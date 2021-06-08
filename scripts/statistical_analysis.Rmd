@@ -1,0 +1,57 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+```
+
+```{r}
+#Upload data
+#Upload output from OBIS taxonomy matching/formatting
+micro <- read_csv(here("files", "calvert.csv"))
+```
+
+```{r}
+#Goal - similarity/dissimilarity cluster analysis 
+
+#How differnt or similar are the three calvert island sites
+
+#Distance metric - Bray-curtis is used for abundance data
+
+#Linkage method - criterion that will determine how observations will be grouped together.
+
+#Figtree (software) allows you to view and edit dendograms - look into this
+
+#https://ourcodingclub.github.io/tutorials/data-clustering/
+
+#Mahara - average linkage Bray-curtis dissimilarity, log10(x+1) transformed
+
+# https://www.davidzeleny.net/anadat-r/doku.php/en:similarity
+
+# similarity calculated using similarity indices ranging from 0 to 1. Ordination uses distances (Euclidean). Legendre & Legendre (2012) offers key on how to select appropriate measure for given data. bray-Curtis and Hellinger distances may be better than Euclidean.
+
+# Symmetrical indices (thos which consider double 0s as relevant not useful for ecological data). Asymmetrical similarity indices (ignore double zeros). Two types, qualitative (presence/absence) and quantitative (raw or transformed species abundance). 
+
+#Qualitative (binary) asymmetrical similarity indices. Information about number of species shared by both samples AND number of species occuring in first or second sampe only.
+
+#Quantitative similarity indices. Percentage Similarity and includes Bray-Curtis
+
+#Distance Indices. Similarity indices return highest value when both samples the same. Distance indices opposite. Two types: 1) Those calculated from similarity indices (includes Bray-Curtis) and; 2) Those which have no analogue in similarity indices. Important criterium is whether distance index is metric or not. Metric = minimum distance is 0, distance is always positive, distance between sample 1 and 2 same as 2 and has triangle inequality.
+
+#Bray-Curits/percentage difference. Suitable for community composition data since it is asymmetrical (ignores double 0s) and meaningful upper vlaue equal to 1. Considers absolute species abundances
+
+```
+
+
+
+
+
+
+
