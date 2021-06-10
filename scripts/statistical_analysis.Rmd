@@ -10,6 +10,9 @@ output: html_notebook
 library(tidyverse)
 library(readxl)
 library(here)
+library(vegan)
+library(factoextra)
+library(ggdendro)
 ```
 
 ```{r}
@@ -17,6 +20,63 @@ library(here)
 #Upload output from OBIS taxonomy matching/formatting
 micro <- read_csv(here("files", "calvert.csv"))
 ```
+
+```{r}
+#Selecting columns
+micro_clust <- micro %>% 
+  select(date, site_id, scientificName, count)
+
+#Complete species list for each station date and fill with zero for not observed. Because I have some species separated out with identificationRemarks, identificationQualifiers and different resting stages, I sum these. I need to decide on best method for this once I have the analysis zeroed in. Complete gives me empty rows... might not need to do this...
+micro_clust <- micro_clust %>%  
+  #complete(date, site_id, scientificName, fill = list(count = 0)) %>%  
+  group_by(date, site_id, scientificName) %>% 
+  summarize(species_sum = sum(count)) %>% 
+  ungroup()
+
+#Combining date and siteID - can't have both for the clustering I am trying now
+micro_clust <- micro_clust %>% 
+  unite(date_site, date, site_id, sep = "_")
+
+#pivoting longer so species are columns. 
+micro_clust <- micro_clust %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  column_to_rownames(var = "date_site") %>% 
+  mutate_all(~replace(., is.na(.), 0))
+```
+
+```{r}
+#Working through steps from https://www.datanovia.com/en/blog/cluster-analysis-in-r-simplified-and-enhanced/
+
+#Calculate dissimilarity matrix. 
+bray.dist <- vegdist(log10(micro_clust+1), "bray")
+
+#Compute hierarchical clustering - not sure if this is the right way to do this...
+bray.hc <- hclust(bray.dist, method = "average")
+
+test <- plot(bray.hc, cex = 0.5, hang = -1)
+
+ggsave(here("figures", "bray_average_test_2.png"), test, width=16, height=15, dpi=300)
+```
+```{r}
+ggdendrogram(bray.hc, size = 5)
+
+ggsave(here("figures", "bray_average_test_2.png"), width=16, height=15, dpi=300)
+
+#Well I have a dendrogram - But does it mean anything? I feel like I'm trying to look at two different questions. Spatial and Temporal...
+
+```
+
+
+
+```{r}
+#Trying different plotting methods?
+fviz_dend(bray.hc, rect = TRUE) # dendrogam
+```
+
+
+
+
+
 
 ```{r}
 #Goal - similarity/dissimilarity cluster analysis 
