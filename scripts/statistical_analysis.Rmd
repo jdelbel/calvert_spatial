@@ -45,8 +45,10 @@ micro_piv <- micro %>%
   mutate_if(is.numeric, ~ replace_na(., 0))
 
 micro_piv <- micro_piv %>% 
-  mutate(month = lubridate::month(date)) %>% 
-  relocate(month, .after = date)
+  mutate(month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  relocate(month, .after = date) %>% 
+  relocate(yday, .after = month)
 
 micro_piv <- micro_piv %>% 
   filter(date > "2018-01-01")
@@ -58,7 +60,7 @@ micro_piv <- micro_piv %>%
                             month >= 9 & month <= 11 ~ "autumn",)) %>% 
   relocate(season, .after = month)
 
-transform <- micro_piv[, 5:138]  
+transform <- micro_piv[, 6:139]  
   
 transform <- log10(transform + 1)
 
@@ -67,10 +69,10 @@ dend_micro <- transform %>%
   hclust(method = "average") %>% 
   as.dendrogram() 
 
-dend_test <- micro_piv[,-c(1,2,3,4)] %>% 
-  vegdist("bray") %>% 
-  hclust(method = "average") %>% 
-  as.dendrogram()
+# dend_test <- micro_piv[,-c(1,2,3,4)] %>% 
+#   vegdist("bray") %>% 
+#   hclust(method = "average") %>% 
+#   as.dendrogram()
 
 # par(mar = c(10,2,1,1)) %>% 
 # plot(dend) 
@@ -122,10 +124,15 @@ png(here("figures", "test.png"), width = 1000, height = 600)
 
 season <- pull(micro_piv, season)
 station <- pull(micro_piv, site_id)
+yday <- pull(micro_piv, yday)
 
 
 barcolor <- colormap(colormap = colormaps$viridis, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
+
 barcolor_station <- colormap(colormap = colormaps$jet, nshades = 3, format = "hex", alpha = 1, reverse = FALSE)
+
+barcolor_yday <- colormap(colormap = colormaps$rainbow, nshades = 356, format = "hex", alpha = 1, reverse = FALSE)
+
 
 # colormaps$viridis
 # colormaps$jet
@@ -133,9 +140,10 @@ barcolor_station <- colormap(colormap = colormaps$jet, nshades = 3, format = "he
 
 barcolor <- barcolor[as.numeric(as.factor(season))]
 barcolor_station <- barcolor_station[as.numeric(as.factor(station))]
+barcolor_yday <- barcolor_yday[as.numeric(yday)]
 
-barcolor_full <- cbind(barcolor, barcolor_station)
-colnames(barcolor_full) <- c("season", "station")
+barcolor_full <- cbind(barcolor, barcolor_station, barcolor_yday)
+colnames(barcolor_full) <- c("season", "station", "yday")
 
 par(mar=c(4,2,1,1))
 dend_micro %>%
