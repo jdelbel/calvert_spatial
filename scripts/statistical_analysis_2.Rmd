@@ -1,0 +1,153 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+```
+
+```{r}
+#Upload data
+#Upload output from OBIS taxonomy matching/formatting
+micro <- read_csv(here("files", "calvert.csv"))
+```
+
+```{r}
+#Selecting columns
+micro <- micro %>% 
+  select(date, site_id, scientificName, count)
+
+#Complete species list for each station date and fill with zero for not observed. Because I have some species separated out with identificationRemarks, identificationQualifiers and different resting stages, I sum these. I need to decide on best method for this once I have the analysis zeroed in. Complete gives me empty rows... might not need to do this...
+micro <- micro %>%  
+  #complete(date, site_id, scientificName, fill = list(count = 0)) %>%  
+  group_by(date, site_id, scientificName) %>% 
+  summarize(species_sum = sum(count)) %>% 
+  ungroup()
+
+#Combining date and siteID - can't have both for the clustering I am trying now
+# micro_clust <- micro_clust %>% 
+#   unite(date_site, date, site_id, sep = "_")
+
+#pivoting longer so species are columns. 
+micro_piv <- micro %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+micro_piv <- micro_piv %>% 
+  mutate(month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  relocate(month, .after = date) %>% 
+  relocate(yday, .after = month)
+
+micro_piv <- micro_piv %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01")
+
+micro_piv <- micro_piv %>% 
+  mutate(season = case_when(month %in% c(12, 1, 2) ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 11 ~ "autumn",)) %>% 
+  relocate(season, .after = month)
+
+transform <- micro_piv[, 6:139]  
+  
+transform <- log10(transform + 1)
+
+dend_micro <- transform %>% 
+  vegdist("bray") %>% 
+  hclust(method = "average") %>% 
+  as.dendrogram() 
+```
+
+```{r}
+#Creation of dendrogram using Calvert data
+
+png(here("figures", "Calvert_only.png"), width = 1000, height = 600) 
+
+season <- pull(micro_piv, season)
+station <- pull(micro_piv, site_id)
+yday <- pull(micro_piv, yday)
+
+
+barcolor <- colormap(colormap = colormaps$viridis, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
+
+barcolor_station <- colormap(colormap = colormaps$jet, nshades = 3, format = "hex", alpha = 1, reverse = FALSE)
+
+barcolor_yday <- colormap(colormap = colormaps$rainbow, nshades = 356, format = "hex", alpha = 1, reverse = FALSE)
+
+
+# colormaps$viridis
+# colormaps$jet
+# c("#0342ff", "#00bd0d", "#fbff00", "#ff0000")
+
+barcolor <- barcolor[as.numeric(as.factor(season))]
+barcolor_station <- barcolor_station[as.numeric(as.factor(station))]
+barcolor_yday <- barcolor_yday[as.numeric(yday)]
+
+barcolor_full <- cbind(barcolor, barcolor_station, barcolor_yday)
+colnames(barcolor_full) <- c("season", "station", "yday")
+
+par(mar=c(4,2,1,1))
+dend_micro %>%
+  plot() 
+
+colored_bars(colors = barcolor_full, dend = dend_micro)
+
+
+
+dev.off()
+```
+
+```{r}
+#Resources
+#https://stackoverflow.com/questions/49088627/how-to-label-colored-bars-in-a-dendrogram
+#https://www.datanovia.com/en/blog/cluster-analysis-in-r-simplified-and-enhanced/
+#https://cran.r-project.org/web/packages/dendextend/vignettes/dendextend.html
+
+#Goal - similarity/dissimilarity cluster analysis 
+
+#How differnt or similar are the three calvert island sites
+
+#Distance metric - Bray-curtis is used for abundance data
+
+#Linkage method - criterion that will determine how observations will be grouped together.
+
+#Figtree (software) allows you to view and edit dendograms - look into this
+
+#https://ourcodingclub.github.io/tutorials/data-clustering/
+
+#Mahara - average linkage Bray-curtis dissimilarity, log10(x+1) transformed
+
+# https://www.davidzeleny.net/anadat-r/doku.php/en:similarity
+
+# similarity calculated using similarity indices ranging from 0 to 1. Ordination uses distances (Euclidean). Legendre & Legendre (2012) offers key on how to select appropriate measure for given data. bray-Curtis and Hellinger distances may be better than Euclidean.
+
+# Symmetrical indices (thos which consider double 0s as relevant not useful for ecological data). Asymmetrical similarity indices (ignore double zeros). Two types, qualitative (presence/absence) and quantitative (raw or transformed species abundance). 
+
+#Qualitative (binary) asymmetrical similarity indices. Information about number of species shared by both samples AND number of species occuring in first or second sampe only.
+
+#Quantitative similarity indices. Percentage Similarity and includes Bray-Curtis
+
+#Distance Indices. Similarity indices return highest value when both samples the same. Distance indices opposite. Two types: 1) Those calculated from similarity indices (includes Bray-Curtis) and; 2) Those which have no analogue in similarity indices. Important criterium is whether distance index is metric or not. Metric = minimum distance is 0, distance is always positive, distance between sample 1 and 2 same as 2 and has triangle inequality.
+
+#Bray-Curits/percentage difference. Suitable for community composition data since it is asymmetrical (ignores double 0s) and meaningful upper vlaue equal to 1. Considers absolute species abundances
+
+```
+
+
+
+
+
+
+
