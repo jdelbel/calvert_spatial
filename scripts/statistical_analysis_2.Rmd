@@ -20,7 +20,28 @@ library(colormap)
 ```{r}
 #Upload data
 #Upload output from OBIS taxonomy matching/formatting
-micro <- read_csv(here("files", "calvert.csv"))
+micro_1 <- read_csv(here("files", "calvert.csv")) 
+
+#Uploading QU39 data
+micro_2 <- read_csv(here("files", "qu39.csv")) %>% 
+  mutate(site_id = "QU39",
+         month = lubridate::month(date),
+         year = lubridate::year(date)) %>% 
+  relocate(site_id, .after = "date") %>%
+  relocate(month, .after = "date") %>% 
+  relocate(year, .after = "date")  
+
+#Performing monthly average to make comparable to Calvert data
+micro_2 <- micro_2 %>% 
+  group_by(year, month, scientificName) %>% 
+  mutate(count_avg = mean(count, rm.na = FALSE)) %>% 
+  ungroup() %>% 
+  distinct(year, month, scientificName, count_avg, .keep_all = TRUE) %>% 
+  select(-year, -month, -count, count = count_avg)
+  
+  
+
+micro <- rbind(micro_1, micro_2)
 ```
 
 ```{r}
@@ -60,7 +81,7 @@ micro_piv <- micro_piv %>%
                             month >= 9 & month <= 11 ~ "autumn",)) %>% 
   relocate(season, .after = month)
 
-transform <- micro_piv[, 6:139]  
+transform <- micro_piv[, 6:162]  
   
 transform <- log10(transform + 1)
 
@@ -73,16 +94,16 @@ dend_micro <- transform %>%
 ```{r}
 #Creation of dendrogram using Calvert data
 
-png(here("figures", "Calvert_only.png"), width = 1000, height = 600) 
+png(here("figures", "Calvert_qu39_monthavg.png"), width = 2200, height = 1000) 
 
 season <- pull(micro_piv, season)
 station <- pull(micro_piv, site_id)
 yday <- pull(micro_piv, yday)
 
 
-barcolor <- colormap(colormap = colormaps$viridis, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
+barcolor_season <- colormap(colormap = colormaps$viridis, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
 
-barcolor_station <- colormap(colormap = colormaps$jet, nshades = 3, format = "hex", alpha = 1, reverse = FALSE)
+barcolor_station <- colormap(colormap = colormaps$jet, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
 
 barcolor_yday <- colormap(colormap = colormaps$rainbow, nshades = 356, format = "hex", alpha = 1, reverse = FALSE)
 
@@ -91,20 +112,31 @@ barcolor_yday <- colormap(colormap = colormaps$rainbow, nshades = 356, format = 
 # colormaps$jet
 # c("#0342ff", "#00bd0d", "#fbff00", "#ff0000")
 
-barcolor <- barcolor[as.numeric(as.factor(season))]
+barcolor_season <- barcolor_season[as.numeric(as.factor(season))]
 barcolor_station <- barcolor_station[as.numeric(as.factor(station))]
 barcolor_yday <- barcolor_yday[as.numeric(yday)]
 
-barcolor_full <- cbind(barcolor, barcolor_station, barcolor_yday)
-colnames(barcolor_full) <- c("season", "station", "yday")
+barcolor_full <- cbind(barcolor_yday, barcolor_season, barcolor_station)
+colnames(barcolor_full) <- c("yday", "season", "station")
 
-par(mar=c(4,2,1,1))
+#Margins bottom, left, top, right.
+par(mar=c(5,2,1,1))
 dend_micro %>%
   plot() 
 
 colored_bars(colors = barcolor_full, dend = dend_micro)
 
+legend("topright", 
+     legend = c("Winter" , "Spring" , "Summer" , "Autumn"), 
+     col = c("red", "blue" , "green" , "yellow"), 
+     pch = c(20,20,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8 , 
+     text.col = "black", horiz = FALSE, inset = c(0, 0.1))
 
+legend("bottomright", 
+     legend = c("Winter" , "Spring" , "Summer" , "Autumn"), 
+     col = c("red", "blue" , "green" , "yellow"), 
+     pch = c(20,20,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8 , 
+     text.col = "black", horiz = FALSE, inset = c(0, 0.1))
 
 dev.off()
 ```
