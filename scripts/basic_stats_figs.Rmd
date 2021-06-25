@@ -1,0 +1,262 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gsw)
+```
+
+```{r}
+#Upload data
+ctd <- read_csv(here("files", "ctd.csv")) 
+```
+
+```{r}
+#Fixing datset so it is easier to work with
+
+#making labels shorter
+ctd <- ctd %>% 
+  rename(pres = `Pressure (dbar)`,
+         sal = `Salinity (PSU)`,
+         temp = `Temperature (deg C)`,
+         date = `Measurement time`,
+         station = Station,
+         cast_pk = `Cast PK`,
+         par = `PAR (umol m-2 s-1)`)
+
+#adding year, month and date
+ctd <- ctd %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date))
+
+ctd_coord <- ctd %>% 
+  distinct(station, Latitude, Longitude)
+
+#filling in lat where not present
+ctd <- ctd %>% 
+  mutate(Latitude = case_when(station == "QU39" & is.na(Latitude) ~ 50.03001,
+                              station == "QCS01" & is.na(Latitude) ~ 51.70493,
+                              station == "KC10" & is.na(Latitude) ~ 51.65064,
+                              station == "DFO2" & is.na(Latitude) ~ 51.52111,
+         TRUE ~ as.numeric(as.character(Latitude))))
+
+#filling in lat where not present
+ctd <- ctd %>% 
+  mutate(Longitude = case_when(station == "QU39" & is.na(Longitude) ~ -125.0989,
+                              station == "QCS01" & is.na(Longitude) ~ -128.2388,
+                              station == "KC10" & is.na(Longitude) ~ -127.9513,
+                              station == "DFO2" & is.na(Longitude) ~ -127.5590,
+         TRUE ~ as.numeric(as.character(Longitude))))
+
+```
+
+```{r}
+#Performing gsw calculations
+
+#Calculating absolute salinity
+SA <- gsw_SA_from_SP(ctd$sal, ctd$pres, ctd$Longitude, ctd$Latitude)
+
+SA <- as.data.frame(SA)
+
+#conservative temperature
+CT <- gsw_CT_from_t(SA$SA, ctd$temp, ctd$pres)
+
+CT <- as.data.frame(CT)
+
+#Density
+rho = gsw_rho(SA$SA,CT$CT,ctd$pres)
+
+rho <- as.data.frame(rho)
+
+#Brunt-Vaisala frequency
+bv <- gsw_Nsquared(SA$SA, CT$CT, ctd$pres)
+
+bv <- bind_rows(bv)
+
+#Had to add a row to bottom to make vector length equal. Ask Jessy if this is the best way to do this.
+bv <- bv %>% 
+  add_row(N2 = NA, p_mid = NA)
+
+#Binding calculations to ctd data
+ctd <- cbind(ctd, SA, CT, rho, bv)
+
+# To Do
+
+#Look into whether flagging is correct
+
+```
+
+
+```{r}
+#Performing calculations
+
+#Finding minimum cast start depth for each profile to determine range of depths to use for density difference. Only 5 casts start deeper than three metres and only 1 doesn't go to 30m.
+range_pres <- ctd %>% 
+  group_by(cast_pk) %>% 
+  summarise(min_pres = min(pres),
+            max_pres = max(pres)) %>% 
+  ungroup() %>% 
+  arrange(desc(min_pres))
+
+#The next few steps are used to determine the density difference as a measure of stratification. Using 2 and 30m
+
+#Filter 2m data
+ctd_2 <- ctd %>% 
+  filter(pres == 2) %>% 
+  select(cast_pk, station, Latitude, Longitude, date, year:day, rho)
+
+#filter 30m data
+ctd_30 <- ctd %>% 
+  filter(pres == 30) %>% 
+  select(cast_pk, rho)
+
+#joining 2m data to 3m data - didn't work.
+ctd_dd <- ctd_2 %>% 
+  left_join(ctd_30, by = "cast_pk") %>% 
+  rename(rho_2 = rho.x, 
+         rho_30 = rho.y)
+
+#Calculating difference in density
+ctd_dd <- ctd_dd %>% 
+  mutate(delta_rho = rho_30 - rho_2)
+  
+```
+
+```{r}
+# Let's go through and combine plots for different aspects.
+```
+
+
+```{r}
+#Monthly difference in temp by station over 2018-2020
+
+ctd %>% 
+  filter(pres == 5) %>%
+  complete(month, station) %>% 
+  mutate_at(c("temp"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = temp, fill = station)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(5, 20)) +
+  labs(title = "2018 - 2020, 5m",
+       y = "Temp",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+#Monthly difference in sal by station over 2018-2020
+
+ctd %>% 
+  filter(pres == 5) %>%
+  complete(month, station) %>% 
+  mutate_at(c("sal"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = sal, fill = station)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(20, 32)) +
+  labs(title = "2018 - 2020, 5m",
+       y = "Salinity",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+#Density at 5m 
+
+ctd %>% 
+  filter(pres == 5) %>%
+  complete(month, station) %>% 
+  mutate_at(c("rho"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = rho, fill = station)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(1015, 1025)) +
+  labs(title = "2018 - 2020, 5m",
+       y = "rho",
+       x = "Month") +
+  theme_bw()
+```
+
+
+
+
+```{r}
+#Monthly difference in delta_rho by station over 2018-2020 (Stratification)
+
+ctd_dd %>% 
+  complete(month, station) %>% 
+  mutate_at(c("delta_rho"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = delta_rho, fill = station)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020",
+       y = "Delta_rho (30 - 2m)",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+#Monthly max in N2 by station over 2018-2020 (Stratification/stability)
+ctd %>% 
+  group_by(cast_pk) %>% 
+  mutate(max_bv = max(N2)) %>% 
+  ungroup() %>% 
+  distinct(cast_pk, max_bv, .keep_all = TRUE) %>% 
+  complete(month, station) %>% 
+  mutate_at(c("max_bv"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = max_bv, fill = station)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020",
+       y = "Profile Max. N2",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+
+#Monthly 5m N2 by station over 2018-2020 (Stratification/stability)
+ctd %>% 
+  filter(pres == 5) %>% 
+  complete(month, station) %>% 
+  mutate_at(c("N2"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = N2, fill = station)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020",
+       y = "5m N2",
+       x = "Month") +
+  theme_bw()
+
+```
+```{r}
+#Monthly PAR
+ctd %>% 
+  filter(pres == 5) %>% 
+  complete(month, station) %>% 
+  mutate_at(c("par"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = par, fill = station)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020",
+       y = "PAR",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+#To do:
+
+#QC PAR
+
+#QC turbidity
+
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
