@@ -24,22 +24,24 @@ micro_1 <- read_csv(here("files", "calvert.csv"))
 micro_2 <- read_csv(here("files", "qu39.csv")) %>% 
   mutate(site_id = "QU39",
          month = lubridate::month(date),
-         year = lubridate::year(date)) %>% 
+         year = lubridate::year(date)) %>%
   relocate(site_id, .after = "date") %>%
-  relocate(month, .after = "date") %>% 
-  relocate(year, .after = "date")  
+  relocate(month, .after = "date") %>%
+  relocate(year, .after = "date")
 
-#Performing monthly average to make comparable to Calvert data - Turn this off for alternative
-micro_2 <- micro_2 %>% 
-  group_by(year, month, scientificName) %>% 
-  mutate(count_avg = mean(count, rm.na = FALSE)) %>% 
-  ungroup() %>% 
-  distinct(year, month, scientificName, count_avg, .keep_all = TRUE) %>% 
+# Performing monthly average to make comparable to Calvert data
+micro_2 <- micro_2 %>%
+  group_by(date, scientificName) %>%
+  mutate(count_avg = mean(count)) %>%
+  ungroup() %>%
+  distinct(date, scientificName, count_avg, .keep_all = TRUE) %>%
   select(-year, -month, -count, count = count_avg)
-  
-  
 
 micro <- rbind(micro_1, micro_2)
+
+micro <- micro %>% 
+  filter(trophicStatus == "auto" &
+         !scientificName == "Protozoa")
 ```
 
 ```{r}
@@ -79,9 +81,9 @@ micro_piv <- micro_piv %>%
                             month >= 9 & month <= 11 ~ "autumn",)) %>% 
   relocate(season, .after = month)
 
-nmds <- micro_piv[, 6:162]
+nmds <- micro_piv[, 6:146]
 
-transform <- micro_piv[, 6:162]  
+transform <- micro_piv[, 6:146]  
   
 transform <- log10(transform + 1)
 
@@ -93,7 +95,8 @@ dend_micro <- transform %>%
 
 
 ```{r}
-example_NMDS <-  metaMDS(nmds , k = 2, trymax = 100) 
+example_NMDS <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
 
 stressplot(example_NMDS)
 

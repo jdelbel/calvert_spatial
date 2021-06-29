@@ -12,6 +12,7 @@ library(tidyverse)
 library(readxl)
 library(gsw)
 library(here)
+library(patchwork)
 ```
 
 ```{r}
@@ -213,34 +214,242 @@ nuts <- nuts %>%
 
 
 ```{r}
-#Monthly difference in temp by station over 2018-2020
+#Monthly difference in temp and Sal at 2 and 5m depths
 
-ctd %>% 
-  filter(pres == 5) %>%
-  # complete(month, station) %>% 
-  # mutate_at(c("temp"), ~ replace(., is.na(.), 0)) %>% 
-  ggplot(aes(x = as.factor(month), y = temp, fill = station)) +
-  geom_boxplot() +
-  coord_cartesian(ylim = c(5, 20)) +
-  labs(title = "2018 - 2020, 5m",
-       y = "Temp",
-       x = "Month") +
-  theme_bw()
-```
-```{r}
-#Monthly difference in temp by station over 2018-2020
-
-ctd %>% 
+p1 <- ctd %>% 
   filter(pres == 2) %>%
-  # complete(month, station) %>% 
-  # mutate_at(c("temp"), ~ replace(., is.na(.), 0)) %>% 
   ggplot(aes(x = as.factor(month), y = temp, fill = station)) +
   geom_boxplot() +
   coord_cartesian(ylim = c(5, 20)) +
-  labs(title = "2018 - 2020, 2m",
-       y = "Temp",
+  labs(y = "Temp",
        x = "Month") +
-  theme_bw()
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd %>% 
+  filter(pres == 5) %>%
+  ggplot(aes(x = as.factor(month), y = temp, fill = station)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(5, 20)) +
+  labs(y = "Temp",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p3 <- ctd %>% 
+  filter(pres == 2) %>%
+  ggplot(aes(x = as.factor(month), y = sal, fill = station)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(10, 32)) +
+  labs(y = "Salinity",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p4 <- ctd %>% 
+  filter(pres == 5) %>%
+  ggplot(aes(x = as.factor(month), y = sal, fill = station)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(10, 32)) +
+  labs(y = "Salinity",
+       x = "Month") +
+  theme_bw() + 
+  theme(legend.position = "none",
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1 + p2 + p3 + p4 + 
+  plot_annotation(tag_levels = c("2", "5", "2", "5") & 
+  theme(plot.tag = element_text(size = 30)))
+
+ggsave(here("figures", "temp_sal_box.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Monthly difference in stratification measures.
+
+p1 <- ctd_dd %>% 
+  ggplot(aes(x = as.factor(month), y = delta_rho, fill = station)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "Delta rho (30 - 2m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd %>% 
+  group_by(cast_pk) %>% 
+  mutate(max_bv = max(N2)) %>% 
+  ungroup() %>% 
+  distinct(cast_pk, max_bv, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = max_bv, fill = station)) +
+  geom_boxplot() +
+  labs(y = "Profile Max. N2",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p3 <- ctd %>% 
+    filter(pres > 3 & pres < 7) %>% 
+  group_by(cast_pk) %>% 
+  mutate(avg_N2 = mean(N2)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(month), y = N2, fill = station)) +
+  geom_boxplot() +
+  labs(y = "Avg 4-6m N2",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p4 <- ctd %>% 
+  filter(pres < 31) %>% 
+  group_by(cast_pk) %>% 
+  mutate(avg_N2 = mean(N2)) %>% 
+  ungroup() %>% 
+  distinct(cast_pk, avg_N2, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = avg_N2, fill = station)) +
+  geom_boxplot() +
+  labs(y = "Avg upper 30m N2",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1 + p2 + p3 + p4 + 
+  theme(plot.tag = element_text(size = 30))
+
+ggsave(here("figures", "Strat_box.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Monthly difference in 5m nutrients.
+
+p1 <- 
+nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = no2_no3_um, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "NO2_NO3 (um)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.7, 0.87),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = sio2, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "SiO2 (um)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p3 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = po4, fill = site_id)) +
+  geom_boxplot() +
+  
+  labs(y = "po4 (um)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p4 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+ 
+  ggplot(aes(x = as.factor(month), y = no2_no3_um/po4, fill = site_id)) +
+  geom_boxplot() +
+
+  labs(y = "N:P",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1 + p2 + p3 + p4 
+
+ggsave(here("figures", "Nuts_box.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Monthly difference in diatoms.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Diatoms",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "diat") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla Diatoms",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Diatoms_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
 ```
 
 ```{r}
@@ -258,24 +467,6 @@ ctd %>%
   theme_bw()
 ```
 
-
-
-
-```{r}
-#Monthly difference in sal by station over 2018-2020
-
-ctd %>% 
-  filter(pres == 5) %>%
-  # complete(month, station) %>% 
-  # mutate_at(c("sal"), ~ replace(., is.na(.), 0)) %>% 
-  ggplot(aes(x = as.factor(month), y = sal, fill = station)) +
-  geom_boxplot() +
-  coord_cartesian(ylim = c(20, 32)) +
-  labs(title = "2018 - 2020, 5m",
-       y = "Salinity",
-       x = "Month") +
-  theme_bw()
-```
 ```{r}
 #Timeseries 5m Sal.
 
@@ -285,37 +476,6 @@ ctd %>%
   geom_point(aes(x = date, y = sal, fill = station), pch = 21, color = "black", size = 2) +
   geom_line(aes(x = date, y = sal, color = station)) +
   coord_cartesian(ylim = c(20, 32)) +
-  labs(title = "2018 - 2020, 5m",
-       y = "Sal",
-       x = "Month") +
-  theme_bw()
-```
-
-
-```{r}
-#Monthly difference in sal by station over 2018-2020
-
-ctd %>% 
-  filter(pres == 2) %>%
-  # complete(month, station) %>% 
-  # mutate_at(c("sal"), ~ replace(., is.na(.), 0)) %>% 
-  ggplot(aes(x = as.factor(month), y = sal, fill = station)) +
-  geom_boxplot() +
-  # coord_cartesian(ylim = c(20, 32)) +
-  labs(title = "2018 - 2020, 2m",
-       y = "Salinity",
-       x = "Month") +
-  theme_bw()
-```
-```{r}
-#Timeseries 2m Sal.
-
-ctd %>% 
-  filter(pres == 2) %>%
-  ggplot() +
-  geom_point(aes(x = date, y = sal, fill = station), pch = 21, color = "black", size = 2) +
-  geom_line(aes(x = date, y = sal, color = station)) +
-  coord_cartesian(ylim = c(10, 32)) +
   labs(title = "2018 - 2020, 5m",
        y = "Sal",
        x = "Month") +
@@ -339,20 +499,6 @@ ctd %>%
 ```
 
 ```{r}
-#Monthly difference in delta_rho by station over 2018-2020 (Stratification)
-
-ctd_dd %>% 
-  # complete(month, station) %>% 
-  # mutate_at(c("delta_rho"), ~ replace(., is.na(.), 0)) %>% 
-  ggplot(aes(x = as.factor(month), y = delta_rho, fill = station)) +
-  geom_boxplot() +
-  coord_cartesian(ylim = c(0, 25)) +
-  labs(title = "2018 - 2020",
-       y = "Delta_rho (30 - 2m)",
-       x = "Month") +
-  theme_bw()
-```
-```{r}
 #Timeseries delta_rho.
 
 ctd_dd %>% 
@@ -365,57 +511,9 @@ ctd_dd %>%
        x = "Month") +
   theme_bw()
 ```
-```{r}
-#Monthly max in N2 by station over 2018-2020 (Stratification/stability)
-ctd %>% 
-  group_by(cast_pk) %>% 
-  mutate(max_bv = max(N2)) %>% 
-  ungroup() %>% 
-  distinct(cast_pk, max_bv, .keep_all = TRUE) %>% 
-  # complete(month, station) %>% 
-  # mutate_at(c("max_bv"), ~ replace(., is.na(.), 0)) %>% 
-  ggplot(aes(x = as.factor(month), y = max_bv, fill = station)) +
-  geom_boxplot() +
-  # coord_cartesian(ylim = c(0, 25)) +
-  labs(title = "2018 - 2020",
-       y = "Profile Max. N2",
-       x = "Month") +
-  theme_bw()
-```
-```{r}
 
-#Monthly 5m N2 by station over 2018-2020 (Stratification/stability)
-ctd %>% 
-  filter(pres == 5) %>% 
-  # complete(month, station) %>% 
-  # mutate_at(c("N2"), ~ replace(., is.na(.), 0)) %>% 
-  ggplot(aes(x = as.factor(month), y = N2, fill = station)) +
-  geom_boxplot() +
-  # coord_cartesian(ylim = c(0, 25)) +
-  labs(title = "2018 - 2020",
-       y = "5m N2",
-       x = "Month") +
-  theme_bw()
 
-```
-```{r}
 
-#Monthly mean upper 30m N2 by station over 2018-2020 (Stratification/stability)
-ctd %>% 
-  filter(pres < 31) %>% 
-  group_by(cast_pk) %>% 
-  mutate(avg_N2 = mean(N2)) %>% 
-  ungroup() %>% 
-  distinct(cast_pk, avg_N2, .keep_all = TRUE) %>% 
-  ggplot(aes(x = as.factor(month), y = avg_N2, fill = station)) +
-  geom_boxplot() +
-  # coord_cartesian(ylim = c(0, 25)) +
-  labs(title = "2018 - 2020",
-       y = "Avg upper 30m N2",
-       x = "Month") +
-  theme_bw()
-
-```
 ```{r}
 #Timeseries N2 avg 30 layer.
 
@@ -712,6 +810,63 @@ chem_tidy %>%
        y = "TChla raph",
        x = "Month") +
   theme_bw()
+```
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "green") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla green",
+       x = "Month") +
+  theme_bw()
+```
+
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "cryp") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla cryp",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "hapto") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla hapt",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "dict") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla dict",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "dino") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla dino",
+       x = "Month") +
+  theme_bw()
+
 ```
 
 
