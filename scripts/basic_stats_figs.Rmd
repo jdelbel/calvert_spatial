@@ -451,6 +451,163 @@ fig <- p1/p2
 ggsave(here("figures", "Diatoms_box.png"), 
        fig, width = 14, height = 10, dpi=300)
 ```
+```{r}
+#Monthly difference in Dinflagellates.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Dinoflagellata") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Dinos",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "dino") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla Dinos",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Dino_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+
+#Monthly difference in Dinflagellates.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Chrysophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Chryso",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "dict") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Chryso_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+
+#Monthly difference in Dinflagellates.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Prymnesiophyta-Haptophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Hapto",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "hapto") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Hapto_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+
+#Monthly difference in Dinflagellates.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Dictyochophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "dict") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla Dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Dict_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+
+
 
 ```{r}
 #Timeseries 5m Temp.
@@ -652,9 +809,6 @@ phyt_group <- micro %>%
   distinct(group)
 ```
 
-
-
-
 ```{r}
 micro %>% 
   filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
@@ -663,6 +817,28 @@ micro %>%
   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
   ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
   geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Diatoms",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = (count)) %>% #summing all species counts for Cryptos
+  ungroup() %>% 
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% #keeping only summed rows 
+  group_by(month, site_id) %>% 
+  mutate(mean_count = mean(sum_count),
+         std_count = sd(sum_count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(month), y = mean_count, fill = site_id)) +
+  geom_errorbar(aes(ymin = mean_count - std_count, 
+                    ymax = mean_count + std_count, color = site_id), width = .1,
+                    size = 1) +
+  geom_point(pch = 21, size = 4) +
   # coord_cartesian(ylim = c(0, 100)) +
   labs(title = "2018 - 2020",
        y = "Abundance Diatoms",
@@ -685,6 +861,29 @@ micro %>%
        x = "Month") +
   theme_bw()
 ```
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Cryptophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = (count)) %>% #summing all species counts for Cryptos
+  ungroup() %>% 
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% #keeping only summed rows 
+  group_by(month, site_id) %>% 
+  mutate(mean_count = mean(sum_count),
+         std_count = sd(sum_count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(month), y = mean_count, fill = site_id)) +
+  geom_errorbar(aes(ymin = mean_count - std_count, 
+                    ymax = mean_count + std_count, color = site_id), width = .1,
+                    size = 1) +
+  geom_point(pch = 21, size = 4) +
+  # coord_cartesian(ylim = c(0, 100)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Crytos",
+       x = "Month") +
+  theme_bw()
+```
+
 ```{r}
 micro %>% 
   filter(trophicStatus == "auto" & group == "Dictyochophyta") %>% 
