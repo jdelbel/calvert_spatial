@@ -18,7 +18,7 @@ library(colormap)
 ```{r}
 #Upload data
 #Upload output from OBIS taxonomy matching/formatting
-micro <- read_csv(here("files", "calvert.csv")) 
+micro_1 <- read_csv(here("files", "calvert.csv")) 
 
 #Uploading QU39 data
 # micro_2 <- read_csv(here("files", "qu39.csv")) %>% 
@@ -39,9 +39,9 @@ micro <- read_csv(here("files", "calvert.csv"))
 # 
 # micro <- rbind(micro_1, micro_2)
 # 
-# micro <- micro %>%
-#   filter(trophicStatus == "auto" &
-#          !scientificName == "Protozoa")
+micro <- micro %>%
+  filter(trophicStatus == "auto" &
+         !scientificName == "Protozoa")
 ```
 
 ```{r}
@@ -81,9 +81,9 @@ micro_piv <- micro_piv %>%
                             month >= 9 & month <= 11 ~ "autumn",)) %>% 
   relocate(season, .after = month) 
 
-nmds <- micro_piv[, 6:147]
+nmds <- micro_piv[, 6:131]
 
-transform <- micro_piv[, 6:147]  
+transform <- micro_piv[, 6:131]  
   
 transform <- log10(transform + 1)
 
@@ -91,8 +91,6 @@ dend_micro <- transform %>%
   vegdist("bray") %>% 
   hclust(method = "average") %>% 
   as.dendrogram()
-
-grp <- cutree(dend_micro, 4)
 ```
 
 ```{r}
@@ -122,6 +120,7 @@ plot(example_NMDS)
 ```
 ```{r}
 ordiplot(example_NMDS,type="n")
+orditorp(example_NMDS,display="species",col="red",air=0.01)
 orditorp(example_NMDS,display="sites",cex=1.25,air=0.01)
 ```
 ```{r}
@@ -130,31 +129,28 @@ orditorp(example_NMDS,display="sites",cex=1.25,air=0.01)
 with(micro_piv, levels(as.factor(site_id)))
 ```
 ```{r}
+scl <- 3
 colvec <- c("red", "green", "blue")
 ```
 
 ```{r}
-plot(example_NMDS, type = "n", xlim = c(-1, 1), ylim = c(-0.5, 0.5))
+plot(example_NMDS, type = "n")
+
+# ylim = c(-0.5, 0.5), xlim = c(-1.0, 0.5)
 
 with(micro_piv, points(example_NMDS, display = "sites", col = "black",
-                      pch = 21, bg = colvec[as.factor(site_id)], cex = 2.2))
+                      pch = 21, bg = colvec[as.factor(site_id)], cex = 1.5))
 
 # text(example_NMDS, display = "species", scaling = scl, cex = 0.8, col = "darkcyan")
 
 with(micro_piv, legend("topright", legend = levels(as.factor(site_id)), bty = "n",
-                      col = "black", pch = 21, pt.bg = colvec, cex = 2))
+                      col = "black", pch = 21, pt.bg = colvec, cex = 1.5))
 
-
-orditorp(example_NMDS, display="sites", cex = 0.70, air = 0.01, col = "white")
-
-# https://stackoverflow.com/questions/12436902/overlaying-clustering-results-on-an-ordination
-ordihull(example_NMDS, groups = grp, display = "sites")
 #Stress is 0.15
 #
 
 
 ```
-
 ```{r}
 
 # https://fromthebottomoftheheap.net/2012/04/11/customising-vegans-ordination-plots/
@@ -167,7 +163,7 @@ colvec_seas <- c("red", "green", "blue", "yellow")
 ```
 
 ```{r}
-plot(example_NMDS, type = "n", xlim = c(-1, 1), ylim = c(-0.5, 0.5))
+plot(example_NMDS, type = "n")
 
 with(micro_piv, points(example_NMDS, display = "sites", col = "black",
                       pch = 21, bg = colvec_seas[as.factor(season)], cex = 1.5))
@@ -178,34 +174,42 @@ with(micro_piv, legend("topright", legend = levels(as.factor(season)), bty = "n"
                       col = "black", pch = 21, pt.bg = colvec_seas, cex = 1.5))
 
 
+#Stress is 0.15
+#
 
-# https://stackoverflow.com/questions/12436902/overlaying-clustering-results-on-an-ordination
-ordihull(example_NMDS, groups = grp, display = "sites")
+
+```
+```{r}
+
+# https://fromthebottomoftheheap.net/2012/04/11/customising-vegans-ordination-plots/
+
+with(micro_piv, levels(as.factor(season)))
+```
+
+```{r}
+colvec_seas <- c("red", "green", "blue", "yellow")
+```
+
+```{r}
+plot(example_NMDS, type = "n")
+
+with(micro_piv, points(example_NMDS, display = "sites", col = "black",
+                      pch = 21, bg = colvec_seas[as.factor(season)], cex = 1.5))
+
+# text(example_NMDS, display = "species", scaling = scl, cex = 0.8, col = "darkcyan")
+
+with(micro_piv, legend("topright", legend = levels(as.factor(season)), bty = "n",
+                      col = "black", pch = 21, pt.bg = colvec_seas, cex = 1.5))
+
+
 #Stress is 0.15
 #
 
 
 ```
 
-```{r}
-#Would really like to have this combined so it shows season and station
-
-#Could try relative abundance
-
-#Try with pigments
-
-#Try with chemtax
 
 
-```
-
-
-
-
-
-```{r}
-plot(example_NMDS)
-```
 
 
 ```{r}
