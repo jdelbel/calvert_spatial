@@ -17,28 +17,83 @@ library(colormap)
 
 ```{r}
 #Upload data
-#Upload output from OBIS taxonomy matching/formatting
-micro <- read_csv(here("files", "calvert.csv")) 
+#Upload output from OBIS taxonomy matching/formatting for Calvert data.
+#Need to look into how I'm actually classifying species here. It might be better to have Louis' original designations as I throw a lot of unknown species into protoza, which is one group rather than many.
+micro_1 <- read_csv(here("files", "calvert.csv")) 
+
+#Trying to remove species that have very few occurrences - trying this later
+# micro_1_test <- micro_1 %>% 
+#   group_by(scientificName_accepted, count) %>% 
+#   mutate(num_occurrence = n())
 
 #Uploading QU39 data
-# micro_2 <- read_csv(here("files", "qu39.csv")) %>% 
-#   mutate(site_id = "QU39",
-#          month = lubridate::month(date),
-#          year = lubridate::year(date)) %>%
-#   relocate(site_id, .after = "date") %>%
-#   relocate(month, .after = "date") %>%
-#   relocate(year, .after = "date")
-# 
-# # Performing monthly average to make comparable to Calvert data
+micro_2 <- read_csv(here("files", "qu39.csv")) %>%
+  mutate(site_id = "QU39") %>% 
+#         month = lubridate::month(date),
+#         year = lubridate::year(date)) %>%
+  relocate(site_id, .after = "date")
+
+#  relocate(month, .after = "date") %>%
+#  relocate(year, .after = "date")
+ 
+# Performing monthly average to make comparable to Calvert data
+# I don't think this is actually doing a monthly average... It's combining the scientificNames with duplicates for a single date.
+#Turning off for now, as I'm not sure I want to do this...
 # micro_2 <- micro_2 %>%
 #   group_by(date, scientificName) %>%
 #   mutate(count_avg = mean(count)) %>%
 #   ungroup() %>%
 #   distinct(date, scientificName, count_avg, .keep_all = TRUE) %>%
 #   select(-year, -month, -count, count = count_avg)
-# 
+
+monthly_qu39 <- micro_2 %>% 
+  filter(trophicStatus == "auto")
+
+
+monthly_qu39 <- micro_2 %>%
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>%
+  group_by(year, month, group, scientificName, identificationRemark) %>%
+  summarise(count = mean(count)) %>%
+  ungroup() %>% 
+  mutate(day = 15,
+         site_id = "QU39") %>% 
+  unite("date", c(year, month, day), sep = "-") %>% 
+  relocate(site_id, .after = "date") %>% 
+  select(-identificationRemark) %>% 
+  mutate(date = lubridate::ymd(date))
+
+calvert <- micro_1 %>% 
+  filter(trophicStatus == "auto")
+
+calvert <- calvert %>% 
+  select(date, site_id, group, scientificName, count)
+
+# %>%
+#   distinct(date, scientificName, count_avg, .keep_all = TRUE) %>%
+#   select(-year, -month, -count, count = count_avg)
+
+
+#Combining Calvert and Qu39 data where all of the qu39 data is included.
 # micro <- rbind(micro_1, micro_2)
-# 
+
+micro <- rbind(monthly_qu39, calvert)
+
+#Counting how many times each species is observed
+micro <- micro %>% 
+   group_by(scientificName) %>% 
+   mutate(num_occurrence = n())
+
+#removing species that have not been observed at least twice.
+micro <- micro %>% 
+  filter(num_occurrence > 2)
+
+# micro <- micro %>% 
+#   mutate(date = lubridate::ymd(date))
+
+
+
+#This filters out the mostly autotrophic species
 # micro <- micro %>%
 #   filter(trophicStatus == "auto" &
 #          !scientificName == "Protozoa")
@@ -47,13 +102,14 @@ micro <- read_csv(here("files", "calvert.csv"))
 ```{r}
 #Selecting columns
 micro <- micro %>% 
-  select(date, site_id, scientificName, count)
+  select(date, site_id, group, scientificName, count)
 
-#Complete species list for each station date and fill with zero for not observed. Because I have some species separated out with identificationRemarks, identificationQualifiers and different resting stages, I sum these. I need to decide on best method for this once I have the analysis zeroed in. Complete gives me empty rows... might not need to do this...
-micro <- micro %>%  
-  #complete(date, site_id, scientificName, fill = list(count = 0)) %>%  
-  group_by(date, site_id, scientificName) %>% 
-  summarize(species_sum = sum(count)) %>% 
+# Because I have some species separated out with identificationRemarks, identificationQualifiers and different resting stages, I sum these. If I don't, then the pivoting in later stages results in columns with combined numbers. I need to decide on best method for this once I have the analysis zeroed in. 
+
+#Again, not sure if I want to do this...
+micro <- micro %>%
+  group_by(date, site_id, scientificName) %>%
+  summarize(species_sum = sum(count)) %>%
   ungroup()
 
 #Combining date and siteID - can't have both for the clustering I am trying now
@@ -65,15 +121,18 @@ micro_piv <- micro %>%
   pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
   mutate_if(is.numeric, ~ replace_na(., 0))
 
+#Adding date columns
 micro_piv <- micro_piv %>% 
   mutate(month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
   relocate(month, .after = date) %>% 
   relocate(yday, .after = month)
 
+#filtering for period under investigation
 micro_piv <- micro_piv %>% 
   filter(date > "2018-01-01" & date < "2021-01-01")
 
+#Roughly adding seasons - would like to make cosmological seasons
 micro_piv <- micro_piv %>% 
   mutate(season = case_when(month %in% c(12, 1, 2) ~ "winter",
                             month >= 3 & month <= 5 ~ "spring",
@@ -81,45 +140,80 @@ micro_piv <- micro_piv %>%
                             month >= 9 & month <= 11 ~ "autumn",)) %>% 
   relocate(season, .after = month) 
 
-nmds <- micro_piv[, 6:147]
 
-transform <- micro_piv[, 6:147]  
+#Pulling out species counts for tranform and input into clustering and NMDS
+transform <- micro_piv[, 6:133]  
   
+#Log10 transformation +1 (as per Mahara)
 transform <- log10(transform + 1)
 
+#Performing clustering
 dend_micro <- transform %>% 
   vegdist("bray") %>% 
   hclust(method = "average") %>% 
   as.dendrogram()
 
-grp <- cutree(dend_micro, 3)
-```
-
-```{r}
-example_NMDS=metaMDS(nmds, # Our community-by-species matrix
-                     k=2, trymax = 100)
-```
-```{r}
-stressplot(example_NMDS)
-```
-```{r}
-plot(example_NMDS)
-```
-```{r}
-ordiplot(example_NMDS,type="n")
-orditorp(example_NMDS,display="species",col="red",air=0.01)
-orditorp(example_NMDS,display="sites",cex=1.25,air=0.01)
+#Creating dendrogram cutoff for clustering in NMDS
+grp <- cutree(dend_micro, 5)
 ```
 
 
 ```{r}
-example_NMDS <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+#Running nmds on entire dataset, without QU39 monthly averaged
+nmds_all <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
                          k = 3, trymax = 100) 
 
-stressplot(example_NMDS)
+#Checking stressplot for fit
+stressplot(nmds_all)
 
-plot(example_NMDS)
 ```
+
+```{r}
+#For this plot I:
+#1) Monthly averaged QU39 data
+#2) Filtered to mostly autotrophic groups - removed ciliates etc.
+#3) removed species that only had 1 or 2 occurrences
+
+#The removal of heterotrophs made a big difference. Before, the groups had huge overlap.
+
+
+# https://fromthebottomoftheheap.net/2012/04/11/customising-vegans-ordination-plots/
+
+with(micro_piv, levels(as.factor(site_id)))
+
+col_site <- c("red", "green", "blue", "magenta")
+
+
+plot(nmds_all, type = "n", ylim = c(-0.6, 0.6), xlim = c(-0.5, 0.5))
+
+with(micro_piv, points(nmds_all, display = "sites", col = "black",
+                      pch = 21, bg = col_site[as.factor(site_id)], cex = 2.2))
+
+# text(example_NMDS, display = "species", scaling = scl, cex = 0.8, col = "darkcyan")
+
+with(micro_piv, legend("topright", legend = levels(as.factor(site_id)), bty = "n",
+                      col = "black", pch = 21, pt.bg = col_site, cex = 1.5))
+
+
+orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
+
+# https://stackoverflow.com/questions/12436902/overlaying-clustering-results-on-an-ordination
+ordihull(nmds_all, groups = grp, display = "sites")
+#Stress is 0.15
+
+#This doesn't seem to show much at all - too much data, especially from QU39. Try monthly averaging? Try removing species with very few occurrences?
+
+```
+
+
+
+
+
+
+
+
+
+
 ```{r}
 ordiplot(example_NMDS,type="n")
 orditorp(example_NMDS,display="sites",cex=1.25,air=0.01)
@@ -211,7 +305,7 @@ plot(example_NMDS)
 ```{r}
 #Creation of dendrogram using Calvert data
 
-png(here("figures", "Calvert_qu39_summer.png"), width = 2200, height = 1000) 
+png(here("figures", "Calvert_qu39_summer_test.png"), width = 2200, height = 1000) 
 
 season <- pull(micro_piv, season)
 station <- pull(micro_piv, site_id)
