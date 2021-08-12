@@ -46,11 +46,11 @@ micro_2 <- read_csv(here("files", "qu39.csv")) %>%
 #   distinct(date, scientificName, count_avg, .keep_all = TRUE) %>%
 #   select(-year, -month, -count, count = count_avg)
 
-monthly_qu39 <- micro_2 %>% 
+monthly_qu39 <- micro_2 %>%
   filter(trophicStatus == "auto")
 
 
-monthly_qu39 <- micro_2 %>%
+monthly_qu39 <- monthly_qu39 %>%
   mutate(month = lubridate::month(date),
          year = lubridate::year(date)) %>%
   group_by(year, month, group, scientificName, identificationRemark) %>%
@@ -63,7 +63,7 @@ monthly_qu39 <- micro_2 %>%
   select(-identificationRemark) %>% 
   mutate(date = lubridate::ymd(date))
 
-calvert <- micro_1 %>% 
+calvert <- micro_1 %>%
   filter(trophicStatus == "auto")
 
 calvert <- calvert %>% 
@@ -98,6 +98,36 @@ micro <- micro %>%
 #   filter(trophicStatus == "auto" &
 #          !scientificName == "Protozoa")
 ```
+
+```{r}
+#What about summing to genus. 
+micro_1_gen <- micro_1 %>%
+  filter(trophicStatus == "auto") %>% 
+  group_by(date, site_id, genus) %>% 
+  summarise(count_gen = sum(count)) %>% 
+  ungroup() %>% 
+  filter(!is.na(genus))
+
+micro_2_gen <- micro_2 %>%
+  filter(trophicStatus == "auto") %>% 
+  group_by(date, site_id, genus) %>% 
+  summarise(count_gen = sum(count)) %>% 
+  ungroup() %>% 
+  filter(!is.na(genus))
+
+micro_gen <- rbind(micro_1_gen, micro_2_gen)
+
+#Counting how many times each species is observed
+micro_gen <- micro_gen %>% 
+   group_by(genus) %>% 
+   mutate(num_occurrence = n())
+
+#removing species that have not been observed at least twice.
+micro_gen <- micro_gen %>% 
+  filter(num_occurrence > 2)
+```
+
+
 
 ```{r}
 #Selecting columns
@@ -142,7 +172,7 @@ micro_piv <- micro_piv %>%
 
 
 #Pulling out species counts for tranform and input into clustering and NMDS
-transform <- micro_piv[, 6:133]  
+transform <- micro_piv[, 6:120]  
   
 #Log10 transformation +1 (as per Mahara)
 transform <- log10(transform + 1)
@@ -153,15 +183,14 @@ dend_micro <- transform %>%
   hclust(method = "average") %>% 
   as.dendrogram()
 
-#Creating dendrogram cutoff for clustering in NMDS
-grp <- cutree(dend_micro, 5)
+
 ```
 
 
 ```{r}
 #Running nmds on entire dataset, without QU39 monthly averaged
 nmds_all <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
-                         k = 3, trymax = 100) 
+                         k = 2, trymax = 100) 
 
 #Checking stressplot for fit
 stressplot(nmds_all)
@@ -169,6 +198,96 @@ stressplot(nmds_all)
 ```
 
 ```{r}
+#Creating dendrogram cutoff for clustering in NMDS
+grp <- cutree(dend_micro, 5)
+```
+
+
+
+```{r}
+#For this plot I:
+#1) Monthly averaged QU39 data
+#2) Filtered to mostly autotrophic groups - removed ciliates etc. (Found out I wasn't removing these from the QU39 data, so now that this is fixed.... my results might not be nearly as good)
+#3) removed species that only had 1 or 2 occurrences
+
+#The removal of heterotrophs made a big difference. Before, the groups had huge overlap.
+
+
+# https://fromthebottomoftheheap.net/2012/04/11/customising-vegans-ordination-plots/
+
+with(micro_piv, levels(as.factor(site_id)))
+
+col_site <- c("red", "green", "blue", "magenta")
+
+
+plot(nmds_all, type = "n", ylim = c(-0.6, 0.6), xlim = c(-0.5, 0.5))
+
+
+
+with(micro_piv, points(nmds_all, display = "sites", col = "black",
+                      pch = 21, bg = col_site[as.factor(site_id)], cex = 2.2))
+
+# text(example_NMDS, display = "species", scaling = scl, cex = 0.8, col = "darkcyan")
+
+with(micro_piv, legend("topright", legend = levels(as.factor(site_id)), bty = "n",
+                      col = "black", pch = 21, pt.bg = col_site, cex = 1.5))
+
+
+orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
+
+# https://stackoverflow.com/questions/12436902/overlaying-clustering-results-on-an-ordination
+ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
+#Stress is 0.15
+# Cut dendrogram at 5 branches, but I only see three groupsings here.
+
+
+```
+
+```{r}
+#displays empty ordination space
+plot(nmds_all, type = "n", ylim = c(-0.5, 0.5), xlim = c(-0.5, 0.5)) 
+
+# displays site points where symbols (pch) are different management options and colour (col) are different land uses
+points(nmds_all, display = "sites", col = "black",
+       pch = c(21, 22, 23, 24) [as.factor(micro_piv$season)], 
+       bg = c("blue", "orange", "black", "magenta") [as.factor(micro_piv$site_id)],
+       cex = 1.5) 
+
+# displays symbol and colour legend
+legend("topright", legend = c(levels(as.factor(micro_piv$season)), 
+                              levels(as.factor(micro_piv$site_id))),
+       pch = c(21, 22, 23, 24, 16, 16, 16, 16),
+       col = c("black", "black", "black", "black", "blue", "orange", "black", "magenta"),
+       bg = c(NA, NA, NA, NA, "blue", "orange", "black", "magenta"),
+       bty = "n", cex = 1)
+
+# # displays legend text of stress value
+legend("topleft", "stress = 0.191", bty = "n", cex = 1)
+
+# orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
+
+# ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
+
+# ordihull(nmds_all, groups = micro_piv$season, draw = "polygon", lty = 1, col = "grey90")
+
+# plot(nmds.spp.fit, p.max = 0.01, col = "black", cex = 0.7)
+
+```
+
+```{r}
+#Might be valuable if I downgrade to genus.
+
+# https://www.rpubs.com/RGrieger/545184
+
+nmds.spp.fit <- envfit(nmds_all, transform, permutations = 999)
+head(nmds.spp.fit)
+
+
+```
+
+
+```{r}
+
 #For this plot I:
 #1) Monthly averaged QU39 data
 #2) Filtered to mostly autotrophic groups - removed ciliates etc.
@@ -182,7 +301,6 @@ stressplot(nmds_all)
 with(micro_piv, levels(as.factor(site_id)))
 
 col_site <- c("red", "green", "blue", "magenta")
-
 
 plot(nmds_all, type = "n", ylim = c(-0.6, 0.6), xlim = c(-0.5, 0.5))
 
@@ -201,9 +319,16 @@ orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
 ordihull(nmds_all, groups = grp, display = "sites")
 #Stress is 0.15
 
-#This doesn't seem to show much at all - too much data, especially from QU39. Try monthly averaging? Try removing species with very few occurrences?
-
 ```
+
+
+
+
+
+
+
+
+
 
 
 
