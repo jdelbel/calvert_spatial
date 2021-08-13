@@ -21,35 +21,18 @@ library(colormap)
 #Need to look into how I'm actually classifying species here. It might be better to have Louis' original designations as I throw a lot of unknown species into protoza, which is one group rather than many.
 micro_1 <- read_csv(here("files", "calvert.csv")) 
 
-#Trying to remove species that have very few occurrences - trying this later
-# micro_1_test <- micro_1 %>% 
-#   group_by(scientificName_accepted, count) %>% 
-#   mutate(num_occurrence = n())
 
 #Uploading QU39 data
 micro_2 <- read_csv(here("files", "qu39.csv")) %>%
   mutate(site_id = "QU39") %>% 
-#         month = lubridate::month(date),
-#         year = lubridate::year(date)) %>%
+
   relocate(site_id, .after = "date")
 
-#  relocate(month, .after = "date") %>%
-#  relocate(year, .after = "date")
- 
-# Performing monthly average to make comparable to Calvert data
-# I don't think this is actually doing a monthly average... It's combining the scientificNames with duplicates for a single date.
-#Turning off for now, as I'm not sure I want to do this...
-# micro_2 <- micro_2 %>%
-#   group_by(date, scientificName) %>%
-#   mutate(count_avg = mean(count)) %>%
-#   ungroup() %>%
-#   distinct(date, scientificName, count_avg, .keep_all = TRUE) %>%
-#   select(-year, -month, -count, count = count_avg)
-
+#Selecting autotrophic groups.
 monthly_qu39 <- micro_2 %>%
   filter(trophicStatus == "auto")
 
-
+#Calculating monthly average
 monthly_qu39 <- monthly_qu39 %>%
   mutate(month = lubridate::month(date),
          year = lubridate::year(date)) %>%
@@ -63,20 +46,15 @@ monthly_qu39 <- monthly_qu39 %>%
   select(-identificationRemark) %>% 
   mutate(date = lubridate::ymd(date))
 
+#Selecting autotrophic groups in Calvert data
 calvert <- micro_1 %>%
   filter(trophicStatus == "auto")
 
+#Making Calvert columns comparable to QU39
 calvert <- calvert %>% 
   select(date, site_id, group, scientificName, count)
 
-# %>%
-#   distinct(date, scientificName, count_avg, .keep_all = TRUE) %>%
-#   select(-year, -month, -count, count = count_avg)
-
-
-#Combining Calvert and Qu39 data where all of the qu39 data is included.
-# micro <- rbind(micro_1, micro_2)
-
+#Binding datasets
 micro <- rbind(monthly_qu39, calvert)
 
 #Counting how many times each species is observed
@@ -88,46 +66,7 @@ micro <- micro %>%
 micro <- micro %>% 
   filter(num_occurrence > 2)
 
-# micro <- micro %>% 
-#   mutate(date = lubridate::ymd(date))
-
-
-
-#This filters out the mostly autotrophic species
-# micro <- micro %>%
-#   filter(trophicStatus == "auto" &
-#          !scientificName == "Protozoa")
 ```
-
-```{r}
-#What about summing to genus. 
-micro_1_gen <- micro_1 %>%
-  filter(trophicStatus == "auto") %>% 
-  group_by(date, site_id, genus) %>% 
-  summarise(count_gen = sum(count)) %>% 
-  ungroup() %>% 
-  filter(!is.na(genus))
-
-micro_2_gen <- micro_2 %>%
-  filter(trophicStatus == "auto") %>% 
-  group_by(date, site_id, genus) %>% 
-  summarise(count_gen = sum(count)) %>% 
-  ungroup() %>% 
-  filter(!is.na(genus))
-
-micro_gen <- rbind(micro_1_gen, micro_2_gen)
-
-#Counting how many times each species is observed
-micro_gen <- micro_gen %>% 
-   group_by(genus) %>% 
-   mutate(num_occurrence = n())
-
-#removing species that have not been observed at least twice.
-micro_gen <- micro_gen %>% 
-  filter(num_occurrence > 2)
-```
-
-
 
 ```{r}
 #Selecting columns
@@ -141,10 +80,6 @@ micro <- micro %>%
   group_by(date, site_id, scientificName) %>%
   summarize(species_sum = sum(count)) %>%
   ungroup()
-
-#Combining date and siteID - can't have both for the clustering I am trying now
-# micro_clust <- micro_clust %>% 
-#   unite(date_site, date, site_id, sep = "_")
 
 #pivoting longer so species are columns. 
 micro_piv <- micro %>% 
@@ -173,23 +108,27 @@ micro_piv <- micro_piv %>%
 
 #Pulling out species counts for tranform and input into clustering and NMDS
 transform <- micro_piv[, 6:120]  
-  
+
+#Trying relative abundance
+transform_rel <- transform %>% 
+  decostand(method = "total")
+
 #Log10 transformation +1 (as per Mahara)
 transform <- log10(transform + 1)
 
+#Transform relative abundance by sqaure root (Simo-matchim)
+transform_rel <- sqrt(transform_rel)
+
 #Performing clustering
-dend_micro <- transform %>% 
+dend_micro <- transform_rel %>% 
   vegdist("bray") %>% 
   hclust(method = "average") %>% 
   as.dendrogram()
-
-
 ```
-
 
 ```{r}
 #Running nmds on entire dataset, without QU39 monthly averaged
-nmds_all <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+nmds_all <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
                          k = 2, trymax = 100) 
 
 #Checking stressplot for fit
@@ -199,7 +138,7 @@ stressplot(nmds_all)
 
 ```{r}
 #Creating dendrogram cutoff for clustering in NMDS
-grp <- cutree(dend_micro, 5)
+grp <- cutree(dend_micro, 3)
 ```
 
 

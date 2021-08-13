@@ -99,35 +99,6 @@ micro <- micro %>%
 #          !scientificName == "Protozoa")
 ```
 
-```{r}
-#What about summing to genus. 
-micro_1_gen <- micro_1 %>%
-  filter(trophicStatus == "auto") %>% 
-  group_by(date, site_id, genus) %>% 
-  summarise(count_gen = sum(count)) %>% 
-  ungroup() %>% 
-  filter(!is.na(genus))
-
-micro_2_gen <- micro_2 %>%
-  filter(trophicStatus == "auto") %>% 
-  group_by(date, site_id, genus) %>% 
-  summarise(count_gen = sum(count)) %>% 
-  ungroup() %>% 
-  filter(!is.na(genus))
-
-micro_gen <- rbind(micro_1_gen, micro_2_gen)
-
-#Counting how many times each species is observed
-micro_gen <- micro_gen %>% 
-   group_by(genus) %>% 
-   mutate(num_occurrence = n())
-
-#removing species that have not been observed at least twice.
-micro_gen <- micro_gen %>% 
-  filter(num_occurrence > 2)
-```
-
-
 
 ```{r}
 #Selecting columns
@@ -162,6 +133,10 @@ micro_piv <- micro_piv %>%
 micro_piv <- micro_piv %>% 
   filter(date > "2018-01-01" & date < "2021-01-01")
 
+# When turned on this removes QU39 data.
+micro_piv <- micro_piv %>% 
+  filter(!site_id == "QU39")
+
 #Roughly adding seasons - would like to make cosmological seasons
 micro_piv <- micro_piv %>% 
   mutate(season = case_when(month %in% c(12, 1, 2) ~ "winter",
@@ -190,7 +165,7 @@ dend_micro <- transform %>%
 ```{r}
 #Running nmds on entire dataset, without QU39 monthly averaged
 nmds_all <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
-                         k = 2, trymax = 100) 
+                         k = 3, trymax = 100) 
 
 #Checking stressplot for fit
 stressplot(nmds_all)
@@ -244,6 +219,8 @@ ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
 ```
 
 ```{r}
+# png(here("figures", "Calvert_qu39_monthly_nmds.png"), width = 800, height = 500)
+
 #displays empty ordination space
 plot(nmds_all, type = "n", ylim = c(-0.5, 0.5), xlim = c(-0.5, 0.5)) 
 
@@ -251,7 +228,7 @@ plot(nmds_all, type = "n", ylim = c(-0.5, 0.5), xlim = c(-0.5, 0.5))
 points(nmds_all, display = "sites", col = "black",
        pch = c(21, 22, 23, 24) [as.factor(micro_piv$season)], 
        bg = c("blue", "orange", "black", "magenta") [as.factor(micro_piv$site_id)],
-       cex = 1.5) 
+       cex = 2) 
 
 # displays symbol and colour legend
 legend("topright", legend = c(levels(as.factor(micro_piv$season)), 
@@ -259,19 +236,23 @@ legend("topright", legend = c(levels(as.factor(micro_piv$season)),
        pch = c(21, 22, 23, 24, 16, 16, 16, 16),
        col = c("black", "black", "black", "black", "blue", "orange", "black", "magenta"),
        bg = c(NA, NA, NA, NA, "blue", "orange", "black", "magenta"),
-       bty = "n", cex = 1)
+       bty = "n", cex = 1.5)
 
 # # displays legend text of stress value
-legend("topleft", "stress = 0.191", bty = "n", cex = 1)
+legend("topleft", "stress = 0.191", bty = "n", cex = 1.5)
 
 # orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
 
-ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
+# ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
 
-# ordihull(nmds_all, groups = micro_piv$season, draw = "polygon", lty = 1, col = "grey90")
+ordihull(nmds_all, groups = micro_piv$season, draw = "polygon", col = NULL,
+  border = c("gray0", "gray0", "gray48", "gray48"),
+  lty = c(1, 2, 1, 2),
+  lwd = 2.5)
 
 # plot(nmds.spp.fit, p.max = 0.01, col = "black", cex = 0.7)
 
+# dev.off()
 ```
 
 ```{r}
@@ -430,7 +411,7 @@ plot(example_NMDS)
 ```{r}
 #Creation of dendrogram using Calvert data
 
-png(here("figures", "Calvert_qu39_summer_test.png"), width = 2200, height = 1000) 
+png(here("figures", "Calvert_qu39_monthly.png"), width = 2200, height = 1000) 
 
 season <- pull(micro_piv, season)
 station <- pull(micro_piv, site_id)

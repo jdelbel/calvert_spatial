@@ -1,0 +1,50 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+https://www.rpubs.com/RGrieger/545184
+
+
+```{r}
+library(vegan) # for vegetation and community analysis
+library(dplyr) # for data manipulation
+```
+
+```{r}
+data("dune")
+data("dune.env")
+```
+
+```{r}
+dune.mds <- metaMDS(dune, distance = "bray", autotransform = FALSE)
+```
+
+```{r}
+dune.mds
+```
+```{r}
+#displays empty ordination space
+plot(dune.mds, type = "n") 
+
+# displays site points where symbols (pch) are different management options and colour (col) are different land uses
+points(dune.mds, display = "sites", 
+       pch = c(16, 8, 17, 11) [as.factor(dune.env$Management)], 
+       col = c("blue", "orange", "black") [as.factor(dune.env$Use)]) 
+
+# displays symbol and colour legend
+legend("topright", legend = c(levels(dune.env$Management), levels(dune.env$Use)), 
+       pch = c(16, 8, 17, 11, 16, 16, 16), 
+       col = c("black","black","black","black","blue", "orange", "black"), 
+       bty = "n", cex = 1) 
+
+# displays legend text of stress value
+legend("topleft", "stress = 0.118", bty = "n", cex = 1)  
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
