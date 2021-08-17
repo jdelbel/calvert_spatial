@@ -79,6 +79,8 @@ calvert <- calvert %>%
 
 micro <- rbind(monthly_qu39, calvert)
 
+micro_full <- micro
+
 #Counting how many times each species is observed
 micro <- micro %>% 
    group_by(scientificName) %>% 
@@ -98,6 +100,21 @@ micro <- micro %>%
 #   filter(trophicStatus == "auto" &
 #          !scientificName == "Protozoa")
 ```
+
+```{r}
+micro_qcs <- micro_1 %>% 
+  filter(site_id == "QCS01")
+
+micro_qcs <- micro_qcs %>% 
+  select(date, trophicStatus, group, scientificName, )
+
+micro_qcs_test <- micro_qcs %>% 
+  pivot_wider(names_from = date, values_from = count) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+
+```
+
 
 
 ```{r}

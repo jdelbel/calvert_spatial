@@ -19,7 +19,7 @@ library(patchwork)
 #Upload data
 ctd <- read_csv(here("files", "ctd.csv")) 
 
-nuts <- read_csv(here("files", "nuts.csv"))
+nuts <- read_csv(here("files", "nuts_2021-08-17.csv"))
 
 micro_c <- read_csv(here("files", "calvert.csv"))
 
@@ -74,9 +74,6 @@ chem_tidy <- chem_tidy %>%
          day = lubridate::day(date))
 
 ```
-
-
-
 
 ```{r}
 #Fixing datset so it is easier to work with
@@ -219,7 +216,9 @@ nuts <- nuts %>%
 p1 <- ctd %>% 
   filter(pres == 2) %>%
   ggplot(aes(x = as.factor(month), y = temp, fill = station)) +
-  geom_boxplot() +
+  geom_jitter(aes(color = station), position =position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
   coord_cartesian(ylim = c(5, 20)) +
   labs(y = "Temp",
        x = "Month") +
@@ -234,7 +233,9 @@ p1 <- ctd %>%
 p2 <- ctd %>% 
   filter(pres == 5) %>%
   ggplot(aes(x = as.factor(month), y = temp, fill = station)) +
-  geom_boxplot() +
+  geom_jitter(aes(color = station), position =position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
   coord_cartesian(ylim = c(5, 20)) +
   labs(y = "Temp",
        x = "Month") +
@@ -250,7 +251,9 @@ p2 <- ctd %>%
 p3 <- ctd %>% 
   filter(pres == 2) %>%
   ggplot(aes(x = as.factor(month), y = sal, fill = station)) +
-  geom_boxplot() +
+  geom_jitter(aes(color = station), position =position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
   coord_cartesian(ylim = c(10, 32)) +
   labs(y = "Salinity",
        x = "Month") +
@@ -262,7 +265,9 @@ p3 <- ctd %>%
 p4 <- ctd %>% 
   filter(pres == 5) %>%
   ggplot(aes(x = as.factor(month), y = sal, fill = station)) +
-  geom_boxplot() +
+  geom_jitter(aes(color = station), position =position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
   coord_cartesian(ylim = c(10, 32)) +
   labs(y = "Salinity",
        x = "Month") +
@@ -282,11 +287,90 @@ ggsave(here("figures", "temp_sal_box.png"),
 ```
 
 ```{r}
+#Separating temp out with monthly boxplot and timeseries
+p1 <- ctd %>% 
+  filter(pres == 5) %>%
+  ggplot(aes(x = as.factor(month), y = temp, fill = station)) +
+  geom_jitter(aes(fill = station), position =position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  coord_cartesian(ylim = c(5, 20)) +
+  labs(y = "Temp (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd %>% 
+  filter(pres == 5) %>%
+  ggplot(aes(x = date, y = temp, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  coord_cartesian(ylim = c(5, 20)) +
+  labs(y = "Temp (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "temp_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+```{r}
+#Separating Sal out with monthly boxplot and timeseries
+p1 <- ctd %>% 
+  filter(pres == 5) %>%
+  ggplot(aes(x = as.factor(month), y = sal, fill = station)) +
+  geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  # coord_cartesian(ylim = c(10, 32)) +
+  labs(y = "Salinity (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.2),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd %>% 
+  filter(pres == 5) %>%
+  ggplot(aes(x = date, y = sal, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  # coord_cartesian(ylim = c(10, 32)) +
+  labs(y = "Salinity (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "sal_box_ts_5m.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+
+
+```{r}
 #Monthly difference in stratification measures.
 
 p1 <- ctd_dd %>% 
   ggplot(aes(x = as.factor(month), y = delta_rho, fill = station)) +
-  geom_boxplot() +
+  geom_jitter(aes(color = station), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
   coord_cartesian(ylim = c(0, 25)) +
   labs(y = "Delta rho (30 - 2m)",
        x = "Month") +
@@ -304,7 +388,9 @@ p2 <- ctd %>%
   ungroup() %>% 
   distinct(cast_pk, max_bv, .keep_all = TRUE) %>% 
   ggplot(aes(x = as.factor(month), y = max_bv, fill = station)) +
-  geom_boxplot() +
+  geom_jitter(aes(color = station), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
   labs(y = "Profile Max. N2",
        x = "Month") +
   theme_bw() +
@@ -320,7 +406,9 @@ p3 <- ctd %>%
   mutate(avg_N2 = mean(N2)) %>% 
   ungroup() %>% 
   ggplot(aes(x = as.factor(month), y = N2, fill = station)) +
-  geom_boxplot() +
+  geom_jitter(aes(color = station), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
   labs(y = "Avg 4-6m N2",
        x = "Month") +
   theme_bw() +
@@ -335,7 +423,9 @@ p4 <- ctd %>%
   ungroup() %>% 
   distinct(cast_pk, avg_N2, .keep_all = TRUE) %>% 
   ggplot(aes(x = as.factor(month), y = avg_N2, fill = station)) +
-  geom_boxplot() +
+  geom_jitter(aes(color = station), position =position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
   labs(y = "Avg upper 30m N2",
        x = "Month") +
   theme_bw() +
@@ -351,14 +441,99 @@ ggsave(here("figures", "Strat_box.png"),
 ```
 
 ```{r}
+#Separating delta_rho out with monthly boxplot and timeseries
+p1 <- ctd_dd %>% 
+  ggplot(aes(x = as.factor(month), y = delta_rho, fill = station)) +
+  geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "Delta rho (30 - 2m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd_dd %>% 
+  ggplot(aes(x = date, y = delta_rho, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "Delta rho (30 - 2m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "deltaRho_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+```{r}
+#Separating delta_rho out with monthly boxplot and timeseries
+p1 <- ctd %>% 
+  group_by(cast_pk) %>% 
+  mutate(max_bv = max(N2)) %>% 
+  ungroup() %>% 
+  distinct(cast_pk, max_bv, .keep_all = TRUE) %>%
+  ggplot(aes(x = as.factor(month), y = max_bv, fill = station)) +
+  geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "Profile Max. N2",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd %>% 
+  group_by(cast_pk) %>% 
+  mutate(max_bv = max(N2)) %>% 
+  ungroup() %>% 
+  distinct(cast_pk, max_bv, .keep_all = TRUE) %>%
+  ggplot(aes(x = date, y = max_bv, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "Profile Max. N2",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "maxN2_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+
+
+
+
+```{r}
 #Monthly difference in 5m nutrients.
 
 p1 <- 
 nuts %>% 
   filter(line_out_depth == 5) %>% 
   ggplot(aes(x = as.factor(month), y = no2_no3_um, fill = site_id)) +
-  geom_boxplot() +
-  labs(y = "NO2_NO3 (um)",
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "NO2_NO3 (5m)",
        x = "Month") +
   theme_bw() +
   theme(legend.position = c(0.7, 0.87),
@@ -372,8 +547,10 @@ nuts %>%
 p2 <- nuts %>% 
   filter(line_out_depth == 5) %>% 
   ggplot(aes(x = as.factor(month), y = sio2, fill = site_id)) +
-  geom_boxplot() +
-  labs(y = "SiO2 (um)",
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "SiO2 (5m)",
        x = "Month") +
   theme_bw() +
   theme(legend.position = "none",
@@ -385,9 +562,10 @@ p2 <- nuts %>%
 p3 <- nuts %>% 
   filter(line_out_depth == 5) %>% 
   ggplot(aes(x = as.factor(month), y = po4, fill = site_id)) +
-  geom_boxplot() +
-  
-  labs(y = "po4 (um)",
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "po4 (5m)",
        x = "Month") +
   theme_bw() +
   theme(legend.position = "none",
@@ -396,11 +574,11 @@ p3 <- nuts %>%
 
 p4 <- nuts %>% 
   filter(line_out_depth == 5) %>% 
- 
   ggplot(aes(x = as.factor(month), y = no2_no3_um/po4, fill = site_id)) +
-  geom_boxplot() +
-
-  labs(y = "N:P",
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "N:P (5m)",
        x = "Month") +
   theme_bw() +
   theme(legend.position = "none",
@@ -414,43 +592,275 @@ ggsave(here("figures", "Nuts_box.png"),
 ```
 
 ```{r}
+#Separating NO2_NO3 out with monthly boxplot and timeseries
+p1 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = no2_no3_um, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "NO2_NO3 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.2),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = date, y = no2_no3_um, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "NO2_NO3 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "no2-no3_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Separating SiO2 out with monthly boxplot and timeseries
+p1 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = sio2, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "sio2 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.2),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = date, y = sio2, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "sio2 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "sio2_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Separating PO4 out with monthly boxplot and timeseries
+p1 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = po4, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "sio2 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.2),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = date, y = po4, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "sio2 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "po4_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Separating no2_no3_um/po4 out with monthly boxplot and timeseries
+p1 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = no2_no3_um/po4, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "no2_no3_um/po4 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.2),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = date, y = no2_no3_um/po4, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "no2_no3_um/po4 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "no2_no3_um_po4_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
 #Monthly difference in diatoms.
 
+# p1 <- micro %>% 
+#   filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+#   geom_boxplot() +
+#   labs(y = "Abundance Diatoms",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = c(0.15, 0.8),
+#         legend.title = element_blank(),
+#         legend.background = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p2 <- chem_tidy %>% 
+#   filter(phyto_group == "diat") %>% 
+#   ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+#   geom_boxplot() +
+#   labs(y = "TChla Diatoms",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# 
+# fig <- p1/p2 
+# 
+# ggsave(here("figures", "Diatoms_box.png"), 
+#        fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+#Monthly difference in diatoms and timeseries.
+
 p1 <- micro %>% 
-  filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+  filter(trophicStatus == "auto" & group == "Bacillariophyta" & 
+           date > "2018-01-01") %>% 
   group_by(date, site_id) %>% 
   mutate(sum_count = sum(count)) %>%
   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
   ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
-  geom_boxplot() +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
   labs(y = "Abundance Diatoms",
        x = "Month") +
   theme_bw() +
-  theme(legend.position = c(0.15, 0.8),
+  theme(legend.position = c(0.1, 0.80),
         legend.title = element_blank(),
-        legend.background = element_blank(),
         axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
 
-p2 <- chem_tidy %>% 
-  filter(phyto_group == "diat") %>% 
-  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
-  geom_boxplot() +
-  labs(y = "TChla Diatoms",
+p2 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Bacillariophyta" & 
+           date > "2018-01-10") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>%
+  ggplot(aes(x = date, y = sum_count, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "Abundance Diatoms",
        x = "Month") +
   theme_bw() +
   theme(legend.position = "none",
+        axis.title.x = element_blank(),
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
 
 
 fig <- p1/p2 
 
-ggsave(here("figures", "Diatoms_box.png"), 
+ggsave(here("figures", "Diatoms_box_ts.png"), 
        fig, width = 14, height = 10, dpi=300)
 ```
+```{r}
+#Monthly difference in chemtax diatoms and time-series.
+
+p1 <- chem_tidy %>% 
+  filter(phyto_group == "diat" & date > "2018-01-01") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "TChla Diatoms",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "diat" & date > "2018-01-01") %>%
+  ggplot(aes(x = date, y = TChla, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "TChla Diatoms",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Diatoms_chemtax_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+
+
+
+
+
+
 ```{r}
 #Monthly difference in diatoms.
 
