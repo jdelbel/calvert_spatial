@@ -22,17 +22,15 @@ library(colormap)
 micro_1 <- read_csv(here("files", "calvert.csv")) 
 
 
+
 #Uploading QU39 data
 micro_2 <- read_csv(here("files", "qu39.csv")) %>%
   mutate(site_id = "QU39") %>% 
-
   relocate(site_id, .after = "date")
 
-#Selecting autotrophic groups.
 monthly_qu39 <- micro_2 %>%
   filter(trophicStatus == "auto")
 
-#Calculating monthly average
 monthly_qu39 <- monthly_qu39 %>%
   mutate(month = lubridate::month(date),
          year = lubridate::year(date)) %>%
@@ -46,15 +44,12 @@ monthly_qu39 <- monthly_qu39 %>%
   select(-identificationRemark) %>% 
   mutate(date = lubridate::ymd(date))
 
-#Selecting autotrophic groups in Calvert data
 calvert <- micro_1 %>%
   filter(trophicStatus == "auto")
 
-#Making Calvert columns comparable to QU39
 calvert <- calvert %>% 
   select(date, site_id, group, scientificName, count)
 
-#Binding datasets
 micro <- rbind(monthly_qu39, calvert)
 
 #Counting how many times each species is observed
@@ -66,24 +61,21 @@ micro <- micro %>%
 micro <- micro %>% 
   filter(num_occurrence > 2)
 
-```
-
-```{r}
-#Selecting columns
+#Bringing down to Louis' group level
 micro <- micro %>% 
-  select(date, site_id, group, scientificName, count)
-
-# Because I have some species separated out with identificationRemarks, identificationQualifiers and different resting stages, I sum these. If I don't, then the pivoting in later stages results in columns with combined numbers. I need to decide on best method for this once I have the analysis zeroed in. 
-
-#Again, not sure if I want to do this...
-micro <- micro %>%
-  group_by(date, site_id, scientificName) %>%
-  summarize(species_sum = sum(count)) %>%
+  group_by(date, site_id, group) %>% 
+  summarise(count = sum(count)) %>% 
   ungroup()
 
+micro <- micro %>% 
+  filter(!group == "Cyanobacteria")
+```
+
+
+```{r}
 #pivoting longer so species are columns. 
 micro_piv <- micro %>% 
-  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  pivot_wider(names_from = group, values_from = count) %>% 
   mutate_if(is.numeric, ~ replace_na(., 0))
 
 #Adding date columns
@@ -97,6 +89,10 @@ micro_piv <- micro_piv %>%
 micro_piv <- micro_piv %>% 
   filter(date > "2018-01-01" & date < "2021-01-01")
 
+# When turned on this removes QU39 data.
+# micro_piv <- micro_piv %>% 
+#   filter(!site_id == "QU39")
+
 #Roughly adding seasons - would like to make cosmological seasons
 micro_piv <- micro_piv %>% 
   mutate(season = case_when(month %in% c(12, 1, 2) ~ "winter",
@@ -107,28 +103,32 @@ micro_piv <- micro_piv %>%
 
 
 #Pulling out species counts for tranform and input into clustering and NMDS
-transform <- micro_piv[, 6:120]  
+transform <- micro_piv[, 6:17] 
 
-#Trying relative abundance
-transform_rel <- transform %>% 
-  decostand(method = "total")
-
+#Trying relative abundance - this gives an interesting result. Turn off don't want relative abundance.
+# transform <- transform %>% 
+#   decostand(method = "total")
+  
 #Log10 transformation +1 (as per Mahara)
-transform <- log10(transform + 1)
+# transform <- log10(transform + 1)
 
-#Transform relative abundance by sqaure root (Simo-matchim)
-transform_rel <- sqrt(transform_rel)
+# transform <- sqrt(transform)
+
+#Hellinger doesnt seem to work with NMDS - more for RDA
+# transform <- transform %>%
+#   decostand(method = "hellinger")
 
 #Performing clustering
-dend_micro <- transform_rel %>% 
+dend_micro <- transform %>% 
   vegdist("bray") %>% 
   hclust(method = "average") %>% 
   as.dendrogram()
 ```
 
+
 ```{r}
 #Running nmds on entire dataset, without QU39 monthly averaged
-nmds_all <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
+nmds_all <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
                          k = 2, trymax = 100) 
 
 #Checking stressplot for fit
@@ -138,10 +138,8 @@ stressplot(nmds_all)
 
 ```{r}
 #Creating dendrogram cutoff for clustering in NMDS
-grp <- cutree(dend_micro, 3)
+grp <- cutree(dend_micro, 4)
 ```
-
-
 
 ```{r}
 #For this plot I:
@@ -159,9 +157,9 @@ with(micro_piv, levels(as.factor(site_id)))
 col_site <- c("red", "green", "blue", "magenta")
 
 
-plot(nmds_all, type = "n", ylim = c(-0.6, 0.6), xlim = c(-0.5, 0.5))
+plot(nmds_all, type = "n")
 
-
+# , ylim = c(-0.6, 0.6), xlim = c(-0.5, 0.5)
 
 with(micro_piv, points(nmds_all, display = "sites", col = "black",
                       pch = 21, bg = col_site[as.factor(site_id)], cex = 2.2))
@@ -183,14 +181,18 @@ ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
 ```
 
 ```{r}
+png(here("figures", "Calvert_qu39_monthly_nmds_group_abund_notrans.png"), width = 800, height = 500)
+
 #displays empty ordination space
-plot(nmds_all, type = "n", ylim = c(-0.5, 0.5), xlim = c(-0.5, 0.5)) 
+plot(nmds_all, type = "n") 
+
+# , ylim = c(-0.5, 0.5), xlim = c(-0.5, 0.5)
 
 # displays site points where symbols (pch) are different management options and colour (col) are different land uses
 points(nmds_all, display = "sites", col = "black",
        pch = c(21, 22, 23, 24) [as.factor(micro_piv$season)], 
        bg = c("blue", "orange", "black", "magenta") [as.factor(micro_piv$site_id)],
-       cex = 1.5) 
+       cex = 2) 
 
 # displays symbol and colour legend
 legend("topright", legend = c(levels(as.factor(micro_piv$season)), 
@@ -198,19 +200,23 @@ legend("topright", legend = c(levels(as.factor(micro_piv$season)),
        pch = c(21, 22, 23, 24, 16, 16, 16, 16),
        col = c("black", "black", "black", "black", "blue", "orange", "black", "magenta"),
        bg = c(NA, NA, NA, NA, "blue", "orange", "black", "magenta"),
-       bty = "n", cex = 1)
+       bty = "n", cex = 1.5)
 
 # # displays legend text of stress value
-legend("topleft", "stress = 0.191", bty = "n", cex = 1)
+legend("topleft", "stress = 0.17", bty = "n", cex = 1.5)
 
 # orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
 
 ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
 
-# ordihull(nmds_all, groups = micro_piv$season, draw = "polygon", lty = 1, col = "grey90")
+# ordihull(nmds_all, groups = micro_piv$season, draw = "polygon", col = NULL,
+#   border = c("gray0", "gray0", "gray48", "gray48"),
+#   lty = c(1, 2, 1, 2),
+#   lwd = 2.5)
 
 # plot(nmds.spp.fit, p.max = 0.01, col = "black", cex = 0.7)
 
+dev.off()
 ```
 
 ```{r}
@@ -369,7 +375,7 @@ plot(example_NMDS)
 ```{r}
 #Creation of dendrogram using Calvert data
 
-png(here("figures", "Calvert_qu39_summer_test.png"), width = 2200, height = 1000) 
+png(here("figures", "Calvert_qu39_monthly.png"), width = 2200, height = 1000) 
 
 season <- pull(micro_piv, season)
 station <- pull(micro_piv, site_id)
@@ -531,6 +537,7 @@ colored_bars(cbind(k234[,3:1], col_car_type), dend,
 #Bray-Curits/percentage difference. Suitable for community composition data since it is asymmetrical (ignores double 0s) and meaningful upper vlaue equal to 1. Considers absolute species abundances
 
 ```
+
 
 
 
