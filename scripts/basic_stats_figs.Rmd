@@ -33,6 +33,10 @@ micro <- rbind(micro_c, micro_q)
 
 ```
 
+
+
+
+
 ```{r}
 #Importing and wrangling Chemtax data
 
@@ -818,6 +822,202 @@ fig <- p1/p2
 ggsave(here("figures", "Diatoms_box_ts.png"), 
        fig, width = 14, height = 10, dpi=300)
 ```
+
+```{r}
+#Monthly difference in total abundance.
+
+p1 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = n, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "# of species",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = date, y = n, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "# of species") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "num_species_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+#Monthly difference in total abundance - only photo.
+
+p1 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & trophicStatus == "auto") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = n, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "# of species",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & trophicStatus == "auto") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = date, y = n, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "# of species") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "num_species_auto_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+#Monthly difference in total abundance - only photo, no protozoa
+
+p1 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           trophicStatus == "auto" & !scientificName == "protozoa") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = n, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "# of species",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           trophicStatus == "auto" & !scientificName == "protozoa") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = date, y = n, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "# of species") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "num_species_auto_no-prot_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+
+```{r}
+#Need to think of how to plot this.
+
+
+#Trying to figure out what species are driving diversity at QCS01 in August
+test <- micro %>% 
+  mutate(month = lubridate::month(date)) %>%
+  filter(date > "2018-01-01" & date <"2020-12-31" & month == 8,
+         trophicStatus == "auto" & !scientificName == "protozoa") %>% 
+  group_by(month, site_id, scientificName) %>%
+  summarize(mean_count = mean(count))
+
+
+
+  # ungroup %>% 
+  # mutate(month = lubridate::month(date)) %>%
+  # ggplot(aes(x = as.factor(site_id), y = mean count))
+
+
+```
+
+
+
+
+
+```{r}
+
+#Monthly in skeletonema
+
+p1 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           scientificName == "Skeletonema marinoi") %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = count, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "s.m.",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           scientificName == "Skeletonema marinoi") %>% 
+  ggplot(aes(x = date, y = count, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "s.m.") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "sm_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+
+```
+
+
+
 ```{r}
 #Monthly difference in chemtax diatoms and time-series.
 

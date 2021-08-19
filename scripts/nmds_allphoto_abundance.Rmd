@@ -24,36 +24,18 @@ micro_1 <- read_csv(here("files", "calvert.csv"))
 micro_1_distinct <- micro_1 %>% 
   distinct(date, site_id)
 
-#Trying to remove species that have very few occurrences - trying this later
-# micro_1_test <- micro_1 %>% 
-#   group_by(scientificName_accepted, count) %>% 
-#   mutate(num_occurrence = n())
-
 #Uploading QU39 data
 micro_2 <- read_csv(here("files", "qu39.csv")) %>%
   mutate(site_id = "QU39") %>% 
-#         month = lubridate::month(date),
-#         year = lubridate::year(date)) %>%
   relocate(site_id, .after = "date")
 
-#  relocate(month, .after = "date") %>%
-#  relocate(year, .after = "date")
- 
-# Performing monthly average to make comparable to Calvert data
-# I don't think this is actually doing a monthly average... It's combining the scientificNames with duplicates for a single date.
-#Turning off for now, as I'm not sure I want to do this...
-# micro_2 <- micro_2 %>%
-#   group_by(date, scientificName) %>%
-#   mutate(count_avg = mean(count)) %>%
-#   ungroup() %>%
-#   distinct(date, scientificName, count_avg, .keep_all = TRUE) %>%
-#   select(-year, -month, -count, count = count_avg)
 
+#Separating dataset to do QU39 monthly averaging with.
+# monthly_qu39 <- micro_2 %>%
+#   filter(trophicStatus == "auto")
+
+#Performing QU39 monthly averaging
 monthly_qu39 <- micro_2 %>%
-  filter(trophicStatus == "auto")
-
-
-monthly_qu39 <- monthly_qu39 %>%
   mutate(month = lubridate::month(date),
          year = lubridate::year(date)) %>%
   group_by(year, month, group, scientificName, identificationRemark) %>%
@@ -66,23 +48,16 @@ monthly_qu39 <- monthly_qu39 %>%
   select(-identificationRemark) %>% 
   mutate(date = lubridate::ymd(date))
 
-calvert <- micro_1 %>%
-  filter(trophicStatus == "auto")
+#Selecting Calvert autotrophic groups.
+# calvert <- micro_1 %>%
+#   filter(trophicStatus == "auto")
 
-calvert <- calvert %>% 
+#Selecting columns for binding with QU39
+calvert <- micro_1 %>% 
   select(date, site_id, group, scientificName, count)
 
-# %>%
-#   distinct(date, scientificName, count_avg, .keep_all = TRUE) %>%
-#   select(-year, -month, -count, count = count_avg)
-
-
-#Combining Calvert and Qu39 data where all of the qu39 data is included.
-# micro <- rbind(micro_1, micro_2)
-
+#Binding with QU39
 micro <- rbind(monthly_qu39, calvert)
-
-micro_full <- micro
 
 #Counting how many times each species is observed
 micro <- micro %>% 
@@ -93,30 +68,44 @@ micro <- micro %>%
 micro <- micro %>% 
   filter(num_occurrence > 2)
 
-# micro <- micro %>% 
-#   mutate(date = lubridate::ymd(date))
-
-
-
-#This filters out the mostly autotrophic species
-# micro <- micro %>%
-#   filter(trophicStatus == "auto" &
-#          !scientificName == "Protozoa")
+#
+micro_full <- rbind(micro_1, micro_2)
 ```
 
 ```{r}
-micro_qcs <- micro_1 %>% 
-  filter(site_id == "QCS01")
+#trying to find the highest abundances for each station
 
-micro_qcs <- micro_qcs %>% 
-  select(date, trophicStatus, group, scientificName, )
+#This gives me the top 10 abundances for each station, excluding unknown flagellates. The problem is that one or two species dominate the list for each station - i.e. Skeletonema was the highest abundance for most stations 
+micro_max_abund <- micro_full %>% 
+  filter(!group == "Unknown_flagellate") %>% 
+  arrange(desc(count)) %>% 
+  group_by(site_id) %>% 
+  slice(1:10)
 
-micro_qcs_test <- micro_qcs %>% 
-  pivot_wider(names_from = date, values_from = count) %>% 
-  mutate_if(is.numeric, ~ replace_na(., 0))
+#What about number of occurrences. 
+#Counting how many times each species is observed
+micro_max_n <- micro_full %>% 
+  group_by(scientificName) %>% 
+  mutate(num_occurrence = n()) %>%
+  ungroup() %>%
+  arrange(desc(num_occurrence)) %>% 
+  group_by(site_id) %>% 
+  slice(1:10)
 
-
+micro_full_short <- micro_full %>% 
+  filter(date > "2018-01-01") %>% 
+  select(date, site_id, group, scientificName, count, identificationRemark) %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum = sum(count),
+         n = n(),
+         rel = ((count/sum)*100)) %>% 
+  arrange(desc(count)) %>% 
+  slice(1:10) %>% 
+  ungroup() %>% 
+  arrange(site_id, date) %>% 
+  mutate_at(vars(rel), funs(round(., 1)))
 ```
+
 
 
 
@@ -154,8 +143,8 @@ micro_piv <- micro_piv %>%
   filter(date > "2018-01-01" & date < "2021-01-01")
 
 # When turned on this removes QU39 data.
-micro_piv <- micro_piv %>% 
-  filter(!site_id == "QU39")
+# micro_piv <- micro_piv %>% 
+#   filter(!site_id == "QU39")
 
 #Roughly adding seasons - would like to make cosmological seasons
 micro_piv <- micro_piv %>% 
@@ -167,7 +156,7 @@ micro_piv <- micro_piv %>%
 
 
 #Pulling out species counts for tranform and input into clustering and NMDS
-transform <- micro_piv[, 6:120]  
+transform <- micro_piv[, 6:134]  
   
 #Log10 transformation +1 (as per Mahara)
 transform <- log10(transform + 1)
@@ -185,7 +174,7 @@ dend_micro <- transform %>%
 ```{r}
 #Running nmds on entire dataset, without QU39 monthly averaged
 nmds_all <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
-                         k = 3, trymax = 100) 
+                         k = 2, trymax = 100) 
 
 #Checking stressplot for fit
 stressplot(nmds_all)
@@ -194,7 +183,7 @@ stressplot(nmds_all)
 
 ```{r}
 #Creating dendrogram cutoff for clustering in NMDS
-grp <- cutree(dend_micro, 5)
+grp <- cutree(dend_micro, 2)
 ```
 
 
@@ -263,12 +252,13 @@ legend("topleft", "stress = 0.191", bty = "n", cex = 1.5)
 
 # orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
 
+# grp <- cutree(dend_micro, 4)
 # ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
 
-ordihull(nmds_all, groups = micro_piv$season, draw = "polygon", col = NULL,
-  border = c("gray0", "gray0", "gray48", "gray48"),
-  lty = c(1, 2, 1, 2),
-  lwd = 2.5)
+# ordihull(nmds_all, groups = micro_piv$site_id, draw = "polygon", col = NULL,
+#   border = c("gray0", "gray0", "gray48", "gray48"),
+#   lty = c(1, 2, 1, 2),
+#   lwd = 2.5)
 
 # plot(nmds.spp.fit, p.max = 0.01, col = "black", cex = 0.7)
 
