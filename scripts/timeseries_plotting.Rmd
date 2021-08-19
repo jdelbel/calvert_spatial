@@ -1,0 +1,284 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+#Load packages
+library(tidyverse)
+library(patchwork)
+library(here)
+library(readr)
+library(readxl)
+```
+
+```{r}
+
+#Upload fully formatted microscopy data
+
+micro_1 <- read_csv(here("files", "calvert.csv"))
+
+micro_2 <- read_csv(here("files", "qu39.csv"))
+
+micro <- rbind(micro_1, micro_2)
+
+micro$date <- as.Date(micro$date, "%Y-%m-%d")
+
+```
+
+```{r}
+#Upload chemtax data
+
+#Upload data
+#Uploading chemtax data
+chem <- read_xlsx(here("files", "qu39_calvert_combined.xlsx")) 
+
+#Formatting date
+chem <- chem %>% 
+  mutate(date = as.Date(Date))
+
+#Renaming columns
+chem <- select(chem, 
+               date, site_id = Station, cyan = Cyanobacteria, hapto = Hapto,
+               green = `Prasinophytes-3`, cryp = Cryptophytes, 
+               dino = `Dinoflagellates-1`, dict = Dictyo, raph = Raphido,
+               diat = `Diatoms-1`)
+```
+
+Working with microscopy data
+
+```{r}
+#Selecting autotrophic groups from class level specifications above. Too coarse for dinos.
+
+
+#Can't figure out how to make this work with multiple stations. Trying each separately and binding
+micro_sum_dfo2 <- micro %>%
+  filter(trophicStatus == "auto" &
+          site_id == "DFO2") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "DFO2") #replace NAs, created by complete, with 0s
+
+micro_sum_kc10 <- micro %>%
+  filter(trophicStatus == "auto" &
+          site_id == "KC10") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "KC10") #replace NAs, created by complete, with 0s
+
+micro_sum_qcs01 <- micro %>%
+  filter(trophicStatus == "auto" &
+          site_id == "QCS01") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "QCS01") #replace NAs, created by complete, with 0s
+
+micro_sum_qu39 <- micro %>%
+  filter(trophicStatus == "auto" &
+          site_id == "QU39") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "QU39") #replace NAs, created by complete, with 0s
+
+
+micro_sum <- rbind(micro_sum_dfo2, micro_sum_kc10, micro_sum_qcs01, micro_sum_qu39)
+```
+```{r}
+#Set order or groups for plotting
+
+micro_sum$group <- factor(micro_sum$group,
+                         levels = c("Bacillariophyta", #Y
+                                    "Chrysophyta", #Y
+                                    "Dictyochophyta", #Y
+                                    "Raphidiophyta", #Y
+                                    "Dinoflagellata", #Y
+                                    "Cryptophyta",#Y
+                                    "Chlorophyta-Prasinophyta", #Y 
+                                    "Euglenophyta", #Y
+                                    "Prymnesiophyta-Haptophyta", #Y 
+                                    "Cyanobacteria", #Y
+                                    "Unknown_Chlorophyta?", #Y
+                                    "Unknown_Dinophyceae?", #Y
+                                    "Unknown_flagellate" #Y
+                                    ))
+```
+
+```{r}
+#Setting colour pallete for microscopy data - roughly comparable to chemtax data
+color_palette_micro <- c("#ff8000", #Diatoms 
+                   "#2642D5", #Chrysophytes
+                   "#ff99c7", #Dicto (same color as chryso as same pig. group)
+                   "#4d6600", #Raph
+                   "#ff0000", #Dino
+                   "#ffff00", #Crypto
+                   "#00ff00", #Chloro (chloro and eugleno same colour, same pig. group)
+                   "#93FFCA", #Eugleno
+                   "#7d4dcc", #Hapto
+                   "#000000"  #Cyano
+                   )
+
+#Set month labels for plot
+month_labels_5 <- rep(c('J','F','M','A','M','J','J','A','S','O','N','D'), 5)
+
+month_labels <- c('J','F','M','A','M','J','J','A','S','O','N','D')
+```
+
+```{r}
+
+startTime <- as.Date("2017-12-01")
+endTime <- as.Date("2020-11-30")
+startEnd <- c(startTime, endTime)
+
+micro_sum %>% 
+  filter(date > "2018-01-01" & date < "2020-12-31" &
+         !group == "Unknown_Chlorophyta?" &
+         !group == "Unknown_Dinophyceae?" &
+         !group == "Unknown_flagellate") %>%
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(sum, na.rm = TRUE)) %>% 
+  ggplot(aes(x = date, y = sum, group = group, fill = group)) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = date, y = sum_all), size = 2) +
+  scale_fill_manual(values = color_palette_micro) +
+  scale_x_date(limits = startEnd,
+               breaks = scales::date_breaks("3 month"),
+               labels = scales::date_format("%m-%y")) +
+  facet_wrap(~ site_id, ncol = 1) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11),
+        strip.background = element_blank(),
+        strip.text = element_blank()) + 
+  labs(x = "Date",
+           y = bquote("Abundance (cells" ~ L^-1*")")) +
+  theme(text = element_text(size = 25)) 
+
+ggsave(here("figures", "calvert_qu39_micro_ts.png"),
+       width = 17, height = 15, dpi = 300)
+
+```
+
+Working with chemtax data
+
+```{r}
+#Making Tidy
+#Chemtax
+chem_tidy <- chem %>% 
+  pivot_longer(c(cyan, hapto, green, cryp, dino, dict, raph, diat),
+                 names_to = "phyto_group", values_to = "TChla") %>% 
+  group_by(date, site_id, phyto_group) %>% 
+  summarize(TChla_mean = mean(TChla)) %>% 
+  ungroup() %>% 
+  group_by(date, site_id) %>% 
+  mutate(TChla_sum = sum(TChla_mean)) %>% 
+  ungroup()
+
+```
+```{r}
+
+#Order phytoplankton groups roughly from smallest to largest - create order list
+order_chem <- c("cyan", "hapto", "green", "cryp",
+                   "dino", "raph", "dict", "diat")
+
+#Chemtax - Specify order of phyto groups for figures
+chem_tidy <- arrange(mutate(chem_tidy,
+                                phyto_group = factor(phyto_group,
+                                levels = order_chem)))
+
+chem_tidy <- chem_tidy %>% 
+  arrange(date, phyto_group)
+
+```
+
+```{r}
+
+#Set Color palette for plotting. Currently based on QU39 manuscript. Brewer has some good ones for R style.
+palette_chem <- c("#ff8000", #1 - Diatoms (orange)
+                  "#ff99c7", #2 - Dictyochophytes (pink)
+                  "#4d6600", #3 - Raphidophytes (dark green)
+                  "#ff0000", #4 - Dinoflagellates (Red)
+                  "#ffff00", #5 - Cryptophytes (yellow)
+                  "#00ff00", #6 - Chlorophyta (light green)
+                  "#7d4dcc", #7 - Haptophytes (purple)
+                  "#000000") #8 - Cyanobacteria (black)
+
+#Set month labels for plot
+month_labels <- c('J','F','M','A','M','J','J','A','S','O','N','D')
+```
+
+```{r}
+#Plot chemtax data by station - biomass
+chem_tidy %>%
+  ggplot() +
+  geom_area(aes(date, TChla_mean, fill = fct_rev(phyto_group)),
+    alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(date, TChla_sum)) +
+  facet_wrap(~ site_id, nrow = 4) +
+  scale_fill_manual(values = palette_chem) +
+  theme_bw() +
+  labs(y = bquote("TChl (mg" ~ m^-3*")"),
+       fill = "Group") +
+  scale_x_date(limits = startEnd,
+               breaks = scales::date_breaks("3 month"),
+               labels = scales::date_format("%m-%y")) +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 30)) +
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        text = element_text(size = 30)) +
+        # plot.margin = margin(0, 50, 0, 0)) +
+  guides(fill = guide_legend(nrow = 1))
+  
+ggsave(here("figures", "calvert_qu39_chem_ts.png"),
+       width=16, height=14, dpi=300)
+```
+```{r}
+#Plot chemtax data by station - relative
+chem_tidy %>%
+  ggplot() +
+  geom_area(aes(date, TChla_mean, fill = fct_rev(phyto_group)),
+    position = "fill", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(date, 1)) +
+  facet_wrap(~ site_id, nrow = 4) +
+  scale_fill_manual(values = palette_chem) +
+  theme_bw() +
+  labs(y = bquote("TChl (mg" ~ m^-3*")"),
+       fill = "Group") +
+  scale_x_date(limits = startEnd,
+               breaks = scales::date_breaks("3 month"),
+               labels = scales::date_format("%m-%y")) +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 30)) +
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        text = element_text(size = 30)) +
+        # plot.margin = margin(0, 50, 0, 0)) +
+  guides(fill = guide_legend(nrow = 1))
+  
+ggsave(here("figures", "calvert_qu39_chem_relative_ts.png"),
+       width=16, height=14, dpi=300)
+```
+

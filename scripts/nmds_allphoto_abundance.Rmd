@@ -21,6 +21,9 @@ library(colormap)
 #Need to look into how I'm actually classifying species here. It might be better to have Louis' original designations as I throw a lot of unknown species into protoza, which is one group rather than many.
 micro_1 <- read_csv(here("files", "calvert.csv")) 
 
+micro_1_distinct <- micro_1 %>% 
+  distinct(date, site_id)
+
 #Trying to remove species that have very few occurrences - trying this later
 # micro_1_test <- micro_1 %>% 
 #   group_by(scientificName_accepted, count) %>% 
