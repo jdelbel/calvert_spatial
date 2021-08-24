@@ -141,13 +141,14 @@ month_labels <- c('J','F','M','A','M','J','J','A','S','O','N','D')
 ```
 
 ```{r}
+#Microscopy 2019 timeseries - need to downscale QU39
 
-startTime <- as.Date("2017-12-01")
-endTime <- as.Date("2020-11-30")
+startTime <- as.Date("2019-05-01")
+endTime <- as.Date("2019-12-01")
 startEnd <- c(startTime, endTime)
 
 micro_sum %>% 
-  filter(date > "2018-01-01" & date < "2020-12-31" &
+  filter(date > "2019-05-01" & date < "2019-12-01" &
          !group == "Unknown_Chlorophyta?" &
          !group == "Unknown_Dinophyceae?" &
          !group == "Unknown_flagellate") %>%
@@ -158,8 +159,8 @@ micro_sum %>%
   geom_point(aes(x = date, y = sum_all), size = 2) +
   scale_fill_manual(values = color_palette_micro) +
   scale_x_date(limits = startEnd,
-               breaks = scales::date_breaks("3 month"),
-               labels = scales::date_format("%m-%y")) +
+               breaks = scales::date_breaks("1 month"),
+               labels = scales::date_format("%m")) +
   facet_wrap(~ site_id, ncol = 1) +
   theme_bw() +
   theme(legend.position = "top",
@@ -172,7 +173,7 @@ micro_sum %>%
            y = bquote("Abundance (cells" ~ L^-1*")")) +
   theme(text = element_text(size = 25)) 
 
-ggsave(here("figures", "calvert_qu39_micro_ts.png"),
+ggsave(here("figures_new", "calvert_qu39_micro_2019-ts.png"),
        width = 17, height = 15, dpi = 300)
 
 ```
@@ -238,8 +239,8 @@ chem_tidy %>%
   labs(y = bquote("TChl (mg" ~ m^-3*")"),
        fill = "Group") +
   scale_x_date(limits = startEnd,
-               breaks = scales::date_breaks("3 month"),
-               labels = scales::date_format("%m-%y")) +
+               breaks = scales::date_breaks("1 month"),
+               labels = scales::date_format("%m")) +
   theme(legend.position = "top",
         legend.direction = "horizontal",
         legend.title = element_blank(),
@@ -250,7 +251,7 @@ chem_tidy %>%
         # plot.margin = margin(0, 50, 0, 0)) +
   guides(fill = guide_legend(nrow = 1))
   
-ggsave(here("figures", "calvert_qu39_chem_ts.png"),
+ggsave(here("figures_new", "calvert_qu39_chem_2019-ts.png"),
        width=16, height=14, dpi=300)
 ```
 ```{r}
@@ -263,11 +264,11 @@ chem_tidy %>%
   facet_wrap(~ site_id, nrow = 4) +
   scale_fill_manual(values = palette_chem) +
   theme_bw() +
-  labs(y = bquote("TChl (mg" ~ m^-3*")"),
+  labs(y = bquote("Relative (%)"),
        fill = "Group") +
   scale_x_date(limits = startEnd,
-               breaks = scales::date_breaks("3 month"),
-               labels = scales::date_format("%m-%y")) +
+               breaks = scales::date_breaks("1 month"),
+               labels = scales::date_format("%m")) +
   theme(legend.position = "top",
         legend.direction = "horizontal",
         legend.title = element_blank(),
@@ -278,7 +279,7 @@ chem_tidy %>%
         # plot.margin = margin(0, 50, 0, 0)) +
   guides(fill = guide_legend(nrow = 1))
   
-ggsave(here("figures", "calvert_qu39_chem_relative_ts.png"),
+ggsave(here("figures", "calvert_qu39_chem_relative_2019-ts.png"),
        width=16, height=14, dpi=300)
 ```
 

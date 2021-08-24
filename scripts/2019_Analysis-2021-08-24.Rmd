@@ -1,0 +1,299 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+```
+
+```{r}
+#Upload data
+#Upload output from OBIS taxonomy matching/formatting for Calvert data.
+cal <- read_csv(here("files", "calvert.csv")) 
+
+#Removing data outside of the date of investigation
+cal <- cal %>% 
+  filter(date > "2019-05-10" & date < "2019-12-01")
+
+cal <- cal %>% 
+  filter(trophicStatus == "auto")
+#Could try to limit cryptic species that influence stats. Leaving off for now.
+
+#Only species occurring in 25% of the samples - could try this.
+
+#Counting how many times each species is observed
+# cal <- cal %>%
+#    group_by(scientificName) %>%
+#    mutate(num_occurrence = n())
+# 
+# # removing species that have not been observed at least twice.
+# cal <- cal %>%
+#   filter(num_occurrence > 2)
+```
+
+```{r}
+#Selecting columns
+micro <- cal %>% 
+  select(date, site_id, group, scientificName, count)
+
+# Because I have some species separated out with identificationRemarks, identificationQualifiers and different resting stages, I sum these. If I don't, then the pivoting in later stages results in columns with combined numbers. I need to decide on best method for this once I have the analysis zeroed in. 
+
+#I could re-merge the qualifiers with the name to separate out some of groups here, especially if they are important, such as the unidentified small dinoflagellates.
+
+#Again, not sure if I want to do this...
+micro <- micro %>%
+  group_by(date, site_id, scientificName) %>%
+  summarize(species_sum = sum(count)) %>%
+  ungroup()
+
+#pivoting longer so species are columns. 
+micro_piv <- micro %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+#Adding date columns
+micro_piv <- micro_piv %>% 
+  mutate(month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  relocate(month, .after = date) %>% 
+  relocate(yday, .after = month)
+
+#Roughly adding seasons - would like to make cosmological seasons
+micro_piv <- micro_piv %>%
+  mutate(season = case_when(month %in% c(12, 1, 2) ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 11 ~ "autumn",)) %>%
+  relocate(season, .after = month)
+
+#Pulling out species counts for tranform and input into clustering and NMDS
+transform <- micro_piv[, 6:108]  
+  
+#Log10 transformation +1 (as per Mahara)
+transform <- log10(transform + 1)
+
+#Performing clustering
+dend_micro <- transform %>% 
+  vegdist("bray") %>% 
+  hclust(method = "average") %>% 
+  as.dendrogram()
+
+
+```
+
+
+```{r}
+#Running nmds on entire dataset, without QU39 monthly averaged
+nmds_all <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Decent stress score - 0.16
+
+#Checking stressplot for fit
+# stressplot(nmds_all)
+
+```
+
+```{r}
+#Plotting NMDS
+
+# https://fromthebottomoftheheap.net/2012/04/11/customising-vegans-ordination-plots/
+
+with(micro_piv, levels(as.factor(site_id)))
+
+#Colors for DFO2, KC10 and QCS01
+col_site <- c("red", "green", "blue")
+
+
+plot(nmds_all, type = "n", ylim = c(-0.6, 0.6), xlim = c(-0.5, 0.5))
+
+# , ylim = c(-0.6, 0.6), xlim = c(-0.5, 0.5)
+
+
+with(micro_piv, points(nmds_all, display = "sites", col = "black",
+                      pch = 21, bg = col_site[as.factor(site_id)], cex = 2.2))
+
+# text(example_NMDS, display = "species", scaling = scl, cex = 0.8, col = "darkcyan")
+
+with(micro_piv, legend("topright", legend = levels(as.factor(site_id)), bty = "n",
+                      col = "black", pch = 21, pt.bg = col_site, cex = 1.5))
+
+
+orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
+
+# #Creating dendrogram cutoff for clustering in NMDS
+# grp <- cutree(dend_micro, 4)
+# 
+# # https://stackoverflow.com/questions/12436902/overlaying-clustering-results-on-an-ordination
+# ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
+
+```
+```{r}
+
+#Might be valuable if I downgrade to genus.
+
+# https://www.rpubs.com/RGrieger/545184
+
+nmds.spp.fit <- envfit(nmds_all, transform, permutations = 999)
+head(nmds.spp.fit)
+
+```
+
+
+```{r}
+# png(here("figures_new", "Calvert_2019_photo_nmds_>2.png"),
+#     width = 800, height = 500)
+
+#displays empty ordination space
+plot(nmds_all, type = "n", ylim = c(-0.5, 0.5), xlim = c(-0.5, 0.5)) 
+
+# displays site points where symbols (pch) are different management options and colour (col) are different land uses
+points(nmds_all, display = "sites", col = "black",
+       pch = c(21, 22, 23) [as.factor(micro_piv$season)], 
+       bg = c("blue", "orange", "black") [as.factor(micro_piv$site_id)],
+       cex = 3) 
+
+# displays symbol and colour legend
+legend("topright", legend = c(levels(as.factor(micro_piv$season)), 
+                              levels(as.factor(micro_piv$site_id))),
+       pch = c(21, 22, 23, 16, 16, 16, 16),
+       col = c("black", "black", "black", "blue", "orange", "black"),
+       bg = c(NA, NA, NA, NA, "blue", "orange", "black"),
+       bty = "n", cex = 1.5)
+
+# # displays legend text of stress value
+legend("topleft", "stress = 0.16", bty = "n", cex = 1.5)
+
+# orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
+
+# grp <- cutree(dend_micro, 3)
+# ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
+
+# ordihull(nmds_all, groups = micro_piv$season, draw = "polygon", col = NULL,
+#   border = c("gray0", "gray0", "gray48", "gray48"),
+#   lty = c(1, 2, 1, 2),
+#   lwd = 2.5)
+
+# plot(nmds.spp.fit, p.max = 0.001, col = "black", cex = 1.5)
+
+# dev.off()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+#Creation of dendrogram using Calvert data
+
+png(here("figures_new", "Calvert_2019_photo_dendro_season.png"), width = 2200, height = 1000) 
+
+season <- pull(micro_piv, season)
+station <- pull(micro_piv, site_id)
+yday <- pull(micro_piv, yday)
+
+
+barcolor_season <- colormap(colormap = colormaps$earth, nshades = 3, format = "hex", alpha = 1, reverse = FALSE)
+
+barcolor_station <- colormap(colormap = colormaps$jet, nshades = 3, format = "hex", alpha = 1, reverse = FALSE)
+
+barcolor_yday <- colormap(colormap = colormaps$rainbow, nshades = 356, format = "hex", alpha = 1, reverse = FALSE)
+
+
+# colormaps$viridis
+# colormaps$jet
+# c("#0342ff", "#00bd0d", "#fbff00", "#ff0000")
+
+barcolor_season <- barcolor_season[as.numeric(as.factor(season))]
+barcolor_station <- barcolor_station[as.numeric(as.factor(station))]
+barcolor_yday <- barcolor_yday[as.numeric(yday)]
+
+barcolor_full <- cbind(barcolor_season, barcolor_station)
+colnames(barcolor_full) <- c("season", "station")
+
+#Margins bottom, left, top, right.
+par(mar=c(5,2,1,2))
+dend_micro %>%
+  plot() 
+
+colored_bars(colors = barcolor_full, dend = dend_micro)
+
+
+legend("topright", 
+     legend = c("DFO2" , "KC10" , "QCS01"), 
+     col = colormap(colormap = colormaps$jet, nshades = 3), 
+     pch = c(20,20,20,20), bty = "n",  pt.cex = 3, cex = 2 , 
+     text.col = "black", horiz = FALSE, inset = c(0, 0.1))
+
+legend("right", 
+     legend = c("Spring" , "Summer" , "Autumn"), 
+     col = colormap(colormap = colormaps$earth, nshades = 3), 
+     pch = c(20,20,20,20), bty = "n",  pt.cex = 3, cex = 2 , 
+     text.col = "black", horiz = FALSE, inset = c(0, 0.1))
+
+# legend("bottomright", 
+#      legend = c(1:356), 
+#      col = colormap(colormap = colormaps$rainbow, nshades = 4), 
+#      pch = c(20,20,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8 , 
+#      text.col = "black", horiz = FALSE, inset = c(0, 0.1))
+
+dev.off()
+```
+```{r}
+#Resources
+#https://stackoverflow.com/questions/49088627/how-to-label-colored-bars-in-a-dendrogram
+#https://www.datanovia.com/en/blog/cluster-analysis-in-r-simplified-and-enhanced/
+#https://cran.r-project.org/web/packages/dendextend/vignettes/dendextend.html
+
+#Goal - similarity/dissimilarity cluster analysis 
+
+#How differnt or similar are the three calvert island sites
+
+#Distance metric - Bray-curtis is used for abundance data
+
+#Linkage method - criterion that will determine how observations will be grouped together.
+
+#Figtree (software) allows you to view and edit dendograms - look into this
+
+#https://ourcodingclub.github.io/tutorials/data-clustering/
+
+#Mahara - average linkage Bray-curtis dissimilarity, log10(x+1) transformed
+
+# https://www.davidzeleny.net/anadat-r/doku.php/en:similarity
+
+# similarity calculated using similarity indices ranging from 0 to 1. Ordination uses distances (Euclidean). Legendre & Legendre (2012) offers key on how to select appropriate measure for given data. bray-Curtis and Hellinger distances may be better than Euclidean.
+
+# Symmetrical indices (thos which consider double 0s as relevant not useful for ecological data). Asymmetrical similarity indices (ignore double zeros). Two types, qualitative (presence/absence) and quantitative (raw or transformed species abundance). 
+
+#Qualitative (binary) asymmetrical similarity indices. Information about number of species shared by both samples AND number of species occuring in first or second sampe only.
+
+#Quantitative similarity indices. Percentage Similarity and includes Bray-Curtis
+
+#Distance Indices. Similarity indices return highest value when both samples the same. Distance indices opposite. Two types: 1) Those calculated from similarity indices (includes Bray-Curtis) and; 2) Those which have no analogue in similarity indices. Important criterium is whether distance index is metric or not. Metric = minimum distance is 0, distance is always positive, distance between sample 1 and 2 same as 2 and has triangle inequality.
+
+#Bray-Curits/percentage difference. Suitable for community composition data since it is asymmetrical (ignores double 0s) and meaningful upper vlaue equal to 1. Considers absolute species abundances
+
+```
+
+
+
+
+
+
+
