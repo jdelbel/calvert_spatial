@@ -70,7 +70,8 @@ chem_tidy <- chem %>%
                  names_to = "phyto_group", values_to = "TChla") %>% 
   group_by(date, site_id, depth) %>% 
   mutate(TChla_sum = sum(TChla)) %>% 
-  ungroup()
+  ungroup() %>% 
+  mutate(rel_abun = TChla/TChla_sum)
 
 chem_tidy <- chem_tidy %>% 
     mutate(year = lubridate::year(date),
@@ -207,6 +208,100 @@ ctd <- ctd %>%
 nuts <- nuts %>% 
   filter(date > "2018-01-01" & date < "2021-01-01")
 ```
+
+```{r}
+hapto <- chem_tidy %>% 
+  filter(phyto_group == "hapto" & site_id == "QCS01")
+
+
+p1 <- chem_tidy %>% 
+  filter(phyto_group == "hapto") %>%
+  ggplot(aes(x = date, y = TChla, color = site_id)) +
+  geom_line() +
+  geom_point()
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "hapto") %>%
+  ggplot(aes(x = date, y = rel_abun, color = site_id)) +
+  geom_line() +
+  geom_point()
+
+p3 <- chem_tidy %>% 
+  filter(phyto_group == "dino") %>%
+  ggplot(aes(x = date, y = rel_abun, color = site_id)) +
+  geom_line() +
+  geom_point()
+
+p4 <- chem_tidy %>% 
+  filter(phyto_group == "dino") %>%
+  ggplot(aes(x = date, y = TChla, color = site_id)) +
+  geom_line() +
+  geom_point()
+
+p1/p2/p3/p4
+```
+
+```{r}
+#Order phytoplankton groups roughly from smallest to largest - create order list
+order_chem <- c("cyan", "hapto", "green", "cryp",
+                   "dino", "raph", "dict", "diat")
+
+#Chemtax - Specify order of phyto groups for figures
+chem_tidy <- arrange(mutate(chem_tidy,
+                                phyto_group = factor(phyto_group,
+                                levels = order_chem)))
+
+transect <- chem_tidy %>% 
+  filter(date > "2019-08-02" & date < "2019-08-08")
+
+chem_tidy <- chem_tidy %>% 
+  arrange(date, phyto_group)
+
+palette_chem <- c("#ff8000", #1 - Diatoms (orange)
+                  "#ff99c7", #2 - Dictyochophytes (pink)
+                  "#4d6600", #3 - Raphidophytes (dark green)
+                  "#ff0000", #4 - Dinoflagellates (Red)
+                  "#ffff00", #5 - Cryptophytes (yellow)
+                  "#00ff00", #6 - Chlorophyta (light green)
+                  "#7d4dcc", #7 - Haptophytes (purple)
+                  "#000000") #8 - Cyanobacteria (black)
+
+
+transect %>% 
+  ggplot(aes(x = as.factor(site_id), y = TChla, fill = fct_rev(phyto_group))) + 
+  geom_bar(position = "stack", stat = "identity") +
+  scale_fill_manual(values = palette_chem) 
+```
+```{r}
+transect_ctd <- ctd %>% 
+  filter(date > "2019-08-02" & date < "2019-08-08" & pres < 50)
+
+transect_nuts <- nuts %>% 
+  filter(date > "2019-08-02" & date < "2019-08-08")
+
+transect_ctd %>% 
+  ggplot(aes(x = temp, y = pres, color = station)) +
+  geom_point() +
+  scale_y_reverse()
+
+transect_ctd %>% 
+  ggplot(aes(x = sal, y = pres, color = station)) +
+  geom_point() +
+  scale_y_reverse()       
+
+transect_ctd %>% 
+  ggplot(aes(x = `Turbidity (FTU)`, y = pres, color = station)) +
+  geom_point() +
+  scale_y_reverse()       
+
+transect_nuts %>%
+  filter(line_out_depth < 21) %>% 
+  ggplot(aes(x = no2_no3_um, y = line_out_depth, color = site_id)) +
+  geom_point() +
+  scale_y_reverse()  
+
+```
+
 
 
 ```{r}
@@ -948,6 +1043,7 @@ fig <- p1/p2
 ggsave(here("figures", "num_species_auto_no-prot_box_ts.png"), 
        fig, width = 14, height = 10, dpi=300)
 ```
+
 ```{r}
 #Monthly difference in number of species - only photo, no protozoa
 
@@ -1039,17 +1135,15 @@ ggsave(here("figures", "num_Chlorophyta-Prasinophyta_box_ts.png"),
 ```
 
 ```{r}
-#Need to think of how to plot this.
-
 #I want the y axis ordered by class/group and then species. Haven't been able to figure this out.
 micro$species_order <- factor(micro$scientificName,
                                    (unique(micro$scientificName
                                               [order(micro$group, micro$scientificName)])))
 
 
-# Trying to figure out what species are driving diversity at QCS01 in August
+# Trying to figure out what species are driving diversity at QCS01 in August - Filtered to 2019 because 2020 has no August QCS01.
 
-p1 <- micro %>%filter(date > "2018-01-01" & date <"2020-12-31" & month == 8,
+p1 <- micro %>%filter(date > "2018-01-01" & date <"2019-12-31" & month == 8,
          trophicStatus == "auto" & !scientificName == "Protozoa" 
          & !site_id == "QU39") %>%
   group_by(site_id, scientificName) %>%
@@ -1068,8 +1162,83 @@ p1 <- micro %>%filter(date > "2018-01-01" & date <"2020-12-31" & month == 8,
         axis.text = element_text(colour = "black"))
 
 
-ggsave(here("figures", "heat_presence_diatoms_noQU39.png"), 
+ggsave(here("figures", "heat_presence_noQU39.png"), 
        width = 14, height = 20, dpi = 300)
+  # ungroup %>% 
+  # mutate(month = lubridate::month(date)) %>%
+  # ggplot(aes(x = as.factor(site_id), y = mean count))
+
+
+```
+
+```{r}
+#I want the y axis ordered by class/group and then species. Haven't been able to figure this out.
+micro$species_order <- factor(micro$scientificName,
+                                   (unique(micro$scientificName
+                                              [order(micro$group, micro$scientificName)])))
+
+
+# Trying to figure out what species are driving diversity at QCS01 in August - Filtered to 2019 because 2020 has no August QCS01.
+
+p1 <- micro %>%filter(date > "2018-01-01" & date <"2019-12-31" & month == 8,
+         trophicStatus == "auto" & !scientificName == "Protozoa") %>%
+  group_by(site_id, scientificName) %>%
+  mutate(mean_count = mean(count),
+            sum = sum(count),
+            n = n()) %>% 
+  ungroup %>% 
+  distinct(site_id, scientificName, mean_count, .keep_all = TRUE) %>%
+  filter(n > 1) %>% 
+  ggplot(aes(x = site_id, y = species_order, fill = log10(mean_count))) +
+  geom_point(pch = 21, size = 9, stroke = 2) +
+  scale_y_discrete(limits = rev) +
+  scale_fill_gradient(low = "white", high = "green4") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+ggsave(here("figures", "heat_presence_withQU39.png"), 
+       width = 14, height = 20, dpi = 300)
+  # ungroup %>% 
+  # mutate(month = lubridate::month(date)) %>%
+  # ggplot(aes(x = as.factor(site_id), y = mean count))
+
+```
+
+
+
+```{r}
+#I want the y axis ordered by class/group and then species. Haven't been able to figure this out.
+micro$species_order <- factor(micro$scientificName,
+                                   (unique(micro$scientificName
+                                              [order(micro$group, micro$scientificName)])))
+
+
+# Trying to figure out what species are driving diversity at QCS01 in August - separating by year for August.
+
+p1 <- micro %>%filter(date > "2018-01-01" & date < "2020-12-31" & month == 8,
+         trophicStatus == "auto" & !scientificName == "Protozoa" 
+         & !site_id == "QU39") %>%
+  group_by(year, site_id, scientificName) %>%
+  mutate(mean_count = mean(count),
+            sum = sum(count),
+            n = n()) %>% 
+  ungroup %>% 
+  distinct(site_id, scientificName, mean_count, .keep_all = TRUE) %>%
+  filter(n >= 1) %>% 
+  ggplot(aes(x = site_id, y = species_order, fill = log10(mean_count))) +
+  geom_point(pch = 21, size = 9, stroke = 2) +
+  facet_wrap(~ year) +
+  scale_y_discrete(limits = rev) +
+  scale_fill_gradient(low = "white", high = "green4") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+ggsave(here("figures", "heat_presence_noQU39_aug_year.png"), 
+       width = 27, height = 25, dpi = 300)
   # ungroup %>% 
   # mutate(month = lubridate::month(date)) %>%
   # ggplot(aes(x = as.factor(site_id), y = mean count))
@@ -1109,7 +1278,7 @@ p1 <- micro %>%filter(date > "2018-01-01" & date <"2020-12-31",
         axis.text = element_text(colour = "black"))
 
 
-ggsave(here("figures", "heat_presence_diatoms_noQU39_month.png"), 
+ggsave(here("figures", "heat_presence_noQU39_month.png"), 
        width = 40, height = 20, dpi = 300)
   # ungroup %>% 
   # mutate(month = lubridate::month(date)) %>%
