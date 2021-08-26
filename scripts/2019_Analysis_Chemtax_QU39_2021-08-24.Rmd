@@ -98,10 +98,10 @@ chem <- chem %>%
 #Roughly adding seasons - would like to make cosmological seasons
 chem <- chem %>%  
   mutate(season = case_when(month %in% c(12, 1, 2) ~ "winter",
-                            month >= 3 & month <= 5 ~ "spring",
-                            month >= 6 & month <= 8 ~ "summer",
-                            month >= 9 & month <= 11 ~ "autumn",)) %>% 
-  relocate(season, .after = month) 
+                            month >= 3 & month <= 6 ~ "spring",
+                            month >= 7 & month <= 9 ~ "summer",
+                            month >= 10 & month <= 11 ~ "autumn",)) %>%
+  relocate(season, .after = month)
 
 
 #Pulling out species counts for tranform and input into clustering and NMDS
@@ -181,6 +181,9 @@ head(nmds.spp.fit)
 png(here("figures_new", "Calvert_QU39_nmds_chemtax_2019-ts_species.png"), 
     width = 800, height = 500)
 
+chem$season = factor(chem$season,
+                          levels = c("spring", "summer", "autumn"))
+
 #displays empty ordination space
 plot(nmds_all, type = "n") 
 
@@ -228,6 +231,46 @@ chem_distinct <- chem %>%
 
 
 
+```{r}
+#separating treatments for following tests
+season <-  chem$season
+site_id <- chem$site_id
+month <- chem$month
+```
+
+
+
+```{r}
+#ANOSIM test to see if groupings statistically significant
+ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
+ano_site
+
+ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
+ano_month
+
+ano_season = anosim(transform, season, distance = "bray", permutations = 9999)
+ano_season
+```
+
+
+
+
+```{r}
+#Indicator species analysis
+
+#Indicators by season
+inv_season = multipatt(transform, season, func = "r.g",
+                       control = how(nperm = 9999))
+#by site
+inv_site = multipatt(transform, site_id, func = "r.g",
+                       control = how(nperm = 9999))
+#by month
+inv_month = multipatt(transform, month, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_site)
+```
+
 
 
 
@@ -235,168 +278,60 @@ chem_distinct <- chem %>%
 ```{r}
 #Creation of dendrogram using Calvert data
 
-png(here("figures", "Calvert_qu39_chem_rel_monthly.png"), width = 2200, height = 1000) 
-
-season <- pull(chem_month, season)
-station <- pull(chem_month, site_id)
-yday <- pull(chem_month, yday)
-
-
-barcolor_season <- colormap(colormap = colormaps$earth, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
-
-barcolor_station <- colormap(colormap = colormaps$jet, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
-
-barcolor_yday <- colormap(colormap = colormaps$rainbow, nshades = 356, format = "hex", alpha = 1, reverse = FALSE)
-
-
-# colormaps$viridis
-# colormaps$jet
-# c("#0342ff", "#00bd0d", "#fbff00", "#ff0000")
-
-barcolor_season <- barcolor_season[as.numeric(as.factor(season))]
-barcolor_station <- barcolor_station[as.numeric(as.factor(station))]
-barcolor_yday <- barcolor_yday[as.numeric(yday)]
-
-barcolor_full <- cbind(barcolor_season, barcolor_station)
-colnames(barcolor_full) <- c("season", "station")
-
-#Margins bottom, left, top, right.
-par(mar=c(5,2,1,2))
-dend_micro %>%
-  plot() 
-
-colored_bars(colors = barcolor_full, dend = dend_micro)
-
-
-legend("topright", 
-     legend = c("DFO2" , "KC10" , "QCS01" , "QU39"), 
-     col = colormap(colormap = colormaps$jet, nshades = 4), 
-     pch = c(20,20,20,20), bty = "n",  pt.cex = 3, cex = 2 , 
-     text.col = "black", horiz = FALSE, inset = c(0, 0.1))
-
-legend("right", 
-     legend = c("Winter" , "Spring" , "Summer" , "Autumn"), 
-     col = colormap(colormap = colormaps$earth, nshades = 4), 
-     pch = c(20,20,20,20), bty = "n",  pt.cex = 3, cex = 2 , 
-     text.col = "black", horiz = FALSE, inset = c(0, 0.1))
-
-# legend("bottomright", 
-#      legend = c(1:356), 
-#      col = colormap(colormap = colormaps$rainbow, nshades = 4), 
-#      pch = c(20,20,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8 , 
+# png(here("figures", "Calvert_qu39_chem_rel_monthly.png"), width = 2200, height = 1000) 
+# 
+# season <- pull(chem_month, season)
+# station <- pull(chem_month, site_id)
+# yday <- pull(chem_month, yday)
+# 
+# 
+# barcolor_season <- colormap(colormap = colormaps$earth, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
+# 
+# barcolor_station <- colormap(colormap = colormaps$jet, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
+# 
+# barcolor_yday <- colormap(colormap = colormaps$rainbow, nshades = 356, format = "hex", alpha = 1, reverse = FALSE)
+# 
+# 
+# # colormaps$viridis
+# # colormaps$jet
+# # c("#0342ff", "#00bd0d", "#fbff00", "#ff0000")
+# 
+# barcolor_season <- barcolor_season[as.numeric(as.factor(season))]
+# barcolor_station <- barcolor_station[as.numeric(as.factor(station))]
+# barcolor_yday <- barcolor_yday[as.numeric(yday)]
+# 
+# barcolor_full <- cbind(barcolor_season, barcolor_station)
+# colnames(barcolor_full) <- c("season", "station")
+# 
+# #Margins bottom, left, top, right.
+# par(mar=c(5,2,1,2))
+# dend_micro %>%
+#   plot() 
+# 
+# colored_bars(colors = barcolor_full, dend = dend_micro)
+# 
+# 
+# legend("topright", 
+#      legend = c("DFO2" , "KC10" , "QCS01" , "QU39"), 
+#      col = colormap(colormap = colormaps$jet, nshades = 4), 
+#      pch = c(20,20,20,20), bty = "n",  pt.cex = 3, cex = 2 , 
 #      text.col = "black", horiz = FALSE, inset = c(0, 0.1))
-
-dev.off()
-```
-```{r}
-plot(cut(dend_micro, h=0.79)$lower[[2]], 
-     main="Second branch of lower tree with cut at h=75")
-```
-
-```{r}
-fviz_cluster(dend_micro) # scatter plot
-```
-
-
-```{r}
-matrix(rnorm(1000), ncol = 10) %>%
-  scale %>% 
-  dist  %>% 
-  hclust %>% 
-  as.dendrogram() -> dend_expr
-
-tree_labels <- dendro_data(dend_micro, type = "rectangle")
-tree_labels$labels <- cbind(tree_labels$labels, Diagnosis = as.factor(sample(1:2, 100, replace = T)))
-
-ggplot() +
-  geom_segment(data = segment(tree_labels), aes(x=x, y=y, xend=xend, yend=yend))+
-  geom_segment(data = tree_labels$segments %>%
-                 filter(yend == 0) %>%
-                 left_join(tree_labels$labels, by = "x"), aes(x=x, y=y.x, xend=xend, yend=yend, color = Diagnosis)) +
-  geom_text(data = label(tree_labels), aes(x=x, y=y, label=label, colour = Diagnosis, hjust=0), size=3) +
-  coord_flip() +
-  scale_y_reverse(expand=c(0.2, 0)) +
-  scale_colour_brewer(palette = "Dark2") + 
-  theme_dendro() +
-  ggtitle("Mayo Cohort: Hierarchical Clustering of Patients Colored by Diagnosis")
+# 
+# legend("right", 
+#      legend = c("Winter" , "Spring" , "Summer" , "Autumn"), 
+#      col = colormap(colormap = colormaps$earth, nshades = 4), 
+#      pch = c(20,20,20,20), bty = "n",  pt.cex = 3, cex = 2 , 
+#      text.col = "black", horiz = FALSE, inset = c(0, 0.1))
+# 
+# # legend("bottomright", 
+# #      legend = c(1:356), 
+# #      col = colormap(colormap = colormaps$rainbow, nshades = 4), 
+# #      pch = c(20,20,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8 , 
+# #      text.col = "black", horiz = FALSE, inset = c(0, 0.1))
+# 
+# dev.off()
 ```
 
-```{r}
-# https://www.rdocumentation.org/packages/dendextend/versions/1.8.0/topics/colored_bars
-
-## mtcars example
-
-# Create the dend:
-dend <- as.dendrogram(hclust(dist(mtcars)))
-
-# Create a vector giving a color for each car to which company it belongs to
-car_type <- rep("Other", length(rownames(mtcars)))
-is_x <- grepl("Merc", rownames(mtcars))
-car_type[is_x] <- "Mercedes"
-is_x <- grepl("Mazda", rownames(mtcars))
-car_type[is_x] <- "Mazda"
-is_x <- grepl("Toyota", rownames(mtcars))
-car_type[is_x] <- "Toyota"
-car_type <- factor(car_type)
-n_car_types <- length(unique(car_type))
-col_car_type <- colorspace::rainbow_hcl(n_car_types, c = 70, l  = 50)[car_type]
-
-# extra: showing the various clusters cuts 
-k234 <- cutree(dend, k = 2:4)
-
-# color labels by car company:
-labels_colors(dend) <- col_car_type[order.dendrogram(dend)]
-# color branches based on cutting the tree into 4 clusters:
-dend <- color_branches(dend, k = 4)
-
-### plots
-par(mar = c(12,4,1,1))
-plot(dend)
-colored_bars(cbind(k234[,3:1], col_car_type), dend, 
-      rowLabels = c(paste0("k = ", 4:2), "Car Type"))
-
-# horiz version:
-par(mar = c(4,1,1,12))
-plot(dend, horiz = TRUE)
-colored_bars(cbind(k234[,3:1], col_car_type), dend, 
-      rowLabels = c(paste0("k = ", 4:2), "Car Type"), horiz = TRUE)
-```
-
-```{r}
-#Resources
-#https://stackoverflow.com/questions/49088627/how-to-label-colored-bars-in-a-dendrogram
-#https://www.datanovia.com/en/blog/cluster-analysis-in-r-simplified-and-enhanced/
-#https://cran.r-project.org/web/packages/dendextend/vignettes/dendextend.html
-
-#Goal - similarity/dissimilarity cluster analysis 
-
-#How differnt or similar are the three calvert island sites
-
-#Distance metric - Bray-curtis is used for abundance data
-
-#Linkage method - criterion that will determine how observations will be grouped together.
-
-#Figtree (software) allows you to view and edit dendograms - look into this
-
-#https://ourcodingclub.github.io/tutorials/data-clustering/
-
-#Mahara - average linkage Bray-curtis dissimilarity, log10(x+1) transformed
-
-# https://www.davidzeleny.net/anadat-r/doku.php/en:similarity
-
-# similarity calculated using similarity indices ranging from 0 to 1. Ordination uses distances (Euclidean). Legendre & Legendre (2012) offers key on how to select appropriate measure for given data. bray-Curtis and Hellinger distances may be better than Euclidean.
-
-# Symmetrical indices (thos which consider double 0s as relevant not useful for ecological data). Asymmetrical similarity indices (ignore double zeros). Two types, qualitative (presence/absence) and quantitative (raw or transformed species abundance). 
-
-#Qualitative (binary) asymmetrical similarity indices. Information about number of species shared by both samples AND number of species occuring in first or second sampe only.
-
-#Quantitative similarity indices. Percentage Similarity and includes Bray-Curtis
-
-#Distance Indices. Similarity indices return highest value when both samples the same. Distance indices opposite. Two types: 1) Those calculated from similarity indices (includes Bray-Curtis) and; 2) Those which have no analogue in similarity indices. Important criterium is whether distance index is metric or not. Metric = minimum distance is 0, distance is always positive, distance between sample 1 and 2 same as 2 and has triangle inequality.
-
-#Bray-Curits/percentage difference. Suitable for community composition data since it is asymmetrical (ignores double 0s) and meaningful upper vlaue equal to 1. Considers absolute species abundances
-
-```
 
 
 

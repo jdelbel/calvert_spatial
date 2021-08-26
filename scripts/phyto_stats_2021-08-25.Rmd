@@ -31,6 +31,10 @@ micro_q <- micro_q %>%
 
 micro <- rbind(micro_c, micro_q)
 
+micro <- micro %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date))
+
 ```
 
 
@@ -167,10 +171,99 @@ micro_ds %>%
   distinct(date, site_id, n_tot, .keep_all = TRUE) %>% 
   ggplot(aes(x = site_id, y = n_tot)) +
   geom_bar(stat = "identity") +
-  facet_wrap(~ month, nrow = 1)
+  labs(y = "# of Phyto. Species") +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  facet_wrap(~ month, nrow = 1) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black")) +
+  
+
+ggsave(here("figures_new", "calvert_qu39_numberSpecies_2019.png"),
+       width = 20, height = 5, dpi = 300)
 ```
 
+```{r}
+#I want the y axis ordered by class/group and then species. Haven't been able to figure this out.
+micro_ds$species_order <- factor(micro_ds$scientificName,
+                                   (unique(micro_ds$scientificName
+                                              [order(micro_ds$group, 
+                                                     micro_ds$scientificName)])))
 
+
+# Trying to figure out what species are driving diversity at QCS01 in August - Filtered to 2019 because 2020 has no August QCS01.
+
+micro_ds %>%
+  filter(trophicStatus == "auto" & !scientificName == "Protozoa") %>%
+  ggplot(aes(x = site_id, y = species_order, fill = log10(count))) +
+  geom_point(pch = 21, size = 9, stroke = 2) +
+  scale_y_discrete(limits = rev) +
+  scale_fill_gradient(low = "white", high = "green4") +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  labs(fill = "Abundance (log10(cells L))") +
+  facet_wrap(~ month, nrow = 1) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"))
+
+
+ggsave(here("figures_new", "test.png"), 
+       width = 25, height = 25, dpi = 300)
+
+```
+
+```{r}
+p1 <- micro_ds %>% 
+  filter(trophicStatus == "auto" & !scientificName == "Protozoa") %>% 
+  group_by(date, site_id) %>%
+  mutate(n_tot = n()) %>%
+  ungroup() %>% 
+  distinct(date, site_id, n_tot, .keep_all = TRUE) %>% 
+  ggplot(aes(x = site_id, y = n_tot)) +
+  geom_bar(stat = "identity") +
+  labs(y = "# of Phyto. Species") +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  facet_wrap(~ month, nrow = 1) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black")) 
+
+p2 <- micro_ds %>%
+  filter(trophicStatus == "auto" & !scientificName == "Protozoa") %>%
+  ggplot(aes(x = site_id, y = species_order, fill = log10(count))) +
+  geom_point(pch = 21, size = 9, stroke = 2) +
+  scale_y_discrete(limits = rev) +
+  scale_fill_gradient(low = "white", high = "green4") +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  labs(fill = "Abundance (log10(cells L))") +
+  facet_wrap(~ month, nrow = 1) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2 + plot_layout(ncol = 1, heights = c(0.1, 1))
+
+ggsave(here("figures_new", "test2.png"), fig,
+       width = 25, height = 25, dpi = 300)
+
+```
 
 
 

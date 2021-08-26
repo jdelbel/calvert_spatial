@@ -13,6 +13,8 @@ library(factoextra)
 library(ggdendro)
 library(dendextend)
 library(colormap)
+library(indicspecies)
+library(fuzzySim)
 ```
 
 ```{r}
@@ -54,6 +56,15 @@ qu39 <- qu39 %>%
 micro <- rbind(cal, qu39)
 
 
+```
+
+```{r}
+#testing species abbreviations
+# micro$sp_code <- spCodes(micro$scientificName, sep.species = " ", 
+#                          nchar.gen = 8,
+#                          nchar.sp = 4,
+#                          nchar.ssp = 0,
+#                          sep.spcode = ".")
 ```
 
 
@@ -102,16 +113,16 @@ micro_piv <- micro_piv %>%
 #Roughly adding seasons - would like to make cosmological seasons
 micro_piv <- micro_piv %>%
   mutate(season = case_when(month %in% c(12, 1, 2) ~ "winter",
-                            month >= 3 & month <= 5 ~ "spring",
-                            month >= 6 & month <= 8 ~ "summer",
-                            month >= 9 & month <= 11 ~ "autumn",)) %>%
+                            month >= 3 & month <= 6 ~ "spring",
+                            month >= 7 & month <= 9 ~ "summer",
+                            month >= 10 & month <= 11 ~ "autumn",)) %>%
   relocate(season, .after = month)
 
 micro_piv <- micro_piv %>% 
   arrange(site_id, date)
 
 #Pulling out species counts for tranform and input into clustering and NMDS
-transform <- micro_piv[, 6:112]  
+transform <- micro_piv[, 6:ncol(micro_piv)]  
   
 #Log10 transformation +1 (as per Mahara)
 transform <- log10(transform + 1)
@@ -185,13 +196,14 @@ head(nmds.spp.fit)
 
 
 ```{r}
-png(here("figures_new", "Calvert_qu39_2019_photo_nmds.png"),
+png(here("figures_new", "Calvert_qu39_2019_photo_nmds_new-seas.png"),
      width = 800, height = 500)
 
-
+micro_piv$season = factor(micro_piv$season,
+                          levels = c("spring", "summer", "autumn"))
 
 #displays empty ordination space
-plot(nmds_all, type = "n", ylim = c(-0.6, 0.6), xlim = c(-0.5, 0.5)) 
+plot(nmds_all, type = "n", ylim = c(-0.6, 0.6), xlim = c(-0.2, 0.5)) 
 
 # , ylim = c(-0.5, 0.5), xlim = c(-0.5, 0.5)
 
@@ -239,108 +251,57 @@ micro_piv_distinct <- micro_piv %>%
 
 ```
 
+```{r}
+#separating treatments for following tests
+season <-  micro_piv$season
+site_id <- micro_piv$site_id
+month <- micro_piv$month
+```
 
 
 
+```{r}
+#ANOSIM test to see if groupings statistically significant
+ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
+ano_site
 
+ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
+ano_month
 
-
-
+ano_season = anosim(transform, season, distance = "bray", permutations = 9999)
+ano_season
+```
 
 
 
 
 ```{r}
-#Creation of dendrogram using Calvert data
+#Indicator species analysis
 
-png(here("figures_new", "Calvert_2019_photo_dendro_season.png"), width = 2200, height = 1000) 
+#Indicators by season
+inv_season = multipatt(transform, season, func = "r.g",
+                       control = how(nperm = 9999))
+#by site
+inv_site = multipatt(transform, site_id, func = "r.g",
+                       control = how(nperm = 9999))
+#by month
+inv_month = multipatt(transform, month, func = "r.g",
+                       control = how(nperm = 9999))
 
-season <- pull(micro_piv, season)
-station <- pull(micro_piv, site_id)
-yday <- pull(micro_piv, yday)
-
-
-barcolor_season <- colormap(colormap = colormaps$earth, nshades = 3, format = "hex", alpha = 1, reverse = FALSE)
-
-barcolor_station <- colormap(colormap = colormaps$jet, nshades = 3, format = "hex", alpha = 1, reverse = FALSE)
-
-barcolor_yday <- colormap(colormap = colormaps$rainbow, nshades = 356, format = "hex", alpha = 1, reverse = FALSE)
-
-
-# colormaps$viridis
-# colormaps$jet
-# c("#0342ff", "#00bd0d", "#fbff00", "#ff0000")
-
-barcolor_season <- barcolor_season[as.numeric(as.factor(season))]
-barcolor_station <- barcolor_station[as.numeric(as.factor(station))]
-barcolor_yday <- barcolor_yday[as.numeric(yday)]
-
-barcolor_full <- cbind(barcolor_season, barcolor_station)
-colnames(barcolor_full) <- c("season", "station")
-
-#Margins bottom, left, top, right.
-par(mar=c(5,2,1,2))
-dend_micro %>%
-  plot() 
-
-colored_bars(colors = barcolor_full, dend = dend_micro)
-
-
-legend("topright", 
-     legend = c("DFO2" , "KC10" , "QCS01"), 
-     col = colormap(colormap = colormaps$jet, nshades = 3), 
-     pch = c(20,20,20,20), bty = "n",  pt.cex = 3, cex = 2 , 
-     text.col = "black", horiz = FALSE, inset = c(0, 0.1))
-
-legend("right", 
-     legend = c("Spring" , "Summer" , "Autumn"), 
-     col = colormap(colormap = colormaps$earth, nshades = 3), 
-     pch = c(20,20,20,20), bty = "n",  pt.cex = 3, cex = 2 , 
-     text.col = "black", horiz = FALSE, inset = c(0, 0.1))
-
-# legend("bottomright", 
-#      legend = c(1:356), 
-#      col = colormap(colormap = colormaps$rainbow, nshades = 4), 
-#      pch = c(20,20,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8 , 
-#      text.col = "black", horiz = FALSE, inset = c(0, 0.1))
-
-dev.off()
+summary(inv_season)
 ```
-```{r}
-#Resources
-#https://stackoverflow.com/questions/49088627/how-to-label-colored-bars-in-a-dendrogram
-#https://www.datanovia.com/en/blog/cluster-analysis-in-r-simplified-and-enhanced/
-#https://cran.r-project.org/web/packages/dendextend/vignettes/dendextend.html
 
-#Goal - similarity/dissimilarity cluster analysis 
 
-#How differnt or similar are the three calvert island sites
 
-#Distance metric - Bray-curtis is used for abundance data
 
-#Linkage method - criterion that will determine how observations will be grouped together.
 
-#Figtree (software) allows you to view and edit dendograms - look into this
 
-#https://ourcodingclub.github.io/tutorials/data-clustering/
 
-#Mahara - average linkage Bray-curtis dissimilarity, log10(x+1) transformed
 
-# https://www.davidzeleny.net/anadat-r/doku.php/en:similarity
 
-# similarity calculated using similarity indices ranging from 0 to 1. Ordination uses distances (Euclidean). Legendre & Legendre (2012) offers key on how to select appropriate measure for given data. bray-Curtis and Hellinger distances may be better than Euclidean.
 
-# Symmetrical indices (thos which consider double 0s as relevant not useful for ecological data). Asymmetrical similarity indices (ignore double zeros). Two types, qualitative (presence/absence) and quantitative (raw or transformed species abundance). 
 
-#Qualitative (binary) asymmetrical similarity indices. Information about number of species shared by both samples AND number of species occuring in first or second sampe only.
 
-#Quantitative similarity indices. Percentage Similarity and includes Bray-Curtis
-
-#Distance Indices. Similarity indices return highest value when both samples the same. Distance indices opposite. Two types: 1) Those calculated from similarity indices (includes Bray-Curtis) and; 2) Those which have no analogue in similarity indices. Important criterium is whether distance index is metric or not. Metric = minimum distance is 0, distance is always positive, distance between sample 1 and 2 same as 2 and has triangle inequality.
-
-#Bray-Curits/percentage difference. Suitable for community composition data since it is asymmetrical (ignores double 0s) and meaningful upper vlaue equal to 1. Considers absolute species abundances
-
-```
 
 
 
