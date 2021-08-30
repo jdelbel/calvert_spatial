@@ -196,7 +196,7 @@ head(nmds.spp.fit)
 
 
 ```{r}
-png(here("figures_new", "Calvert_qu39_2019_photo_nmds_new-seas.png"),
+png(here("figures_new", "Calvert_qu39_2019_photo_nmds_new-seas_species.png"),
      width = 800, height = 500)
 
 micro_piv$season = factor(micro_piv$season,
@@ -226,7 +226,7 @@ legend("topleft", "stress = 0.16", bty = "n", cex = 1.5)
 
 orditorp(nmds_all, display = "sites", cex = 1, air = 0.01, col = "white")
 
-# plot(nmds.spp.fit, p.max = 0.001, col = "grey", cex = 1.5)
+plot(nmds.spp.fit, p.max = 0.001, col = "grey", cex = 1.5)
 
 # orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
 

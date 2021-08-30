@@ -1,0 +1,374 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Load packages
+library(tidyverse)
+library(here)
+library(readxl)
+library(patchwork)
+```
+
+```{r}
+#upload data - should probably limit dataset for faster uploading. OR s
+cast <- read_excel(here("files", "ctd.xlsx"), sheet = "Data")
+
+meta <- read_excel(here("files", "ctd.xlsx"), sheet = "Drops")
+
+# ctd <- read_csv(here("files", "ctd.csv")) 
+```
+
+```{r}
+#Reduce columns and join drop metadata to drop data
+prof <- cast %>%
+  left_join(meta, by = "Cast PK") %>% 
+  mutate(date = lubridate::date(`Measurement time`)) %>%
+  mutate(year = lubridate::year(`Measurement time`)) %>%
+  select(castPk = `Cast PK`, ctdNum = `CTD serial number`, 
+         ctdFirm = `CTD firmware version`, station = Station.x, lat = Latitude,
+         long = Longitude, time = `Measurement time`, date, year,
+         depth = `Depth (m)`, pressure = `Pressure (dbar)`,
+         turb = `Turbidity (FTU)`, fluor = `Fluorometry Chlorophyll (ug/L)`, 
+         beam_c = `Beam Attenuation 650nm (1/m)`)
+```
+
+```{r}
+#Limit to Calvert data and timeframe
+
+prof_cal <- prof %>% 
+  filter(!station == "QU39" & date > "2018-01-01" & date < "2020-12-31")
+
+prof_qu39 <- prof %>% 
+  filter(station == "QU39" & date > "2018-01-01" & date < "2020-12-31")
+
+```
+
+```{r}
+# Specifiying survey transect for group/stats in later steps - grouping all surveys from a trip
+
+prof_cal <- prof_cal %>%
+  mutate(survey = case_when(date > "2018-01-09" & date < "2018-01-13" ~ 1,
+                            date > "2018-02-18" & date < "2018-02-22" ~ 2,
+                            date > "2018-03-22" & date < "2018-04-01" ~ 3,
+                            date > "2018-04-21" & date < "2018-04-29" ~ 4, #
+                            date > "2018-05-21" & date < "2018-06-01" ~ 5,
+                            date > "2018-06-18" & date < "2018-06-28" ~ 6,
+                            date > "2018-07-13" & date < "2018-07-25" ~ 7,
+                            date > "2018-08-18" & date < "2018-08-29" ~ 8,
+                            date > "2018-09-10" & date < "2018-09-15" ~ 9,
+                            date > "2018-10-22" & date < "2018-10-24" ~ 10,
+                            date > "2018-11-20" & date < "2018-11-22" ~ 11,
+                            date > "2019-01-20" & date < "2019-01-25" ~ 12,
+                            date > "2019-02-13" & date < "2019-02-20" ~ 13,
+                            date > "2019-03-12" & date < "2019-03-16" ~ 14,
+                            date > "2019-04-17" & date < "2019-04-20" ~ 15,
+                            date > "2019-05-10" & date < "2019-05-15" ~ 16,
+                            date > "2019-06-05" & date < "2019-06-12" ~ 17,
+                            date > "2019-07-05" & date < "2019-07-11" ~ 18,
+                            date > "2019-08-02" & date < "2019-08-07" ~ 19,
+                            date > "2019-08-30" & date < "2019-09-03" ~ 20,
+                            date > "2019-09-30" & date < "2019-10-06" ~ 21,
+                            date > "2019-11-23" & date < "2019-11-27" ~ 22,
+                            date > "2020-02-08" & date < "2020-02-13" ~ 23,
+                            date > "2020-04-29" & date < "2020-05-05" ~ 24,
+                            date > "2020-06-05" & date < "2020-06-09" ~ 25,
+                            date > "2020-07-01" & date < "2020-07-07" ~ 26,
+                            date > "2020-08-05" & date < "2020-08-09" ~ 27,
+                            date > "2020-09-02" & date < "2020-09-09" ~ 28,
+                            date > "2020-09-30" & date < "2020-10-05" ~ 29,
+                            date > "2020-11-03" & date < "2020-11-05" ~ 30,
+                            date > "2020-11-26" & date < "2020-12-01" ~ 31))
+    
+```
+
+
+
+
+```{r}
+#Selecting cast 10 minimum values
+cal_10 <- prof_cal %>%
+  group_by(castPk) %>%
+  filter(pressure > 10 & min_rank((turb)) <= 10) %>% 
+  group_by(castPk) %>% 
+  mutate(min_turb = turb,
+         min_mean = mean(turb),
+         min_std = sd(turb)) %>% 
+  ungroup()
+
+#QU39
+qu39_10 <- prof_qu39 %>%
+  group_by(castPk) %>%
+  filter(pressure > 10 & min_rank((turb)) <= 10) %>% 
+  group_by(castPk) %>% 
+  mutate(min_turb = turb,
+         min_mean = mean(turb),
+         min_std = sd(turb)) %>% 
+  ungroup()
+
+#Calculating the mean of the 10 minimum values for each station
+cal_10_mean <- cal_10 %>% 
+  distinct(min_mean, .keep_all = TRUE) %>% 
+  select(ctdNum, station, date, min_mean, min_std, survey) %>% 
+  group_by(date, station) %>% 
+  mutate(dup = n()) %>% 
+  ungroup()
+
+#QU39
+qu39_10_mean <- qu39_10 %>% 
+  distinct(min_mean, .keep_all = TRUE) %>% 
+  select(ctdNum, station, date, min_mean, min_std) %>% 
+  group_by(date) %>% 
+  mutate(dup = n()) %>% 
+  ungroup()
+
+
+#Removing data from survey 4 as crazy high turbidity - likely a sensor issue? Need to look into this further.
+cal_10_mean <- cal_10_mean %>% 
+  filter(!survey == 4)
+
+qu39_10_mean <- qu39_10_mean %>% 
+  filter(!date == "2018-01-24")
+
+#Looking at how similar the offset was when duplicate casts were performed
+cal_10_dup <- cal_10_mean %>% 
+  filter(dup > 1) %>% 
+  group_by(date, station) %>% 
+  mutate(off_mean = mean(min_mean),
+         off_std = sd(min_mean)) %>% 
+  ungroup()
+
+#No duplicate casts for qu39 - Is is true?
+
+
+#Averaging minimum 10 value offset for duplicate casts
+cal_10_mean_dm <- cal_10_mean %>% 
+  group_by(date, station) %>% 
+  mutate(off_mean = mean(min_mean),
+         off_std = sd(min_mean)) %>% 
+  ungroup() %>% 
+  distinct(date, station, off_mean, .keep_all = TRUE) %>% 
+  select(ctdNum, station, date, survey, off_mean, off_std)
+
+#Ranking the values from each survey
+cal_10_mean_dm <- cal_10_mean_dm %>% 
+  group_by(survey) %>% 
+  mutate(rank = rank(off_mean)) %>% 
+  ungroup()
+
+```
+
+```{r}
+#Plot showing average and standard deviation of QCS01, KC10, DFO2 
+cal_10_mean %>% 
+  ggplot(aes(x = date, y = min_mean, color = station)) +
+  geom_point(size = 4) +
+  geom_errorbar(aes(ymin = min_mean - min_std,
+                    ymax = min_mean + min_std)) + 
+  facet_wrap(~ ctdNum, ncol = 1, scales = "free_y") +
+  labs(x = "Date",
+           y = "Profile Avg. 10 minimum Turbidity (FTU) values") +
+  scale_y_continuous(limits = c(0, NA)) +
+  theme(text = element_text(size = 25))
+
+ggsave(here("figures_new", "cal_turb_min10.png"), 
+       width = 17, height = 15, dpi = 300)
+
+#Looks like there is some linear drift going on.
+```
+
+```{r}
+#Plot showing average and standard deviation of 10 minimum values for QU39. 
+qu39_10_mean %>% 
+  ggplot(aes(x = date, y = min_mean)) +
+  geom_point(size = 4) +
+  geom_errorbar(aes(ymin = min_mean - min_std,
+                    ymax = min_mean + min_std)) + 
+  facet_wrap(~ ctdNum, ncol = 1, scales = "free_y") +
+  labs(x = "Date",
+           y = "Profile Avg. 10 minimum Turbidity (FTU) values") +
+  scale_y_continuous(limits = c(0, NA)) +
+  theme(text = element_text(size = 25))
+
+ggsave(here("figures_new", "qu39_turb_min10.png"), 
+       width = 17, height = 15, dpi = 300)
+
+
+#Values aren't exactly consistent - should quantify a level of error here. Not perfect. Could maybe take Bute values and cross over.
+```
+
+
+
+```{r}
+#Plot distribution of the lowest station offset rankings for each survey.
+cal_10_mean_dm %>% 
+  ggplot(aes(x = rank, fill = station)) + 
+  geom_bar(position = 'dodge')
+```
+
+```{r}
+#Selecting the cast from each survey that had the lowest offset values.
+sub_vals <- cal_10_mean_dm %>% 
+  filter(rank == 1) %>% 
+  select(ctdNum, survey, off_mean)
+
+sub_vals_qu30 <- qu39_10_mean %>% 
+  select(ctdNum, date, min_mean)
+
+#joining lowest offset value from each survey to all casts from that survey.
+corrected <- prof_cal %>%
+  left_join(sub_vals)
+
+corrected_qu39 <- prof_qu39 %>% 
+  left_join(sub_vals_qu30)
+
+#correcting turbidity for offset by subtracting lowest offset value
+corrected <- corrected %>% 
+  mutate(turb_cor = turb - off_mean)
+
+corrected_qu39 <- corrected_qu39 %>% 
+  mutate(turb_cor = turb - min_mean)
+
+#Changing slight negative values from corrections to 0
+corrected <- corrected %>% 
+  mutate(turb_cor = if_else(turb_cor < 0, 0, turb_cor))
+
+corrected_qu39 <- corrected_qu39 %>% 
+  mutate(turb_cor = if_else(turb_cor < 0, 0, turb_cor),
+         survey = NaN)
+
+corrected_qu39 <- corrected_qu39 %>% 
+  rename(off_mean = min_mean) 
+
+# merging Calvert data with qu39 data
+corrected <- rbind(corrected, corrected_qu39)
+
+
+#Adding month
+corrected <- corrected %>%
+  mutate(month = lubridate::month(date))
+
+
+```
+
+```{r}
+#Plotting all of the corrected profiles by station and date
+corrected %>%  
+  filter(!station == "QU39" & pressure > 3) %>% 
+  ggplot() +
+  geom_point(aes(x = turb_cor, y = depth, color = station)) +
+  facet_wrap(~ survey, nrow = 6, scales = "free_x") +
+  labs(x = "Turbidity FTU",
+           y = "Depth (m)") +
+  # coord_cartesian(xlim = c(0, 8)) +
+  scale_y_reverse() +
+  theme(text = element_text(size = 20))
+
+ggsave(here("figures_new", "corr_turb_profiles.png"), 
+       width = 16, height = 14, dpi = 300)
+
+```
+
+```{r}
+#Plotting turbidity seasonal cycle and time-series - mostly for QC - does it make sense?
+
+p1 <- corrected %>% 
+  filter(pressure == 2) %>%
+  ggplot(aes(x = as.factor(month), y = turb_cor, fill = station)) +
+  geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  # coord_cartesian(ylim = c(5, 20)) +
+  labs(y = "Turbidity (2m, FTU)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.08, 0.85),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- corrected %>% 
+  filter(pressure == 2) %>%
+  ggplot(aes(x = date, y = turb_cor, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  # coord_cartesian(ylim = c(5, 20)) +
+  labs(y = "Turbidity (2m, FTU)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures_new", "turbidity_box_ts_2m_qu39.png"), 
+       fig, width = 16, height = 12, dpi = 300)
+
+#The spikes at QU39 are pretty interesting - I wonder if they are real? This could be a water mass indicator. 
+```
+
+```{r}
+#Need to do QU39 - result could give perspective.
+
+```
+
+
+
+```{r}
+#Plotting turbidity seasonal cycle and timeseries - mostly for QC - does it make sense?
+
+p1 <- corrected %>% 
+  filter(pressure == 5) %>%
+  ggplot(aes(x = as.factor(month), y = turb_cor, fill = station)) +
+  geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  # coord_cartesian(ylim = c(5, 20)) +
+  labs(y = "Turbidity (5m, FTU)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.08, 0.85),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- corrected %>% 
+  filter(pressure == 5) %>%
+  ggplot(aes(x = date, y = turb_cor, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  # coord_cartesian(ylim = c(5, 20)) +
+  labs(y = "Turbidity (5m, FTU)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures_new", "turbidity_box_ts_5m.png"), 
+       fig, width = 16, height = 12, dpi = 300)
+
+
+```
+
+```{r}
+#creating export sheet for corrected profiles
+corrected_export <- corrected %>% 
+  select(castPk:pressure, turb_cor)
+
+
+#Export so I can feed it into statistical analysis.
+write_csv(corrected_export, here("outputs", "corrected_turbidity_v1.csv"))
+```
+
+
+
+
