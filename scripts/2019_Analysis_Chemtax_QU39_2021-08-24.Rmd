@@ -121,6 +121,11 @@ dend_bc <- transform %>%
   as.dendrogram()
 ```
 
+```{r}
+#Be careful - Currently, I am only using the 2019 May to November data with QU39 closest dates.
+write_csv(chem, here("outputs", "chem_2019.csv"))
+```
+
 
 ```{r}
 #Running nmds on entire dataset, without QU39 monthly averaged

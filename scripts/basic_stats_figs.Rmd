@@ -34,9 +34,6 @@ micro <- rbind(micro_c, micro_q)
 ```
 
 
-
-
-
 ```{r}
 #Importing and wrangling Chemtax data
 
@@ -208,6 +205,22 @@ ctd <- ctd %>%
 nuts <- nuts %>% 
   filter(date > "2018-01-01" & date < "2021-01-01")
 ```
+
+```{r}
+#Exporting data with calculations to incorporate into statistical analysis.
+
+write_csv(ctd, here("outputs", "ctd_calcs.csv"))
+
+write_csv(ctd_dd, here("outputs", "ctd_dd.csv"))
+
+write_csv(ctd, here("outputs", "ctd_calcs.csv"))
+
+write_csv(nuts, here("outputs", "nuts.csv"))
+
+```
+
+
+
 
 ```{r}
 hapto <- chem_tidy %>% 

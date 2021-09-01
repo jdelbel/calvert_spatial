@@ -135,6 +135,10 @@ dend_micro <- transform %>%
 
 
 ```
+```{r}
+#Be careful as I have been making changes to this in terms of which species and stations to include. Currently, I am only using the 2019 May to November data with QU39 closest dates.
+write_csv(micro_piv, here("outputs", "micro_photo_piv.csv"))
+```
 
 
 ```{r}

@@ -1,0 +1,139 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+ 
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(gsw)
+library(here)
+```
+
+```{r}
+#Upload data
+
+#ctd data with gsw calculations
+ctd_calcs <- read_csv(here("outputs", "ctd_calcs.csv")) 
+
+#delta rho data
+ctd_dd <- read_csv(here("outputs", "ctd_dd.csv"))
+
+#nutrient data
+nuts <- read_csv(here("outputs", "nuts.csv"))
+
+#microscopy data with species as columns - only 2019 May to November and photo species
+micro_piv <- read_csv(here("outputs", "micro_photo_piv.csv"))
+
+#turbidity data with offset corrections
+turb_corr <- read_csv(here("outputs", "corrected_turbidity_v1.csv"))
+
+#Uploading chemtax
+chem <- read_csv(here("outputs", "chem_2019.csv")) 
+
+#Formatting date
+# chem <- chem %>% 
+#   mutate(date = as.Date(Date))
+# 
+# #Renaming columns
+# chem <- select(chem, 
+#                date, site_id = Station, cyan = Cyanobacteria, hapto = Hapto,
+#                green = `Prasinophytes-3`, cryp = Cryptophytes, 
+#                dino = `Dinoflagellates-1`, dict = Dictyo, raph = Raphido,
+#                diat = `Diatoms-1`)
+
+```
+
+```{r}
+#Further work to some of the ctd data for merging
+
+#Pulling out data I need for merging with ctd - There are duplicate casts here, so for now performing daily mean.
+ctd_dd_dm <- ctd_dd %>% 
+  select(date, station, delta_rho) %>% 
+  mutate(ymd = lubridate::date(date)) %>% 
+  group_by(ymd, station) %>% 
+  summarise(dd_dm = mean(delta_rho)) %>%
+  ungroup()
+  
+
+#Pulling out data I need for merging with ctd
+turb_corr_dm <- turb_corr %>% 
+  filter(pressure == 5) %>% 
+  select(ymd = date, station, turb_cor) %>% 
+  group_by(ymd, station) %>% 
+  summarise(turb_dm = mean(turb_cor)) %>%
+  ungroup()
+
+#Finding the N2 max
+n2_max_dm <- ctd_calcs %>% 
+  mutate(ymd = lubridate::date(date)) %>%
+  select(cast_pk, ymd, station, N2) %>% 
+  group_by(cast_pk) %>% 
+  mutate(n2_max = max(N2)) %>% 
+  ungroup() %>% 
+  distinct(cast_pk, n2_max, .keep_all = TRUE) %>% 
+  group_by(ymd, station) %>% 
+  summarise(n2_max_dm = mean(n2_max)) %>% 
+  ungroup()
+  
+#cutting out data I am using from 5m depth - for some reason throwing tons of duplicates in temp/sal
+ctd_dm <- ctd_calcs %>% 
+  filter(pres == 5) %>%
+  mutate(ymd = lubridate::date(date)) %>%
+  select(ymd, station, temp, sal) %>%
+  group_by(ymd, station) %>% 
+  mutate(sal_dm = mean(sal),
+         temp_dm = mean(temp)) %>% 
+  ungroup() %>% 
+  distinct(ymd, station, temp_dm, sal_dm)
+
+nuts_dm <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  select(ymd = date, station = site_id, no2_no3_um, sio2, po4) %>% 
+  group_by(ymd, station) %>% 
+  summarise(no2_dm = mean(no2_no3_um),
+            sio2_dm = mean(sio2),
+            po4_dm = mean(po4)) %>% 
+  ungroup()
+  
+  
+ctd_merge <- ctd_dm %>% 
+  left_join(ctd_dd_dm, by = c("station", "ymd")) %>% 
+  left_join(turb_corr_dm, by = c("station", "ymd")) %>% 
+  left_join(n2_max_dm, by = c("station", "ymd")) %>% 
+  left_join(nuts_dm, by = c("station", "ymd"))
+
+#Cleaning/standardizing for merge with microscopy and chemtax
+ctd <- ctd_merge %>% 
+  rename(date = ymd, site_id = station, sal = sal_dm, temp = temp_dm,
+         d_rho = dd_dm, turb = turb_dm, n2_max = n2_max_dm, no2 = no2_dm,
+         sio2 = sio2_dm, po4 = po4_dm)
+
+#OK, so all of the physical and chemical data are merged. I could consider adding FWC, solar, wind, 1026 depth etc.
+
+```
+
+
+```{r}
+#merging using the truncated microscopy data as
+
+#Merging the microscopy data with the physical/chemical data. Here, the microscopy data was already filtered to the 2019 May to November period.
+micro_merge <- micro_piv %>% 
+  left_join(ctd, by = c("date", "site_id"))
+
+#Merging the chemtax data with the physical/chemical data. Here, the chemtax data was already filtered to the 2019 May to November period. 
+chem_merge <- chem %>% 
+  left_join(ctd, by = c("date", "site_id"))
+
+
+
+
+
+```
+
+
+
+
