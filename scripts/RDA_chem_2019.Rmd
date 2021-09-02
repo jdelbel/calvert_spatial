@@ -1,0 +1,315 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+ 
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(gsw)
+library(here)
+```
+
+```{r}
+#Upload data
+
+#ctd data with gsw calculations
+ctd_calcs <- read_csv(here("outputs", "ctd_calcs.csv")) 
+
+#delta rho data
+ctd_dd <- read_csv(here("outputs", "ctd_dd.csv"))
+
+#nutrient data
+nuts <- read_csv(here("outputs", "nuts.csv"))
+
+#microscopy data with species as columns - only 2019 May to November and photo species
+micro_piv <- read_csv(here("outputs", "micro_photo_piv.csv"))
+
+#turbidity data with offset corrections
+turb_corr <- read_csv(here("outputs", "corrected_turbidity_v1.csv"))
+
+#Uploading chemtax
+chem <- read_csv(here("outputs", "chem_2019.csv")) 
+
+#Formatting date
+# chem <- chem %>% 
+#   mutate(date = as.Date(Date))
+# 
+# #Renaming columns
+# chem <- select(chem, 
+#                date, site_id = Station, cyan = Cyanobacteria, hapto = Hapto,
+#                green = `Prasinophytes-3`, cryp = Cryptophytes, 
+#                dino = `Dinoflagellates-1`, dict = Dictyo, raph = Raphido,
+#                diat = `Diatoms-1`)
+
+```
+
+```{r}
+#Further work to some of the ctd data for merging
+
+#Pulling out data I need for merging with ctd - There are duplicate casts here, so for now performing daily mean.
+ctd_dd_dm <- ctd_dd %>% 
+  select(date, station, delta_rho) %>% 
+  mutate(ymd = lubridate::date(date)) %>% 
+  group_by(ymd, station) %>% 
+  summarise(dd_dm = mean(delta_rho)) %>%
+  ungroup()
+  
+
+#Pulling out data I need for merging with ctd
+turb_corr_dm <- turb_corr %>% 
+  filter(pressure == 5) %>% 
+  select(ymd = date, station, turb_cor) %>% 
+  group_by(ymd, station) %>% 
+  summarise(turb_dm = mean(turb_cor)) %>%
+  ungroup()
+
+#Finding the N2 max
+n2_max_dm <- ctd_calcs %>% 
+  mutate(ymd = lubridate::date(date)) %>%
+  select(cast_pk, ymd, station, N2) %>% 
+  group_by(cast_pk) %>% 
+  mutate(n2_max = max(N2)) %>% 
+  ungroup() %>% 
+  distinct(cast_pk, n2_max, .keep_all = TRUE) %>% 
+  group_by(ymd, station) %>% 
+  summarise(n2_max_dm = mean(n2_max)) %>% 
+  ungroup()
+  
+#cutting out data I am using from 5m depth - for some reason throwing tons of duplicates in temp/sal
+ctd_dm <- ctd_calcs %>% 
+  filter(pres == 5) %>%
+  mutate(ymd = lubridate::date(date)) %>%
+  select(ymd, station, temp, sal) %>%
+  group_by(ymd, station) %>% 
+  mutate(sal_dm = mean(sal),
+         temp_dm = mean(temp)) %>% 
+  ungroup() %>% 
+  distinct(ymd, station, temp_dm, sal_dm)
+
+nuts_dm <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  select(ymd = date, station = site_id, no2_no3_um, sio2, po4) %>% 
+  group_by(ymd, station) %>% 
+  summarise(no2_dm = mean(no2_no3_um),
+            sio2_dm = mean(sio2),
+            po4_dm = mean(po4)) %>% 
+  ungroup()
+  
+  
+ctd_merge <- ctd_dm %>% 
+  left_join(ctd_dd_dm, by = c("station", "ymd")) %>% 
+  left_join(turb_corr_dm, by = c("station", "ymd")) %>% 
+  left_join(n2_max_dm, by = c("station", "ymd")) %>% 
+  left_join(nuts_dm, by = c("station", "ymd"))
+
+#Cleaning/standardizing for merge with microscopy and chemtax
+ctd <- ctd_merge %>% 
+  rename(date = ymd, site_id = station, sal = sal_dm, temp = temp_dm,
+         dr = dd_dm, turb = turb_dm, n2_max = n2_max_dm, no2 = no2_dm,
+         sio2 = sio2_dm, po4 = po4_dm)
+
+#OK, so all of the physical and chemical data are merged. I could consider adding FWC, solar, wind, 1026 depth etc.
+
+```
+
+
+```{r}
+#merging using the truncated microscopy data as
+
+#Merging the microscopy data with the physical/chemical data. Here, the microscopy data was already filtered to the 2019 May to November period.
+micro_merge <- micro_piv %>% 
+  left_join(ctd, by = c("date", "site_id"))
+
+#Merging the chemtax data with the physical/chemical data. Here, the chemtax data was already filtered to the 2019 May to November period. 
+chem_merge <- chem %>% 
+  left_join(ctd, by = c("date", "site_id"))
+
+```
+
+```{r}
+#Remove rows with NaNs
+chem_merge <- chem_merge %>% 
+  drop_na()
+
+#Separating into response variables (CHEMTAX) and Explainatory variables (Environmental)
+resp_chem <- chem_merge[, 6:13]
+
+#Things to add TChla, WSDP, iso depth, FWC...
+expl_chem <- chem_merge[, 14:ncol(chem_merge)]
+```
+
+```{r}
+#Hellinger transformation on species data - particularly suited to species abundance data with large range and lots of zeros. Gives low weights to variables with low counts and many zeroes.
+resp_chem.hell <- decostand(resp_chem,'hell')
+```
+
+
+```{r}
+tbRDA_chem.all <- rda(resp_chem.hell ~ . , data = expl_chem)
+
+tbRDA_chem.all
+
+anova(tbRDA_chem.all)
+
+adjR2_chem.tbrda <- RsquareAdj (tbRDA_chem.all)$adj.r.squared
+
+# Variables explain 13% of the variance
+# RDA1 - 8.6%
+# RDA2 - 2.7%
+# PCA1 - 8.2%
+# PCA2 - 2.0%
+
+#Global model significant to 0.01 
+```
+
+```{r}
+#Using DCA on chemtax data to test whether linear or unimodal model is appropriate
+DCA <- decorana(resp_chem.hell)
+DCA
+#As the length of the first DCA is < 3 S.D. - the dataset is homogenous and a linear model is appropriate. The score went down after applying the Hellinger Transformation. Proceed with RDA.
+
+```
+
+```{r}
+#Forward selection RDA used to remove environmental variables that do not show significance. https://wiki.qcbs.ca/r_workshop10
+# ?ordiR2step
+ordiR2step(rda(resp_chem.hell ~ 1, data = expl_chem), scope = formula(tbRDA),
+           direction= "forward", R2scope = TRUE, pstep = 1000)
+
+#Only salinitity is significant to 0.004
+```
+
+```{r}
+#Trying different approach for ordiR2step from https://www.davidzeleny.net/anadat-r/doku.php/en:forward_sel_examples - same result as my other test
+tb_rda.vasc.0 <- rda (resp_chem.hell ~ 1, data = expl_chem)
+
+tb_rda.vasc.all <- rda (resp_chem.hell ~ ., data = expl_chem)
+
+sel.osR2 <- ordiR2step (tb_rda.vasc.0, scope = formula (tb_rda.vasc.all), R2scope = adjR2_chem.tbrda, direction = 'forward', permutations = 999)
+
+sel.osR2$anova
+
+sel.osR2_adj <- sel.osR2
+
+sel.osR2_adj$anova$`Pr(>F)` <- p.adjust (sel.osR2$anova$`Pr(>F)`, method = 'holm', n = ncol (expl_chem))
+
+sel.osR2_adj$anova
+
+#Again, only salinity is significant
+```
+
+```{r}
+#Select the statistically significant variables - May want to remove SiO2, see VIFS below!
+env.signif <- subset(expl_chem, select = c(sal))
+
+#RDA using significant variables
+rda.signif <- rda(resp_chem.hell ~ . ,data = env.signif)
+rda.signif
+summary(rda.signif, display = NULL)
+
+#Adjusted R2 for the 1 significant variables
+#AdjR2 = 0.21
+(R2adj <- RsquareAdj(rda.signif)$adj.r.squared)
+
+#ANOVA for testing significance of model and individual axes #Can do ANOVA by terms...
+#Entire model = 0.001***
+#RDA1 = 0.001***
+#RDA2 = 0.007**
+#RDA3 = 0.028*
+# ?anova.cca
+anova.cca(rda.signif, step = 1000)
+anova.cca(rda.signif, step = 1000, by = "axis")
+
+#All significant - already shown in forward rda, but easier to see
+anova(rda.signif, by = "terms")
+```
+```{r}
+
+#Trying to colour the black dots according to thier season
+levels(chem_merge$site_id) <- c("DFO2","KC10","QCS01","QU39")
+
+eco <- chem_merge$site_id
+
+bg <- c("#01BFFF","#A7FC01","#FFFE00","#FF7F00")
+
+
+#Trying the same thing, but bringing in arrows from previous plot - trying scaling 2
+#pdf(file = "rda_s2.pdf", width = 6.5, height = 5, pointsize = 2)
+
+plot(rda.signif, scaling = 2, type = "none", xlab = c("RDA1 (6%)"),
+               ylab = c("RDA2 (0%)"), xlim = c(-0.5, 0.5), ylim = c(-1.1, 1.1))
+
+# points(rda.signif, display = 'sites', pch = 21, cex = 2.2,
+#        col = rgb(red = 1, green = 1, blue = 1, alpha = 0.5), scaling = 2,
+#        bg = bg[eco])
+
+points(scores(rda.signif, display = 'sites', choices = c(1, 2), scaling = 2),
+       pch = 21, cex = 2.0,
+       bg = c("blue", "springgreen4", "black", "magenta")[as.factor(chem_merge$site_id)])
+
+text(rda.signif, scaling = 2, display = "bp", col = "blue",cex = 0.8, font = 2)
+
+#So since distance doesn't matter, I can make arrows longer with scaling 2? 
+arrows(0,0, scores(rda.signif, display = "species", choices = c(1),
+                   scaling = 2), scores(rda.signif, display = "species",
+                                            choices = c(2), scaling = 2),
+       col = "black", length = 0)
+
+text(rda.signif, scaling = 2, display = "bp", col = "blue",cex = 0.8, font = 2)
+
+text(scores(rda.signif, display = "species", choices = c(1), scaling = 2),
+     scores(rda.signif, display = "species", choices = c(2), scaling = 2),
+     labels = rownames(scores(rda.signif, display = "species", scaling = 2)),
+     col = "black", cex = 0.8, font = 2)
+
+
+# legend("topleft", legend = levels(eco), bty ="n", col="gray32", pch = 21,
+#        cex = 1.5, pt.bg = bg)
+
+legend("topright", legend = c(levels(as.factor(chem_merge$site_id))),
+       pch = 21,
+       pt.bg = c("blue", "springgreen4", "black", "magenta"),
+       bty = "n", cex = 1.5)
+
+#dev.off()
+
+```
+```{r}
+#Scaling 2
+#When looking at scaling 2, variables approaching 90 degrees of each other have little correlation. Variables < 90 degrees have positive correlations and those > 90 degrees have negative correlations. Len Based on this the below plot suggests that 1) Diatoms are negatively correlated to temperature and stratification and also, all other phytoplankton groups. Cyanobacteria, Haptophytes and Dictyophytes are positively correlated to temperature and stratification, but show no relationship to NO2 and SiO2. Prasinophytes and Cryptophytes are positively correlated with SiO2 and NO2. This goes pretty strongly againts what the Spearman's rank analysis shows. What's more appropriate? Also, what would separating my data (by year, season) look like? https://wiki.qcbs.ca/r_workshop10
+
+#eigenvectors for 
+#explains a reasonable amount of 
+plot(rda.signif, scaling = 2, main = "Triplot RDA - scaling 2", type = "none",
+     xlab = c("RDA1 (31%)"), ylab = c("RDA2 (3%)"), xlim = c(-0.5, 0.5), 
+     ylim = c(-1, 1))
+
+
+points(scores(rda.signif, display = "sites", choices = c(1, 2), scaling = 2),
+       pch = 21, col = "steelblue", bg = "steelblue", cex = 0.8)
+
+
+
+arrows(0, 0, scores(rda.signif, display = "species", choices = c(1), scaling = 2),
+       scores(rda.signif, display = "species", choices = c(2), scaling = 2),
+       col= "black", length=0)
+
+text(scores(rda.signif, display = "species", choices = c(1), scaling = 2),
+     scores(rda.signif, display = "species", choices = c(2), scaling = 2),
+     labels = rownames(scores(rda.signif, display = "species", scaling = 2)),
+     col = "black", cex = 0.8)    
+
+arrows(0,0,
+       scores(rda.signif, display = "bp", choices = c(1), scaling = 2),
+       scores(rda.signif, display = "bp", choices = c(2), scaling = 2),
+       col="red")
+
+text(scores(rda.signif, display = "bp", choices = c(1), scaling = 2) + 0.05,
+     scores(rda.signif, display = "bp", choices = c(2), scaling = 2)+ 0.05,
+     labels = rownames(scores(rda.signif, display = "bp", choices = c(2),
+                              scaling=2)), col = "red", cex = 1)
+```

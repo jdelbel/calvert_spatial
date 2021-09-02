@@ -160,9 +160,9 @@ micro_ds <- micro %>%
 
 micro_ds <- rbind(micro_ds, micro_qu39_ds)
 
-micro_ds <- micro_ds %>% 
-  filter(date > "2019-05-01" & date < "2019-12-01") %>% 
-  arrange(date)
+# micro_ds <- micro_ds %>% 
+#   filter(date > "2019-05-01" & date < "2019-12-01") %>% 
+#   arrange(date)
 
 micro_ds <- micro_ds %>%  
   mutate(month = lubridate::month(date),
@@ -180,13 +180,13 @@ micro_ds <- micro_ds %>%
 #Heat map of species observed and abundance for 2019 May - November
 
 #I want the y axis ordered by class/group and then species. Haven't been able to figure this out.
-micro$species_order <- factor(micro$scientificName,
-                                   (unique(micro$scientificName
-                                              [order(micro$group, micro$scientificName)])))
+micro_ds$species_order <- factor(micro_ds$scientificName,
+                                   (unique(micro_ds$scientificName
+                                              [order(micro_ds$group, micro_ds$scientificName)])))
 
 p1 <- micro_ds %>% 
   filter(trophicStatus == "auto" & !scientificName == "Protozoa" &
-           ) %>% 
+           date >= "2019-05-01" & date < "2019-11-01") %>% 
   group_by(date, site_id) %>%
   mutate(n_tot = n()) %>%
   ungroup() %>% 
@@ -205,7 +205,8 @@ p1 <- micro_ds %>%
         axis.text = element_text(colour = "black")) 
 
 p2 <- micro_ds %>%
-  filter(trophicStatus == "auto" & !scientificName == "Protozoa") %>%
+  filter(trophicStatus == "auto" & !scientificName == "Protozoa" &
+           date >= "2019-05-01" & date < "2019-11-01") %>%
   ggplot(aes(x = site_id, y = fct_rev(species_order), fill = log10(count))) +
   geom_tile() +
   facet_grid(~ month, scales = "free_x", space = "free_x") +
@@ -233,6 +234,57 @@ fig <- p1/p2 + plot_layout(ncol = 1, heights = c(0.1, 1))
 ggsave(here("figures_new", "heat_2019_abundance_test.png"), fig,
        width = 25, height = 29, dpi = 300)
 
+```
+```{r}
+p1 <- micro_ds %>% 
+  filter(trophicStatus == "auto" & !scientificName == "Protozoa" &
+           date >= "2018-05-01" & date < "2018-11-01") %>% 
+  group_by(date, site_id) %>%
+  mutate(n_tot = n()) %>%
+  ungroup() %>% 
+  distinct(date, site_id, n_tot, .keep_all = TRUE) %>% 
+  ggplot(aes(x = site_id, y = n_tot)) +
+  geom_bar(stat = "identity") +
+  labs(y = "# of Phyto. Species") +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  facet_wrap(~ month, nrow = 1) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black")) 
+
+p2 <- micro_ds %>%
+  filter(trophicStatus == "auto" & !scientificName == "Protozoa" &
+           date >= "2018-05-01" & date < "2018-11-01") %>%
+  ggplot(aes(x = site_id, y = fct_rev(species_order), fill = log10(count))) +
+  geom_tile() +
+  facet_grid(~ month, scales = "free_x", space = "free_x") +
+  scale_fill_gradient(name = "Log10(Abundance)",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(), 
+        axis.line = element_line(colour = "black"))  
+  
+fig <- p1/p2 + plot_layout(ncol = 1, heights = c(0.1, 1))
+
+ggsave(here("figures_new", "heat_2018_abundance.png"), fig,
+       width = 25, height = 29, dpi = 300)
 ```
 
 
