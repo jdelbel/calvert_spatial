@@ -135,13 +135,25 @@ micro_qu39_ds <- micro %>%
 
 #Trying to plot Relative in a different way - CHEMTAX
 micro_qu39_ds <- micro_qu39_ds %>%
-  filter(date == "2019-05-09" |
+  filter(date == "2018-05-29" | #could also be 05-22
+         date == "2018-06-26" |
+         date == "2018-07-23" | # Could also be 07-16
+         date == "2018-08-21" | # 08-14, 08-28
+         date == "2018-09-13" |   
+         date == "2018-10-24" |
+         date == "2019-05-09" |
          date == "2019-06-04" |
          date == "2019-07-09" |
          date == "2019-08-07" |
          date == "2019-08-29" |
          date == "2019-10-09" |
-         date == "2019-11-26")
+         #date == "2019-11-26" | #removing this for multi-year analysis
+         date == "2020-04-29" | #Different month, but very close temporally
+         date == "2020-06-04" |
+         date == "2020-07-09" | # Also 06-30 - Tricky
+         date == "2020-08-04" | # Also 08-13 
+         date == "2020-09-01" |
+         date == "2020-10-08")
 
 micro_ds <- micro %>%
   filter(!site_id == "QU39")
@@ -156,6 +168,8 @@ micro_ds <- micro_ds %>%
   mutate(month = lubridate::month(date),
          month = case_when(date == "2019-08-29" ~ 9,
                            date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
                              TRUE ~ as.numeric (month)))
 
 
@@ -171,7 +185,8 @@ micro$species_order <- factor(micro$scientificName,
                                               [order(micro$group, micro$scientificName)])))
 
 p1 <- micro_ds %>% 
-  filter(trophicStatus == "auto" & !scientificName == "Protozoa") %>% 
+  filter(trophicStatus == "auto" & !scientificName == "Protozoa" &
+           ) %>% 
   group_by(date, site_id) %>%
   mutate(n_tot = n()) %>%
   ungroup() %>% 
@@ -215,7 +230,7 @@ p2 <- micro_ds %>%
   
 fig <- p1/p2 + plot_layout(ncol = 1, heights = c(0.1, 1))
 
-ggsave(here("figures_new", "heat_2019_abundance.png"), fig,
+ggsave(here("figures_new", "heat_2019_abundance_test.png"), fig,
        width = 25, height = 29, dpi = 300)
 
 ```
