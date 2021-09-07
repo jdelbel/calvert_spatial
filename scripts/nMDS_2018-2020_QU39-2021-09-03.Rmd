@@ -1,0 +1,344 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+library(indicspecies)
+library(fuzzySim)
+```
+
+
+
+
+```{r}
+#Upload data
+#Upload output from OBIS taxonomy matching/formatting for Calvert data.
+cal <- read_csv(here("files", "calvert.csv")) 
+
+qu39 <- read_csv(here("files", "qu39.csv"))
+
+#Removing data outside of the date of investigation
+# cal <- cal %>% 
+#   filter(date > "2019-05-10" & date < "2019-12-01")
+
+cal <- cal %>% 
+  filter(trophicStatus == "auto")
+
+#Selecting closest temporal stations from QU39
+qu39 <- qu39 %>% 
+  filter(trophicStatus == "auto")
+
+qu39 <- qu39 %>% 
+  filter(date == "2018-05-29" | #could also be 05-22
+         date == "2018-06-26" |
+         date == "2018-07-23" | # Could also be 07-16
+         date == "2018-08-21" | # 08-14, 08-28
+         date == "2018-09-13" |   
+         date == "2018-10-24" |
+         date == "2019-05-09" |
+         date == "2019-06-04" |
+         date == "2019-07-09" |
+         date == "2019-08-07" |
+         date == "2019-08-29" |
+         date == "2019-10-09" |
+         #date == "2019-11-26" | #removing this for multi-year analysis
+         date == "2020-04-29" | #Different month, but very close temporally
+         date == "2020-06-04" |
+         date == "2020-07-09" | # Also 06-30 - Tricky
+         date == "2020-08-04" | # Also 08-13 
+         date == "2020-09-01" |
+         date == "2020-10-08")
+            
+#Merge with qu39 and calvert
+micro <- rbind(cal, qu39)
+
+#Dates that were collected on the cusp of a month change - rest of survey was done in following month. Just done for ease of plotting.
+micro <- micro%>%  
+  mutate(month = lubridate::month(date),
+         month = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month)))
+
+micro <- micro %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11)
+
+micro_distinct <- micro %>% 
+  distinct(date, site_id)
+
+
+```
+
+```{r}
+#Could try to limit cryptic species that influence stats. Leaving off for now.
+
+#Only species occurring in 25% of the samples - could try this.
+
+# Counting how many times each species is observed
+micro <- micro %>%
+   group_by(scientificName) %>%
+   mutate(num_occurrence = n())
+
+# removing species that have not been observed at least twice.
+micro <- micro %>%
+  filter(num_occurrence > 2)
+```
+
+```{r}
+#Selecting columns
+micro <- micro %>% 
+  select(date, site_id, group, scientificName, count)
+
+# Because I have some species separated out with identificationRemarks, identificationQualifiers and different resting stages, I sum these. If I don't, then the pivoting in later stages results in columns with combined numbers. I need to decide on best method for this once I have the analysis zeroed in. 
+
+#I could re-merge the qualifiers with the name to separate out some of groups here, especially if they are important, such as the unidentified small dinoflagellates.
+
+#Again, not sure if I want to do this...
+micro <- micro %>%
+  group_by(date, site_id, scientificName) %>%
+  summarize(species_sum = sum(count)) %>%
+  ungroup()
+
+#pivoting longer so species are columns. 
+micro_piv <- micro %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+#Adding date columns
+micro_piv <- micro_piv %>% 
+  mutate(month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  relocate(month, .after = date) %>% 
+  relocate(yday, .after = month)
+
+#Roughly adding seasons - would like to make cosmological seasons
+micro_piv <- micro_piv %>%
+  mutate(season = case_when(month %in% c(12, 1, 2) ~ "winter",
+                            month >= 3 & month <= 6 ~ "spring",
+                            month >= 7 & month <= 9 ~ "summer",
+                            month >= 10 & month <= 11 ~ "autumn",)) %>%
+  relocate(season, .after = month)
+
+micro_piv <- micro_piv %>% 
+  arrange(site_id, date)
+
+#Pulling out species counts for transform and input into clustering and NMDS
+transform <- micro_piv[, 6:ncol(micro_piv)]  
+  
+#Log10 transformation +1 (as per Mahara)
+transform <- log10(transform + 1)
+
+#Performing clustering
+dend_micro <- transform %>% 
+  vegdist("bray") %>% 
+  hclust(method = "average") %>% 
+  as.dendrogram()
+
+
+```
+
+```{r}
+#Be careful as I have been making changes to this in terms of which species and stations to include. Currently, I am only using the 2019 May to November data with QU39 closest dates.
+write_csv(micro_piv, here("outputs", "micro_photo_piv_2018-2020_2.csv"))
+```
+
+
+```{r}
+#Running nmds on entire dataset, without QU39 monthly averaged
+nmds_all <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Decent stress score - 0.14
+
+#Checking stressplot for fit
+# stressplot(nmds_all)
+
+```
+
+```{r}
+#Plotting NMDS
+
+# https://fromthebottomoftheheap.net/2012/04/11/customising-vegans-ordination-plots/
+
+with(micro_piv, levels(as.factor(site_id)))
+
+#Colors for DFO2, KC10 and QCS01
+col_site <- c("red", "green", "blue", "magenta")
+
+
+plot(nmds_all, type = "n")
+
+# , ylim = c(-0.6, 0.6), xlim = c(-0.5, 0.5)
+
+
+with(micro_piv, points(nmds_all, display = "sites", col = "black",
+                      pch = 21, bg = col_site[as.factor(site_id)], cex = 2.2))
+
+# text(example_NMDS, display = "species", scaling = scl, cex = 0.8, col = "darkcyan")
+
+with(micro_piv, legend("topright", legend = levels(as.factor(site_id)), bty = "n",
+                      col = "black", pch = 21, pt.bg = col_site, cex = 1.5))
+
+
+orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
+
+# #Creating dendrogram cutoff for clustering in NMDS
+# grp <- cutree(dend_micro, 4)
+# 
+# # https://stackoverflow.com/questions/12436902/overlaying-clustering-results-on-an-ordination
+# ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
+
+```
+```{r}
+
+#Might be valuable if I downgrade to genus.
+
+# https://www.rpubs.com/RGrieger/545184
+
+nmds.spp.fit <- envfit(nmds_all, transform, permutations = 999)
+head(nmds.spp.fit)
+
+```
+
+
+```{r}
+png(here("figures_new", "Nmds_2018-2020_May-Oct_gt2.png"),
+     width = 800, height = 500)
+
+micro_piv$season = factor(micro_piv$season,
+                          levels = c("spring", "summer", "autumn"))
+
+#displays empty ordination space
+plot(nmds_all, type = "n", ylim = c(-0.5, 0.5), xlim = c(-0.0, 0.5)) 
+
+# , ylim = c(-0.5, 0.5), xlim = c(-0.5, 0.5)
+
+# displays site points where symbols (pch) are different management options and colour (col) are different land uses
+points(nmds_all, display = "sites", col = "black",
+       pch = c(21, 22, 23, 24) [as.factor(micro_piv$season)], 
+       bg = c("blue", "springgreen4", "black", "magenta") [as.factor(micro_piv$site_id)],
+       cex = 3) 
+
+# displays symbol and colour legend
+legend("topright", legend = c(levels(as.factor(micro_piv$season)), 
+                              levels(as.factor(micro_piv$site_id))),
+       pch = c(21, 22, 23, 16, 16, 16, 16),
+       col = c("black", "black", "black", "blue", "springgreen4", "black", "magenta"),
+       bg = c(NA, NA, NA, NA, "blue", "springgreen4", "black", "magenta"),
+       bty = "n", cex = 1.5)
+
+# # displays legend text of stress value
+legend("topleft", "stress = 0.16", bty = "n", cex = 1.5)
+
+orditorp(nmds_all, display = "sites", cex = 1, air = 0.01, col = "white")
+
+# plot(nmds.spp.fit, p.max = 0.001, col = "grey", cex = 1.5)
+
+# orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
+
+# grp <- cutree(dend_micro, 3)
+# ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
+
+# ordihull(nmds_all, groups = micro_piv$season, draw = "polygon", col = NULL,
+#   border = c("gray0", "gray0", "gray48", "gray48"),
+#   lty = c(1, 2, 1, 2),
+#   lwd = 2.5)
+
+
+
+dev.off()
+```
+```{r}
+
+#Distinct list
+
+micro_piv_distinct <- micro_piv %>% 
+  distinct(date, site_id)
+
+```
+
+```{r}
+#test
+
+plot_ordination(nmds_all, 
+                micro_piv)+
+  geom_point(size = 3)+
+  scale_color_continuous(low="blue", high="goldenrod2")+
+  scale_shape_manual(values=c(7,6,16,8))+
+  labs(main="stress .10")+
+  theme(panel.grid=element_blank())
+```
+
+
+
+
+
+```{r}
+#separating treatments for following tests
+season <-  micro_piv$season
+site_id <- micro_piv$site_id
+month <- micro_piv$month
+```
+
+
+
+```{r}
+#ANOSIM test to see if groupings statistically significant
+ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
+ano_site
+
+ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
+ano_month
+
+ano_season = anosim(transform, season, distance = "bray", permutations = 9999)
+ano_season
+```
+
+
+
+
+```{r}
+#Indicator species analysis
+
+#Indicators by season
+inv_season = multipatt(transform, season, func = "r.g",
+                       control = how(nperm = 9999))
+#by site
+inv_site = multipatt(transform, site_id, func = "r.g",
+                       control = how(nperm = 9999))
+#by month
+inv_month = multipatt(transform, month, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_season)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

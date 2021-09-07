@@ -1,0 +1,345 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+```
+
+```{r}
+#Upload data
+#Uploading chemtax data
+chem <- read_xlsx(here("files", "qu39_calvert_combined.xlsx")) 
+
+#Formatting date
+chem <- chem %>% 
+  mutate(date = as.Date(Date))
+
+#Renaming columns
+chem <- select(chem, 
+               date, site_id = Station, cyan = Cyanobacteria, hapto = Hapto,
+               green = `Prasinophytes-3`, cryp = Cryptophytes, 
+               dino = `Dinoflagellates-1`, dict = Dictyo, raph = Raphido,
+               diat = `Diatoms-1`)
+
+#separating out QU39 for date selection
+chem_qu39 <- chem %>% 
+  filter(site_id == "QU39")
+
+#selecting closest dates to Calvert data from QU39
+chem_qu39 <- chem_qu39 %>% 
+  filter(date == "2018-05-29" | #could also be 05-22
+         date == "2018-06-26" |
+         date == "2018-07-23" | # Could also be 07-16
+         date == "2018-08-21" | # 08-14, 08-28
+         date == "2018-09-13" |   
+         date == "2018-10-24" |
+         date == "2019-05-09" |
+         date == "2019-06-04" |
+         date == "2019-07-09" |
+         date == "2019-08-07" |
+         date == "2019-08-29" |
+         date == "2019-10-09" |
+         #date == "2019-11-26" | #removing this for multi-year analysis
+         date == "2020-04-29" | #Different month, but very close temporally
+         date == "2020-06-04" |
+         date == "2020-07-09" | # Also 06-30 - Tricky
+         date == "2020-08-04" | # Also 08-13 
+         date == "2020-09-01" |
+         date == "2020-10-08")
+
+#Merging back into main file with Calvert data
+chem <- chem %>% 
+  filter(!site_id == "QU39")
+
+chem <- rbind(chem, chem_qu39)
+
+#Dates that were collected on the cusp of a month change - rest of survey was done in following month. Just done for ease of plotting.
+chem <- chem %>%  
+  mutate(month = lubridate::month(date),
+         month = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month)))
+
+#
+chem <- chem %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11)
+
+```
+
+
+```{r}
+#Adding date columns
+chem <- chem %>% 
+  mutate(month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  relocate(month, .after = date) %>% 
+  relocate(yday, .after = month)
+
+#filtering for period under investigation
+# chem_month <- chem_month %>% 
+#   filter(date > "2018-01-01" & date < "2021-01-01")
+
+#Roughly adding seasons - would like to make cosmological seasons
+chem <- chem %>%  
+  mutate(season = case_when(month %in% c(12, 1, 2) ~ "winter",
+                            month >= 3 & month <= 6 ~ "spring",
+                            month >= 7 & month <= 9 ~ "summer",
+                            month >= 10 & month <= 11 ~ "autumn",)) %>%
+  relocate(season, .after = month)
+
+chem <- chem %>% 
+  arrange(site_id, date)
+
+
+#Pulling out species counts for tranform and input into clustering and NMDS
+transform <- chem[, 6:13]
+
+#This is how you do relative abundance.
+# transform_rel <- transform %>% 
+#   decostand(method = "total")
+  
+#Log10 transformation +1 (as per Mahara)
+transform <- log10(transform + 1)
+
+#Performing clustering
+dend_bc <- transform %>% 
+  vegdist("bray") %>% 
+  hclust(method = "average") %>% 
+  as.dendrogram()
+```
+
+```{r}
+#Be careful - Currently, I am only using the 2019 May to November data with QU39 closest dates.
+write_csv(chem, here("outputs", "chem_photo_piv_2018-2020.csv"))
+```
+
+
+```{r}
+#Running nmds on entire dataset, without QU39 monthly averaged
+nmds_all <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Checking stressplot for fit
+# stressplot(nmds_all)
+
+```
+
+```{r}
+# https://fromthebottomoftheheap.net/2012/04/11/customising-vegans-ordination-plots/
+
+with(chem, levels(as.factor(site_id)))
+
+col_site <- c("red", "green", "blue", "magenta")
+
+# c("red", "green", "blue", "magenta")
+
+plot(nmds_all, type = "n")
+
+# , ylim = c(-0.6, 0.6), xlim = c(-0.5, 0.5)
+
+with(chem, points(nmds_all, display = "sites", col = "black",
+                      pch = 21, bg = col_site[as.factor(site_id)], cex = 2.2))
+
+# text(example_NMDS, display = "species", scaling = scl, cex = 0.8, col = "darkcyan")
+
+with(chem, legend("bottomleft", legend = levels(as.factor(site_id)), bty = "n",
+                      col = "black", pch = 21, pt.bg = col_site, cex = 1.5))
+
+
+orditorp(nmds_all, display = "sites", cex = 0.70, air = 0.01, col = "white")
+
+# https://stackoverflow.com/questions/12436902/overlaying-clustering-results-on-an-ordination
+
+#Creating dendrogram cutoff for clustering in NMDS
+grp <- cutree(dend_bc, 5)
+
+ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
+#Stress is 0.15
+# Cut dendrogram at 5 branches, but I only see three groupsings here.
+
+
+```
+
+```{r}
+#Might be valuable if I downgrade to genus.
+
+# https://www.rpubs.com/RGrieger/545184
+
+nmds.spp.fit <- envfit(nmds_all, transform, permutations = 999)
+head(nmds.spp.fit)
+```
+
+```{r}
+png(here("figures_new", "Nmds_Chem_2018-2020_May-Oct.png"), 
+    width = 800, height = 500)
+
+chem$season = factor(chem$season,
+                          levels = c("spring", "summer", "autumn"))
+
+#displays empty ordination space
+plot(nmds_all, type = "n") 
+
+#, ylim = c(-0.5, 0.5), xlim = c(-2.0, 2.0)
+
+# displays site points where symbols (pch) are different management options and colour (col) are different land uses
+points(nmds_all, display = "sites", col = "black",
+       pch = c(21, 22, 23) [as.factor(chem$season)], 
+       bg = c("blue", "springgreen4", "black", "magenta") [as.factor(chem$site_id)],
+       cex = 3) 
+
+# displays symbol and colour legend
+legend("topright", legend = c(levels(as.factor(chem$season)), 
+                              levels(as.factor(chem$site_id))),
+       pch = c(21, 22, 23, 16, 16, 16, 16),
+       col = c("black", "black", "black", "blue", "springgreen4", "black", "magenta"),
+       bg = c(NA, NA, NA, "blue", "springgreen4", "black", "magenta"),
+       bty = "n", cex = 1.5)
+
+# # displays legend text of stress value
+legend("topleft", "stress = 0.13", bty = "n", cex = 1.5)
+
+orditorp(nmds_all, display = "sites", cex = 1, air = 0.01, col = "white")
+
+# grp <- cutree(dend_bc, 5)
+
+# ordihull(nmds_all, groups = grp, display = "sites", draw = "polygon")
+
+# ordihull(nmds_all, groups = chem_month$season, draw = "polygon", col = NULL,
+#   border = c("gray0", "gray0", "gray48", "gray48"),
+#   lty = c(1, 2, 1, 2),
+#   lwd = 2.5)
+
+plot(nmds.spp.fit, p.max = 0.001, col = "grey", cex = 1.5)
+
+dev.off()
+```
+
+```{r}
+#Distinct list
+
+chem_distinct <- chem %>% 
+  distinct(date, site_id)
+```
+
+
+
+```{r}
+#separating treatments for following tests
+season <-  chem$season
+site_id <- chem$site_id
+month <- chem$month
+```
+
+
+
+```{r}
+#ANOSIM test to see if groupings statistically significant
+ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
+ano_site
+
+ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
+ano_month
+
+ano_season = anosim(transform, season, distance = "bray", permutations = 9999)
+ano_season
+```
+
+
+
+
+```{r}
+#Indicator species analysis
+
+#Indicators by season
+inv_season = multipatt(transform, season, func = "r.g",
+                       control = how(nperm = 9999))
+#by site
+inv_site = multipatt(transform, site_id, func = "r.g",
+                       control = how(nperm = 9999))
+#by month
+inv_month = multipatt(transform, month, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_site)
+```
+
+
+
+
+
+```{r}
+#Creation of dendrogram using Calvert data
+
+# png(here("figures", "Calvert_qu39_chem_rel_monthly.png"), width = 2200, height = 1000) 
+# 
+# season <- pull(chem_month, season)
+# station <- pull(chem_month, site_id)
+# yday <- pull(chem_month, yday)
+# 
+# 
+# barcolor_season <- colormap(colormap = colormaps$earth, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
+# 
+# barcolor_station <- colormap(colormap = colormaps$jet, nshades = 4, format = "hex", alpha = 1, reverse = FALSE)
+# 
+# barcolor_yday <- colormap(colormap = colormaps$rainbow, nshades = 356, format = "hex", alpha = 1, reverse = FALSE)
+# 
+# 
+# # colormaps$viridis
+# # colormaps$jet
+# # c("#0342ff", "#00bd0d", "#fbff00", "#ff0000")
+# 
+# barcolor_season <- barcolor_season[as.numeric(as.factor(season))]
+# barcolor_station <- barcolor_station[as.numeric(as.factor(station))]
+# barcolor_yday <- barcolor_yday[as.numeric(yday)]
+# 
+# barcolor_full <- cbind(barcolor_season, barcolor_station)
+# colnames(barcolor_full) <- c("season", "station")
+# 
+# #Margins bottom, left, top, right.
+# par(mar=c(5,2,1,2))
+# dend_micro %>%
+#   plot() 
+# 
+# colored_bars(colors = barcolor_full, dend = dend_micro)
+# 
+# 
+# legend("topright", 
+#      legend = c("DFO2" , "KC10" , "QCS01" , "QU39"), 
+#      col = colormap(colormap = colormaps$jet, nshades = 4), 
+#      pch = c(20,20,20,20), bty = "n",  pt.cex = 3, cex = 2 , 
+#      text.col = "black", horiz = FALSE, inset = c(0, 0.1))
+# 
+# legend("right", 
+#      legend = c("Winter" , "Spring" , "Summer" , "Autumn"), 
+#      col = colormap(colormap = colormaps$earth, nshades = 4), 
+#      pch = c(20,20,20,20), bty = "n",  pt.cex = 3, cex = 2 , 
+#      text.col = "black", horiz = FALSE, inset = c(0, 0.1))
+# 
+# # legend("bottomright", 
+# #      legend = c(1:356), 
+# #      col = colormap(colormap = colormaps$rainbow, nshades = 4), 
+# #      pch = c(20,20,4,4,4), bty = "n",  pt.cex = 1.5, cex = 0.8 , 
+# #      text.col = "black", horiz = FALSE, inset = c(0, 0.1))
+# 
+# dev.off()
+```
+
+
+
+
+
+
+
+

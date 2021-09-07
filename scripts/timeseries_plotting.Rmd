@@ -97,7 +97,6 @@ micro_sum_qu39 <- micro %>%
   mutate(sum = replace_na(sum, 0),
          site_id = "QU39") #replace NAs, created by complete, with 0s
 
-
 micro_sum <- rbind(micro_sum_dfo2, micro_sum_kc10, micro_sum_qcs01, micro_sum_qu39)
 ```
 ```{r}
@@ -384,7 +383,8 @@ micro_ds <- micro_sum %>%
 micro_ds_distinct <- micro_ds %>% 
   mutate(month = lubridate::month(date)) %>% 
   filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11) %>%
-  distinct(date, site_id)
+  distinct(date, site_id) %>% 
+  mutate(row_n = row_number())
 
 micro_ds <- rbind(micro_ds, micro_qu39_ds)
 
@@ -474,6 +474,41 @@ fig <-  p1/p2/p3
 ggsave(here("figures_new", "calvert_qu39_2018-2020_micro_box_absolute.png"), fig,
        width = 20, height = 12, dpi = 300)
 ```
+
+```{r}
+# p1 <- micro_ds %>% 
+#   filter(!group == "Unknown_Chlorophyta?" &
+#          !group == "Unknown_Dinophyceae?" &
+#          !group == "Unknown_flagellate" &
+#            date >= "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11) %>% 
+#   mutate(year = lubridate::year(date),
+#          row_n = row_number()) %>% 
+#   ggplot(aes(x = site_id, y = sum, fill = group)) +
+#   geom_bar(position = "stack", stat = "identity", color = "black") +
+#   geom_text(aes(label = row_n, group = site_id),  vjust = -1, data = micro_ds_distinct) +
+#   ylim(y = c(0, 3500000)) +
+#   facet_grid(year ~ month) +
+#   scale_fill_manual(values = color_palette_micro) +
+#   scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+#                               "QU39" = "E")) +
+#   # labs(y = bquote("Abundance (cells" ~ L^-1*")")) +
+#   theme_bw() +
+#   theme(legend.position = "top",
+#         legend.direction = "horizontal",
+#         legend.title = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         axis.title.y = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# 
+# 
+# ggsave(here("figures_new", "calvert_qu39_2018-2020_micro_box_absolute_grid.png"),
+#        width = 20, height = 12, dpi = 300)
+```
+
+
 
 ```{r}
 p1 <- chem_ds %>% 
