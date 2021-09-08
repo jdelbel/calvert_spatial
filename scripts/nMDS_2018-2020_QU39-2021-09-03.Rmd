@@ -269,15 +269,15 @@ micro_piv_distinct <- micro_piv %>%
 ```
 
 ```{r}
-#test
+#test plotting ordination with ggplot - want to try this as way better and more customizable
 
-plot_ordination(nmds_all, 
-                micro_piv)+
-  geom_point(size = 3)+
-  scale_color_continuous(low="blue", high="goldenrod2")+
-  scale_shape_manual(values=c(7,6,16,8))+
-  labs(main="stress .10")+
-  theme(panel.grid=element_blank())
+# plot_ordination(nmds_all, 
+#                 micro_piv)+
+#   geom_point(size = 3)+
+#   scale_color_continuous(low="blue", high="goldenrod2")+
+#   scale_shape_manual(values=c(7,6,16,8))+
+#   labs(main="stress .10")+
+#   theme(panel.grid=element_blank())
 ```
 
 
@@ -321,7 +321,7 @@ inv_site = multipatt(transform, site_id, func = "r.g",
 inv_month = multipatt(transform, month, func = "r.g",
                        control = how(nperm = 9999))
 
-summary(inv_season)
+summary(inv_site)
 ```
 
 

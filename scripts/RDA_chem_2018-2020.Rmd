@@ -25,17 +25,15 @@ ctd_dd <- read_csv(here("outputs", "ctd_dd.csv"))
 #nutrient data
 nuts <- read_csv(here("outputs", "nuts.csv"))
 
-#microscopy data with species as columns - only 2019 May to November and photo species
-micro_piv <- read_csv(here("outputs", "micro_photo_piv_2018-2020_2.csv"))
-
 #turbidity data with offset corrections
 turb_corr <- read_csv(here("outputs", "corrected_turbidity_v1.csv"))
 
-
+#Uploading chemtax
+chem <- read_csv(here("outputs", "chem_photo_piv_2018-2020_2.csv")) 
 
 #Formatting date
-# chem <- chem %>% 
-#   mutate(date = as.Date(Date))
+# chem <- chem %>%
+#   mutate(date = as.Date(date))
 # 
 # #Renaming columns
 # chem <- select(chem, 
@@ -119,40 +117,39 @@ ctd <- ctd_merge %>%
 ```{r}
 #merging using the truncated microscopy data as
 
-#Merging the microscopy data with the physical/chemical data. Here, the microscopy data was already filtered to the 2019 May to November period.
-micro_merge <- micro_piv %>% 
+
+#Merging the chemtax data with the physical/chemical data. Here, the chemtax data was already filtered to the 2019 May to November period. 
+chem_merge <- chem %>% 
   left_join(ctd, by = c("date", "site_id"))
 
 ```
 
 ```{r}
 #Remove rows with NaNs
-micro_merge <- micro_merge %>% 
+chem_merge <- chem_merge %>% 
   drop_na()
 
 #Separating into response variables (CHEMTAX) and Explainatory variables (Environmental)
-resp <- micro_merge[, 6:112]
+resp_chem <- chem_merge[, 6:13]
 
 #Things to add TChla, WSDP, iso depth, FWC...
-expl <- micro_merge[, 113:ncol(micro_merge)]
+expl_chem <- chem_merge[, 14:ncol(chem_merge)]
 ```
 
 ```{r}
 #Hellinger transformation on species data - particularly suited to species abundance data with large range and lots of zeros. Gives low weights to variables with low counts and many zeroes.
-resp.hell <- decostand(resp,'hell')
+resp_chem.hell <- decostand(resp_chem,'hell')
 ```
 
 
 ```{r}
-tbRDA.all <- rda(resp.hell ~ . , data = expl)
+tbRDA_chem.all <- rda(resp_chem.hell ~ . , data = expl_chem)
 
-tbRDA.all
+tbRDA_chem.all
 
-anova(tbRDA.all)
+anova(tbRDA_chem.all)
 
-adjR2.tbrda <- RsquareAdj (tbRDA.all)$adj.r.squared
-
-adjR2.tbrda
+adjR2_chem.tbrda <- RsquareAdj (tbRDA_chem.all)$adj.r.squared
 
 # Variables explain 13% of the variance
 # RDA1 - 8.6%
@@ -165,7 +162,7 @@ adjR2.tbrda
 
 ```{r}
 #Using DCA on chemtax data to test whether linear or unimodal model is appropriate
-DCA <- decorana(resp.hell)
+DCA <- decorana(resp_chem.hell)
 DCA
 #As the length of the first DCA is < 3 S.D. - the dataset is homogenous and a linear model is appropriate. The score went down after applying the Hellinger Transformation. Proceed with RDA.
 
@@ -174,20 +171,21 @@ DCA
 ```{r}
 #Forward selection RDA used to remove environmental variables that do not show significance. https://wiki.qcbs.ca/r_workshop10
 # ?ordiR2step
-ordiR2step(rda(resp.hell ~ 1, data = expl), scope = formula(tbRDA.all),
-           direction = "forward", R2scope = TRUE, pstep = 1000)
+ordiR2step(rda(resp_chem.hell ~ 1, data = expl_chem), 
+           scope = formula(tbRDA_chem.all), direction = "forward",
+           R2scope = TRUE, pstep = 1000)
 
 #Only salinitity is significant to 0.004
 ```
 
 ```{r}
 #Trying different approach for ordiR2step from https://www.davidzeleny.net/anadat-r/doku.php/en:forward_sel_examples - same result as my other test
-tb_rda.vasc.0 <- rda (resp.hell ~ 1, data = expl)
+tb_rda.vasc.0 <- rda (resp_chem.hell ~ 1, data = expl_chem)
 
-tb_rda.vasc.all <- rda (resp.hell ~ ., data = expl)
+tb_rda.vasc.all <- rda (resp_chem.hell ~ ., data = expl_chem)
 
 sel.osR2 <- ordiR2step (tb_rda.vasc.0, scope = formula (tb_rda.vasc.all), 
-                        R2scope = adjR2.tbrda, direction = 'forward', 
+                        R2scope = adjR2_chem.tbrda, direction = 'forward', 
                         permutations = 999)
 
 sel.osR2$anova
@@ -195,19 +193,19 @@ sel.osR2$anova
 sel.osR2_adj <- sel.osR2
 
 sel.osR2_adj$anova$`Pr(>F)` <- p.adjust (sel.osR2$anova$`Pr(>F)`, 
-                                         method = 'holm', n = ncol (expl))
+                                         method = 'holm', n = ncol (expl_chem))
 
 sel.osR2_adj$anova
 
-#Again, only salinity is significant
+
 ```
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif <- subset(expl, select = c(sal, temp))
+env.signif <- subset(expl_chem, select = c(temp, po4))
 
 #RDA using significant variables
-rda.signif <- rda(resp.hell ~ . ,data = env.signif)
+rda.signif <- rda(resp_chem.hell ~ . ,data = env.signif)
 rda.signif
 summary(rda.signif, display = NULL)
 
@@ -229,6 +227,14 @@ anova(rda.signif, by = "terms")
 ```
 ```{r}
 
+#Trying to colour the black dots according to thier season
+levels(chem_merge$site_id) <- c("DFO2","KC10","QCS01","QU39")
+
+eco <- chem_merge$site_id
+
+bg <- c("#01BFFF","#A7FC01","#FFFE00","#FF7F00")
+
+
 #Trying the same thing, but bringing in arrows from previous plot - trying scaling 2
 #pdf(file = "rda_s2.pdf", width = 6.5, height = 5, pointsize = 2)
 
@@ -241,7 +247,7 @@ plot(rda.signif, scaling = 2, type = "none", xlab = c("RDA1 (6%)"),
 
 points(scores(rda.signif, display = 'sites', choices = c(1, 2), scaling = 2),
        pch = 21, cex = 2.0,
-       bg = c("blue", "springgreen4", "black", "magenta")[as.factor(micro_merge$site_id)])
+       bg = c("blue", "springgreen4", "black", "magenta")[as.factor(chem_merge$site_id)])
 
 text(rda.signif, scaling = 2, display = "bp", col = "blue",cex = 0.8, font = 2)
 
@@ -262,7 +268,7 @@ text(scores(rda.signif, display = "species", choices = c(1), scaling = 2),
 # legend("topleft", legend = levels(eco), bty ="n", col="gray32", pch = 21,
 #        cex = 1.5, pt.bg = bg)
 
-legend("topright", legend = c(levels(as.factor(micro_merge$site_id))),
+legend("topright", legend = c(levels(as.factor(chem_merge$site_id))),
        pch = 21,
        pt.bg = c("blue", "springgreen4", "black", "magenta"),
        bty = "n", cex = 1.5)

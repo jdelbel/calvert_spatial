@@ -122,7 +122,7 @@ dend_bc <- transform %>%
 
 ```{r}
 #Be careful - Currently, I am only using the 2019 May to November data with QU39 closest dates.
-write_csv(chem, here("outputs", "chem_photo_piv_2018-2020.csv"))
+write_csv(chem, here("outputs", "chem_photo_piv_2018-2020_2.csv"))
 ```
 
 
