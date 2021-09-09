@@ -238,8 +238,8 @@ bg <- c("#01BFFF","#A7FC01","#FFFE00","#FF7F00")
 #Trying the same thing, but bringing in arrows from previous plot - trying scaling 2
 #pdf(file = "rda_s2.pdf", width = 6.5, height = 5, pointsize = 2)
 
-plot(rda.signif, scaling = 2, type = "none", xlab = c("RDA1 (6%)"),
-               ylab = c("RDA2 (0%)"), xlim = c(-0.5, 0.5), ylim = c(-1.1, 1.1))
+plot(rda.signif, scaling = 2, type = "none", xlab = c("RDA1 (38%)"),
+               ylab = c("RDA2 (2%)"), xlim = c(-0.5, 0.5), ylim = c(-1.1, 1.1))
 
 # points(rda.signif, display = 'sites', pch = 21, cex = 2.2,
 #        col = rgb(red = 1, green = 1, blue = 1, alpha = 0.5), scaling = 2,
@@ -252,17 +252,16 @@ points(scores(rda.signif, display = 'sites', choices = c(1, 2), scaling = 2),
 text(rda.signif, scaling = 2, display = "bp", col = "blue",cex = 0.8, font = 2)
 
 #So since distance doesn't matter, I can make arrows longer with scaling 2? 
-arrows(0,0, scores(rda.signif, display = "species", choices = c(1),
-                   scaling = 2), scores(rda.signif, display = "species",
-                                            choices = c(2), scaling = 2),
-       col = "black", length = 0)
+arrows(0,0, scores(rda.signif, display = "species", choices = c(1), scaling = 2)*2, 
+            scores(rda.signif, display = "species", choices = c(2), scaling = 2)*2,
+            col = "grey", length = 0)
 
 text(rda.signif, scaling = 2, display = "bp", col = "blue",cex = 0.8, font = 2)
 
-text(scores(rda.signif, display = "species", choices = c(1), scaling = 2),
-     scores(rda.signif, display = "species", choices = c(2), scaling = 2),
+text(scores(rda.signif, display = "species", choices = c(1), scaling = 2)*2.3,
+     scores(rda.signif, display = "species", choices = c(2), scaling = 2)*2.3,
      labels = rownames(scores(rda.signif, display = "species", scaling = 2)),
-     col = "black", cex = 0.8, font = 2)
+     col = "grey", cex = 1, font = 2)
 
 
 # legend("topleft", legend = levels(eco), bty ="n", col="gray32", pch = 21,
