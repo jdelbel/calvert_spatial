@@ -14,6 +14,15 @@ library(here)
 library(vegan)
 library(adespatial)
 library(ggord)
+
+#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
+
+#For plotting with ggplot2
+
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
 ```
 
 ```{r}
@@ -278,12 +287,6 @@ resp.hell <- decostand(resp,'hell')
 ```
 
 ```{r}
-# dbRDA <- capscale(mont.spec.matrix.27 ~ , data=shannon.montast.env.site, distance = "bray")
-```
-
-
-
-```{r}
 tbRDA.all <- rda(resp.hell ~ . , data = expl)
 
 tbRDA.all
@@ -294,13 +297,16 @@ adjR2.tbrda <- RsquareAdj (tbRDA.all)$adj.r.squared
 
 adjR2.tbrda
 
-# Variables explain 13% of the variance
-# RDA1 - 8.6%
-# RDA2 - 2.7%
-# PCA1 - 8.2%
-# PCA2 - 2.0%
+# Variables explain 41% of the variance
+#Constrained Variance = 43.46%
+# RDA1 - 27.9%
+# RDA2 - 6.4%
+# PCA1 - 13.0%%
+# PCA2 - 6.6%
 
-#Global model significant to 0.01 
+#r2 = 0.32
+
+#Global model significant to 0.001 
 ```
 ```{r}
 constrained_eig <- tbRDA.all$CCA$eig/tbRDA.all$tot.chi*100
@@ -319,21 +325,11 @@ ordiplot (tbRDA.all)
 #Using DCA on chemtax data to test whether linear or unimodal model is appropriate
 DCA <- decorana(resp.hell)
 DCA
+
+#2.4505
+
 #As the length of the first DCA is < 3 S.D. - the dataset is homogenous and a linear model is appropriate. The score went down after applying the Hellinger Transformation. Proceed with RDA.
 
-```
-```{r}
-sel.fs <- forward.sel (Y = resp.hell, X = expl, adjR2thresh = adjR2.tbrda)
-sel.fs
-```
-
-```{r}
-#Forward selection RDA used to remove environmental variables that do not show significance. https://wiki.qcbs.ca/r_workshop10
-# ?ordiR2step
-ordiR2step(rda(resp.hell ~ 1, data = expl), scope = formula(tbRDA.all),
-           direction = "forward", R2scope = TRUE, pstep = 1000)
-
-#Only salinitity is significant to 0.004
 ```
 
 ```{r}
@@ -355,7 +351,10 @@ sel.osR2_adj$anova$`Pr(>F)` <- p.adjust (sel.osR2$anova$`Pr(>F)`,
 
 sel.osR2_adj$anova
 
-#Again, only salinity is significant
+#temp = 0.008
+#po4 = 0.008
+#sal = 0.008
+#no2 = 0.025
 ```
 
 ```{r}
@@ -365,22 +364,27 @@ env.signif <- subset(expl, select = c(temp, po4, sal, no2))
 #RDA using significant variables
 rda.signif <- rda(resp.hell ~ . ,data = env.signif)
 rda.signif
-summary(rda.signif, display = NULL)
+rda.sign.sum <- summary(rda.signif)
+
+#Total = 41.46%
+#Constrained = 37.5%
+#RDA1 = 27.43%
+#RDA2 = 6.1%
 
 #Adjusted R2 for the 1 significant variables
-#AdjR2 = 0.21
+#AdjR2 = 0.319
 (R2adj <- RsquareAdj(rda.signif)$adj.r.squared)
 
 #ANOVA for testing significance of model and individual axes #Can do ANOVA by terms...
 #Entire model = 0.001***
 #RDA1 = 0.001***
-#RDA2 = 0.007**
-#RDA3 = 0.028*
+#RDA2 = 0.001***
+
 # ?anova.cca
 anova.cca(rda.signif, step = 1000)
 anova.cca(rda.signif, step = 1000, by = "axis")
 
-#All significant - already shown in forward rda, but easier to see
+#All significant - already shown in forward rda, but easier to see (Not corrected)
 anova(rda.signif, by = "terms")
 ```
 ```{r}
@@ -425,10 +429,10 @@ legend("topright", legend = c(levels(as.factor(micro_merge$site_id))),
 
 ```
 ```{r}
-png(here("figures_new", "rda_micro.png"),
-     width = 800, height = 500)
+# png(here("figures_new", "rda_micro.png"),
+#      width = 800, height = 500)
 
-plot(rda.signif, scaling = 2, type = "none", xlab = c("RDA1 (28%)"),
+plot_s2 <- plot(rda.signif, scaling = 2, type = "none", xlab = c("RDA1 (28%)"),
                ylab = c("RDA2 (5%)"))
 
 # , xlim = c(-0.01, 0.1), ylim = c(-1.1, 1.1)
@@ -463,8 +467,86 @@ legend("topright", legend = c(levels(as.factor(micro_merge$site_id))),
        pt.bg = c("blue", "springgreen4", "black", "magenta"),
        bty = "n", cex = 1.5)
 
-dev.off()
+# dev.off()
 ```
+
+
+```{r}
+#Trying a ggplot version -  didn't really work
+
+# https://programmer.ink/think/r-redundancy-analysis-rda-ggplot2.html
+# https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html
+
+#Extracting site locations
+sites_loc <- sites.long(plot_s2, env.data = env.signif)
+meta <- micro_merge[,1:5]
+sites_loc <- cbind(meta, sites_loc)
+head(sites_loc)
+
+#Species location in ordination
+species_loc <- species.long(plot_s2)
+species_loc
+
+# spec.envfit <- envfit(plot2, env = env.signif)
+# spec.data.envfit <- data.frame(r=spec.envfit$vectors$r, p=spec.envfit$vectors$pvals)
+# species.long2 <- species.long(plot2, spec.data=spec.data.envfit)
+# species.long2
+
+#I think this is the axes scores, and I use another metod for this.
+axis.long <- axis.long(rda.signif, choices = c(1, 2))
+axis.long
+
+env_loc <-  as.data.frame(rda.sign.sum$biplot[,1:2])
+
+sp_loc <-  as.data.frame(rda.sign.sum$species[,1:2])
+
+ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc, aes(x = axis1, y = axis2, fill = site_id,
+                                   shape = season), 
+             size = 4, alpha = 0.7) +
+  scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  geom_segment(data = env_loc, aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
+                arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
+                              type = "closed"),
+                linetype = 1, size = 0.6, colour = "blue") +
+  geom_segment(data = sp_loc, aes(x = 0, y = 0, xend = RDA1, yend = RDA2),
+                 arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
+                               type = "closed"),
+               linetype = 1, size = 0.6, colour = "red") +
+  geom_text_repel(data = sp_loc,aes(RDA1, RDA2, label = row.names(sp_loc))) +
+  geom_text_repel(data = env_loc , aes(RDA1, RDA2,label = row.names(env_loc))) +
+  labs(x = paste("RDA 1 (", format(100 *rda.sign.sum$cont[[1]][2,1], digits = 3),
+               "%)", sep = ""),
+       y = paste("RDA 2 (", format(100 *rda.sign.sum$cont[[1]][2,2], digits = 2),
+               "%)", sep = "")) +
+ 
+  # coord_fixed(ratio = 1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.position = c(0.92, 0.73),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 10)) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  labs(fill = "Station", shape = "Season")
+
+ggsave(here("figures_new", "rda_micro_ggplot.png"),
+       width = 6.2, height = 5, dpi = 300)
+```
+
+
+
+
+
+
 
 ```{r}
 pl <- plot(rda.signif, scaling=2, main="Triplot RDA", type="none", xlab=c("RDA1"), ylab=c("RDA2"), 

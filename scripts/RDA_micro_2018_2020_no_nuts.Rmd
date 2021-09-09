@@ -14,6 +14,15 @@ library(here)
 library(vegan)
 library(adespatial)
 library(ggord)
+
+#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
+
+#For plotting with ggplot2
+
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
 ```
 
 ```{r}
@@ -261,8 +270,12 @@ micro_merge <- micro_piv %>%
 ```
 
 ```{r}
-#Remove rows with NaNs
-micro_merge <- micro_merge %>% 
+#Removing nutrient columns
+micro_merge <- micro_merge[,1:132]
+
+
+#Remove rows with NaNs - some data with missing CTD - investigate
+micro_merge <- micro_merge %>%
   drop_na()
 
 #Separating into response variables (CHEMTAX) and Explainatory variables (Environmental)
@@ -277,13 +290,9 @@ expl <- micro_merge[, 128:ncol(micro_merge)]
 resp.hell <- decostand(resp,'hell')
 ```
 
-```{r}
-# dbRDA <- capscale(mont.spec.matrix.27 ~ , data=shannon.montast.env.site, distance = "bray")
-```
-
-
 
 ```{r}
+#Running RDA on global model
 tbRDA.all <- rda(resp.hell ~ . , data = expl)
 
 tbRDA.all
@@ -294,13 +303,13 @@ adjR2.tbrda <- RsquareAdj (tbRDA.all)$adj.r.squared
 
 adjR2.tbrda
 
-# Variables explain 13% of the variance
-# RDA1 - 8.6%
-# RDA2 - 2.7%
-# PCA1 - 8.2%
-# PCA2 - 2.0%
+#Total model = 38.86%
+#Constrained = 25.91%
+#RDA1 = 18.27%
+#RDA2 = 4.17%
 
-#Global model significant to 0.01 
+#Both constrained axes less than unconstrained
+
 ```
 ```{r}
 constrained_eig <- tbRDA.all$CCA$eig/tbRDA.all$tot.chi*100
@@ -322,19 +331,7 @@ DCA
 #As the length of the first DCA is < 3 S.D. - the dataset is homogenous and a linear model is appropriate. The score went down after applying the Hellinger Transformation. Proceed with RDA.
 
 ```
-```{r}
-sel.fs <- forward.sel (Y = resp.hell, X = expl, adjR2thresh = adjR2.tbrda)
-sel.fs
-```
 
-```{r}
-#Forward selection RDA used to remove environmental variables that do not show significance. https://wiki.qcbs.ca/r_workshop10
-# ?ordiR2step
-ordiR2step(rda(resp.hell ~ 1, data = expl), scope = formula(tbRDA.all),
-           direction = "forward", R2scope = TRUE, pstep = 1000)
-
-#Only salinitity is significant to 0.004
-```
 
 ```{r}
 #Trying different approach for ordiR2step from https://www.davidzeleny.net/anadat-r/doku.php/en:forward_sel_examples - same result as my other test
@@ -355,28 +352,24 @@ sel.osR2_adj$anova$`Pr(>F)` <- p.adjust (sel.osR2$anova$`Pr(>F)`,
 
 sel.osR2_adj$anova
 
-#Again, only salinity is significant
+
 ```
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif <- subset(expl, select = c(temp, po4, sal, no2))
+env.signif <- subset(expl, select = c(temp, dr))
 
 #RDA using significant variables
 rda.signif <- rda(resp.hell ~ . ,data = env.signif)
 rda.signif
-summary(rda.signif, display = NULL)
+ii <- summary(rda.signif)
 
 #Adjusted R2 for the 1 significant variables
 #AdjR2 = 0.21
 (R2adj <- RsquareAdj(rda.signif)$adj.r.squared)
 
 #ANOVA for testing significance of model and individual axes #Can do ANOVA by terms...
-#Entire model = 0.001***
-#RDA1 = 0.001***
-#RDA2 = 0.007**
-#RDA3 = 0.028*
-# ?anova.cca
+
 anova.cca(rda.signif, step = 1000)
 anova.cca(rda.signif, step = 1000, by = "axis")
 
@@ -425,11 +418,11 @@ legend("topright", legend = c(levels(as.factor(micro_merge$site_id))),
 
 ```
 ```{r}
-png(here("figures_new", "rda_micro.png"),
-     width = 800, height = 500)
+# png(here("figures_new", "rda_micro_no_nuts.png"),
+#      width = 800, height = 500)
 
-plot(rda.signif, scaling = 2, type = "none", xlab = c("RDA1 (28%)"),
-               ylab = c("RDA2 (5%)"))
+plot2 <- plot(rda.signif, scaling = 2, type = "none", xlab = c("RDA1 (16%)"),
+               ylab = c("RDA2 (3%)"))
 
 # , xlim = c(-0.01, 0.1), ylim = c(-1.1, 1.1)
 
@@ -463,8 +456,65 @@ legend("topright", legend = c(levels(as.factor(micro_merge$site_id))),
        pt.bg = c("blue", "springgreen4", "black", "magenta"),
        bty = "n", cex = 1.5)
 
-dev.off()
+# dev.off()
 ```
+
+```{r}
+#Trying a ggplot version -  didn't really work
+
+# https://programmer.ink/think/r-redundancy-analysis-rda-ggplot2.html
+# https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html
+
+#Extracting site locations
+sites.long2 <- sites.long(plot2, env.data = env.signif)
+meta <- micro_merge[,5]
+sites.long2 <- cbind(meta, sites.long2)
+head(sites.long2)
+
+species.long2 <- species.long(plot2)
+species.long2
+
+spec.envfit <- envfit(plot2, env = env.signif)
+spec.data.envfit <- data.frame(r=spec.envfit$vectors$r, p=spec.envfit$vectors$pvals)
+species.long2 <- species.long(plot2, spec.data=spec.data.envfit)
+species.long2
+
+
+axis.long2 <- axis.long(rda.signif, choices = c(1, 2))
+axis.long2
+
+yz = as.data.frame(ii$biplot[,1:2])
+
+sp=as.data.frame(ii$species[,1:2])
+
+
+
+ggplot() + 
+    geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+    geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+    xlab(axis.long2[1, "label"]) +
+    ylab(axis.long2[2, "label"]) +  
+    scale_x_continuous(sec.axis = dup_axis(labels=NULL, name=NULL)) +
+    scale_y_continuous(sec.axis = dup_axis(labels=NULL, name=NULL)) +    
+    geom_point(data = sites.long2, 
+               aes(x = axis1, y = axis2, color = site_id), 
+               size = 5) +
+      geom_segment(data = yz,aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
+                arrow = arrow(angle=22.5,length = unit(0.35,"cm"),
+                              type = "closed"),linetype=1, size=0.6,colour = "blue") +
+  geom_segment(data = sp,aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
+                 arrow = arrow(angle=22.5,length = unit(0.35,"cm"),
+                               type = "closed"),linetype=1, size=0.6,colour = "red")+
+  geom_text_repel(data = yz , aes(RDA1,RDA2,label=row.names(yz)))+
+         labs(x=paste("RDA 1 (", format(100 *ii$cont[[1]][2,1], digits=2), "%)", sep=""),
+              y=paste("RDA 2 (", format(100 *ii$cont[[1]][2,2], digits=2), "%)", sep=""))+
+  
+  ggsci::scale_colour_npg() +
+    coord_fixed(ratio = 1) +
+  theme_bw()
+```
+
+
 
 ```{r}
 pl <- plot(rda.signif, scaling=2, main="Triplot RDA", type="none", xlab=c("RDA1"), ylab=c("RDA2"), 
