@@ -588,13 +588,17 @@ ggsave(here("figures", "deltaRho_box_ts.png"),
        fig, width = 16, height = 12, dpi=300)
 ```
 ```{r}
-#Separating delta_rho out with monthly boxplot and timeseries
+#Separating N2 out with monthly boxplot and timeseries
+test <- ctd %>% 
+  group_by(cast_pk) %>% 
+  filter(N2 == max(N2))
+
+
 p1 <- ctd %>% 
   group_by(cast_pk) %>% 
-  mutate(max_bv = max(N2)) %>% 
+  filter(N2 == max(N2)) %>% 
   ungroup() %>% 
-  distinct(cast_pk, max_bv, .keep_all = TRUE) %>%
-  ggplot(aes(x = as.factor(month), y = max_bv, fill = station)) +
+  ggplot(aes(x = as.factor(month), y = N2, fill = station)) +
   geom_jitter(aes(fill = station), position = position_jitterdodge(), 
               pch = 21, color = "black", size = 4, alpha = 0.5) +
   geom_boxplot(position = position_dodge(preserve = "single")) +
@@ -610,10 +614,27 @@ p1 <- ctd %>%
 
 p2 <- ctd %>% 
   group_by(cast_pk) %>% 
-  mutate(max_bv = max(N2)) %>% 
+  filter(N2 == max(N2)) %>% 
   ungroup() %>% 
-  distinct(cast_pk, max_bv, .keep_all = TRUE) %>%
-  ggplot(aes(x = date, y = max_bv, fill = station)) +
+  ggplot(aes(x = as.factor(month), y = pres, fill = station)) +
+  geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "pressure",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p3 <- ctd %>% 
+  group_by(cast_pk) %>% 
+  filter(N2 == max(N2)) %>% 
+  ungroup() %>%  
+  ggplot(aes(x = date, y = N2, fill = station)) +
   geom_line(aes(color = station), size = 1.5) +
   geom_point(size = 4, pch = 21, color = "black") +
   # coord_cartesian(ylim = c(0, 25)) +
@@ -625,10 +646,27 @@ p2 <- ctd %>%
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
 
-fig <- p1/p2
+p4 <- ctd %>% 
+  group_by(cast_pk) %>% 
+  filter(N2 == max(N2)) %>% 
+  ungroup() %>%  
+  ggplot(aes(x = date, y = pres, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "pressure",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
 
-ggsave(here("figures", "maxN2_box_ts.png"), 
-       fig, width = 16, height = 12, dpi=300)
+
+fig <- p1 + p2 + p3 + p4 
+
+ggsave(here("figures_new", "box_maxN2-depth_2.png"), 
+       fig, width = 18, height = 12, dpi=300)
 ```
 
 

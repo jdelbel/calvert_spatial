@@ -284,7 +284,7 @@ ctd <- ctd %>%
 micro_ctd <- micro_piv %>% 
   left_join(ctd, by = c("date", "site_id"))
 
-env <- micro_ctd[,104:108]
+env <- micro_ctd[,104:111]
 
 en = envfit(nmds_all, env, permutations = 999, na.rm = TRUE)
 
@@ -295,7 +295,7 @@ en_coord_cont <- as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
 #Can't figure out how to add these yet. Look into it as would be cool.
 sp_cont <- as.data.frame(scores(nmds.spp.fit, "vectors")) * ordiArrowMul(en)
 
-en_coord_cont <- en_coord_cont[1:2,]
+en_coord_cont <- en_coord_cont[c(1:2, 7),]
 ```
 
 
@@ -349,8 +349,8 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
   labs(fill = "Station", shape = "Season") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-ggsave(here("figures_new", "nmds_micro_ggplot.png"),
-       width = 6.2, height = 4, dpi = 300)
+ggsave(here("figures_new", "nmds_micro_ggplot_nuts.png"),
+       width = 6.2, height = 4.5, dpi = 300)
 ```
 
 

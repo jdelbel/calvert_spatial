@@ -119,8 +119,8 @@ write_csv(ctd_merge, here("outputs", "ctd_merge.csv"))
 
 #Selecting only Size fractions, checking for duplicates, calculating relative contributions of each size fraction
 chl <- chl %>% 
-  filter(!filter_type == "Bulk GF/F" & (chla_flag == "AV" | chla_flag == "ADL" |
-                                          is.na(chla_flag))) %>% 
+  filter(chla_flag == "AV" | chla_flag == "ADL" |
+           is.na(chla_flag)) %>% 
   select(date, site_id, filter_type, chla, chla_flag) %>% 
   group_by(date, site_id) %>% 
   mutate(n = n(),
@@ -130,8 +130,8 @@ chl <- chl %>%
 
 #Pivoting wider for joining with other data
 chl_wide <- chl %>% 
-  select(date, site_id, filter_type, chl_per) %>% 
-  pivot_wider(names_from = filter_type, values_from = chl_per)
+  select(date, site_id, filter_type, chla) %>% 
+  pivot_wider(names_from = filter_type, values_from = chla)
 
 chl_qu39 <- chl_wide %>%
   filter(site_id == "QU39") %>% 
@@ -316,8 +316,14 @@ micro_piv <- micro_piv %>%
 micro_merge <- micro_piv %>% 
   left_join(ctd, by = c("date", "site_id"))
 
-# test <- micro_merge %>% 
-#   left_join(chl_wide, by = c("date", "site_id"))
+#Only keeping 2um SF as was overwhelming everything else
+chl_wide <- chl_wide %>%
+  select(date, site_id, GFF_chl = `GF/F`, Chl = `Bulk GF/F`)
+
+
+#Merging with Chl data
+micro_merge <- micro_merge %>% 
+   left_join(chl_wide, by = c("date", "site_id"))
 
 ```
 
@@ -350,13 +356,13 @@ adjR2.tbrda <- RsquareAdj (tbRDA.all)$adj.r.squared
 adjR2.tbrda
 
 # Variables explain 41% of the variance
-#Constrained Variance = 43.46%
-# RDA1 - 27.9%
-# RDA2 - 6.4%
-# PCA1 - 13.0%%
-# PCA2 - 6.6%
+#Constrained Variance = 54.73.46%
+# RDA1 - 
+# RDA2 - 
+# PCA1 - 
+# PCA2 - 
 
-#r2 = 0.32
+#r2 = 0.41
 
 #Global model significant to 0.001 
 ```
@@ -378,7 +384,7 @@ ordiplot (tbRDA.all)
 DCA <- decorana(resp.hell)
 DCA
 
-#2.4505
+#2.4693
 
 #As the length of the first DCA is < 3 S.D. - the dataset is homogenous and a linear model is appropriate. The score went down after applying the Hellinger Transformation. Proceed with RDA.
 
@@ -411,13 +417,14 @@ sel.osR2_adj$anova
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif <- subset(expl, select = c(temp, po4, sal, no2))
+env.signif <- subset(expl, select = c(temp, po4, dr, GFF, sal, no2))
 
 #RDA using significant variables
 rda.signif <- rda(resp.hell ~ . ,data = env.signif)
 rda.signif
 rda.sign.sum <- summary(rda.signif)
 
+rda.sign.sum
 #Total = 41.46%
 #Constrained = 37.5%
 #RDA1 = 27.43%
@@ -590,7 +597,7 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Station", shape = "Season")
 
-ggsave(here("figures_new", "rda_micro_ggplot.png"),
+ggsave(here("figures_new", "rda_micro_ggplot_Chl.png"),
        width = 6.2, height = 5, dpi = 300)
 ```
 
