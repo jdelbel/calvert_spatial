@@ -14,6 +14,7 @@ library(here)
 library(vegan)
 library(adespatial)
 library(ggord)
+library(fuzzySim)
 
 #From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
 
@@ -278,6 +279,10 @@ micro <- micro %>%
 micro_distinct <- micro %>% 
   distinct(date, site_id)
 
+#Annoying
+spCodes(micro$scientificName, nchar.gen = 8, nchar.sp = 4, nchar.ssp = 0, 
+sep.species = " ", sep.spcode = ".")
+
 # micro <- micro %>% 
 #   filter(!site_id == "QU39")
 
@@ -302,6 +307,9 @@ micro <- micro %>%
 #Selecting columns
 micro <- micro %>% 
   select(date, site_id, group, scientificName, count)
+
+
+  
 
 # Because I have some species separated out with identificationRemarks, identificationQualifiers and different resting stages, I sum these. If I don't, then the pivoting in later stages results in columns with combined numbers. I need to decide on best method for this once I have the analysis zeroed in. 
 
