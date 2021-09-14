@@ -1,0 +1,388 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(here)
+```
+
+```{r}
+#Upload data
+#Uploading chemtax data
+chem <- read_xlsx(here("files", "qu39_calvert_combined.xlsx")) 
+
+#Formatting date
+chem <- chem %>% 
+  mutate(date = as.Date(Date))
+
+#Renaming columns
+chem <- select(chem, 
+               date, site_id = Station, cyan = Cyanobacteria, hapto = Hapto,
+               green = `Prasinophytes-3`, cryp = Cryptophytes, 
+               dino = `Dinoflagellates-1`, dict = Dictyo, raph = Raphido,
+               diat = `Diatoms-1`)
+
+#separating out QU39 for date selection
+chem_qu39 <- chem %>% 
+  filter(site_id == "QU39")
+
+#selecting closest dates to Calvert data from QU39
+chem_qu39 <- chem_qu39 %>% 
+  filter(date == "2018-05-29" | #could also be 05-22
+         date == "2018-06-26" |
+         date == "2018-07-23" | # Could also be 07-16
+         date == "2018-08-21" | # 08-14, 08-28
+         date == "2018-09-13" |   
+         date == "2018-10-24" |
+         date == "2019-05-09" |
+         date == "2019-06-04" |
+         date == "2019-07-09" |
+         date == "2019-08-07" |
+         date == "2019-08-29" |
+         date == "2019-10-09" |
+         #date == "2019-11-26" | #removing this for multi-year analysis
+         date == "2020-04-29" | #Different month, but very close temporally
+         date == "2020-06-04" |
+         date == "2020-07-09" | # Also 06-30 - Tricky
+         date == "2020-08-04" | # Also 08-13 
+         date == "2020-09-01" |
+         date == "2020-10-08")
+
+#Merging back into main file with Calvert data
+chem <- chem %>% 
+  filter(!site_id == "QU39")
+
+chem <- rbind(chem, chem_qu39)
+
+#Dates that were collected on the cusp of a month change - rest of survey was done in following month. Just done for ease of plotting.
+chem <- chem %>%  
+  mutate(month = lubridate::month(date),
+         month = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month)))
+
+#Selecting pertinent months
+chem <- chem %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11)
+```
+
+```{r}
+#Upload data
+#Uploading chemtax data
+pigs <- read_xls(here("files", "calvert_chemtax.xls"), sheet = "Data", 
+                      range = "B4:V55")
+
+#Removing columns I dont want.
+pigs <- pigs %>% 
+  select(!c(`Sample #`, flag, depth)) %>% 
+  rename(date = Date, site_id = Station)
+
+pigs$date <- as.Date(pigs$date)
+
+#Dates that were collected on the cusp of a month change - rest of survey was done in following month. Just done for ease of plotting.
+pigs <- pigs %>%  
+  mutate(month = lubridate::month(date),
+         month = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month)))
+
+#Selecting pertinent months
+pigs <- pigs %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11)
+
+#Calculating TChla ratios
+
+```
+
+
+```{r}
+# Adding date columns
+chem <- chem %>%
+  mutate(year = lubridate::year(date)) 
+
+#Pivoting for tidy
+chem_tidy <- chem %>% 
+  pivot_longer(c(cyan, hapto, green, cryp, dino, dict, raph, diat),
+                 names_to = "phyto_group", values_to = "TChla")
+
+#Calculating Relative abundance.
+chem_tidy <- chem_tidy %>% 
+  group_by(date, site_id) %>% 
+  mutate(total_Tchla = sum(TChla)) %>% 
+  ungroup() %>% 
+  mutate(rel_bio = TChla/total_Tchla)
+
+```
+
+```{r}
+#Adding date columns
+pigs <- pigs %>%
+  mutate(year = lubridate::year(date)) 
+
+#Pivoting for tidy
+pigs_tidy <- pigs %>% 
+  pivot_longer(c(chlc3:chl_b),
+                 names_to = "pig_type", values_to = "conc")
+```
+
+
+```{r}
+#Order phytoplankton groups roughly from smallest to largest - create order list
+order_chem <- c("cyan", "hapto", "green", "cryp",
+                   "dino", "raph", "dict", "diat")
+
+#Chemtax - Specify order of phyto groups for figures
+chem_tidy <- arrange(mutate(chem_tidy,
+                                phyto_group = factor(phyto_group,
+                                levels = order_chem)))
+
+chem_tidy <- chem_tidy %>% 
+  arrange(date, phyto_group)
+
+```
+
+```{r}
+chem_tidy %>% 
+  ggplot(aes(x = month, y = TChla, color = as.factor(year))) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_grid(fct_rev(phyto_group) ~ site_id, scales = "free_y") +
+  theme_bw() +
+  
+
+ggsave(here("figures_new", "chemtax_TS_by_group.png"),
+       width = 16, height = 14, dpi = 300)
+
+
+```
+```{r}
+chem_tidy %>% 
+  ggplot(aes(x = month, y = rel_bio, color = as.factor(year))) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_grid(fct_rev(phyto_group) ~ site_id, scales = "free_y") +
+  theme_bw() +
+  
+
+ggsave(here("figures_new", "chemtax_TS_by_group-rel.png"),
+       width = 16, height = 14, dpi = 300)
+```
+
+```{r}
+pigs_tidy %>% 
+  ggplot(aes(x = month, y = conc, color = as.factor(year))) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_grid(pig_type ~ site_id, scales = "free_y") +
+  theme_bw() 
+  
+
+ggsave(here("figures_new", "pigs_TS_by_group.png"),
+       width = 16, height = 14, dpi = 300)
+```
+
+
+```{r}
+#Upload fully formatted microscopy data
+
+micro_1 <- read_csv(here("files", "calvert.csv"))
+
+micro_2 <- read_csv(here("files", "qu39.csv"))
+
+micro <- rbind(micro_1, micro_2)
+
+micro$date <- as.Date(micro$date, "%Y-%m-%d")
+```
+
+
+```{r}
+#Selecting autotrophic groups from class level specifications above. Too coarse for dinos.
+
+
+#Can't figure out how to make this work with multiple stations. Trying each separately and binding
+micro_sum_dfo2 <- micro %>%
+  filter(trophicStatus == "auto" &
+          site_id == "DFO2") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "DFO2") #replace NAs, created by complete, with 0s
+
+micro_sum_kc10 <- micro %>%
+  filter(trophicStatus == "auto" &
+          site_id == "KC10") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "KC10") #replace NAs, created by complete, with 0s
+
+micro_sum_qcs01 <- micro %>%
+  filter(trophicStatus == "auto" &
+          site_id == "QCS01") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "QCS01") #replace NAs, created by complete, with 0s
+
+micro_sum_qu39 <- micro %>%
+  filter(trophicStatus == "auto" &
+          site_id == "QU39") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "QU39") #replace NAs, created by complete, with 0s
+
+micro_sum <- rbind(micro_sum_dfo2, micro_sum_kc10, micro_sum_qcs01, micro_sum_qu39)
+```
+
+```{r}
+#Set order or groups for plotting
+
+micro_sum$group <- factor(micro_sum$group,
+                         levels = c("Bacillariophyta", #Y
+                                    "Chrysophyta", #Y
+                                    "Dictyochophyta", #Y
+                                    "Raphidiophyta", #Y
+                                    "Dinoflagellata", #Y
+                                    "Cryptophyta",#Y
+                                    "Chlorophyta-Prasinophyta", #Y 
+                                    "Euglenophyta", #Y
+                                    "Prymnesiophyta-Haptophyta", #Y 
+                                    "Cyanobacteria", #Y
+                                    "Unknown_Chlorophyta?", #Y
+                                    "Unknown_Dinophyceae?", #Y
+                                    "Unknown_flagellate" #Y
+                                    ))
+```
+
+```{r}
+micro_qu39_ds <- micro_sum %>%
+  filter(site_id == "QU39")
+
+micro_qu39_ds_distinct <- micro_qu39_ds %>%
+  mutate(month = lubridate::month(date)) %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month > 3 & month < 11) %>%
+  distinct(date, site_id)
+
+#Trying to plot Relative in a different way - CHEMTAX
+micro_qu39_ds <- micro_qu39_ds %>%
+  filter(date == "2018-05-29" | #could also be 05-22
+         date == "2018-06-26" |
+         date == "2018-07-23" | # Could also be 07-16
+         date == "2018-08-21" | # 08-14, 08-28
+         date == "2018-09-13" |   
+         date == "2018-10-24" |
+         date == "2019-05-09" |
+         date == "2019-06-04" |
+         date == "2019-07-09" |
+         date == "2019-08-07" |
+         date == "2019-08-29" |
+         date == "2019-10-09" |
+         #date == "2019-11-26" | #removing this for multi-year analysis
+         date == "2020-04-29" | #Different month, but very close temporally
+         date == "2020-06-04" |
+         date == "2020-07-09" | # Also 06-30 - Tricky
+         date == "2020-08-04" | # Also 08-13 
+         date == "2020-09-01" |
+         date == "2020-10-08")
+
+micro_ds <- micro_sum %>%
+  filter(!site_id == "QU39")
+
+micro_ds_distinct <- micro_ds %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11) %>%
+  distinct(date, site_id) %>% 
+  mutate(row_n = row_number())
+
+micro_ds <- rbind(micro_ds, micro_qu39_ds)
+
+# micro_ds <- micro_ds %>% 
+#   filter(date > "2019-05-01" & date < "2019-12-01") %>% 
+#   arrange(date)
+
+micro_ds <- micro_ds %>%  
+  mutate(month = lubridate::month(date),
+         month = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month)))
+
+micro_ds <- micro_ds %>% 
+  mutate(year = lubridate::year(date))
+
+#Selecting pertinent months
+micro_ds <- micro_ds %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11)
+```
+
+```{r}
+#Calculating Relative abundance.
+micro_ds <- micro_ds %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_abund = sum(sum)) %>% 
+  ungroup() %>% 
+  mutate(rel_abund = sum/sum_abund)
+
+```
+
+
+
+```{r}
+micro_ds %>% 
+  filter(!group == "Unknown_Chlorophyta?" &
+         !group == "Unknown_Dinophyceae?" &
+         !group == "Unknown_flagellate") %>% 
+  ggplot(aes(x = month, y = sum, color = as.factor(year))) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_grid(group ~ site_id, scales = "free_y") +
+  theme_bw() 
+  
+
+ggsave(here("figures_new", "micro_TS_by_group.png"),
+       width = 16, height = 14, dpi = 300)
+
+
+```
+
+
+```{r}
+micro_ds %>% 
+  filter(!group == "Unknown_Chlorophyta?" &
+         !group == "Unknown_Dinophyceae?" &
+         !group == "Unknown_flagellate") %>% 
+  ggplot(aes(x = month, y = rel_abund, color = as.factor(year))) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  facet_grid(group ~ site_id, scales = "free_y") +
+  theme_bw() 
+  
+
+ggsave(here("figures_new", "micro_TS_by_group_rel.png"),
+       width = 16, height = 14, dpi = 300)
+
+
+```
+
+
