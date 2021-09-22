@@ -35,11 +35,9 @@ micro <- micro %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date))
 
+secchi <- read_csv(here("files", "secchi.csv"))
+
 ```
-
-
-
-
 
 ```{r}
 #Importing and wrangling Chemtax data
@@ -175,6 +173,59 @@ micro_ds <- micro_ds %>%
 
 
 ```
+
+```{r}
+#Sub-setting secchi data to only include May to October and select QU39 with the closest matching dates to the Calvert surbeys
+
+secchi_qu39_ds <- secchi %>%
+  filter(site_id == "QU39")
+
+#Trying to plot Relative in a different way - CHEMTAX
+secchi_qu39_ds <- secchi_qu39_ds %>%
+  filter(date == "2018-05-29" | #could also be 05-22
+         date == "2018-06-26" |
+         date == "2018-07-23" | # Could also be 07-16
+         date == "2018-08-21" | # 08-14, 08-28
+         date == "2018-09-13" |   
+         date == "2018-10-24" |
+         date == "2019-05-09" |
+         date == "2019-06-04" |
+         date == "2019-07-09" |
+         date == "2019-08-07" |
+         date == "2019-08-29" |
+         date == "2019-10-09" |
+         #date == "2019-11-26" | #removing this for multi-year analysis
+         date == "2020-04-29" | #Different month, but very close temporally
+         date == "2020-06-04" |
+         date == "2020-07-09" | # Also 06-30 - Tricky
+         date == "2020-08-04" | # Also 08-13 
+         date == "2020-09-01" |
+         date == "2020-10-08")
+
+secchi_ds <- secchi %>%
+  filter(!site_id == "QU39")
+
+secchi_ds <- rbind(secchi_ds, secchi_qu39_ds)
+
+# micro_ds <- micro_ds %>% 
+#   filter(date > "2019-05-01" & date < "2019-12-01") %>% 
+#   arrange(date)
+
+secchi_ds <- secchi_ds %>%  
+  mutate(month = lubridate::month(date),
+         month = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month)))
+
+
+
+```
+
+
+
+
 
 ```{r}
 #Heat map of species observed and abundance for 2019 May - November
@@ -344,6 +395,249 @@ fig <- p1/p2 + plot_layout(ncol = 1, heights = c(0.1, 1))
 ggsave(here("figures_new", "heat_2020_abundance.png"), fig,
        width = 25, height = 29, dpi = 300)
 ```
+```{r}
+#Looking at mean abundance of species separated by station and year
+
+#Calculating mean abundance of each species at each station and year.
+max_year <- micro_ds %>%
+  mutate(month = lubridate::month(date)) %>% 
+  filter(trophicStatus == "auto" & !scientificName == "Protozoa" &
+           date > "2018-01-01" & date < "2020-12-31" & month > 4 & month < 11) %>% 
+  group_by(year, scientificName) %>% 
+  mutate(mean = mean(count),
+            sd = sd(count)) %>% 
+  ungroup() %>% 
+  distinct(mean, .keep_all = TRUE)
+
+#selecting the top ten mean abundances for each station and year
+max_year <- max_year %>% 
+  group_by(year) %>% 
+  mutate(rank = rank(desc(mean))) %>%
+  top_n(mean, n = 10) %>% 
+  ungroup() %>%
+  arrange(desc(mean))
+
+#Setting order of species for figure
+max_year$species_order <- factor(max_year$scientificName,
+                                   (unique(max_year$scientificName
+                                              [order(max_year$group,
+                                                     max_year$scientificName)])))
+
+
+#Ploting in a heatmap with rank numbers over tiles.
+max_year %>% 
+  ggplot(aes(x = as.factor(year), y = fct_rev(species_order), fill = mean)) +
+  geom_tile(color = "black") +
+  geom_text(aes(label = rank), color = "red", size = 6) +
+  scale_fill_gradient(name = "Mean Abundance",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # strip.background = element_blank(),
+        # strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black")) 
+
+ggsave(here("figures_new", "heat_mean_abund_year_no_station.png"),
+       width = 12, height = 18, dpi = 300)
+```
+
+```{r}
+#Looking at mean abundance of species separated by station and year
+
+#Calculating mean abundance of each species at each station and year.
+max_st_year <- micro_ds %>%
+  mutate(month = lubridate::month(date)) %>% 
+  filter(trophicStatus == "auto" & !scientificName == "Protozoa" &
+           date > "2018-01-01" & date < "2020-12-31" & month > 4 & month < 11) %>% 
+  group_by(year, site_id, scientificName) %>% 
+  mutate(mean = mean(count),
+            sd = sd(count)) %>% 
+  ungroup() %>% 
+  distinct(mean, .keep_all = TRUE)
+
+#selecting the top ten mean abundances for each station and year
+max_st_year <- max_st_year %>% 
+  group_by(year, site_id) %>% 
+  mutate(rank = rank(desc(mean))) %>%
+  top_n(mean, n = 10) %>% 
+  ungroup() %>%
+  arrange(desc(mean))
+
+#Setting order of species for figure
+max_st_year$species_order <- factor(max_st_year$scientificName,
+                                   (unique(max_st_year$scientificName
+                                              [order(max_st_year$group,
+                                                     max_st_year$scientificName)])))
+
+
+#Ploting in a heatmap with rank numbers over tiles.
+max_st_year %>% 
+  ggplot(aes(x = site_id, y = fct_rev(species_order), fill = mean)) +
+  geom_tile(color = "black") +
+  geom_text(aes(label = rank), color = "red", size = 6) +
+  scale_fill_gradient(name = "Mean Abundance",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  facet_grid(~ year) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # strip.background = element_blank(),
+        # strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black")) 
+
+ggsave(here("figures_new", "heat_mean_abund_year.png"),
+       width = 18, height = 18, dpi = 300)
+```
+```{r}
+
+#Filtering to desired data and calculating the number of samples per station per year. Removing any where spores were present as causing greater than 100%. Could also sum these, but not sure if they should be summed.
+perc_st_year <- micro_ds %>%
+  mutate(month = lubridate::month(date)) %>% 
+  filter(trophicStatus == "auto" & !scientificName == "Protozoa" & is.na(lifeStage) &
+           date > "2018-01-01" & date < "2020-12-31" & month > 4 & month < 11) %>% 
+  group_by(year, site_id) %>% 
+  mutate(num_st = n_distinct(date)) %>% #number of distinct sample dates for each station per year
+  ungroup()
+  
+#Summing when phaeocystis pouchetii is present in both motile and non-motile as this is causing percentages greater than 100%
+perc_st_year <- perc_st_year %>% 
+  group_by(date, site_id, scientificName) %>% 
+  mutate(count = sum(count)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, scientificName, count, .keep_all = TRUE)
+
+#Calculating number of times a species was observed at each station per year and dividing by number of samples for that station/year
+perc_st_year <- perc_st_year %>% 
+  group_by(year, site_id, scientificName) %>% 
+  mutate(num_sp = n()) %>% 
+  ungroup() %>% 
+  mutate(perc_pres = num_sp/num_st*100)
+
+
+
+
+
+# perc_st_year <- perc_st_year %>%
+#   group_by(year, site_id) %>%
+#   mutate(rank = rank(desc(perc_pres))) %>%
+#   top_n(perc_pres, n = 10) %>%
+#   ungroup()
+  
+
+perc_st_year$species_order <- factor(perc_st_year$scientificName,
+                                   (unique(perc_st_year$scientificName
+                                              [order(perc_st_year$group,
+                                                     perc_st_year$scientificName)])))
+
+
+
+perc_st_year %>% 
+  filter(perc_pres > 50) %>% 
+  ggplot(aes(x = site_id, y = fct_rev(species_order), fill = perc_pres)) +
+  geom_tile(color = "black") +
+  # geom_text(aes(label = rank), color = "red", size = 6) +
+  scale_fill_gradient(name = "Mean Abundance",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  facet_grid(~ year) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # strip.background = element_blank(),
+        # strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black")) 
+
+ggsave(here("figures_new", "heat_mean_perc_year.png"),
+       width = 18, height = 18, dpi = 300)
+```
+```{r}
+#Looking at blooms
+
+#defined by abundance greater than 10^6 cells L-1
+
+bloom <- micro_ds %>% 
+  filter(count > 1000000)
+
+bloom_flag <- micro_ds %>% 
+  filter(count > 500000 & group == "Cryptophyta")
+
+```
+
+```{r}
+#Looking at secchi depth - this is misplaced here and should put in it's own files where it is compared with PAR
+
+
+p1 <- secchi_ds %>% 
+  filter(date > "2018-01-01" & date < "2020-12-31" & month > 4 & month < 11) %>%  
+  ggplot(aes(x = as.factor(month), y = line_out_depth, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "secchi depth (m)",
+       x = "Month") +
+  ylim(0, 15) +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- secchi_ds %>% 
+  filter(date > "2018-01-01" & date < "2020-12-31" & month > 4 & month < 11) %>% 
+  ggplot(aes(x = date, y = line_out_depth, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "s.m.") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures_new", "box_secchi.png"), 
+       fig, width = 14, height = 10, dpi = 300)
+
+
+```
+
+
+
+
+
 
 ```{r}
 #Monthly difference in number of DIATOM species 
