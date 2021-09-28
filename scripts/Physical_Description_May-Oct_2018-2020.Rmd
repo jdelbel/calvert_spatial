@@ -1,0 +1,2102 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gsw)
+library(here)
+library(patchwork)
+```
+
+```{r}
+#Upload data
+ctd <- read_csv(here("files", "ctd.csv")) 
+
+nuts <- read_csv(here("files", "nuts_2021-08-17.csv"))
+
+```
+
+```{r}
+#Fixing datset so it is easier to work with
+
+#making labels shorter
+ctd <- ctd %>% 
+  rename(pres = `Pressure (dbar)`,
+         sal = `Salinity (PSU)`,
+         temp = `Temperature (deg C)`,
+         date = `Measurement time`,
+         station = Station,
+         cast_pk = `Cast PK`,
+         par = `PAR (umol m-2 s-1)`)
+
+#adding year, month and date
+ctd <- ctd %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date))
+
+ctd_coord <- ctd %>% 
+  distinct(station, Latitude, Longitude)
+
+#filling in lat where not present
+ctd <- ctd %>% 
+  mutate(Latitude = case_when(station == "QU39" & is.na(Latitude) ~ 50.03001,
+                              station == "QCS01" & is.na(Latitude) ~ 51.70493,
+                              station == "KC10" & is.na(Latitude) ~ 51.65064,
+                              station == "DFO2" & is.na(Latitude) ~ 51.52111,
+         TRUE ~ as.numeric(as.character(Latitude))))
+
+#filling in lat where not present
+ctd <- ctd %>% 
+  mutate(Longitude = case_when(station == "QU39" & is.na(Longitude) ~ -125.0989,
+                              station == "QCS01" & is.na(Longitude) ~ -128.2388,
+                              station == "KC10" & is.na(Longitude) ~ -127.9513,
+                              station == "DFO2" & is.na(Longitude) ~ -127.5590,
+         TRUE ~ as.numeric(as.character(Longitude))))
+
+nuts <- nuts %>%  
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date))
+
+```
+
+```{r}
+#Performing gsw calculations
+
+#Calculating absolute salinity
+SA <- gsw_SA_from_SP(ctd$sal, ctd$pres, ctd$Longitude, ctd$Latitude)
+
+SA <- as.data.frame(SA)
+
+#conservative temperature
+CT <- gsw_CT_from_t(SA$SA, ctd$temp, ctd$pres)
+
+CT <- as.data.frame(CT)
+
+#Density
+rho = gsw_rho(SA$SA,CT$CT,ctd$pres)
+
+rho <- as.data.frame(rho)
+
+#Brunt-Vaisala frequency
+bv <- gsw_Nsquared(SA$SA, CT$CT, ctd$pres)
+
+bv <- bind_rows(bv)
+
+#Had to add a row to bottom to make vector length equal. Ask Jessy if this is the best way to do this.
+bv <- bv %>% 
+  add_row(N2 = NA, p_mid = NA)
+
+#Binding calculations to ctd data
+ctd <- cbind(ctd, SA, CT, rho, bv)
+
+# To Do
+
+#Look into whether flagging is correct
+
+```
+```{r}
+#Performing calculations
+
+#Finding minimum cast start depth for each profile to determine range of depths to use for density difference. Only 5 casts start deeper than three metres and only 1 doesn't go to 30m.
+range_pres <- ctd %>% 
+  group_by(cast_pk) %>% 
+  summarise(min_pres = min(pres),
+            max_pres = max(pres)) %>% 
+  ungroup() %>% 
+  arrange(desc(min_pres))
+
+#The next few steps are used to determine the density difference as a measure of stratification. Using 2 and 30m
+
+#Filter 2m data
+ctd_2 <- ctd %>% 
+  filter(pres == 2) %>% 
+  select(cast_pk, station, Latitude, Longitude, date, year:day, rho)
+
+#filter 30m data
+ctd_30 <- ctd %>% 
+  filter(pres == 30) %>% 
+  select(cast_pk, rho)
+
+#joining 2m data to 3m data - didn't work.
+ctd_dd <- ctd_2 %>% 
+  left_join(ctd_30, by = "cast_pk") %>% 
+  rename(rho_2 = rho.x, 
+         rho_30 = rho.y)
+
+#Calculating difference in density
+ctd_dd <- ctd_dd %>% 
+  mutate(delta_rho = rho_30 - rho_2)
+  
+```
+
+```{r}
+ctd <- ctd %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01")
+
+nuts <- nuts %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01")
+
+nuts_dm <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  select(ymd = date, station = site_id, no2_no3_um, sio2, po4) %>% 
+  group_by(ymd, station) %>% 
+  summarise(no2_dm = mean(no2_no3_um),
+            sio2_dm = mean(sio2),
+            po4_dm = mean(po4)) %>% 
+  ungroup()
+```
+
+```{r}
+# Bringing in nutrient data that is not finalized and has some errors
+nuts_bad <- read_xlsx(here("files", "nuts_bad_2020.xlsx"))
+
+#Fixing names for joining
+nuts_bad <- nuts_bad %>%  
+  rename(hakai_id = `Sample ID`)
+
+#pulling data that doesn't have a match
+nuts_nd <- nuts %>% 
+  filter(line_out_depth == 5 & date > "2020-06-24") %>% 
+  select(date, hakai_id, station = site_id)
+
+#Joining hakai IDS so concentrations have metadata (date and station). Checking for replicates. There are none.
+nuts_nd_join <- nuts_nd %>% 
+  left_join(nuts_bad, by = "hakai_id") %>% 
+  drop_na() %>% 
+  group_by(date, station) %>% 
+  mutate(n = n()) %>% 
+  ungroup()
+
+#Binding the "bad data" with the nutrient daily mean dataset to complete timeseries.
+nuts_nd_join <-  nuts_nd_join %>% 
+  select(ymd = date, station, no2_dm = `NO3+NO2`, sio2_dm = SiO2, po4_dm = PO4)
+
+nuts_dm <- nuts_dm %>% 
+  drop_na() 
+
+nuts_dm_bd <- rbind(nuts_nd_join, nuts_dm)
+
+nuts_dm_bd <- nuts_dm_bd %>% 
+  arrange(ymd, station)
+
+```
+
+```{r}
+nuts_qu39 <- nuts_dm_bd %>% 
+  rename(date = ymd) %>% 
+  filter(station == "QU39" &
+         (date == "2018-05-29" | #could also be 05-22
+         date == "2018-06-26" |
+         date == "2018-07-23" | # Could also be 07-16
+         date == "2018-08-21" | # 08-14, 08-28
+         date == "2018-09-13" |   
+         date == "2018-10-24" |
+         date == "2019-05-09" |
+         date == "2019-06-04" |
+         date == "2019-07-09" |
+         date == "2019-08-07" |
+         date == "2019-08-29" |
+         date == "2019-10-09" |
+         #date == "2019-11-26" | #removing this for multi-year analysis
+         date == "2020-04-29" | #Different month, but very close temporally
+         date == "2020-06-04" |
+         date == "2020-07-09" | # Also 06-30 - Tricky
+         date == "2020-08-04" | # Also 08-13 
+         date == "2020-09-01" |
+         date == "2020-10-08"))
+            
+#Merge with qu39 and calvert
+nuts_no_qu39 <- nuts_dm_bd %>% 
+  rename(date = ymd) %>% 
+  filter(!station == "QU39")
+
+nuts_scaled <- rbind(nuts_qu39, nuts_no_qu39)
+
+
+#Dates that were collected on the cusp of a month change - rest of survey was done in following month. Just done for ease of plotting.
+nuts_scaled <- nuts_scaled %>%  
+  mutate(month = lubridate::month(date),
+         month = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month)))
+
+nuts_scaled <- nuts_scaled %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11)
+
+```
+
+
+```{r}
+#Separating out nutrients 
+nuts_scaled %>% 
+  ggplot(aes(x = as.factor(month), y = no2_dm, fill = station)) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  # geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+  #             pch = 21, color = "black", size = 4, alpha = 0.5) +
+  # coord_cartesian(ylim = c(5, 20)) +
+  labs(y = "NO2 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd %>% 
+  filter(pres == 5) %>%
+  ggplot(aes(x = date, y = temp, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  coord_cartesian(ylim = c(5, 20)) +
+  labs(y = "Temp (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "temp_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+```{r}
+#Separating Sal out with monthly boxplot and timeseries
+p1 <- ctd %>% 
+  filter(pres == 5) %>%
+  ggplot(aes(x = as.factor(month), y = sal, fill = station)) +
+  geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  # coord_cartesian(ylim = c(10, 32)) +
+  labs(y = "Salinity (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.2),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd %>% 
+  filter(pres == 5) %>%
+  ggplot(aes(x = date, y = sal, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  # coord_cartesian(ylim = c(10, 32)) +
+  labs(y = "Salinity (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "sal_box_ts_5m.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+
+
+```{r}
+#Monthly difference in stratification measures.
+
+p1 <- ctd_dd %>% 
+  ggplot(aes(x = as.factor(month), y = delta_rho, fill = station)) +
+  geom_jitter(aes(color = station), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "Delta rho (30 - 2m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd %>% 
+  group_by(cast_pk) %>% 
+  mutate(max_bv = max(N2)) %>% 
+  ungroup() %>% 
+  distinct(cast_pk, max_bv, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = max_bv, fill = station)) +
+  geom_jitter(aes(color = station), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "Profile Max. N2",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p3 <- ctd %>% 
+    filter(pres > 3 & pres < 7) %>% 
+  group_by(cast_pk) %>% 
+  mutate(avg_N2 = mean(N2)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(month), y = N2, fill = station)) +
+  geom_jitter(aes(color = station), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "Avg 4-6m N2",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p4 <- ctd %>% 
+  filter(pres < 31) %>% 
+  group_by(cast_pk) %>% 
+  mutate(avg_N2 = mean(N2)) %>% 
+  ungroup() %>% 
+  distinct(cast_pk, avg_N2, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = avg_N2, fill = station)) +
+  geom_jitter(aes(color = station), position =position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "Avg upper 30m N2",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1 + p2 + p3 + p4 + 
+  theme(plot.tag = element_text(size = 30))
+
+ggsave(here("figures", "Strat_box.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Separating delta_rho out with monthly boxplot and timeseries
+p1 <- ctd_dd %>% 
+  ggplot(aes(x = as.factor(month), y = delta_rho, fill = station)) +
+  geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "Delta rho (30 - 2m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd_dd %>% 
+  ggplot(aes(x = date, y = delta_rho, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "Delta rho (30 - 2m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "deltaRho_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+```{r}
+#Separating N2 out with monthly boxplot and timeseries
+test <- ctd %>% 
+  group_by(cast_pk) %>% 
+  filter(N2 == max(N2))
+
+
+p1 <- ctd %>% 
+  group_by(cast_pk) %>% 
+  filter(N2 == max(N2)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(month), y = N2, fill = station)) +
+  geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "Profile Max. N2",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- ctd %>% 
+  group_by(cast_pk) %>% 
+  filter(N2 == max(N2)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(month), y = pres, fill = station)) +
+  geom_jitter(aes(fill = station), position = position_jitterdodge(), 
+              pch = 21, color = "black", size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "pressure",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p3 <- ctd %>% 
+  group_by(cast_pk) %>% 
+  filter(N2 == max(N2)) %>% 
+  ungroup() %>%  
+  ggplot(aes(x = date, y = N2, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "Profile Max. N2",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p4 <- ctd %>% 
+  group_by(cast_pk) %>% 
+  filter(N2 == max(N2)) %>% 
+  ungroup() %>%  
+  ggplot(aes(x = date, y = pres, fill = station)) +
+  geom_line(aes(color = station), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(y = "pressure",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1 + p2 + p3 + p4 
+
+ggsave(here("figures_new", "box_maxN2-depth_2.png"), 
+       fig, width = 18, height = 12, dpi=300)
+```
+
+
+
+
+
+```{r}
+#Monthly difference in 5m nutrients.
+
+p1 <- 
+nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = no2_no3_um, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "NO2_NO3 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.7, 0.87),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = sio2, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "SiO2 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p3 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = po4, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "po4 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p4 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = no2_no3_um/po4, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "N:P (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1 + p2 + p3 + p4 
+
+ggsave(here("figures", "Nuts_box.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Separating NO2_NO3 out with monthly boxplot and timeseries
+p1 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = no2_no3_um, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "NO2_NO3 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.2),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = date, y = no2_no3_um, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "NO2_NO3 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "no2-no3_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Separating SiO2 out with monthly boxplot and timeseries
+p1 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = sio2, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "sio2 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.2),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = date, y = sio2, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "sio2 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "sio2_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Separating PO4 out with monthly boxplot and timeseries
+p1 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = po4, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "sio2 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.2),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = date, y = po4, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "sio2 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "po4_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Separating no2_no3_um/po4 out with monthly boxplot and timeseries
+p1 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = as.factor(month), y = no2_no3_um/po4, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "no2_no3_um/po4 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.2),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  ggplot(aes(x = date, y = no2_no3_um/po4, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "no2_no3_um/po4 (5m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2
+
+ggsave(here("figures", "no2_no3_um_po4_box_ts.png"), 
+       fig, width = 16, height = 12, dpi=300)
+```
+
+```{r}
+#Monthly difference in diatoms.
+
+# p1 <- micro %>% 
+#   filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+#   geom_boxplot() +
+#   labs(y = "Abundance Diatoms",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = c(0.15, 0.8),
+#         legend.title = element_blank(),
+#         legend.background = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p2 <- chem_tidy %>% 
+#   filter(phyto_group == "diat") %>% 
+#   ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+#   geom_boxplot() +
+#   labs(y = "TChla Diatoms",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# 
+# fig <- p1/p2 
+# 
+# ggsave(here("figures", "Diatoms_box.png"), 
+#        fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+#Monthly difference in diatoms and timeseries.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Bacillariophyta" & 
+           date > "2018-01-01") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "Abundance Diatoms",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Bacillariophyta" & 
+           date > "2018-01-10") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>%
+  ggplot(aes(x = date, y = sum_count, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "Abundance Diatoms",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Diatoms_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+
+```{r}
+#Monthly difference in total abundance.
+
+p1 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = n, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "# of species",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = date, y = n, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "# of species") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "num_species_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+#Monthly difference in total abundance - only photo.
+
+p1 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & trophicStatus == "auto") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = n, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "# of species",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & trophicStatus == "auto") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = date, y = n, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "# of species") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "num_species_auto_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+#Monthly difference in number of species - only photo, no protozoa
+
+p1 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           trophicStatus == "auto" & !scientificName == "Protozoa") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = n, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "# of species",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           trophicStatus == "auto" & !scientificName == "protozoa") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = date, y = n, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "# of species") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "num_species_auto_no-prot_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+
+```{r}
+#Monthly difference in number of species - only photo, no protozoa
+
+p1 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = n, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "# of diatoms",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = date, y = n, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "# of diatoms") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "num_diatoms_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+unique_groups <- micro %>% 
+  distinct(group)
+
+#Monthly difference in number of species - only photo, no protozoa
+
+p1 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           trophicStatus == "auto" & group == "Chlorophyta-Prasinophyta") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = n, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "# of Chlorophyta-Prasinophyta",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           trophicStatus == "auto" & group == "Chlorophyta-Prasinophyta") %>% 
+  group_by(date, site_id) %>%
+  summarize(n = n()) %>%
+  ggplot(aes(x = date, y = n, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "# of Chlorophyta-Prasinophyta") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "num_Chlorophyta-Prasinophyta_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+
+```{r}
+#I want the y axis ordered by class/group and then species. Haven't been able to figure this out.
+micro$species_order <- factor(micro$scientificName,
+                                   (unique(micro$scientificName
+                                              [order(micro$group, micro$scientificName)])))
+
+
+# Trying to figure out what species are driving diversity at QCS01 in August - Filtered to 2019 because 2020 has no August QCS01.
+
+p1 <- micro %>%filter(date > "2018-01-01" & date <"2019-12-31" & month == 8,
+         trophicStatus == "auto" & !scientificName == "Protozoa" 
+         & !site_id == "QU39") %>%
+  group_by(site_id, scientificName) %>%
+  mutate(mean_count = mean(count),
+            sum = sum(count),
+            n = n()) %>% 
+  ungroup %>% 
+  distinct(site_id, scientificName, mean_count, .keep_all = TRUE) %>%
+  filter(n > 1) %>% 
+  ggplot(aes(x = site_id, y = species_order, fill = log10(mean_count))) +
+  geom_point(pch = 21, size = 9, stroke = 2) +
+  scale_y_discrete(limits = rev) +
+  scale_fill_gradient(low = "white", high = "green4") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+ggsave(here("figures", "heat_presence_noQU39.png"), 
+       width = 14, height = 20, dpi = 300)
+  # ungroup %>% 
+  # mutate(month = lubridate::month(date)) %>%
+  # ggplot(aes(x = as.factor(site_id), y = mean count))
+
+
+```
+
+```{r}
+#I want the y axis ordered by class/group and then species. Haven't been able to figure this out.
+micro$species_order <- factor(micro$scientificName,
+                                   (unique(micro$scientificName
+                                              [order(micro$group, micro$scientificName)])))
+
+
+# Trying to figure out what species are driving diversity at QCS01 in August - Filtered to 2019 because 2020 has no August QCS01.
+
+p1 <- micro %>%filter(date > "2018-01-01" & date <"2019-12-31" & month == 8,
+         trophicStatus == "auto" & !scientificName == "Protozoa") %>%
+  group_by(site_id, scientificName) %>%
+  mutate(mean_count = mean(count),
+            sum = sum(count),
+            n = n()) %>% 
+  ungroup %>% 
+  distinct(site_id, scientificName, mean_count, .keep_all = TRUE) %>%
+  filter(n > 1) %>% 
+  ggplot(aes(x = site_id, y = species_order, fill = log10(mean_count))) +
+  geom_point(pch = 21, size = 9, stroke = 2) +
+  scale_y_discrete(limits = rev) +
+  scale_fill_gradient(low = "white", high = "green4") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+ggsave(here("figures", "heat_presence_withQU39.png"), 
+       width = 14, height = 20, dpi = 300)
+  # ungroup %>% 
+  # mutate(month = lubridate::month(date)) %>%
+  # ggplot(aes(x = as.factor(site_id), y = mean count))
+
+```
+
+
+
+```{r}
+#I want the y axis ordered by class/group and then species. Haven't been able to figure this out.
+micro$species_order <- factor(micro$scientificName,
+                                   (unique(micro$scientificName
+                                              [order(micro$group, micro$scientificName)])))
+
+
+# Trying to figure out what species are driving diversity at QCS01 in August - separating by year for August.
+
+p1 <- micro %>%filter(date > "2018-01-01" & date < "2020-12-31" & month == 8,
+         trophicStatus == "auto" & !scientificName == "Protozoa" 
+         & !site_id == "QU39") %>%
+  group_by(year, site_id, scientificName) %>%
+  mutate(mean_count = mean(count),
+            sum = sum(count),
+            n = n()) %>% 
+  ungroup %>% 
+  distinct(site_id, scientificName, mean_count, .keep_all = TRUE) %>%
+  filter(n >= 1) %>% 
+  ggplot(aes(x = site_id, y = species_order, fill = log10(mean_count))) +
+  geom_point(pch = 21, size = 9, stroke = 2) +
+  facet_wrap(~ year) +
+  scale_y_discrete(limits = rev) +
+  scale_fill_gradient(low = "white", high = "green4") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+ggsave(here("figures", "heat_presence_noQU39_aug_year.png"), 
+       width = 27, height = 25, dpi = 300)
+  # ungroup %>% 
+  # mutate(month = lubridate::month(date)) %>%
+  # ggplot(aes(x = as.factor(site_id), y = mean count))
+
+
+```
+
+
+```{r}
+#Need to think of how to plot this.
+
+#I want the y axis ordered by class/group and then species. Haven't been able to figure this out.
+micro$species_order <- factor(micro$scientificName,
+                                   (unique(micro$scientificName
+                                              [order(micro$group, micro$scientificName)])))
+
+
+# Trying to figure out what species are driving diversity at QCS01 in August
+
+p1 <- micro %>%filter(date > "2018-01-01" & date <"2020-12-31",
+         trophicStatus == "auto" & !scientificName == "Protozoa" 
+         & !site_id == "QU39") %>%
+  group_by(month, site_id, scientificName) %>%
+  mutate(mean_count = mean(count),
+            sum = sum(count),
+            n = n()) %>% 
+  ungroup %>% 
+  distinct(site_id, scientificName, mean_count, .keep_all = TRUE) %>%
+  filter(n > 1) %>% 
+  ggplot(aes(x = site_id, y = species_order, fill = log10(mean_count))) +
+  geom_point(pch = 21, size = 9, stroke = 2) +
+  facet_wrap(~ month, nrow = 1) +
+  scale_y_discrete(limits = rev) +
+  scale_fill_gradient(low = "white", high = "green4") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+ggsave(here("figures", "heat_presence_noQU39_month.png"), 
+       width = 40, height = 20, dpi = 300)
+  # ungroup %>% 
+  # mutate(month = lubridate::month(date)) %>%
+  # ggplot(aes(x = as.factor(site_id), y = mean count))
+
+
+```
+
+
+
+
+
+```{r}
+
+#Monthly in skeletonema
+
+p1 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           scientificName == "Skeletonema marinoi") %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = count, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "s.m.",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- micro %>% 
+  filter(date > "2018-01-01" & date <"2020-12-31" & 
+           scientificName == "Skeletonema marinoi") %>% 
+  ggplot(aes(x = date, y = count, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "s.m.") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "sm_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+
+```
+
+
+
+```{r}
+#Monthly difference in chemtax diatoms and time-series.
+
+p1 <- chem_tidy %>% 
+  filter(phyto_group == "diat" & date > "2018-01-01") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_jitter(aes(color = site_id), position = position_jitterdodge(), 
+              pch = 21, size = 4, alpha = 0.5) +
+  geom_boxplot(position = position_dodge(preserve = "single")) +
+  labs(y = "TChla Diatoms",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.80),
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "diat" & date > "2018-01-01") %>%
+  ggplot(aes(x = date, y = TChla, fill = site_id)) +
+  geom_line(aes(color = site_id), size = 1.5) +
+  geom_point(size = 4, pch = 21, color = "black") +
+  labs(y = "TChla Diatoms",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Diatoms_chemtax_box_ts.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+
+
+
+
+
+
+```{r}
+#Monthly difference in diatoms.
+
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Diatoms",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        text = element_text(size = 20),
+        axis.text = element_text(colour = "black"))
+
+ggsave(here("figures", "Diatoms_box_justmicro.png"), 
+       width = 10, height = 5, dpi=300)
+
+```
+
+
+
+```{r}
+#Monthly difference in Dinflagellates.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Dinoflagellata") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Dinos",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "dino") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla Dinos",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Dino_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+#Monthly difference in Dinflagellates.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Unknown_Dinophyceae?") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Dinos?",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "dino") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla Dinos",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Dino_unkown_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+
+
+
+
+
+```{r}
+
+#Monthly difference in Dinflagellates.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Chrysophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Chryso",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "dict") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Chryso_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+
+#Monthly difference in Dinflagellates.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Prymnesiophyta-Haptophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Hapto",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "hapto") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla Hapto",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Hapto_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+
+#Monthly difference in Dictyo.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Dictyochophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Dict",
+       x = "Month") +
+  coord_cartesian(ylim = c(0, 50000)) +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "dict") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla Dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Dict_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+
+
+#Monthly difference in Dictyo.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Dictyochophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "dict") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla Dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "Dict_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+
+```{r}
+#Monthly difference in green.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Chlorophyta-Prasinophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "green") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla Dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "green_box.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+```{r}
+#Monthly difference in green.
+
+p1 <- micro %>% 
+  filter(trophicStatus == "auto" & group == "Unknown_Chlorophyta?") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "Abundance Dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.15, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- chem_tidy %>% 
+  filter(phyto_group == "green") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  labs(y = "TChla Dict",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2 
+
+ggsave(here("figures", "green_box_unknown.png"), 
+       fig, width = 14, height = 10, dpi=300)
+```
+
+```{r}
+#Timeseries 5m Temp.
+
+ctd %>% 
+  filter(pres == 5) %>%
+  ggplot() +
+  geom_point(aes(x = date, y = temp, fill = station), pch = 21, color = "black", size = 2) +
+  geom_line(aes(x = date, y = temp, color = station)) +
+  coord_cartesian(ylim = c(5, 20)) +
+  labs(title = "2018 - 2020, 5m",
+       y = "Temp",
+       x = "Month") +
+  theme_bw()
+```
+
+```{r}
+#Timeseries 5m Sal.
+
+ctd %>% 
+  filter(pres == 5) %>%
+  ggplot() +
+  geom_point(aes(x = date, y = sal, fill = station), pch = 21, color = "black", size = 2) +
+  geom_line(aes(x = date, y = sal, color = station)) +
+  coord_cartesian(ylim = c(20, 32)) +
+  labs(title = "2018 - 2020, 5m",
+       y = "Sal",
+       x = "Month") +
+  theme_bw()
+```
+
+```{r}
+#Density at 5m 
+
+ctd %>% 
+  filter(pres == 5) %>%
+  # complete(month, station) %>% 
+  # mutate_at(c("rho"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = rho, fill = station)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(1015, 1025)) +
+  labs(title = "2018 - 2020, 5m",
+       y = "rho",
+       x = "Month") +
+  theme_bw()
+```
+
+```{r}
+#Timeseries delta_rho.
+
+ctd_dd %>% 
+  ggplot() +
+  geom_point(aes(x = date, y = delta_rho, fill = station), pch = 21, color = "black", size = 2) +
+  geom_line(aes(x = date, y = delta_rho, color = station)) +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020, 5m",
+       y = "delta_rho",
+       x = "Month") +
+  theme_bw()
+```
+
+
+
+```{r}
+#Timeseries N2 avg 30 layer.
+
+ctd %>% 
+  filter(pres < 31) %>% 
+  group_by(cast_pk) %>% 
+  mutate(avg_N2 = mean(N2)) %>% 
+  ungroup() %>% 
+  distinct(cast_pk, avg_N2, .keep_all = TRUE) %>% 
+  ggplot() +
+  geom_point(aes(x = date, y = avg_N2, fill = station), pch = 21, color = "black", size = 2) +
+  geom_line(aes(x = date, y = avg_N2, color = station)) +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020, < 30m depth",
+       y = "Avg. N2",
+       x = "Month") +
+  theme_bw()
+```
+
+```{r}
+#Monthly PAR
+ctd %>% 
+  filter(pres == 5) %>% 
+  # complete(month, station) %>% 
+  # mutate_at(c("par"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = par, fill = station)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020",
+       y = "PAR",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+#Plotting 5m nitrogen separated by station
+
+nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  # complete(month, site_id) %>% 
+  # mutate_at(c("no2_no3_um"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = no2_no3_um, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020",
+       y = "NO2_NO3 (um)",
+       x = "Month") +
+  theme_bw()
+
+```
+
+```{r}
+nuts %>% 
+  filter(line_out_depth == 5) %>%
+  ggplot() +
+  geom_point(aes(x = date, y = no2_no3_um, fill = site_id), pch = 21,
+             color = "black", size = 2) +
+  geom_line(aes(x = date, y = no2_no3_um, color = site_id)) +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020",
+       y = "NO2_NO3 (um)",
+       x = "Month") +
+  theme_bw()
+
+```
+
+
+
+```{r}
+#Plotting 5m silicate separated by station
+
+nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  # complete(month, site_id) %>% 
+  # mutate_at(c("no2_no3_um"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = sio2, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020",
+       y = "SiO2 (um)",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+#Plotting 5m phosphate separated by station
+
+nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  # complete(month, site_id) %>% 
+  # mutate_at(c("no2_no3_um"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = po4, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020",
+       y = "po4 (um)",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+#Plotting 5m N:P separated by station
+
+nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  # complete(month, site_id) %>% 
+  # mutate_at(c("no2_no3_um"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = no2_no3_um/po4, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 25)) +
+  labs(title = "2018 - 2020",
+       y = "N:P (um)",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+#Plotting 5m Si:N separated by station
+
+nuts %>% 
+  filter(line_out_depth == 5) %>%
+  mutate(si_n = sio2/no2_no3_um) %>% 
+  filter(si_n > 0) %>% 
+  # complete(month, site_id) %>% 
+  # mutate_at(c("no2_no3_um"), ~ replace(., is.na(.), 0)) %>% 
+  ggplot(aes(x = as.factor(month), y = si_n, fill = site_id)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0, 100)) +
+  labs(title = "2018 - 2020",
+       y = "Si:N (um)",
+       x = "Month") +
+  theme_bw()
+
+#Look into weird values.
+```
+Phytoplankton Plots
+
+```{r}
+phyt_group <- micro %>% 
+  distinct(group)
+```
+
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Diatoms",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = (count)) %>% #summing all species counts for Cryptos
+  ungroup() %>% 
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% #keeping only summed rows 
+  group_by(month, site_id) %>% 
+  mutate(mean_count = mean(sum_count),
+         std_count = sd(sum_count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(month), y = mean_count, fill = site_id)) +
+  geom_errorbar(aes(ymin = mean_count - std_count, 
+                    ymax = mean_count + std_count, color = site_id), width = .1,
+                    size = 1) +
+  geom_point(pch = 21, size = 4) +
+  # coord_cartesian(ylim = c(0, 100)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Diatoms",
+       x = "Month") +
+  theme_bw()
+```
+
+
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Cryptophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Crytos",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Cryptophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = (count)) %>% #summing all species counts for Cryptos
+  ungroup() %>% 
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% #keeping only summed rows 
+  group_by(month, site_id) %>% 
+  mutate(mean_count = mean(sum_count),
+         std_count = sd(sum_count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(month), y = mean_count, fill = site_id)) +
+  geom_errorbar(aes(ymin = mean_count - std_count, 
+                    ymax = mean_count + std_count, color = site_id), width = .1,
+                    size = 1) +
+  geom_point(pch = 21, size = 4) +
+  # coord_cartesian(ylim = c(0, 100)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Crytos",
+       x = "Month") +
+  theme_bw()
+```
+
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Dictyochophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Dictyochophyta",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Dinoflagellata") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Dinoflagellata",
+       x = "Month") +
+  theme_bw()
+```
+
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Euglenophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Euglenophyta",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Chrysophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Chrysophyta",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Chlorophyta-Prasinophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Chlorophyta-Prasinophyta",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+micro %>% 
+  filter(trophicStatus == "auto" & group == "Prymnesiophyta-Haptophyta") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Prymnesiophyta-Haptophyta",
+       x = "Month") +
+  theme_bw()
+```
+
+```{r}
+micro %>% 
+  filter(trophicStatus == "hetero" & group == "Ciliophora") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(count)) %>%
+  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+  ggplot(aes(x = as.factor(month), y = sum_count, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "Abundance Ciliophora",
+       x = "Month") +
+  theme_bw()
+```
+
+Pigments
+
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "diat") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla Diatoms",
+       x = "Month") +
+  theme_bw()
+```
+
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "raph") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla raph",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "green") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla green",
+       x = "Month") +
+  theme_bw()
+```
+
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "cryp") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla cryp",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "hapto") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla hapt",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "dict") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla dict",
+       x = "Month") +
+  theme_bw()
+```
+```{r}
+chem_tidy %>% 
+  filter(phyto_group == "dino") %>% 
+  ggplot(aes(x = as.factor(month), y = TChla, fill = site_id)) +
+  geom_boxplot() +
+  # coord_cartesian(ylim = c(0, 100000)) +
+  labs(title = "2018 - 2020",
+       y = "TChla dino",
+       x = "Month") +
+  theme_bw()
+
+```
+
+
+```{r}
+micro %>% 
+  filter(!is.na(family) & trophicStatus == "auto") %>% 
+  group_by(date, site_id, family) %>% 
+  summarize(count_sum = sum(count)) %>% 
+  ungroup() %>%
+  mutate(month = lubridate::month(date)) %>% 
+  group_by(month, site_id, family) %>% 
+  summarize(count_month = mean(count_sum)) %>%
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(month), y = count_month, fill = family)) + 
+  geom_bar(position = "fill", stat = "identity", color = "black") + 
+  facet_wrap(~ site_id, ncol = 1) + 
+  theme(legend.position = "none")
+```
+
+
+```{r}
+#To do:
+
+#Nutrients
+
+#QC PAR
+
+#QC turbidity
+
+
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
