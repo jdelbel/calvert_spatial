@@ -280,8 +280,8 @@ micro_distinct <- micro %>%
   distinct(date, site_id)
 
 #Annoying
-spCodes(micro$scientificName, nchar.gen = 8, nchar.sp = 4, nchar.ssp = 0, 
-sep.species = " ", sep.spcode = ".")
+# spCodes(micro$scientificName, nchar.gen = 8, nchar.sp = 4, nchar.ssp = 0, 
+# sep.species = " ", sep.spcode = ".")
 
 # micro <- micro %>% 
 #   filter(!site_id == "QU39")
@@ -1379,6 +1379,5 @@ ggsave(here("figures_new", "rda_micro_ggplot_Chl_bad-nuts_test_arrows_15perc_s1.
 # 
 
 ```
-
 
 
