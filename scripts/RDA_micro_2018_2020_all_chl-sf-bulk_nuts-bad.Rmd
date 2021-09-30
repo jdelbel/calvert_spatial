@@ -390,7 +390,13 @@ chl_wide <- chl_wide %>%
 micro_merge <- micro_merge %>% 
    left_join(chl_wide, by = c("date", "site_id"))
 
-#Seems to be some wierd data mis-matches. Will need to cross check this for accuracy. Particularily days when chlorophyll exists, but no other measurements. Shouldn't happen.
+#Seems to be some wield data mis-matches. Will need to cross check this for accuracy. Particularily days when chlorophyll exists, but no other measurements. Shouldn't happen.
+
+# ISSUES
+
+#Including some samples from April...
+
+
 
 ```
 

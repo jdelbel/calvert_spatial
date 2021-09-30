@@ -303,8 +303,38 @@ ctd_dd_merge <- ctd_dd %>%
 ctd_scaled <- ctd_scaled %>% 
   left_join(ctd_dd_merge)
 
+ctd_scaled_check <- ctd_scaled %>% 
+  group_by(date, station) %>% 
+  mutate(n = n()) %>% 
+  ungroup() %>% 
+  filter(n > 1) %>% 
+  select(cast_pk, date, date_long,station, pres, sal, temp, delta_rho, n) %>% 
+  arrange(station)
 
+ctd_scaled <- ctd_scaled %>%
+  select(date, month, season, station, pres, sal, temp, delta_rho)
+
+ctd_scaled <- ctd_scaled %>% 
+  group_by(date, station) %>% 
+  mutate(temp = mean(temp),
+         sal = mean(sal),
+         delta_rho = mean(delta_rho)) %>% 
+  ungroup
+
+ctd_scaled <- ctd_scaled %>% 
+  distinct(date, station, sal, temp, delta_rho, .keep_all = TRUE)
+
+ctd_scaled_month_check <- ctd_scaled %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  group_by(year, month, station) %>% 
+  mutate(n_month = n()) %>% 
+  ungroup %>% 
+  filter(n_month > 1)
+
+#QCS01 - 2018-05-22, 2018-05-29. 2018-05-29 is the match used in RDA
+#DFO2 - 2020-09-03, 2020-09-07. 2020-09-05 is what I have in RDA merged dataset. WEIRD. I need to have a central data wrangling file and then write out to all the other analysis. Getting to messy and convoluted and mistakes are being made.
 ```
+
 ```{r}
 #Sub-setting secchi data to only include May to October and select QU39 with the closest matching dates to the Calvert surbeys
 
@@ -463,8 +493,3 @@ ggsave(here("figures_new", "box_descriptor_stats.png"),
 
 
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
-
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
