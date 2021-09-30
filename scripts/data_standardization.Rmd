@@ -1,0 +1,330 @@
+---
+title: Data Wrangling and standardization for Calvert/QU39 spatial paper
+output: html_notebook
+---
+
+The purpose of this folder is to bring all the data together in a single location and then write them to different output files for each type of analysis. Prior to this, analysis was largely exploratory and I was uploading data and wrangling data to each analysis file independently. This approach was getting convoluted and errors/differences between analysis were starting to arise.
+
+Things to look into
+1) where am determining phototrophs from heterotrophs?
+
+
+```{r}
+#Load packages
+library(tidyverse) #Data wrangling
+library(readxl) #Import excel files
+library(gsw) #Gibbs Seawater Toolbox
+library(here) #File structure management
+
+```
+
+```{r}
+#Importing datasets
+
+#Upload ctd data
+ctd <- read_csv(here("files", "ctd.csv")) 
+
+#Upload nutrient data (QC'd data from the portal)
+nuts <- read_csv(here("files", "nuts_2021-08-17.csv"))
+
+# Uploading nutrient data that is not finalized and has some errors - from Chris M. Using these data until finalized data are uploaded to the portal. Make sure that this step is removed for final analysis.
+nuts_bad <- read_xlsx(here("files", "nuts_bad_2020.xlsx"))
+
+#Upload secchi disk data
+secchi <- read_csv(here("files", "secchi.csv"))
+
+#Upload Calvert microscopy data
+micro_c <- read_csv(here("files", "calvert.csv"))
+
+#Upload QU39 microscopy data
+micro_q <- read_csv(here("files", "qu39.csv"))
+
+#Add QU39 as site_id 
+micro_q <- micro_q %>% 
+  mutate(site_id = "QU39") %>% 
+  relocate(site_id, .after = date)
+
+#Binding the Calvert and Quadra Microscopy datasets into a single dataframe.
+micro <- rbind(micro_c, micro_q)
+
+#Importing QU39 Chemtax data
+chem_q <- read_xlsx(here("files", "qu39_2019_2020_5m.xlsx"),
+                 sheet = "Concentration",
+                 range = "E1:R82")
+
+#Importing Calvert Chemtax data
+chem_c <- read_xls(here("files", "calvert_chemtax.xls"),
+                 sheet = "DataSummaryR1_3",
+                 range = "E325:R376")
+
+#Binding the Calvert and Quadra Microscopy datasets into a single dataframe.
+chem <- rbind(chem_c, chem_q)
+```
+
+```{r}
+#Making changes to datasets to make them easier to work with.
+
+#making CTD labels shorter and easier to work with.
+ctd <- ctd %>% 
+  rename(pres = `Pressure (dbar)`,
+         sal = `Salinity (PSU)`,
+         temp = `Temperature (deg C)`,
+         date = `Measurement time`,
+         station = Station,
+         cast_pk = `Cast PK`,
+         par = `PAR (umol m-2 s-1)`)
+
+#Renaming Chemtax columns to make them easier to work with
+chem <- select(chem,
+               date = Date, site_id = Station,
+               depth, cyan = Cyanobacteria, hapto = Hapto,
+               green = `Prasinophytes-3`, cryp = Cryptophytes,
+               dino = `Dinoflagellates-1`, dict = Dictyo, raph = Raphido,
+               diat = `Diatoms-1`)
+
+#Setting data format for Chemtax data. They usually import in a strange format and need to be fixed.
+chem$date <- as.Date(chem$date, "%Y-%m-%d")
+
+
+#Looking at coordinates for the CTD dataset - creating a list of unique coordinates
+ctd_coord <- ctd %>% 
+  distinct(station, Latitude, Longitude)
+
+#Some CTD casts are missing coordinates that are required for GSW calculations. Fill the coordinates in using those from the Hakai Station Master - Latitude
+ctd <- ctd %>% 
+  mutate(Latitude = case_when(station == "QU39" & is.na(Latitude) ~ 50.03001,
+                              station == "QCS01" & is.na(Latitude) ~ 51.70493,
+                              station == "KC10" & is.na(Latitude) ~ 51.65064,
+                              station == "DFO2" & is.na(Latitude) ~ 51.52111,
+         TRUE ~ as.numeric(as.character(Latitude))))
+
+#Filling in missing Longitude
+ctd <- ctd %>% 
+  mutate(Longitude = case_when(station == "QU39" & is.na(Longitude) ~ -125.0989,
+                              station == "QCS01" & is.na(Longitude) ~ -128.2388,
+                              station == "KC10" & is.na(Longitude) ~ -127.9513,
+                              station == "DFO2" & is.na(Longitude) ~ -127.5590,
+         TRUE ~ as.numeric(as.character(Longitude))))
+
+#Making a Tidy/long format for the Chemtax data. This needs to be done for plotting. The other datasets are already in this format
+chem_tidy <- chem %>% 
+  pivot_longer(c(cyan, hapto, green, cryp, dino, dict, raph, diat),
+                 names_to = "phyto_group", values_to = "TChla") %>% 
+  group_by(date, site_id, depth) %>% 
+  mutate(TChla_sum = sum(TChla)) %>% 
+  ungroup() %>% 
+  mutate(rel_abun = TChla/TChla_sum)
+
+
+#Instead of doing this each individually, might be best to do to final merged dataset.
+
+#adding year/month/day to CTD dataset
+ctd <- ctd %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date))
+
+#Adding year/month/date columns to nutrients
+nuts <- nuts %>%  
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date))
+
+#Adding year/month/date columns to microscopy
+micro <- micro %>% 
+    mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date))
+
+#Adding year/month/date columns to Chemtax Tidy/Long format
+chem_tidy <- chem_tidy %>% 
+    mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date))
+
+#Adding year/month/date columns to Chemtax wise format
+chem <- chem %>% 
+    mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date))
+```
+```{r}
+#Performing GSW calculations
+
+#Calculating absolute salinity
+SA <- gsw_SA_from_SP(ctd$sal, ctd$pres, ctd$Longitude, ctd$Latitude)
+
+#Converting absolute salinity output to a dataframe
+SA <- as.data.frame(SA)
+
+#Calculating conservative temperature
+CT <- gsw_CT_from_t(SA$SA, ctd$temp, ctd$pres)
+
+#Converting conservative temperature output to a dataframe
+CT <- as.data.frame(CT)
+
+#Calculating Density
+rho = gsw_rho(SA$SA,CT$CT,ctd$pres)
+
+#Converting Density to a dataframe
+rho <- as.data.frame(rho)
+
+#Calculating Brunt-Vaisala frequency
+bv <- gsw_Nsquared(SA$SA, CT$CT, ctd$pres)
+
+#Converting Brunt-Vaisala frequency to a dataframe
+bv <- bind_rows(bv)
+
+#Adding a row at the bottom of the Brunt-Vaisala dataframe to make the vector length equal to the other calculations
+bv <- bv %>% 
+  add_row(N2 = NA, p_mid = NA)
+
+#Binding calculations to ctd dataframe
+ctd <- cbind(ctd, SA, CT, rho, bv)
+```
+```{r}
+#Performing calculations for delta_rho 
+
+#Finding minimum cast start depth for each profile to determine range of depths to use for density difference. Only 5 casts start deeper than three meters and only 1 doesn't go to 30m. Using 2 and 30 meters for delta_rho calculation
+range_pres <- ctd %>% 
+  group_by(cast_pk) %>% 
+  summarise(min_pres = min(pres),
+            max_pres = max(pres)) %>% 
+  ungroup() %>% 
+  arrange(desc(min_pres))
+
+#The next few steps are used to determine the density difference as a measure of stratification. Using 2 and 30m
+
+#Filter 2m data from the CTD datasheet
+ctd_2 <- ctd %>% 
+  filter(pres == 2) %>% 
+  select(cast_pk, station, Latitude, Longitude, date, year:day, rho)
+
+#filter 30m data
+ctd_30 <- ctd %>% 
+  filter(pres == 30) %>% 
+  select(cast_pk, rho)
+
+#joining 2m data to 3m data
+ctd_dd <- ctd_2 %>% 
+  left_join(ctd_30, by = "cast_pk") %>% 
+  rename(rho_2 = rho.x, 
+         rho_30 = rho.y)
+
+#Calculating difference in density
+ctd_dd <- ctd_dd %>% 
+  mutate(delta_rho = rho_30 - rho_2)
+
+#Preparing delta_rho calculation sheet for merging back into ctd datasheet
+ctd_dd <- ctd_dd %>% 
+  select(cast_pk, delta_rho)
+
+#Merging/joining delta_rho into ctd datasheet
+ctd <- ctd %>% 
+  left_join(ctd_dd)
+```
+```{r}
+#Selecting the pertinent columns for analysis - much easier to assess merging/joining with fewer columns
+
+#Selecting 5 m depth CTD data, selecting  columns and renaming certain columns for merging with nutrients and phytoplankton data.
+ctd_5 <- ctd %>%
+  filter(pres == 5) %>% 
+  rename(date_long = date) %>% 
+  mutate(date = lubridate::date(date_long)) %>%
+  select(cast_pk, date, date_long, site_id = station, pres, temp, sal,
+         N2, delta_rho)
+
+nuts_5 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  select(date, collected, site_id, no2_no3_um, po4, sio2)
+```
+
+```{r}
+#Calculating the daily means for datasets with replicates and replicate casts.
+
+#Determining how many replicate casts there are.
+dup_ctd <- ctd_5 %>% 
+  group_by(date, site_id) %>% 
+  mutate(dups = n()) %>% 
+  arrange(date) %>% 
+  ungroup() %>%
+  filter(dups > 1)  
+
+# Calculating time difference between replicate casts. 
+## Result - 2 just over an hour and one over 4 hours. The four hour one has very similar values, so including in daily mean calculation, but could remove as well. 
+dup_ctd <- dup_ctd %>% 
+  group_by(date, site_id) %>% 
+  arrange(date_long) %>% 
+  mutate(time_diff = as.numeric(date_long - lag(date_long), units = "hours"))
+
+ctd_dm <- ctd_5 %>% 
+  select(date, site_id, temp:delta_rho) %>% 
+  group_by(date, site_id) %>% 
+  summarise(temp_dm = mean(temp),
+            sal_dm = mean(sal),
+            N2_dm = mean(N2),
+            delta_rho_dm = mean(delta_rho)) %>% 
+  ungroup()
+
+# Separating replicate nutrient data from 5m depth data. 
+## Duplicates only from QU39 outside of the dates under investigation. Not bothering with looking at difference in time.
+dups_nuts <- nuts_5 %>% 
+  group_by(date, site_id) %>% 
+  mutate(dups = n()) %>% 
+  ungroup() %>%
+  filter(dups > 1)
+  
+#Performing daily mean on 5m depth nutrient data
+nuts_dm <- nuts_5 %>% 
+  group_by(date, site_id) %>% 
+  summarise(no2_dm = mean(no2_no3_um),
+            sio2_dm = mean(sio2),
+            po4_dm = mean(po4)) %>% 
+  ungroup()
+```
+
+```{r}
+#Formatting the bad nutrient data for merging with the hakai portal dataset. This is awkardly placed here, but not bothering reformatting as it will be removed once the data has been uploaded to the portal.
+
+#Fixing column headers from the bad nutrient dataset
+nuts_bad <- nuts_bad %>%  
+  rename(hakai_id = `Sample ID`)
+
+#Finding records from the Hakai portal dataset that does not have any nutrient concentrations (post June 24th, 2020) - the metadata from these records will be matched with the HakaiIDS from the bad dataset
+nuts_nd <- nuts %>% 
+  filter(line_out_depth == 5 & date > "2020-06-24") %>% 
+  select(date, hakai_id, site_id)
+
+#Joining hakaiIDS from the bad nutrient dataset with the portal metadata (date and station). Checking for replicates. There are none for this subset of data.
+nuts_nd_join <- nuts_nd %>% 
+  left_join(nuts_bad, by = "hakai_id") %>% 
+  drop_na() %>% 
+  group_by(date, site_id) %>% 
+  mutate(n = n()) %>% 
+  ungroup()
+
+#Binding the "bad data" with the nutrient daily mean dataset to complete timeseries.
+nuts_nd_join <-  nuts_nd_join %>% 
+  select(date, site_id, no2_dm = `NO3+NO2`, sio2_dm = SiO2, po4_dm = PO4)
+
+nuts_dm <- nuts_dm %>% 
+  drop_na() 
+
+nuts_dm_bd <- rbind(nuts_nd_join, nuts_dm)
+
+nuts_dm_bd <- nuts_dm_bd %>% 
+  arrange(date, site_id)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
