@@ -109,7 +109,7 @@ qu39_10 <- prof_qu39 %>%
 
 #Calculating the mean of the 10 minimum values for each station
 cal_10_mean <- cal_10 %>% 
-  distinct(min_mean, .keep_all = TRUE) %>% 
+  distinct(castPk, min_mean, .keep_all = TRUE) %>% 
   select(ctdNum, station, date, min_mean, min_std, survey) %>% 
   group_by(date, station) %>% 
   mutate(dup = n()) %>% 
@@ -117,7 +117,7 @@ cal_10_mean <- cal_10 %>%
 
 #QU39
 qu39_10_mean <- qu39_10 %>% 
-  distinct(min_mean, .keep_all = TRUE) %>% 
+  distinct(castPk, min_mean, .keep_all = TRUE) %>% 
   select(ctdNum, station, date, min_mean, min_std) %>% 
   group_by(date) %>% 
   mutate(dup = n()) %>% 
@@ -213,15 +213,28 @@ sub_vals <- cal_10_mean_dm %>%
   filter(rank == 1) %>% 
   select(ctdNum, survey, off_mean)
 
-sub_vals_qu30 <- qu39_10_mean %>% 
+sub_vals_qu39 <- qu39_10_mean %>% 
   select(ctdNum, date, min_mean)
 
 #joining lowest offset value from each survey to all casts from that survey.
 corrected <- prof_cal %>%
   left_join(sub_vals)
 
+#Investigating missing data for castPK 15540, which doesn't have an offset for subtraction
+
+# Prof_cal = instrument 18066, sub_vals = instrument 18032. 
+
+# CTD used for QCS01 was different than the one used for the rest of the Calvert surveys. I think I am good for the other ones, or they wouldn't have merged, right? This must be the one instance where an issue arose.
+
+#Value for this cast_pk will need to be added manually
+
+corrected <- corrected %>% 
+  mutate(off_mean =  case_when(castPk == 15540 ~ 2.1527500,
+                               TRUE ~ as.numeric(as.numeric(off_mean))))
+
+#Merging offset value with turbidity profile for QU39
 corrected_qu39 <- prof_qu39 %>% 
-  left_join(sub_vals_qu30)
+  left_join(sub_vals_qu39)
 
 #correcting turbidity for offset by subtracting lowest offset value
 corrected <- corrected %>% 
@@ -244,10 +257,13 @@ corrected_qu39 <- corrected_qu39 %>%
 # merging Calvert data with qu39 data
 corrected <- rbind(corrected, corrected_qu39)
 
-
 #Adding month
 corrected <- corrected %>%
   mutate(month = lubridate::month(date))
+
+
+test <- corrected %>%
+  filter(castPk == 15540)
 
 
 ```

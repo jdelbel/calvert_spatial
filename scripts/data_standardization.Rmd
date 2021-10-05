@@ -15,7 +15,6 @@ library(tidyverse) #Data wrangling
 library(readxl) #Import excel files
 library(gsw) #Gibbs Seawater Toolbox
 library(here) #File structure management
-
 ```
 
 ```{r}
@@ -23,6 +22,9 @@ library(here) #File structure management
 
 #Upload ctd data
 ctd <- read_csv(here("files", "ctd.csv")) 
+
+#Upload corrected turbidity data - the corrections are rough and need to be reviewed. Trends are probably correct, but each point will have error.
+turb_corr <- read_csv(here("outputs", "corrected_turbidity_v1.csv"))
 
 #Upload nutrient data (QC'd data from the portal)
 nuts <- read_csv(here("files", "nuts_2021-08-17.csv"))
@@ -64,7 +66,7 @@ chem <- rbind(chem_c, chem_q)
 ```{r}
 #Making changes to datasets to make them easier to work with.
 
-#making CTD labels shorter and easier to work with.
+#making CTD labels shorter and easier to work with. Selecting the columns I want to work with.
 ctd <- ctd %>% 
   rename(pres = `Pressure (dbar)`,
          sal = `Salinity (PSU)`,
@@ -74,13 +76,22 @@ ctd <- ctd %>%
          cast_pk = `Cast PK`,
          par = `PAR (umol m-2 s-1)`)
 
-#Renaming Chemtax columns to make them easier to work with
+#Renaming Chemtax columns to make them easier to work with. Selecting the columns I want for analysis.
 chem <- select(chem,
                date = Date, site_id = Station,
                depth, cyan = Cyanobacteria, hapto = Hapto,
                green = `Prasinophytes-3`, cryp = Cryptophytes,
                dino = `Dinoflagellates-1`, dict = Dictyo, raph = Raphido,
                diat = `Diatoms-1`)
+
+#Selecting columns I need from the Secchi workbook. Removing two records where the secchi depth was 999.
+secchi <- secchi %>% 
+  select(date, site_id, secchi_depth = line_out_depth) %>% 
+  filter(secchi_depth < 30)
+
+#Selecting columns I need from the turbidity workbook.
+turb_corr <- turb_corr %>% 
+  select(cast_pk = castPk, pres = pressure, turb_cor)
 
 #Setting data format for Chemtax data. They usually import in a strange format and need to be fixed.
 chem$date <- as.Date(chem$date, "%Y-%m-%d")
@@ -148,6 +159,7 @@ chem <- chem %>%
          month = lubridate::month(date),
          day = lubridate::day(date))
 ```
+
 ```{r}
 #Performing GSW calculations
 
@@ -218,11 +230,18 @@ ctd_dd <- ctd_dd %>%
 #Preparing delta_rho calculation sheet for merging back into ctd datasheet
 ctd_dd <- ctd_dd %>% 
   select(cast_pk, delta_rho)
-
-#Merging/joining delta_rho into ctd datasheet
-ctd <- ctd %>% 
-  left_join(ctd_dd)
 ```
+
+
+```{r}
+#Merging delta_rho and the corrected turbidity back into the ctd workbook here
+
+#Merging/joining delta_rho and corrected turbidity into ctd datasheet
+ctd <- ctd %>% 
+  left_join(ctd_dd) %>% 
+  left_join((turb_corr))
+```
+
 ```{r}
 #Selecting the pertinent columns for analysis - much easier to assess merging/joining with fewer columns
 
@@ -232,8 +251,13 @@ ctd_5 <- ctd %>%
   rename(date_long = date) %>% 
   mutate(date = lubridate::date(date_long)) %>%
   select(cast_pk, date, date_long, site_id = station, pres, temp, sal,
-         N2, delta_rho)
+         N2, delta_rho, turb_cor)
 
+#Limited years to those being used for analysis
+ctd_5 <- ctd_5 %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01")
+
+#Selecting 5m nutrients and limiting to useful columns (my column selections are scattered all over the place and this could be done to all files much earlier, no? Chunk 2)
 nuts_5 <- nuts %>% 
   filter(line_out_depth == 5) %>% 
   select(date, collected, site_id, no2_no3_um, po4, sio2)
@@ -251,19 +275,20 @@ dup_ctd <- ctd_5 %>%
   filter(dups > 1)  
 
 # Calculating time difference between replicate casts. 
-## Result - 2 just over an hour and one over 4 hours. The four hour one has very similar values, so including in daily mean calculation, but could remove as well. 
+## Result - 2 just over an hour and one over 4 hours. The four hour one has very similar values, so including in daily mean calculation, but could remove as. 
 dup_ctd <- dup_ctd %>% 
   group_by(date, site_id) %>% 
   arrange(date_long) %>% 
   mutate(time_diff = as.numeric(date_long - lag(date_long), units = "hours"))
 
 ctd_dm <- ctd_5 %>% 
-  select(date, site_id, temp:delta_rho) %>% 
+  select(date, site_id, temp:turb_cor) %>% 
   group_by(date, site_id) %>% 
   summarise(temp_dm = mean(temp),
             sal_dm = mean(sal),
             N2_dm = mean(N2),
-            delta_rho_dm = mean(delta_rho)) %>% 
+            delta_rho_dm = mean(delta_rho),
+            turb_dm = mean(turb_cor)) %>% 
   ungroup()
 
 # Separating replicate nutrient data from 5m depth data. 
@@ -314,9 +339,48 @@ nuts_dm_bd <- rbind(nuts_nd_join, nuts_dm)
 
 nuts_dm_bd <- nuts_dm_bd %>% 
   arrange(date, site_id)
+```
+
+```{r}
+#To merge with the environmental driver data, the microscopy needs to be transformed to wide format where species represent columns and samples represent rows. Up until now, I have done this in the individual statistical analysis workbooks, but better to do it once here. The only issue is that for some statistical analysis, I remove some species that are infrequently observed and I haven't decided on a final method for this. It needs to be done while the data is still in long format.
+
+
+
+
 
 ```
 
+```{r}
+#Merging ctd and nutrient data
+
+#Still need to merge - turbidity (pull from correction workbook). Why are there so many days with missing turbidity? Every CTD cast should have turbidity data, no? Need to look into this. Did I account for days where two different CTDs may have been used???
+
+#Dates to investigate
+#2018-01-24 - QU39 - Sensor blank was > 3
+#2018-04-22 - QCS01 - Sensor had very high blank values > 70
+#2018-04-25 - DFO2 - Same survey/sensor
+#2018-04-28 - KC10 - Same survey/sensor
+#2020-07-22 - QU39 - Exists. 15453. D
+#2020-07-29 - QU39 - programming issue, fixed
+#2020-08-06 - QCS01 - fixed.
+#2020-09-22 - QU39 - programming issue, fixed
+
+ctd_merge <- ctd_dm %>% 
+  left_join(nuts_dm_bd) %>% 
+  left_join(secchi)
+```
+
+
+
+
+
+
+
+```{r}
+ctd_merge %>% 
+  ggplot(aes(x = secchi_depth, y = turb_dm)) +
+  geom_point()
+```
 
 
 
