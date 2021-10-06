@@ -61,6 +61,10 @@ chem_c <- read_xls(here("files", "calvert_chemtax.xls"),
 
 #Binding the Calvert and Quadra Microscopy datasets into a single dataframe.
 chem <- rbind(chem_c, chem_q)
+
+#Bringing in Chlorophyll
+chl <- read_csv(here("files", "chl.csv"))
+
 ```
 
 ```{r}
@@ -130,34 +134,34 @@ chem_tidy <- chem %>%
 #Instead of doing this each individually, might be best to do to final merged dataset.
 
 #adding year/month/day to CTD dataset
-ctd <- ctd %>% 
+ctd <- ctd %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          day = lubridate::day(date))
 
 #Adding year/month/date columns to nutrients
-nuts <- nuts %>%  
-  mutate(year = lubridate::year(date),
-         month = lubridate::month(date),
-         day = lubridate::day(date))
+# nuts <- nuts %>%  
+#   mutate(year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          day = lubridate::day(date))
 
 #Adding year/month/date columns to microscopy
-micro <- micro %>% 
-    mutate(year = lubridate::year(date),
-         month = lubridate::month(date),
-         day = lubridate::day(date))
+# micro <- micro %>% 
+#     mutate(year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          day = lubridate::day(date))
 
 #Adding year/month/date columns to Chemtax Tidy/Long format
-chem_tidy <- chem_tidy %>% 
-    mutate(year = lubridate::year(date),
-         month = lubridate::month(date),
-         day = lubridate::day(date))
+# chem_tidy <- chem_tidy %>% 
+#     mutate(year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          day = lubridate::day(date))
 
 #Adding year/month/date columns to Chemtax wise format
-chem <- chem %>% 
-    mutate(year = lubridate::year(date),
-         month = lubridate::month(date),
-         day = lubridate::day(date))
+# chem <- chem %>% 
+#     mutate(year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          day = lubridate::day(date))
 ```
 
 ```{r}
@@ -342,11 +346,84 @@ nuts_dm_bd <- nuts_dm_bd %>%
 ```
 
 ```{r}
-#To merge with the environmental driver data, the microscopy needs to be transformed to wide format where species represent columns and samples represent rows. Up until now, I have done this in the individual statistical analysis workbooks, but better to do it once here. The only issue is that for some statistical analysis, I remove some species that are infrequently observed and I haven't decided on a final method for this. It needs to be done while the data is still in long format.
+#To merge with the environmental driver data, the microscopy needs to be transformed to wide format where species represent columns and samples represent rows. Up until now, I have done this in the individual statistical analysis workbooks, but better to do it once here. The only issue is that for some statistical analysis, I remove some species that are infrequently observed and I haven't decided on a final method for this. It needs to be done while the data is still in long format, so i will need two outputs. Less concerned about data matches for taxonomy anyways.
+
+##Removeing data outside of timeframe under investigation
+micro <- micro %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01")
+
+#Removing species that are clearly heterotrophs (some hetero/mixos remain in the photo class though)
+micro <- micro %>% 
+  filter(trophicStatus == "auto")
+
+#Removing unknown classifications (Protozoa). Summing counts where I have multiple records of the same species for a day, but different qualifiers
+micro <- micro %>%
+  filter(!scientificName == "Protozoa") %>%
+  group_by(date, site_id, scientificName) %>%
+  summarize(species_sum = sum(count)) %>%
+  ungroup()
+
+#Summing the total abundance for each day - might be easier in column format.
+# micro <- micro %>% 
+#   group_by(date, site_id) %>% 
+
+#pivoting longer so species are columns. 
+micro_piv <- micro %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0)) %>% 
+  arrange(site_id, date)
 
 
+```
 
+```{r}
+#Working with the chlorophyll data to make it mergable with other data.
 
+#Checking for duplicate data - doesn't appear to be any.
+chl_dup <- chl %>% 
+  group_by(date, site_id, filter_type) %>% 
+  summarize(n = n()) %>% 
+  ungroup() %>% 
+  filter(n > 1)
+
+#Selecting only Size fractions, checking for duplicates, calculating relative contributions of each size fraction
+chl_sf <- chl %>% 
+  filter(!filter_type == "Bulk GF/F", chla_flag == "AV" | chla_flag == "ADL" |
+           is.na(chla_flag)) %>% 
+  select(date, site_id, filter_type, chla, chla_flag) %>% 
+  group_by(date, site_id) %>% 
+  mutate(n = n(),
+         chl_sum = sum(chla)) %>% 
+  ungroup() %>% 
+  mutate(chl_per = chla/chl_sum)
+
+#Separating bulk chlorophyll data
+chl_bulk <- chl %>% 
+  filter(filter_type == "Bulk GF/F", chla_flag == "AV" | chla_flag == "ADL" |
+           is.na(chla_flag)) %>% 
+  select(date, site_id, filter_type, chla)
+
+#Pivoting SF concentration data wider for joining with other data
+chl_sf_wide <- chl_sf %>% 
+  select(date, site_id, filter_type, chla) %>% 
+  pivot_wider(names_from = filter_type, values_from = chla) %>% 
+  rename(micro_chl = '20um', nano_chl = '3um', pico_chl = 'GF/F')
+
+#Pivoting SF percent data wider for joining with other data
+chl_sfp_wide <- chl_sf %>% 
+  select(date, site_id, filter_type, chl_per) %>% 
+  pivot_wider(names_from = filter_type, values_from = chl_per) %>% 
+  rename(micro_perc = '20um', nano_perc = '3um', pico_perc = 'GF/F')
+
+#Pivoting bulk wide for joining with other data
+chl_bulk_wide <- chl_bulk %>% 
+  select(date, site_id, filter_type, chla) %>% 
+  pivot_wider(names_from = filter_type, values_from = chla) %>% 
+  rename(bulk_chl = 'Bulk GF/F')
+
+chl_merge <- chl_sf_wide %>% 
+  left_join(chl_sfp_wide) %>% 
+  left_join(chl_bulk_wide)
 
 ```
 
@@ -367,20 +444,90 @@ nuts_dm_bd <- nuts_dm_bd %>%
 
 ctd_merge <- ctd_dm %>% 
   left_join(nuts_dm_bd) %>% 
-  left_join(secchi)
+  left_join(secchi) %>% 
+  left_join(chl_merge) %>% 
+  left_join(micro_piv)
+
 ```
-
-
-
-
-
-
 
 ```{r}
-ctd_merge %>% 
-  ggplot(aes(x = secchi_depth, y = turb_dm)) +
-  geom_point()
+#Here, I downscale the QU39 data to the nearest matching dates to those on Calvert. 
+
+#Making a worksheet of just QU39 data
+ctd_merge_qu39 <- ctd_merge %>% 
+  filter(site_id == "QU39")
+
+#Selecting closest dates of QU39 to those of the Calvert surveys
+ctd_merge_qu39 <- ctd_merge_qu39 %>% 
+  filter(date == "2018-05-29" | #could also be 05-22
+         date == "2018-06-26" |
+         date == "2018-07-23" | # Could also be 07-16
+         date == "2018-08-21" | # 08-14, 08-28
+         date == "2018-09-13" |   
+         date == "2018-10-24" |
+         date == "2019-05-09" |
+         date == "2019-06-04" |
+         date == "2019-07-09" |
+         date == "2019-08-07" |
+         date == "2019-08-29" |
+         date == "2019-10-09" |
+         #date == "2019-11-26" | #removing this for multi-year analysis
+         date == "2020-04-29" | #Different month, but very close temporally
+         date == "2020-06-04" |
+         date == "2020-07-09" | # Also 06-30 - Tricky
+         date == "2020-08-04" | # Also 08-13 
+         date == "2020-09-01" |
+         date == "2020-10-08")
+            
+#Removing QU39 from ctd_merge file so I can reintroduce it with the downscaled QU39 data
+ctd_merge_no_qu39 <- ctd_merge %>% 
+  filter(!(site_id == "QU39"))
+
+#Merging the downscaled QU39 data back into the full dataset 
+ctd_merge_ds <- rbind(ctd_merge_no_qu39, ctd_merge_qu39)
+
+#Here, dates that were collected on the cusp of a month change, where the rest of survey was done in following month, are pushed forward to the next month. This helps with plotting by month or else I will get two surveys for a single month. 
+ctd_merge_ds <- ctd_merge_ds %>%  
+  mutate(month = lubridate::month(date),
+         month = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month)))
+
+#Pulling out the data I want for analysis (May to October 2018-2021)
+ctd_merge_ds <- ctd_merge_ds %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11)
+
+#In this final files, there were some CTD days where samples were not collected. Filtering these out.
+ctd_merge_ds <- ctd_merge_ds %>% 
+  filter(!is.na(no2_dm))
+
+#Relocating month to be after date for visual ease
+ctd_merge_ds <- ctd_merge_ds %>% 
+  relocate(month, .after = date)
+
+test <- ctd_merge_ds %>% 
+  filter(is.na(micro_chl))
 ```
+
+```{r}
+#This final ctd_merge_ds files, should be an overarching, standardized and consistent file that I can now pull into all of my different analysis scripts. This should reduced error and data mismatches. The only analysis that may need to be done independently is nMDS where I need to remove species that aren't observed very often. 
+
+#Cross check my current RDA file that the sample size of the analysis is 67 and if it is larger, why? What have I cut out here?
+
+#It's actually less - 59 - Why? One reason could be chlorophyll data, which I incorporated and may have had missing data. Incorporate here and see. 8 Chlorophyll samples missing - this explains the disparity. Should be good to go.
+
+#Exporting as a csv to pull into other analysis.
+write_csv(ctd_merge_ds, here("outputs", "ctd_merge_master_2021-10-06.csv"))
+
+```
+
+
+
+
+
+
 
 
 
