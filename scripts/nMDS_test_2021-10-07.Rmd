@@ -1,0 +1,313 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+library(indicspecies)
+library(fuzzySim)
+
+#Need to go through and test these
+
+```
+
+```{r}
+#Upload data
+#Upload data from my master data standardization sheet
+micro <- read_csv(here("outputs", "micro_master_2021-10-06.csv")) 
+
+```
+
+```{r}
+#Could try to limit cryptic species that influence stats. Leaving off for now.
+
+#Only species occurring in 25% of the samples - could try this.
+
+#Could also try removing samples that represent <1% of abundance (currently switched on)
+
+#Counting how many times each species is observed
+micro <- micro %>%
+  group_by(scientificName) %>%
+  mutate(num_occurrence = n())
+
+#removing species that have not been observed at least twice.
+micro <- micro %>%
+  filter(num_occurrence > 2)
+
+#Method where I removed species not observed more than once resulted in 2420 records. Here I am trying a more convservative method where I remove any species that do not exceed 1% of abundance in any of the samples. The result is 1829 records - far fewer. Need to do a literature review here to see what is most appropriate, but I think this method is probably more focused.
+# micro_1perc <- micro %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(abund_sum = sum(species_sum)) %>% 
+#   ungroup
+# 
+# micro_1perc <- micro_1perc %>% 
+#   mutate(abund_rel = species_sum/abund_sum*100)
+# 
+# less_1perc <- micro_1perc %>% 
+#   group_by(scientificName) %>% 
+#   summarize(max = max(abund_rel)) %>% 
+#   ungroup() %>% 
+#   filter(max < 1)
+# 
+# sp_rem <- less_1perc$scientificName
+# 
+# micro_1perc <- micro %>%
+#   filter(!(scientificName %in% sp_rem))
+# 
+# micro <- micro_1perc
+
+#Result of analysis is pretty comparable. Lit review to determine best method.
+
+```
+
+```{r}
+#Selecting columns
+micro <- micro %>% 
+  select(date, month, month_surv, site_id, scientificName, species_sum)
+
+
+#pivoting longer so species are columns. 
+micro_piv <- micro %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+#Roughly adding seasons - would like to make cosmological seasons
+micro_piv <- micro_piv %>%
+  mutate(season = case_when(month >= 4 & month <= 6 ~ "spring",
+                            month >= 7 & month <= 9 ~ "summer",
+                            month >= 10 & month <= 11 ~ "autumn",)) %>%
+  relocate(season, .after = month)
+
+#Arranging according to site ID and date
+micro_piv <- micro_piv %>% 
+  arrange(site_id, date)
+
+#Pulling out species counts for transform and input into clustering and NMDS
+transform <- micro_piv[, 6:ncol(micro_piv)]  
+
+transform_rel <- decostand(transform, method = "total")
+  
+#Log10 transformation +1 (as per Mahara)
+transform <- log10(transform + 1)
+
+transform_rel <- sqrt(transform_rel)
+
+#Performing clustering - need to retry this, but turning off for now.
+dend_micro <- transform %>%
+  vegdist("bray") %>%
+  hclust(method = "average") %>%
+  as.dendrogram()
+```
+
+```{r}
+# http://www.sthda.com/english/wiki/beautiful-dendrogram-visualizations-in-r-5-must-known-methods-unsupervised-machine-learning
+
+dend_data <- dendro_data(dend_micro, type = "rectangle")
+
+names(dend_data)
+head(dend_data$segments)
+
+ggplot(dend_data$segments) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
+  geom_text(data = dend_data$labels, aes(x, y, label = label),
+            hjust = 1, angle = 90, size = 3)
+
+
+```
+
+
+```{r}
+#Running nmds on entire dataset, without QU39 monthly averaged
+nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Decent stress score - 0.16
+
+nmds_rel <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+
+#Checking stressplot for fit
+stressplot(nmds)
+
+stressplot(nmds_rel)
+```
+```{r}
+
+#Calculating species scores that are driving the nmds
+
+# https://www.rpubs.com/RGrieger/545184
+
+nmds_sp <- envfit(nmds, transform, permutations = 999)
+head(nmds_sp)
+
+```
+
+```{r}
+#Pulling NMDS scores, months and stations for plotting NMDS is ggplot
+
+# https://stackoverflow.com/questions/14711470/plotting-envfit-vectors-vegan-package-in-ggplot2
+#If I want to try to get species vectors on plot try above link, near bottom
+# spp.scrs <- as.data.frame(scores(nmds_sp, display = "vectors"))
+# test <- as.data.frame(nmds_sp, display = "pvals")
+# spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
+
+data.scores = as.data.frame(scores(nmds))
+data.scores$month = micro_piv$month
+data.scores$site = micro_piv$site_id
+
+data.scores.rel = as.data.frame(scores(nmds_rel))
+data.scores.rel$month = micro_piv$month
+data.scores.rel$site = micro_piv$site_id
+
+```
+
+```{r}
+#Plotting nMDS - commented sections are for if I want to add environmental fits.
+
+ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores, aes(fill = as.factor(month), shape = site),
+             size = 4) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.8) +
+  theme(axis.title = element_text(size = 10, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 10, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 9, colour = "black"),
+        legend.position = c(0.92, 0.6),
+        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+ggsave(here("figures_new", "nmds_micro_ggplot_month_station_1perc.png"),
+       width = 6, height = 4.5, dpi = 300)
+```
+```{r}
+ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores.rel, aes(fill = as.factor(month), shape = site),
+             size = 4) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.8) +
+  theme(axis.title = element_text(size = 10, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 10, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 9, colour = "black"),
+        legend.position = c(0.92, 0.6),
+        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+ggsave(here("figures_new", "nmds_micro_ggplot_month_station_1perc.png"),
+       width = 6, height = 4.5, dpi = 300)
+```
+
+```{r}
+#separating treatments for following tests
+season <-  micro_piv$season
+site_id <- micro_piv$site_id
+month <- micro_piv$month
+```
+
+
+
+```{r}
+#ANOSIM test to see if groupings statistically significant
+ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
+ano_site
+
+ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
+ano_month
+
+ano_season = anosim(transform, season, distance = "bray", permutations = 9999)
+ano_season
+```
+
+```{r}
+#Indicator species analysis
+
+#Indicators by season
+inv_season = multipatt(transform, season, func = "r.g",
+                       control = how(nperm = 9999))
+#by site
+inv_site = multipatt(transform, site_id, func = "r.g",
+                       control = how(nperm = 9999))
+#by month
+inv_month = multipatt(transform, month, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_site)
+```
+
+```{r}
+#Uploading CTD data - https://jkzorz.github.io/2020/04/04/NMDS-extras.html
+# ctd <- read_csv(here("outputs", "ctd_merge.csv"))
+# 
+# ctd <- ctd %>% 
+#   rename(date = ymd, site_id = station, salinity = sal_dm, temperature = temp_dm)
+# 
+# #merging with micro data
+# 
+# micro_ctd <- micro_piv %>% 
+#   left_join(ctd, by = c("date", "site_id"))
+# 
+# env <- micro_ctd[,104:111]
+# 
+# en = envfit(nmds_all, env, permutations = 999, na.rm = TRUE)
+# 
+# en
+# 
+# en_coord_cont <- as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
+# 
+# #Can't figure out how to add these yet. Look into it as would be cool.
+# sp_cont <- as.data.frame(scores(nmds.spp.fit, "vectors")) * ordiArrowMul(en)
+# 
+# en_coord_cont <- en_coord_cont[c(1:2, 7),]
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

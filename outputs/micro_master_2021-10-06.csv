@@ -1,0 +1,2455 @@
+date,month,month_surv,site_id,scientificName,species_sum
+2018-05-23,5,5,KC10,Apedinella spinifera,17499
+2018-05-23,5,5,KC10,Biddulphiales,23333
+2018-05-23,5,5,KC10,Chaetoceros,4000
+2018-05-23,5,5,KC10,Chaetoceros debilis,21200
+2018-05-23,5,5,KC10,Chaetoceros laciniosus,400
+2018-05-23,5,5,KC10,Chaetoceros radicans,1200
+2018-05-23,5,5,KC10,Chaetoceros similis,2800
+2018-05-23,5,5,KC10,Chaetoceros tenuissimus,200
+2018-05-23,5,5,KC10,Ciliophrys infusionum,23332
+2018-05-23,5,5,KC10,Dactyliosolen fragilissimus,16400
+2018-05-23,5,5,KC10,Dactyliosolen phuketensis,200
+2018-05-23,5,5,KC10,Dictyocha,400
+2018-05-23,5,5,KC10,Dictyocha speculum,800
+2018-05-23,5,5,KC10,Dinobryon,11666
+2018-05-23,5,5,KC10,Dinophyceae,800
+2018-05-23,5,5,KC10,Eucampia zodiacus,400
+2018-05-23,5,5,KC10,Euglenozoa,2800
+2018-05-23,5,5,KC10,Guinardia delicatula,800
+2018-05-23,5,5,KC10,Gymnodinium,800
+2018-05-23,5,5,KC10,Gyrodinium,1200
+2018-05-23,5,5,KC10,Hillea,93328
+2018-05-23,5,5,KC10,Leptocylindrus danicus,1800
+2018-05-23,5,5,KC10,Pennales,2200
+2018-05-23,5,5,KC10,Protoperidinium,400
+2018-05-23,5,5,KC10,Protoperidinium steinii,600
+2018-05-23,5,5,KC10,Pseudo-nitzschia delicatissima,7200
+2018-05-23,5,5,KC10,Pseudo-nitzschia multiseries,17000
+2018-05-23,5,5,KC10,Pseudo-nitzschia seriata,7000
+2018-05-23,5,5,KC10,Pyramimonas grossii,40831
+2018-05-23,5,5,KC10,Rhizosolenia setigera,200
+2018-05-23,5,5,KC10,Scrippsiella precaria,1000
+2018-05-23,5,5,KC10,Scrippsiella trochoidea,400
+2018-05-23,5,5,KC10,Skeletonema marinoi,1156000
+2018-05-23,5,5,KC10,Teleaulax,116660
+2018-05-23,5,5,KC10,Teleaulax acuta,5833
+2018-05-23,5,5,KC10,Teleaulax amphioxeia,5833
+2018-05-23,5,5,KC10,Thalassionema nitzschioides,1600
+2018-05-23,5,5,KC10,Thalassiosira,31000
+2018-05-23,5,5,KC10,Thalassiosira rotula,400
+2018-05-29,5,5,QCS01,Bacterosira,623
+2018-05-29,5,5,QCS01,Ceratium lineatum,1157
+2018-05-29,5,5,QCS01,Chaetoceros cinctus,356
+2018-05-29,5,5,QCS01,Chaetoceros convolutus,356
+2018-05-29,5,5,QCS01,Chaetoceros debilis,1157
+2018-05-29,5,5,QCS01,Chaetoceros radicans,2136
+2018-05-29,5,5,QCS01,Chaetoceros socialis,11433
+2018-05-29,5,5,QCS01,Cylindrotheca closterium,623
+2018-05-29,5,5,QCS01,Dactyliosolen fragilissimus,979
+2018-05-29,5,5,QCS01,Dactyliosolen phuketensis,8099
+2018-05-29,5,5,QCS01,Dictyocha,89
+2018-05-29,5,5,QCS01,Dictyocha speculum,356
+2018-05-29,5,5,QCS01,Dinophysis acuminata,267
+2018-05-29,5,5,QCS01,Dinophysis fortii,89
+2018-05-29,5,5,QCS01,Euglenozoa,89
+2018-05-29,5,5,QCS01,Guinardia delicatula,267
+2018-05-29,5,5,QCS01,Gymnodinium,267
+2018-05-29,5,5,QCS01,Gyrodinium,445
+2018-05-29,5,5,QCS01,Hillea,198339
+2018-05-29,5,5,QCS01,Leptocylindrus danicus,1513
+2018-05-29,5,5,QCS01,Pennales,712
+2018-05-29,5,5,QCS01,Protoperidinium,534
+2018-05-29,5,5,QCS01,Pseudo-nitzschia delicatissima,1602
+2018-05-29,5,5,QCS01,Pseudo-nitzschia multiseries,801
+2018-05-29,5,5,QCS01,Pseudo-nitzschia seriata,534
+2018-05-29,5,5,QCS01,Pterosperma,3889
+2018-05-29,5,5,QCS01,Pyramimonas grossii,19445
+2018-05-29,5,5,QCS01,Pyramimonas orientalis,50557
+2018-05-29,5,5,QCS01,Scrippsiella precaria,89
+2018-05-29,5,5,QCS01,Scrippsiella trochoidea,178
+2018-05-29,5,5,QCS01,Skeletonema marinoi,43374
+2018-05-29,5,5,QCS01,Teleaulax,50557
+2018-05-29,5,5,QCS01,Teleaulax acuta,7778
+2018-05-29,5,5,QCS01,Thalassionema nitzschioides,89
+2018-05-29,5,5,QCS01,Thalassiosira,1157
+2018-05-29,5,5,QCS01,Thalassiosira rotula,178
+2018-05-30,5,5,DFO2,Cerataulina bicornis,576
+2018-05-30,5,5,DFO2,Chaetoceros,1584
+2018-05-30,5,5,DFO2,Chaetoceros cinctus,4608
+2018-05-30,5,5,DFO2,Chaetoceros debilis,3312
+2018-05-30,5,5,DFO2,Chaetoceros laciniosus,288
+2018-05-30,5,5,DFO2,Chaetoceros radicans,576
+2018-05-30,5,5,DFO2,Chaetoceros seiracanthus,576
+2018-05-30,5,5,DFO2,Chaetoceros tenuissimus,5529
+2018-05-30,5,5,DFO2,Ciliophrys infusionum,2692
+2018-05-30,5,5,DFO2,Cylindrotheca closterium,2448
+2018-05-30,5,5,DFO2,Dactyliosolen fragilissimus,5328
+2018-05-30,5,5,DFO2,Dactyliosolen phuketensis,144
+2018-05-30,5,5,DFO2,Dictyocha,144
+2018-05-30,5,5,DFO2,Dictyocha speculum,720
+2018-05-30,5,5,DFO2,Dinophyceae,432
+2018-05-30,5,5,DFO2,Dinophysis acuminata,144
+2018-05-30,5,5,DFO2,Ebria tripartita,432
+2018-05-30,5,5,DFO2,Gymnodinium,288
+2018-05-30,5,5,DFO2,Gyrodinium,144
+2018-05-30,5,5,DFO2,Hillea,78068
+2018-05-30,5,5,DFO2,Leptocylindrus danicus,1584
+2018-05-30,5,5,DFO2,Pennales,864
+2018-05-30,5,5,DFO2,Protoperidinium,144
+2018-05-30,5,5,DFO2,Protoperidinium steinii,144
+2018-05-30,5,5,DFO2,Pseudo-nitzschia delicatissima,7200
+2018-05-30,5,5,DFO2,Pseudo-nitzschia multiseries,13968
+2018-05-30,5,5,DFO2,Pseudo-nitzschia seriata,10080
+2018-05-30,5,5,DFO2,Pyramimonas orientalis,5384
+2018-05-30,5,5,DFO2,Scrippsiella precaria,720
+2018-05-30,5,5,DFO2,Scrippsiella trochoidea,3888
+2018-05-30,5,5,DFO2,Skeletonema marinoi,347310
+2018-05-30,5,5,DFO2,Teleaulax,34996
+2018-05-30,5,5,DFO2,Teleaulax acuta,2692
+2018-05-30,5,5,DFO2,Teleaulax amphioxeia,10768
+2018-05-30,5,5,DFO2,Thalassionema nitzschioides,3168
+2018-05-30,5,5,DFO2,Thalassiosira,10800
+2018-05-30,5,5,DFO2,Thalassiosira anguste-lineata,432
+2018-05-30,5,5,DFO2,Thalassiosira pacifica,5184
+2018-05-30,5,5,DFO2,Thalassiosira rotula,576
+2018-06-19,6,6,DFO2,Chaetoceros ceratosporus,54
+2018-06-19,6,6,DFO2,Chaetoceros cinctus,540
+2018-06-19,6,6,DFO2,Chaetoceros seiracanthus,108
+2018-06-19,6,6,DFO2,Chrysophyceae,7000
+2018-06-19,6,6,DFO2,Corethron criophilum,162
+2018-06-19,6,6,DFO2,Cyanobacteria,1188
+2018-06-19,6,6,DFO2,Cylindrotheca closterium,1458
+2018-06-19,6,6,DFO2,Dictyocha,54
+2018-06-19,6,6,DFO2,Dictyocha speculum,378
+2018-06-19,6,6,DFO2,Dinobryon,14000
+2018-06-19,6,6,DFO2,Dinophyceae,432
+2018-06-19,6,6,DFO2,Dinophysis acuminata,972
+2018-06-19,6,6,DFO2,Dinophysis fortii,108
+2018-06-19,6,6,DFO2,Ebria tripartita,5940
+2018-06-19,6,6,DFO2,Gymnodinium,54
+2018-06-19,6,6,DFO2,Gyrodinium,432
+2018-06-19,6,6,DFO2,Hillea,532000
+2018-06-19,6,6,DFO2,Katodinium,54
+2018-06-19,6,6,DFO2,Katodinium glaucum,54
+2018-06-19,6,6,DFO2,Leptocylindrus danicus,918
+2018-06-19,6,6,DFO2,Pennales,8188
+2018-06-19,6,6,DFO2,Pleurosigma,54
+2018-06-19,6,6,DFO2,Protoperidinium,54
+2018-06-19,6,6,DFO2,Pseudo-nitzschia delicatissima,216
+2018-06-19,6,6,DFO2,Pseudo-nitzschia multiseries,378
+2018-06-19,6,6,DFO2,Pseudo-nitzschia seriata,486
+2018-06-19,6,6,DFO2,Pyramimonas orientalis,14000
+2018-06-19,6,6,DFO2,Scrippsiella trochoidea,54
+2018-06-19,6,6,DFO2,Skeletonema marinoi,22436
+2018-06-19,6,6,DFO2,Teleaulax,161000
+2018-06-19,6,6,DFO2,Teleaulax acuta,7000
+2018-06-19,6,6,DFO2,Tetraselmis gracilis,14000
+2018-06-19,6,6,DFO2,Thalassionema nitzschioides,2268
+2018-06-19,6,6,DFO2,Thalassiosira,6642
+2018-06-27,6,6,KC10,Apedinella spinifera,2692
+2018-06-27,6,6,KC10,Attheya,5385
+2018-06-27,6,6,KC10,Bacteriastrum,3744
+2018-06-27,6,6,KC10,Biddulphiales,432
+2018-06-27,6,6,KC10,Ceratium divaricatum,144
+2018-06-27,6,6,KC10,Ceratium horridum,144
+2018-06-27,6,6,KC10,Ceratium lineatum,432
+2018-06-27,6,6,KC10,Chaetoceros,1584
+2018-06-27,6,6,KC10,Chaetoceros ceratosporus,288
+2018-06-27,6,6,KC10,Chaetoceros cinctus,3024
+2018-06-27,6,6,KC10,Chaetoceros danicus,432
+2018-06-27,6,6,KC10,Chaetoceros debilis,22000
+2018-06-27,6,6,KC10,Chaetoceros diadema,1008
+2018-06-27,6,6,KC10,Chaetoceros didymus,432
+2018-06-27,6,6,KC10,Chaetoceros laciniosus,1728
+2018-06-27,6,6,KC10,Chaetoceros seiracanthus,1872
+2018-06-27,6,6,KC10,Chaetoceros similis,3456
+2018-06-27,6,6,KC10,Chaetoceros socialis,21744
+2018-06-27,6,6,KC10,Chaetoceros tenuissimus,2692
+2018-06-27,6,6,KC10,Cylindrotheca closterium,288
+2018-06-27,6,6,KC10,Dactyliosolen fragilissimus,576
+2018-06-27,6,6,KC10,Dactyliosolen phuketensis,1872
+2018-06-27,6,6,KC10,Dictyocha,144
+2018-06-27,6,6,KC10,Dictyocha speculum,1008
+2018-06-27,6,6,KC10,Dinophyceae,1008
+2018-06-27,6,6,KC10,Dinophysis acuminata,288
+2018-06-27,6,6,KC10,Dinophysis fortii,144
+2018-06-27,6,6,KC10,Dinophysis rotundata,144
+2018-06-27,6,6,KC10,Eucampia groenlandica,288
+2018-06-27,6,6,KC10,Eutreptiella hirudoidea,144
+2018-06-27,6,6,KC10,Guinardia delicatula,144
+2018-06-27,6,6,KC10,Gymnodinium,864
+2018-06-27,6,6,KC10,Hillea,29612
+2018-06-27,6,6,KC10,Katodinium,144
+2018-06-27,6,6,KC10,Katodinium glaucum,144
+2018-06-27,6,6,KC10,Leptocylindrus danicus,10368
+2018-06-27,6,6,KC10,Pennales,5672
+2018-06-27,6,6,KC10,Phaeocystis pouchetii,2448
+2018-06-27,6,6,KC10,Pleurosigma,576
+2018-06-27,6,6,KC10,Protoperidinium,288
+2018-06-27,6,6,KC10,Protoperidinium steinii,576
+2018-06-27,6,6,KC10,Pseudo-nitzschia multiseries,432
+2018-06-27,6,6,KC10,Pseudo-nitzschia seriata,1152
+2018-06-27,6,6,KC10,Pyramimonas orientalis,2692
+2018-06-27,6,6,KC10,Rhizosolenia setigera,720
+2018-06-27,6,6,KC10,Scrippsiella precaria,288
+2018-06-27,6,6,KC10,Skeletonema marinoi,447000
+2018-06-27,6,6,KC10,Teleaulax,16152
+2018-06-27,6,6,KC10,Teleaulax acuta,2692
+2018-06-27,6,6,KC10,Thalassionema nitzschioides,3888
+2018-06-27,6,6,KC10,Thalassiosira,7920
+2018-06-27,6,6,KC10,Thalassiosira rotula,1440
+2018-07-14,7,7,QCS01,Asterionellopsis glacialis,2160
+2018-07-14,7,7,QCS01,Attheya,1750
+2018-07-14,7,7,QCS01,Ceratium fusus,144
+2018-07-14,7,7,QCS01,Ceratium horridum,576
+2018-07-14,7,7,QCS01,Chaetoceros,4320
+2018-07-14,7,7,QCS01,Chaetoceros ceratosporus,144
+2018-07-14,7,7,QCS01,Chaetoceros cinctus,14112
+2018-07-14,7,7,QCS01,Chaetoceros debilis,16848
+2018-07-14,7,7,QCS01,Chaetoceros diadema,1728
+2018-07-14,7,7,QCS01,Chaetoceros laciniosus,1152
+2018-07-14,7,7,QCS01,Chaetoceros radicans,3744
+2018-07-14,7,7,QCS01,Chaetoceros similis,2304
+2018-07-14,7,7,QCS01,Chaetoceros socialis,32200
+2018-07-14,7,7,QCS01,Chaetoceros tenuissimus,144
+2018-07-14,7,7,QCS01,Corethron criophilum,144
+2018-07-14,7,7,QCS01,Cyanobacteria,10500
+2018-07-14,7,7,QCS01,Cylindrotheca closterium,1728
+2018-07-14,7,7,QCS01,Dactyliosolen fragilissimus,432
+2018-07-14,7,7,QCS01,Dactyliosolen phuketensis,576
+2018-07-14,7,7,QCS01,Dictyocha speculum,288
+2018-07-14,7,7,QCS01,Dinobryon,5250
+2018-07-14,7,7,QCS01,Dinophyceae,144
+2018-07-14,7,7,QCS01,Euglenozoa,144
+2018-07-14,7,7,QCS01,Gymnodinium,432
+2018-07-14,7,7,QCS01,Gyrodinium,288
+2018-07-14,7,7,QCS01,Hillea,26250
+2018-07-14,7,7,QCS01,Leptocylindrus danicus,21400
+2018-07-14,7,7,QCS01,Pennales,2182
+2018-07-14,7,7,QCS01,Pleurosigma,288
+2018-07-14,7,7,QCS01,Protoperidinium,288
+2018-07-14,7,7,QCS01,Protoperidinium steinii,432
+2018-07-14,7,7,QCS01,Pseudo-nitzschia delicatissima,4176
+2018-07-14,7,7,QCS01,Pseudo-nitzschia multiseries,3744
+2018-07-14,7,7,QCS01,Pseudo-nitzschia seriata,4032
+2018-07-14,7,7,QCS01,Pyramimonas orientalis,1750
+2018-07-14,7,7,QCS01,Rhizosolenia setigera,720
+2018-07-14,7,7,QCS01,Scrippsiella trochoidea,144
+2018-07-14,7,7,QCS01,Skeletonema marinoi,365304
+2018-07-14,7,7,QCS01,Teleaulax,14000
+2018-07-14,7,7,QCS01,Thalassionema nitzschioides,1152
+2018-07-14,7,7,QCS01,Thalassiosira,18288
+2018-07-14,7,7,QCS01,Thalassiosira nordenskioeldii,864
+2018-07-14,7,7,QCS01,Thalassiosira rotula,1728
+2018-07-15,7,7,KC10,Asterionellopsis glacialis,6768
+2018-07-15,7,7,KC10,Attheya,6000
+2018-07-15,7,7,KC10,Biddulphiales,144
+2018-07-15,7,7,KC10,Ceratium lineatum,432
+2018-07-15,7,7,KC10,Chaetoceros,8352
+2018-07-15,7,7,KC10,Chaetoceros ceratosporus,144
+2018-07-15,7,7,KC10,Chaetoceros cinctus,18000
+2018-07-15,7,7,KC10,Chaetoceros danicus,144
+2018-07-15,7,7,KC10,Chaetoceros debilis,16416
+2018-07-15,7,7,KC10,Chaetoceros laciniosus,2304
+2018-07-15,7,7,KC10,Chaetoceros radicans,2448
+2018-07-15,7,7,KC10,Chaetoceros seiracanthus,4752
+2018-07-15,7,7,KC10,Chaetoceros similis,1872
+2018-07-15,7,7,KC10,Chaetoceros socialis,21000
+2018-07-15,7,7,KC10,Chaetoceros tenuissimus,3144
+2018-07-15,7,7,KC10,Coscinodiscus,144
+2018-07-15,7,7,KC10,Cylindrotheca closterium,1584
+2018-07-15,7,7,KC10,Dactyliosolen fragilissimus,1008
+2018-07-15,7,7,KC10,Dactyliosolen phuketensis,1296
+2018-07-15,7,7,KC10,Dictyocha speculum,144
+2018-07-15,7,7,KC10,Dinophyceae,144
+2018-07-15,7,7,KC10,Dinophysis,144
+2018-07-15,7,7,KC10,Dinophysis acuta,144
+2018-07-15,7,7,KC10,Gyrodinium,288
+2018-07-15,7,7,KC10,Hillea,3000
+2018-07-15,7,7,KC10,Katodinium,432
+2018-07-15,7,7,KC10,Leptocylindrus danicus,17424
+2018-07-15,7,7,KC10,Pennales,22152
+2018-07-15,7,7,KC10,Phaeocystis pouchetii,12000
+2018-07-15,7,7,KC10,Pleurosigma,432
+2018-07-15,7,7,KC10,Protoperidinium,432
+2018-07-15,7,7,KC10,Pseudo-nitzschia delicatissima,1152
+2018-07-15,7,7,KC10,Pseudo-nitzschia multiseries,4176
+2018-07-15,7,7,KC10,Pseudo-nitzschia seriata,8352
+2018-07-15,7,7,KC10,Pyramimonas grossii,9000
+2018-07-15,7,7,KC10,Pyrocystis lunula,144
+2018-07-15,7,7,KC10,Rhizosolenia setigera,1728
+2018-07-15,7,7,KC10,Scrippsiella precaria,144
+2018-07-15,7,7,KC10,Skeletonema marinoi,614000
+2018-07-15,7,7,KC10,Teleaulax acuta,3000
+2018-07-15,7,7,KC10,Thalassionema nitzschioides,6768
+2018-07-15,7,7,KC10,Thalassiosira,9504
+2018-07-24,7,7,DFO2,Ceratium horridum,178
+2018-07-24,7,7,DFO2,Chaetoceros,356
+2018-07-24,7,7,DFO2,Chaetoceros ceratosporus,89
+2018-07-24,7,7,DFO2,Chaetoceros debilis,1246
+2018-07-24,7,7,DFO2,Chaetoceros tenuissimus,3182
+2018-07-24,7,7,DFO2,Cylindrotheca closterium,890
+2018-07-24,7,7,DFO2,Dactyliosolen fragilissimus,89
+2018-07-24,7,7,DFO2,Dictyocha,178
+2018-07-24,7,7,DFO2,Dictyocha speculum,445
+2018-07-24,7,7,DFO2,Dinophyceae,356
+2018-07-24,7,7,DFO2,Dinophysis fortii,89
+2018-07-24,7,7,DFO2,Ebria tripartita,1335
+2018-07-24,7,7,DFO2,Gonyaulax,89
+2018-07-24,7,7,DFO2,Guinardia delicatula,1246
+2018-07-24,7,7,DFO2,Gymnodinium,801
+2018-07-24,7,7,DFO2,Gyrodinium,1513
+2018-07-24,7,7,DFO2,Hillea,76368
+2018-07-24,7,7,DFO2,Katodinium,89
+2018-07-24,7,7,DFO2,Leptocylindrus danicus,4183
+2018-07-24,7,7,DFO2,Pennales,1157
+2018-07-24,7,7,DFO2,Pleurosigma,89
+2018-07-24,7,7,DFO2,Protoperidinium,89
+2018-07-24,7,7,DFO2,Pseudo-nitzschia delicatissima,267
+2018-07-24,7,7,DFO2,Pseudo-nitzschia seriata,1068
+2018-07-24,7,7,DFO2,Pyramimonas grossii,9546
+2018-07-24,7,7,DFO2,Pyramimonas orientalis,44548
+2018-07-24,7,7,DFO2,Rhizosolenia setigera,623
+2018-07-24,7,7,DFO2,Scrippsiella trochoidea,712
+2018-07-24,7,7,DFO2,Skeletonema marinoi,225764
+2018-07-24,7,7,DFO2,Teleaulax,120916
+2018-07-24,7,7,DFO2,Teleaulax acuta,22274
+2018-07-24,7,7,DFO2,Teleaulax amphioxeia,3182
+2018-07-24,7,7,DFO2,Tetraselmis gracilis,9546
+2018-07-24,7,7,DFO2,Thalassionema nitzschioides,11100
+2018-07-24,7,7,DFO2,Thalassiosira,9256
+2018-08-19,8,8,KC10,Apedinella spinifera,17500
+2018-08-19,8,8,KC10,Biddulphiales,79370
+2018-08-19,8,8,KC10,Chaetoceros,930
+2018-08-19,8,8,KC10,Chaetoceros cinctus,372
+2018-08-19,8,8,KC10,Chaetoceros danicus,186
+2018-08-19,8,8,KC10,Chaetoceros debilis,4402
+2018-08-19,8,8,KC10,Chaetoceros decipiens,186
+2018-08-19,8,8,KC10,Chaetoceros laciniosus,744
+2018-08-19,8,8,KC10,Chaetoceros seiracanthus,372
+2018-08-19,8,8,KC10,Chaetoceros socialis,78750
+2018-08-19,8,8,KC10,Chaetoceros subtilis,124
+2018-08-19,8,8,KC10,Ciliophrys infusionum,8750
+2018-08-19,8,8,KC10,Cylindrotheca closterium,1612
+2018-08-19,8,8,KC10,Dactyliosolen fragilissimus,620
+2018-08-19,8,8,KC10,Dactyliosolen phuketensis,62
+2018-08-19,8,8,KC10,Dictyocha,310
+2018-08-19,8,8,KC10,Dictyocha speculum,186
+2018-08-19,8,8,KC10,Dinobryon,26250
+2018-08-19,8,8,KC10,Dinophyceae,372
+2018-08-19,8,8,KC10,Dinophysis acuminata,62
+2018-08-19,8,8,KC10,Eucampia zodiacus,930
+2018-08-19,8,8,KC10,Euglenozoa,496
+2018-08-19,8,8,KC10,Gonyaulax,62
+2018-08-19,8,8,KC10,Guinardia delicatula,248
+2018-08-19,8,8,KC10,Gymnodinium,186
+2018-08-19,8,8,KC10,Gyrodinium,248
+2018-08-19,8,8,KC10,Hillea,612500
+2018-08-19,8,8,KC10,Katodinium,372
+2018-08-19,8,8,KC10,Leptocylindrus danicus,868
+2018-08-19,8,8,KC10,Navicula,186
+2018-08-19,8,8,KC10,Pennales,1488
+2018-08-19,8,8,KC10,Phaeocystis pouchetii,43750
+2018-08-19,8,8,KC10,Prorocentrum gracile,62
+2018-08-19,8,8,KC10,Protoperidinium,310
+2018-08-19,8,8,KC10,Protoperidinium steinii,62
+2018-08-19,8,8,KC10,Pseudo-nitzschia multiseries,62
+2018-08-19,8,8,KC10,Pseudo-nitzschia seriata,2046
+2018-08-19,8,8,KC10,Pterosperma,35000
+2018-08-19,8,8,KC10,Pyramimonas,8750
+2018-08-19,8,8,KC10,Pyramimonas grossii,35000
+2018-08-19,8,8,KC10,Pyramimonas orientalis,8750
+2018-08-19,8,8,KC10,Rhizosolenia setigera,51004
+2018-08-19,8,8,KC10,Scrippsiella precaria,248
+2018-08-19,8,8,KC10,Scrippsiella trochoidea,248
+2018-08-19,8,8,KC10,Skeletonema marinoi,1922
+2018-08-19,8,8,KC10,Teleaulax,367500
+2018-08-19,8,8,KC10,Thalassionema nitzschioides,310
+2018-08-19,8,8,KC10,Thalassiosira,2170
+2018-08-19,8,8,KC10,Thalassiosira rotula,124
+2018-08-21,8,8,DFO2,Apedinella spinifera,11668
+2018-08-21,8,8,DFO2,Ceratium horridum,296
+2018-08-21,8,8,DFO2,Chaetoceros,1110
+2018-08-21,8,8,DFO2,Chaetoceros ceratosporus,2917
+2018-08-21,8,8,DFO2,Chaetoceros cinctus,7696
+2018-08-21,8,8,DFO2,Chaetoceros danicus,74
+2018-08-21,8,8,DFO2,Chaetoceros debilis,20800
+2018-08-21,8,8,DFO2,Chaetoceros laciniosus,814
+2018-08-21,8,8,DFO2,Chaetoceros simplex,148
+2018-08-21,8,8,DFO2,Chaetoceros socialis,1776
+2018-08-21,8,8,DFO2,Chaetoceros subtilis,5834
+2018-08-21,8,8,DFO2,Chaetoceros tenuissimus,20419
+2018-08-21,8,8,DFO2,Corethron criophilum,222
+2018-08-21,8,8,DFO2,Cylindrotheca closterium,666
+2018-08-21,8,8,DFO2,Dactyliosolen fragilissimus,148
+2018-08-21,8,8,DFO2,Dactyliosolen phuketensis,74
+2018-08-21,8,8,DFO2,Dictyocha,592
+2018-08-21,8,8,DFO2,Dictyocha speculum,148
+2018-08-21,8,8,DFO2,Dinophyceae,444
+2018-08-21,8,8,DFO2,Dinophysis acuminata,222
+2018-08-21,8,8,DFO2,Ebria tripartita,814
+2018-08-21,8,8,DFO2,Eucampia zodiacus,740
+2018-08-21,8,8,DFO2,Guinardia delicatula,444
+2018-08-21,8,8,DFO2,Gymnodinium,148
+2018-08-21,8,8,DFO2,Gyrodinium,518
+2018-08-21,8,8,DFO2,Hillea,55423
+2018-08-21,8,8,DFO2,Katodinium,74
+2018-08-21,8,8,DFO2,Leptocylindrus danicus,1628
+2018-08-21,8,8,DFO2,Pennales,12334
+2018-08-21,8,8,DFO2,Protoperidinium,148
+2018-08-21,8,8,DFO2,Protoperidinium steinii,148
+2018-08-21,8,8,DFO2,Pseudo-nitzschia delicatissima,370
+2018-08-21,8,8,DFO2,Pseudo-nitzschia multiseries,2960
+2018-08-21,8,8,DFO2,Pseudo-nitzschia seriata,4144
+2018-08-21,8,8,DFO2,Pterosperma,2917
+2018-08-21,8,8,DFO2,Pyramimonas grossii,5834
+2018-08-21,8,8,DFO2,Pyramimonas orientalis,5834
+2018-08-21,8,8,DFO2,Rhizosolenia setigera,740
+2018-08-21,8,8,DFO2,Scrippsiella precaria,74
+2018-08-21,8,8,DFO2,Scrippsiella trochoidea,148
+2018-08-21,8,8,DFO2,Skeletonema marinoi,337330
+2018-08-21,8,8,DFO2,Stephanopyxis turris,74
+2018-08-21,8,8,DFO2,Teleaulax,43755
+2018-08-21,8,8,DFO2,Teleaulax acuta,5834
+2018-08-21,8,8,DFO2,Tetraselmis gracilis,2917
+2018-08-21,8,8,DFO2,Thalassionema nitzschioides,10064
+2018-08-21,8,8,DFO2,Thalassiosira,2442
+2018-08-21,8,8,DFO2,Thalassiosira anguste-lineata,222
+2018-08-28,8,8,QCS01,Alexandrium catenella,144
+2018-08-28,8,8,QCS01,Asterionellopsis glacialis,432
+2018-08-28,8,8,QCS01,Asteromphalus heptactis,144
+2018-08-28,8,8,QCS01,Ceratium horridum,144
+2018-08-28,8,8,QCS01,Ceratium lineatum,432
+2018-08-28,8,8,QCS01,Chaetoceros,2736
+2018-08-28,8,8,QCS01,Chaetoceros ceratosporus,144
+2018-08-28,8,8,QCS01,Chaetoceros cinctus,3168
+2018-08-28,8,8,QCS01,Chaetoceros danicus,144
+2018-08-28,8,8,QCS01,Chaetoceros debilis,288
+2018-08-28,8,8,QCS01,Chaetoceros decipiens,288
+2018-08-28,8,8,QCS01,Chaetoceros didymus,1440
+2018-08-28,8,8,QCS01,Chaetoceros laciniosus,10368
+2018-08-28,8,8,QCS01,Chaetoceros similis,1872
+2018-08-28,8,8,QCS01,Chaetoceros socialis,7000
+2018-08-28,8,8,QCS01,Chaetoceros tenuissimus,3644
+2018-08-28,8,8,QCS01,Corethron criophilum,144
+2018-08-28,8,8,QCS01,Cyanobacteria,3456
+2018-08-28,8,8,QCS01,Cylindrotheca closterium,3600
+2018-08-28,8,8,QCS01,Dactyliosolen fragilissimus,864
+2018-08-28,8,8,QCS01,Dactyliosolen phuketensis,2736
+2018-08-28,8,8,QCS01,Detonula pumila,432
+2018-08-28,8,8,QCS01,Dictyocha,720
+2018-08-28,8,8,QCS01,Dictyocha speculum,864
+2018-08-28,8,8,QCS01,Dinobryon,7000
+2018-08-28,8,8,QCS01,Dinophyceae,2880
+2018-08-28,8,8,QCS01,Dinophysis acuminata,144
+2018-08-28,8,8,QCS01,Dinophysis fortii,144
+2018-08-28,8,8,QCS01,Ditylum brightwellii,144
+2018-08-28,8,8,QCS01,Eucampia groenlandica,144
+2018-08-28,8,8,QCS01,Eucampia zodiacus,864
+2018-08-28,8,8,QCS01,Euglenozoa,1584
+2018-08-28,8,8,QCS01,Gonyaulax,1008
+2018-08-28,8,8,QCS01,Guinardia delicatula,2736
+2018-08-28,8,8,QCS01,Gymnodinium,864
+2018-08-28,8,8,QCS01,Gyrodinium,288
+2018-08-28,8,8,QCS01,Hillea,108500
+2018-08-28,8,8,QCS01,Katodinium,864
+2018-08-28,8,8,QCS01,Leptocylindrus danicus,4176
+2018-08-28,8,8,QCS01,Pennales,3744
+2018-08-28,8,8,QCS01,Prorocentrum gracile,432
+2018-08-28,8,8,QCS01,Prorocentrum micans,864
+2018-08-28,8,8,QCS01,Protoperidinium,1152
+2018-08-28,8,8,QCS01,Protoperidinium steinii,288
+2018-08-28,8,8,QCS01,Pseudo-nitzschia delicatissima,1296
+2018-08-28,8,8,QCS01,Pseudo-nitzschia multiseries,432
+2018-08-28,8,8,QCS01,Pseudo-nitzschia seriata,17424
+2018-08-28,8,8,QCS01,Pyramimonas orientalis,17500
+2018-08-28,8,8,QCS01,Rhizosolenia setigera,245000
+2018-08-28,8,8,QCS01,Scrippsiella precaria,432
+2018-08-28,8,8,QCS01,Skeletonema marinoi,19440
+2018-08-28,8,8,QCS01,Stephanopyxis turris,288
+2018-08-28,8,8,QCS01,Teleaulax,70000
+2018-08-28,8,8,QCS01,Thalassionema nitzschioides,3456
+2018-08-28,8,8,QCS01,Thalassiosira,5616
+2018-08-28,8,8,QCS01,Thalassiosira rotula,288
+2018-09-11,9,9,KC10,Alexandrium catenella,48
+2018-09-11,9,9,KC10,Apedinella spinifera,4375
+2018-09-11,9,9,KC10,Biddulphiales,4711
+2018-09-11,9,9,KC10,Ceratium fusus,48
+2018-09-11,9,9,KC10,Ceratium horridum,48
+2018-09-11,9,9,KC10,Ceratium lineatum,144
+2018-09-11,9,9,KC10,Chaetoceros,432
+2018-09-11,9,9,KC10,Chaetoceros cinctus,1440
+2018-09-11,9,9,KC10,Chaetoceros debilis,48
+2018-09-11,9,9,KC10,Chaetoceros decipiens,384
+2018-09-11,9,9,KC10,Chaetoceros subtilis,48
+2018-09-11,9,9,KC10,Chaetoceros tenuissimus,4375
+2018-09-11,9,9,KC10,Cylindrotheca closterium,768
+2018-09-11,9,9,KC10,Dactyliosolen fragilissimus,96
+2018-09-11,9,9,KC10,Dactyliosolen phuketensis,336
+2018-09-11,9,9,KC10,Detonula pumila,96
+2018-09-11,9,9,KC10,Dictyocha,336
+2018-09-11,9,9,KC10,Dictyocha fibula,96
+2018-09-11,9,9,KC10,Dictyocha speculum,1056
+2018-09-11,9,9,KC10,Dinobryon,8750
+2018-09-11,9,9,KC10,Dinophyceae,144
+2018-09-11,9,9,KC10,Dinophysis acuminata,48
+2018-09-11,9,9,KC10,Eucampia zodiacus,96
+2018-09-11,9,9,KC10,Euglenozoa,1056
+2018-09-11,9,9,KC10,Gonyaulax,48
+2018-09-11,9,9,KC10,Gymnodinium,816
+2018-09-11,9,9,KC10,Gyrodinium,768
+2018-09-11,9,9,KC10,Hillea,170625
+2018-09-11,9,9,KC10,Katodinium,144
+2018-09-11,9,9,KC10,Katodinium glaucum,48
+2018-09-11,9,9,KC10,Leptocylindrus danicus,576
+2018-09-11,9,9,KC10,Odontella longicruris,96
+2018-09-11,9,9,KC10,Pennales,14133
+2018-09-11,9,9,KC10,Phaeocystis pouchetii,140000
+2018-09-11,9,9,KC10,Protoperidinium,576
+2018-09-11,9,9,KC10,Protoperidinium steinii,48
+2018-09-11,9,9,KC10,Pseudo-nitzschia delicatissima,336
+2018-09-11,9,9,KC10,Pseudo-nitzschia multiseries,480
+2018-09-11,9,9,KC10,Pseudo-nitzschia seriata,192
+2018-09-11,9,9,KC10,Pterosperma,21875
+2018-09-11,9,9,KC10,Pyramimonas orientalis,26250
+2018-09-11,9,9,KC10,Rhizosolenia setigera,240
+2018-09-11,9,9,KC10,Scrippsiella trochoidea,144
+2018-09-11,9,9,KC10,Skeletonema marinoi,14028
+2018-09-11,9,9,KC10,Teleaulax,74375
+2018-09-11,9,9,KC10,Thalassionema nitzschioides,624
+2018-09-11,9,9,KC10,Thalassiosira,2112
+2018-09-11,9,9,KC10,Thalassiosira rotula,96
+2018-09-13,9,9,QCS01,Apedinella spinifera,3889
+2018-09-13,9,9,QCS01,Biddulphiales,74
+2018-09-13,9,9,QCS01,Ceratium lineatum,222
+2018-09-13,9,9,QCS01,Chaetoceros,148
+2018-09-13,9,9,QCS01,Chaetoceros convolutus,222
+2018-09-13,9,9,QCS01,Chaetoceros debilis,1110
+2018-09-13,9,9,QCS01,Chaetoceros laciniosus,148
+2018-09-13,9,9,QCS01,Chaetoceros tenuissimus,15556
+2018-09-13,9,9,QCS01,Cyanobacteria,1554
+2018-09-13,9,9,QCS01,Cylindrotheca closterium,1702
+2018-09-13,9,9,QCS01,Dactyliosolen fragilissimus,592
+2018-09-13,9,9,QCS01,Dictyocha,2664
+2018-09-13,9,9,QCS01,Dictyocha fibula,74
+2018-09-13,9,9,QCS01,Dictyocha speculum,1480
+2018-09-13,9,9,QCS01,Dinobryon,15556
+2018-09-13,9,9,QCS01,Dinophyceae,296
+2018-09-13,9,9,QCS01,Dinophysis,74
+2018-09-13,9,9,QCS01,Ditylum brightwellii,222
+2018-09-13,9,9,QCS01,Eucampia zodiacus,222
+2018-09-13,9,9,QCS01,Euglenozoa,444
+2018-09-13,9,9,QCS01,Guinardia delicatula,370
+2018-09-13,9,9,QCS01,Gymnodinium,1998
+2018-09-13,9,9,QCS01,Gyrodinium,814
+2018-09-13,9,9,QCS01,Hillea,221673
+2018-09-13,9,9,QCS01,Katodinium,74
+2018-09-13,9,9,QCS01,Leptocylindrus danicus,518
+2018-09-13,9,9,QCS01,Pennales,888
+2018-09-13,9,9,QCS01,Phaeocystis pouchetii,814
+2018-09-13,9,9,QCS01,Prorocentrum gracile,222
+2018-09-13,9,9,QCS01,Prorocentrum micans,74
+2018-09-13,9,9,QCS01,Protoperidinium,148
+2018-09-13,9,9,QCS01,Protoperidinium steinii,222
+2018-09-13,9,9,QCS01,Pseudo-nitzschia delicatissima,2368
+2018-09-13,9,9,QCS01,Pseudo-nitzschia multiseries,518
+2018-09-13,9,9,QCS01,Pseudo-nitzschia seriata,666
+2018-09-13,9,9,QCS01,Pyramimonas orientalis,19445
+2018-09-13,9,9,QCS01,Rhizosolenia setigera,7030
+2018-09-13,9,9,QCS01,Scrippsiella precaria,370
+2018-09-13,9,9,QCS01,Skeletonema marinoi,14236
+2018-09-13,9,9,QCS01,Teleaulax,54446
+2018-09-13,9,9,QCS01,Teleaulax acuta,3889
+2018-09-13,9,9,QCS01,Thalassionema nitzschioides,888
+2018-09-13,9,9,QCS01,Thalassiosira,2960
+2018-09-13,9,9,QCS01,Thalassiosira rotula,444
+2018-09-14,9,9,DFO2,Alexandrium catenella,74
+2018-09-14,9,9,DFO2,Asterionellopsis glacialis,370
+2018-09-14,9,9,DFO2,Bacteriastrum,296
+2018-09-14,9,9,DFO2,Cerataulina bicornis,74
+2018-09-14,9,9,DFO2,Ceratium fusus,74
+2018-09-14,9,9,DFO2,Ceratium horridum,74
+2018-09-14,9,9,DFO2,Chaetoceros,1258
+2018-09-14,9,9,DFO2,Chaetoceros ceratosporus,7000
+2018-09-14,9,9,DFO2,Chaetoceros cinctus,1480
+2018-09-14,9,9,DFO2,Chaetoceros convolutus,296
+2018-09-14,9,9,DFO2,Chaetoceros danicus,222
+2018-09-14,9,9,DFO2,Chaetoceros debilis,3256
+2018-09-14,9,9,DFO2,Chaetoceros decipiens,148
+2018-09-14,9,9,DFO2,Chaetoceros laciniosus,962
+2018-09-14,9,9,DFO2,Chaetoceros simplex,148
+2018-09-14,9,9,DFO2,Chaetoceros socialis,1036
+2018-09-14,9,9,DFO2,Chaetoceros tenuissimus,7000
+2018-09-14,9,9,DFO2,Cyanobacteria,814
+2018-09-14,9,9,DFO2,Cylindrotheca closterium,1628
+2018-09-14,9,9,DFO2,Dactyliosolen fragilissimus,666
+2018-09-14,9,9,DFO2,Dactyliosolen phuketensis,222
+2018-09-14,9,9,DFO2,Detonula pumila,592
+2018-09-14,9,9,DFO2,Dictyocha speculum,2516
+2018-09-14,9,9,DFO2,Dinobryon,3000
+2018-09-14,9,9,DFO2,Dinophyceae,148
+2018-09-14,9,9,DFO2,Dinophysis acuminata,148
+2018-09-14,9,9,DFO2,Dinophysis acuta,74
+2018-09-14,9,9,DFO2,Ebria tripartita,740
+2018-09-14,9,9,DFO2,Guinardia delicatula,370
+2018-09-14,9,9,DFO2,Gymnodinium,1184
+2018-09-14,9,9,DFO2,Gyrodinium,518
+2018-09-14,9,9,DFO2,Hillea,201000
+2018-09-14,9,9,DFO2,Katodinium,370
+2018-09-14,9,9,DFO2,Leptocylindrus danicus,148
+2018-09-14,9,9,DFO2,Pennales,4628
+2018-09-14,9,9,DFO2,Protoperidinium conicum,74
+2018-09-14,9,9,DFO2,Protoperidinium steinii,296
+2018-09-14,9,9,DFO2,Pseudo-nitzschia delicatissima,518
+2018-09-14,9,9,DFO2,Pseudo-nitzschia multiseries,222
+2018-09-14,9,9,DFO2,Pseudo-nitzschia seriata,1628
+2018-09-14,9,9,DFO2,Pyramimonas grossii,3000
+2018-09-14,9,9,DFO2,Pyramimonas orientalis,12000
+2018-09-14,9,9,DFO2,Rhizosolenia setigera,962
+2018-09-14,9,9,DFO2,Scrippsiella precaria,1554
+2018-09-14,9,9,DFO2,Scrippsiella trochoidea,296
+2018-09-14,9,9,DFO2,Skeletonema marinoi,83102
+2018-09-14,9,9,DFO2,Teleaulax,39000
+2018-09-14,9,9,DFO2,Teleaulax acuta,3000
+2018-09-14,9,9,DFO2,Thalassionema nitzschioides,2738
+2018-09-14,9,9,DFO2,Thalassiosira,1406
+2018-09-14,9,9,DFO2,Thalassiosira rotula,296
+2018-10-23,10,10,KC10,Apedinella spinifera,11666
+2018-10-23,10,10,KC10,Attheya,5833
+2018-10-23,10,10,KC10,Bacillariophyceae,148
+2018-10-23,10,10,KC10,Biddulphiales,11666
+2018-10-23,10,10,KC10,Chaetoceros,5476
+2018-10-23,10,10,KC10,Chaetoceros ceratosporus,148
+2018-10-23,10,10,KC10,Chaetoceros danicus,222
+2018-10-23,10,10,KC10,Chaetoceros debilis,16848
+2018-10-23,10,10,KC10,Chaetoceros tenuissimus,1628
+2018-10-23,10,10,KC10,Ciliophrys infusionum,11666
+2018-10-23,10,10,KC10,Coscinodiscus,74
+2018-10-23,10,10,KC10,Cylindrotheca closterium,2664
+2018-10-23,10,10,KC10,Dactyliosolen fragilissimus,1628
+2018-10-23,10,10,KC10,Dactyliosolen phuketensis,370
+2018-10-23,10,10,KC10,Dictyocha,148
+2018-10-23,10,10,KC10,Dictyocha fibula,74
+2018-10-23,10,10,KC10,Dictyocha speculum,296
+2018-10-23,10,10,KC10,Dinobryon,5833
+2018-10-23,10,10,KC10,Dinophyceae,74
+2018-10-23,10,10,KC10,Ditylum brightwellii,74
+2018-10-23,10,10,KC10,Euglenozoa,888
+2018-10-23,10,10,KC10,Guinardia delicatula,296
+2018-10-23,10,10,KC10,Gymnodinium,1480
+2018-10-23,10,10,KC10,Gyrodinium,444
+2018-10-23,10,10,KC10,Hillea,186656
+2018-10-23,10,10,KC10,Katodinium,74
+2018-10-23,10,10,KC10,Leptocylindrus danicus,1702
+2018-10-23,10,10,KC10,Pennales,962
+2018-10-23,10,10,KC10,Protoperidinium steinii,74
+2018-10-23,10,10,KC10,Pseudo-nitzschia delicatissima,148
+2018-10-23,10,10,KC10,Pseudo-nitzschia multiseries,740
+2018-10-23,10,10,KC10,Pseudo-nitzschia seriata,444
+2018-10-23,10,10,KC10,Pterosperma,11666
+2018-10-23,10,10,KC10,Pyramimonas grossii,11666
+2018-10-23,10,10,KC10,Pyramimonas orientalis,11666
+2018-10-23,10,10,KC10,Rhizosolenia setigera,296
+2018-10-23,10,10,KC10,Scrippsiella precaria,74
+2018-10-23,10,10,KC10,Skeletonema marinoi,5328
+2018-10-23,10,10,KC10,Teleaulax,52497
+2018-10-23,10,10,KC10,Thalassiosira,444
+2019-05-11,5,5,KC10,Biddulphiales,630594
+2019-05-11,5,5,KC10,Chaetoceros,144
+2019-05-11,5,5,KC10,Chaetoceros cinctus,2448
+2019-05-11,5,5,KC10,Chaetoceros convolutus,432
+2019-05-11,5,5,KC10,Chaetoceros similis,4032
+2019-05-11,5,5,KC10,Chaetoceros socialis,14976
+2019-05-11,5,5,KC10,Chaetoceros tenuissimus,144
+2019-05-11,5,5,KC10,Ciliophrys infusionum,576
+2019-05-11,5,5,KC10,Cylindrotheca closterium,288
+2019-05-11,5,5,KC10,Dinobryon,11667
+2019-05-11,5,5,KC10,Dinophyceae,1296
+2019-05-11,5,5,KC10,Euglenozoa,2736
+2019-05-11,5,5,KC10,Gymnodinium,864
+2019-05-11,5,5,KC10,Gyrodinium,288
+2019-05-11,5,5,KC10,Hillea,175005
+2019-05-11,5,5,KC10,Ochromonas,11667
+2019-05-11,5,5,KC10,Pennales,14691
+2019-05-11,5,5,KC10,Phaeocystis pouchetii,224694
+2019-05-11,5,5,KC10,Protoperidinium,144
+2019-05-11,5,5,KC10,Pseudo-nitzschia delicatissima,12528
+2019-05-11,5,5,KC10,Pseudo-nitzschia multiseries,13824
+2019-05-11,5,5,KC10,Pseudo-nitzschia seriata,10944
+2019-05-11,5,5,KC10,Pterosperma,23334
+2019-05-11,5,5,KC10,Pyramimonas grossii,11667
+2019-05-11,5,5,KC10,Pyramimonas orientalis,11667
+2019-05-11,5,5,KC10,Scrippsiella trochoidea,144
+2019-05-11,5,5,KC10,Skeletonema marinoi,147648
+2019-05-11,5,5,KC10,Teleaulax,443346
+2019-05-11,5,5,KC10,Teleaulax amphioxeia,58335
+2019-05-11,5,5,KC10,Thalassionema nitzschioides,288
+2019-05-11,5,5,KC10,Thalassiosira,15696
+2019-05-11,5,5,KC10,Thalassiosira pacifica,4320
+2019-05-13,5,5,QCS01,Apedinella spinifera,3889
+2019-05-13,5,5,QCS01,Asterionellopsis glacialis,5909
+2019-05-13,5,5,QCS01,Biddulphiales,163338
+2019-05-13,5,5,QCS01,Chaetoceros,3732
+2019-05-13,5,5,QCS01,Chaetoceros cinctus,228000
+2019-05-13,5,5,QCS01,Chaetoceros debilis,37942
+2019-05-13,5,5,QCS01,Chaetoceros decipiens,5287
+2019-05-13,5,5,QCS01,Chaetoceros didymus,933
+2019-05-13,5,5,QCS01,Chaetoceros laciniosus,8397
+2019-05-13,5,5,QCS01,Chaetoceros radicans,76960
+2019-05-13,5,5,QCS01,Chaetoceros seiracanthus,25813
+2019-05-13,5,5,QCS01,Chaetoceros similis,1555
+2019-05-13,5,5,QCS01,Chaetoceros simplex,311
+2019-05-13,5,5,QCS01,Chaetoceros socialis,37942
+2019-05-13,5,5,QCS01,Chaetoceros subtilis,933
+2019-05-13,5,5,QCS01,Chaetoceros tenuissimus,19445
+2019-05-13,5,5,QCS01,Cylindrotheca closterium,1555
+2019-05-13,5,5,QCS01,Dactyliosolen fragilissimus,1244
+2019-05-13,5,5,QCS01,Dactyliosolen phuketensis,311
+2019-05-13,5,5,QCS01,Detonula pumila,1866
+2019-05-13,5,5,QCS01,Dinobryon,3889
+2019-05-13,5,5,QCS01,Dinophyceae,622
+2019-05-13,5,5,QCS01,Eutreptiella hirudoidea,622
+2019-05-13,5,5,QCS01,Guinardia delicatula,5909
+2019-05-13,5,5,QCS01,Gymnodinium,933
+2019-05-13,5,5,QCS01,Gyrodinium,1244
+2019-05-13,5,5,QCS01,Hillea,58335
+2019-05-13,5,5,QCS01,Katodinium,311
+2019-05-13,5,5,QCS01,Leptocylindrus danicus,3421
+2019-05-13,5,5,QCS01,Pennales,119469
+2019-05-13,5,5,QCS01,Phaeocystis pouchetii,124448
+2019-05-13,5,5,QCS01,Pleurosigma,933
+2019-05-13,5,5,QCS01,Protoperidinium,622
+2019-05-13,5,5,QCS01,Pseudo-nitzschia delicatissima,24569
+2019-05-13,5,5,QCS01,Pseudo-nitzschia multiseries,43851
+2019-05-13,5,5,QCS01,Pseudo-nitzschia seriata,35765
+2019-05-13,5,5,QCS01,Pterosperma,7778
+2019-05-13,5,5,QCS01,Pyramimonas orientalis,3889
+2019-05-13,5,5,QCS01,Scrippsiella precaria,1555
+2019-05-13,5,5,QCS01,Scrippsiella trochoidea,1244
+2019-05-13,5,5,QCS01,Skeletonema marinoi,592000
+2019-05-13,5,5,QCS01,Teleaulax,116670
+2019-05-13,5,5,QCS01,Thalassionema nitzschioides,311
+2019-05-13,5,5,QCS01,Thalassiosira,46650
+2019-05-13,5,5,QCS01,Thalassiosira nordenskioeldii,311
+2019-05-13,5,5,QCS01,Thalassiosira rotula,6842
+2019-05-14,5,5,DFO2,Apedinella spinifera,23334
+2019-05-14,5,5,DFO2,Attheya,11667
+2019-05-14,5,5,DFO2,Biddulphiales,623
+2019-05-14,5,5,DFO2,Chaetoceros,623
+2019-05-14,5,5,DFO2,Chaetoceros cinctus,1691
+2019-05-14,5,5,DFO2,Chaetoceros laciniosus,623
+2019-05-14,5,5,DFO2,Chaetoceros simplex,89
+2019-05-14,5,5,DFO2,Chaetoceros tenuissimus,1190034
+2019-05-14,5,5,DFO2,Cylindrotheca closterium,14832
+2019-05-14,5,5,DFO2,Dictyocha,89
+2019-05-14,5,5,DFO2,Dictyocha speculum,623
+2019-05-14,5,5,DFO2,Dinobryon,70002
+2019-05-14,5,5,DFO2,Dinophyceae,801
+2019-05-14,5,5,DFO2,Dinophysis acuminata,89
+2019-05-14,5,5,DFO2,Guinardia delicatula,267
+2019-05-14,5,5,DFO2,Gymnodinium,4361
+2019-05-14,5,5,DFO2,Gyrodinium,712
+2019-05-14,5,5,DFO2,Katodinium,89
+2019-05-14,5,5,DFO2,Leptocylindrus danicus,1780
+2019-05-14,5,5,DFO2,Pennales,26983
+2019-05-14,5,5,DFO2,Phaeocystis pouchetii,186672
+2019-05-14,5,5,DFO2,Pleurosigma,89
+2019-05-14,5,5,DFO2,Pseudo-nitzschia delicatissima,1335
+2019-05-14,5,5,DFO2,Pseudo-nitzschia multiseries,7565
+2019-05-14,5,5,DFO2,Pseudo-nitzschia seriata,356
+2019-05-14,5,5,DFO2,Pyramimonas,11667
+2019-05-14,5,5,DFO2,Pyramimonas grossii,11667
+2019-05-14,5,5,DFO2,Skeletonema marinoi,429000
+2019-05-14,5,5,DFO2,Teleaulax,70002
+2019-05-14,5,5,DFO2,Thalassiosira,178
+2019-06-09,6,6,QCS01,Apedinella spinifera,4375
+2019-06-09,6,6,QCS01,Biddulphiales,5176
+2019-06-09,6,6,QCS01,Chaetoceros,178
+2019-06-09,6,6,QCS01,Chaetoceros cinctus,712
+2019-06-09,6,6,QCS01,Chaetoceros convolutus,801
+2019-06-09,6,6,QCS01,Chaetoceros laciniosus,267
+2019-06-09,6,6,QCS01,Chaetoceros similis,267
+2019-06-09,6,6,QCS01,Chaetoceros socialis,17500
+2019-06-09,6,6,QCS01,Chaetoceros tenuissimus,4375
+2019-06-09,6,6,QCS01,Ciliophrys infusionum,178
+2019-06-09,6,6,QCS01,Cyanobacteria,178
+2019-06-09,6,6,QCS01,Cylindrotheca closterium,890
+2019-06-09,6,6,QCS01,Dactyliosolen fragilissimus,2670
+2019-06-09,6,6,QCS01,Dactyliosolen phuketensis,623
+2019-06-09,6,6,QCS01,Dictyocha,89
+2019-06-09,6,6,QCS01,Dictyocha speculum,890
+2019-06-09,6,6,QCS01,Dinobryon,8750
+2019-06-09,6,6,QCS01,Dinophyceae,712
+2019-06-09,6,6,QCS01,Eucampia zodiacus,890
+2019-06-09,6,6,QCS01,Guinardia delicatula,356
+2019-06-09,6,6,QCS01,Gymnodinium,1602
+2019-06-09,6,6,QCS01,Hillea,26250
+2019-06-09,6,6,QCS01,Katodinium,267
+2019-06-09,6,6,QCS01,Leptocylindrus danicus,267
+2019-06-09,6,6,QCS01,Membraneis challengeri,178
+2019-06-09,6,6,QCS01,Navicula,4183
+2019-06-09,6,6,QCS01,Pennales,1246
+2019-06-09,6,6,QCS01,Phaeocystis pouchetii,21875
+2019-06-09,6,6,QCS01,Protoperidinium,534
+2019-06-09,6,6,QCS01,Protoperidinium steinii,445
+2019-06-09,6,6,QCS01,Pseudo-nitzschia multiseries,2670
+2019-06-09,6,6,QCS01,Pseudo-nitzschia seriata,112000
+2019-06-09,6,6,QCS01,Pterosperma,8750
+2019-06-09,6,6,QCS01,Pyramimonas orientalis,8750
+2019-06-09,6,6,QCS01,Pyrocystis lunula,534
+2019-06-09,6,6,QCS01,Rhizosolenia setigera,3026
+2019-06-09,6,6,QCS01,Scrippsiella precaria,445
+2019-06-09,6,6,QCS01,Scrippsiella trochoidea,445
+2019-06-09,6,6,QCS01,Skeletonema marinoi,9345
+2019-06-09,6,6,QCS01,Teleaulax,17500
+2019-06-09,6,6,QCS01,Thalassionema nitzschioides,1068
+2019-06-09,6,6,QCS01,Thalassiosira,10413
+2019-06-09,6,6,QCS01,Thalassiosira rotula,267
+2019-06-10,6,6,KC10,Apedinella spinifera,17500
+2019-06-10,6,6,KC10,Biddulphiales,9038
+2019-06-10,6,6,KC10,Chaetoceros,144
+2019-06-10,6,6,KC10,Chaetoceros ceratosporus,144
+2019-06-10,6,6,KC10,Chaetoceros convolutus,144
+2019-06-10,6,6,KC10,Chaetoceros danicus,144
+2019-06-10,6,6,KC10,Chaetoceros debilis,2736
+2019-06-10,6,6,KC10,Chaetoceros seiracanthus,5760
+2019-06-10,6,6,KC10,Chaetoceros socialis,1584
+2019-06-10,6,6,KC10,Chaetoceros tenuissimus,35000
+2019-06-10,6,6,KC10,Cylindrotheca closterium,5616
+2019-06-10,6,6,KC10,Dactyliosolen fragilissimus,1152
+2019-06-10,6,6,KC10,Dictyocha,144
+2019-06-10,6,6,KC10,Dinobryon,17500
+2019-06-10,6,6,KC10,Dinophyceae,1152
+2019-06-10,6,6,KC10,Euglenozoa,144
+2019-06-10,6,6,KC10,Fragilariopsis,144
+2019-06-10,6,6,KC10,Guinardia delicatula,11232
+2019-06-10,6,6,KC10,Gymnodinium,432
+2019-06-10,6,6,KC10,Hillea,201250
+2019-06-10,6,6,KC10,Katodinium,432
+2019-06-10,6,6,KC10,Katodinium glaucum,288
+2019-06-10,6,6,KC10,Leptocylindrus danicus,1152
+2019-06-10,6,6,KC10,Meringosphaera mediterranea,8750
+2019-06-10,6,6,KC10,Navicula,864
+2019-06-10,6,6,KC10,Pennales,28410
+2019-06-10,6,6,KC10,Phaeocystis pouchetii,8750
+2019-06-10,6,6,KC10,Pleurosigma,576
+2019-06-10,6,6,KC10,Protoperidinium,144
+2019-06-10,6,6,KC10,Pseudo-nitzschia delicatissima,1152
+2019-06-10,6,6,KC10,Pseudo-nitzschia multiseries,21400
+2019-06-10,6,6,KC10,Pseudo-nitzschia seriata,101232
+2019-06-10,6,6,KC10,Pyramimonas,17500
+2019-06-10,6,6,KC10,Pyramimonas orientalis,35000
+2019-06-10,6,6,KC10,Rhizosolenia setigera,1728
+2019-06-10,6,6,KC10,Scrippsiella trochoidea,576
+2019-06-10,6,6,KC10,Skeletonema marinoi,217856
+2019-06-10,6,6,KC10,Teleaulax,78750
+2019-06-10,6,6,KC10,Tetraselmis gracilis,8750
+2019-06-10,6,6,KC10,Thalassionema nitzschioides,2304
+2019-06-10,6,6,KC10,Thalassiosira,46650
+2019-06-11,6,6,DFO2,Asterionellopsis kariana,576
+2019-06-11,6,6,DFO2,Bacillariophyceae,13824
+2019-06-11,6,6,DFO2,Biddulphiales,18508
+2019-06-11,6,6,DFO2,Chaetoceros,3312
+2019-06-11,6,6,DFO2,Chaetoceros cinctus,2592
+2019-06-11,6,6,DFO2,Chaetoceros debilis,4032
+2019-06-11,6,6,DFO2,Chaetoceros didymus,288
+2019-06-11,6,6,DFO2,Chaetoceros laciniosus,432
+2019-06-11,6,6,DFO2,Chaetoceros radicans,864
+2019-06-11,6,6,DFO2,Chaetoceros socialis,2880
+2019-06-11,6,6,DFO2,Chaetoceros tenuissimus,13269
+2019-06-11,6,6,DFO2,Ciliophrys infusionum,288
+2019-06-11,6,6,DFO2,Cylindrotheca closterium,2448
+2019-06-11,6,6,DFO2,Dactyliosolen fragilissimus,288
+2019-06-11,6,6,DFO2,Dactyliosolen phuketensis,576
+2019-06-11,6,6,DFO2,Dinobryon,17500
+2019-06-11,6,6,DFO2,Dinophyceae,720
+2019-06-11,6,6,DFO2,Dinophysis acuminata,288
+2019-06-11,6,6,DFO2,Euglenozoa,4375
+2019-06-11,6,6,DFO2,Gonyaulax,144
+2019-06-11,6,6,DFO2,Gymnodinium,288
+2019-06-11,6,6,DFO2,Gyrodinium,576
+2019-06-11,6,6,DFO2,Hillea,105000
+2019-06-11,6,6,DFO2,Katodinium,144
+2019-06-11,6,6,DFO2,Leptocylindrus danicus,288
+2019-06-11,6,6,DFO2,Pennales,15717
+2019-06-11,6,6,DFO2,Phaeocystis pouchetii,17500
+2019-06-11,6,6,DFO2,Protoperidinium,144
+2019-06-11,6,6,DFO2,Pseudo-nitzschia delicatissima,2736
+2019-06-11,6,6,DFO2,Pseudo-nitzschia multiseries,6624
+2019-06-11,6,6,DFO2,Pseudo-nitzschia seriata,12528
+2019-06-11,6,6,DFO2,Rhizosolenia setigera,288
+2019-06-11,6,6,DFO2,Scrippsiella precaria,144
+2019-06-11,6,6,DFO2,Scrippsiella trochoidea,144
+2019-06-11,6,6,DFO2,Skeletonema marinoi,840800
+2019-06-11,6,6,DFO2,Teleaulax,48125
+2019-06-11,6,6,DFO2,Thalassionema nitzschioides,288
+2019-06-11,6,6,DFO2,Thalassiosira,1584
+2019-06-11,6,6,DFO2,Thalassiosira rotula,432
+2019-07-06,7,7,DFO2,Bacillariophyceae,24200
+2019-07-06,7,7,DFO2,Biddulphiales,105000
+2019-07-06,7,7,DFO2,Chaetoceros cinctus,2016
+2019-07-06,7,7,DFO2,Chaetoceros danicus,144
+2019-07-06,7,7,DFO2,Chaetoceros simplex,8750
+2019-07-06,7,7,DFO2,Cylindrotheca closterium,1008
+2019-07-06,7,7,DFO2,Dactyliosolen fragilissimus,1296
+2019-07-06,7,7,DFO2,Dactyliosolen phuketensis,3600
+2019-07-06,7,7,DFO2,Dictyocha,144
+2019-07-06,7,7,DFO2,Dictyocha speculum,288
+2019-07-06,7,7,DFO2,Dinophyceae,432
+2019-07-06,7,7,DFO2,Dinophysis acuminata,864
+2019-07-06,7,7,DFO2,Dinophysis acuta,144
+2019-07-06,7,7,DFO2,Eucampia zodiacus,288
+2019-07-06,7,7,DFO2,Guinardia delicatula,2016
+2019-07-06,7,7,DFO2,Gymnodinium,720
+2019-07-06,7,7,DFO2,Hillea,166250
+2019-07-06,7,7,DFO2,Katodinium,288
+2019-07-06,7,7,DFO2,Leptocylindrus danicus,864
+2019-07-06,7,7,DFO2,Pennales,29418
+2019-07-06,7,7,DFO2,Pleurosigma,288
+2019-07-06,7,7,DFO2,Pseudo-nitzschia delicatissima,432
+2019-07-06,7,7,DFO2,Pseudo-nitzschia multiseries,3888
+2019-07-06,7,7,DFO2,Pseudo-nitzschia seriata,20600
+2019-07-06,7,7,DFO2,Pyramimonas orientalis,61250
+2019-07-06,7,7,DFO2,Rhizosolenia setigera,432
+2019-07-06,7,7,DFO2,Scrippsiella precaria,144
+2019-07-06,7,7,DFO2,Scrippsiella trochoidea,288
+2019-07-06,7,7,DFO2,Skeletonema marinoi,1106000
+2019-07-06,7,7,DFO2,Teleaulax,280000
+2019-07-06,7,7,DFO2,Thalassionema nitzschioides,26800
+2019-07-06,7,7,DFO2,Thalassiosira,17712
+2019-07-06,7,7,DFO2,Thalassiosira rotula,1296
+2019-07-07,7,7,QCS01,Asterionellopsis glacialis,144
+2019-07-07,7,7,QCS01,Biddulphiales,18076
+2019-07-07,7,7,QCS01,Ceratium lineatum,432
+2019-07-07,7,7,QCS01,Chaetoceros,5760
+2019-07-07,7,7,QCS01,Chaetoceros cinctus,17424
+2019-07-07,7,7,QCS01,Chaetoceros danicus,144
+2019-07-07,7,7,QCS01,Chaetoceros debilis,39186
+2019-07-07,7,7,QCS01,Chaetoceros laciniosus,432
+2019-07-07,7,7,QCS01,Chaetoceros seiracanthus,2160
+2019-07-07,7,7,QCS01,Chaetoceros socialis,3888
+2019-07-07,7,7,QCS01,Ciliophrys infusionum,720
+2019-07-07,7,7,QCS01,Cylindrotheca closterium,576
+2019-07-07,7,7,QCS01,Dactyliosolen fragilissimus,432
+2019-07-07,7,7,QCS01,Dactyliosolen phuketensis,144
+2019-07-07,7,7,QCS01,Detonula pumila,1008
+2019-07-07,7,7,QCS01,Dictyocha,864
+2019-07-07,7,7,QCS01,Dinobryon,23332
+2019-07-07,7,7,QCS01,Dinophyceae,288
+2019-07-07,7,7,QCS01,Euglenozoa,144
+2019-07-07,7,7,QCS01,Eutreptiella hirudoidea,144
+2019-07-07,7,7,QCS01,Guinardia delicatula,2448
+2019-07-07,7,7,QCS01,Gymnodinium,1008
+2019-07-07,7,7,QCS01,Hillea,64163
+2019-07-07,7,7,QCS01,Katodinium,1008
+2019-07-07,7,7,QCS01,Leptocylindrus danicus,6336
+2019-07-07,7,7,QCS01,Navicula,144
+2019-07-07,7,7,QCS01,Pennales,13250
+2019-07-07,7,7,QCS01,Phaeocystis pouchetii,11666
+2019-07-07,7,7,QCS01,Prorocentrum micans,144
+2019-07-07,7,7,QCS01,Protoperidinium,432
+2019-07-07,7,7,QCS01,Protoperidinium steinii,144
+2019-07-07,7,7,QCS01,Pseudo-nitzschia multiseries,144
+2019-07-07,7,7,QCS01,Pseudo-nitzschia seriata,452000
+2019-07-07,7,7,QCS01,Pterosperma,11666
+2019-07-07,7,7,QCS01,Pyramimonas orientalis,5833
+2019-07-07,7,7,QCS01,Rhizosolenia setigera,20016
+2019-07-07,7,7,QCS01,Scrippsiella precaria,1872
+2019-07-07,7,7,QCS01,Scrippsiella trochoidea,288
+2019-07-07,7,7,QCS01,Skeletonema marinoi,26584
+2019-07-07,7,7,QCS01,Teleaulax,64163
+2019-07-07,7,7,QCS01,Thalassionema nitzschioides,288
+2019-07-07,7,7,QCS01,Thalassiosira,1872
+2019-07-07,7,7,QCS01,Thalassiosira rotula,576
+2019-07-10,7,7,KC10,Asterionellopsis glacialis,3732
+2019-07-10,7,7,KC10,Attheya,8750
+2019-07-10,7,7,KC10,Biddulphiales,311
+2019-07-10,7,7,KC10,Ceratium fusus,311
+2019-07-10,7,7,KC10,Ceratium horridum,311
+2019-07-10,7,7,KC10,Chaetoceros,6220
+2019-07-10,7,7,KC10,Chaetoceros cinctus,84903
+2019-07-10,7,7,KC10,Chaetoceros convolutus,933
+2019-07-10,7,7,KC10,Chaetoceros debilis,45406
+2019-07-10,7,7,KC10,Chaetoceros laciniosus,2799
+2019-07-10,7,7,KC10,Chaetoceros seiracanthus,622
+2019-07-10,7,7,KC10,Chaetoceros socialis,40838
+2019-07-10,7,7,KC10,Chaetoceros tenuissimus,11668
+2019-07-10,7,7,KC10,Ciliophrys infusionum,5834
+2019-07-10,7,7,KC10,Cylindrotheca closterium,3421
+2019-07-10,7,7,KC10,Dactyliosolen fragilissimus,933
+2019-07-10,7,7,KC10,Dactyliosolen phuketensis,1244
+2019-07-10,7,7,KC10,Dinobryon,32087
+2019-07-10,7,7,KC10,Dinophyceae,622
+2019-07-10,7,7,KC10,Dinophysis acuminata,622
+2019-07-10,7,7,KC10,Guinardia delicatula,12440
+2019-07-10,7,7,KC10,Gyrodinium,311
+2019-07-10,7,7,KC10,Hillea,8751
+2019-07-10,7,7,KC10,Katodinium,1244
+2019-07-10,7,7,KC10,Katodinium glaucum,311
+2019-07-10,7,7,KC10,Leptocylindrus danicus,27990
+2019-07-10,7,7,KC10,Navicula,311
+2019-07-10,7,7,KC10,Paralia sulcata,622
+2019-07-10,7,7,KC10,Pennales,6456
+2019-07-10,7,7,KC10,Pleurosigma,311
+2019-07-10,7,7,KC10,Protoperidinium steinii,622
+2019-07-10,7,7,KC10,Pseudo-nitzschia delicatissima,311
+2019-07-10,7,7,KC10,Pseudo-nitzschia multiseries,123000
+2019-07-10,7,7,KC10,Pseudo-nitzschia seriata,69264
+2019-07-10,7,7,KC10,Pterosperma,29170
+2019-07-10,7,7,KC10,Rhizosolenia setigera,37009
+2019-07-10,7,7,KC10,Scrippsiella trochoidea,1866
+2019-07-10,7,7,KC10,Skeletonema marinoi,80932
+2019-07-10,7,7,KC10,Teleaulax,14585
+2019-07-10,7,7,KC10,Thalassionema nitzschioides,3421
+2019-07-10,7,7,KC10,Thalassiosira,1244
+2019-07-10,7,7,KC10,Thalassiosira nordenskioeldii,3110
+2019-08-03,8,8,KC10,Apedinella spinifera,15000
+2019-08-03,8,8,KC10,Biddulphiales,63330
+2019-08-03,8,8,KC10,Ceratium lineatum,111
+2019-08-03,8,8,KC10,Chaetoceros,1332
+2019-08-03,8,8,KC10,Chaetoceros cinctus,80000
+2019-08-03,8,8,KC10,Chaetoceros debilis,1554
+2019-08-03,8,8,KC10,Chaetoceros subtilis,10000
+2019-08-03,8,8,KC10,Chaetoceros tenuissimus,10000
+2019-08-03,8,8,KC10,Ciliophrys infusionum,222
+2019-08-03,8,8,KC10,Cylindrotheca closterium,8658
+2019-08-03,8,8,KC10,Dactyliosolen fragilissimus,1221
+2019-08-03,8,8,KC10,Dactyliosolen phuketensis,111
+2019-08-03,8,8,KC10,Dictyocha,2220
+2019-08-03,8,8,KC10,Dictyocha fibula,111
+2019-08-03,8,8,KC10,Dictyocha speculum,222
+2019-08-03,8,8,KC10,Dinobryon,15000
+2019-08-03,8,8,KC10,Dinophyceae,222
+2019-08-03,8,8,KC10,Dinophysis fortii,111
+2019-08-03,8,8,KC10,Euglenozoa,2442
+2019-08-03,8,8,KC10,Guinardia delicatula,999
+2019-08-03,8,8,KC10,Gymnodinium,555
+2019-08-03,8,8,KC10,Gyrodinium,222
+2019-08-03,8,8,KC10,Hillea,170000
+2019-08-03,8,8,KC10,Katodinium,222
+2019-08-03,8,8,KC10,Leptocylindrus danicus,12099
+2019-08-03,8,8,KC10,Pennales,4440
+2019-08-03,8,8,KC10,Prorocentrum,888
+2019-08-03,8,8,KC10,Pseudo-nitzschia delicatissima,1998
+2019-08-03,8,8,KC10,Pseudo-nitzschia multiseries,2997
+2019-08-03,8,8,KC10,Pseudo-nitzschia seriata,222
+2019-08-03,8,8,KC10,Pterosperma,5000
+2019-08-03,8,8,KC10,Pyramimonas,15000
+2019-08-03,8,8,KC10,Rhizosolenia setigera,10434
+2019-08-03,8,8,KC10,Scrippsiella trochoidea,222
+2019-08-03,8,8,KC10,Skeletonema marinoi,10767
+2019-08-03,8,8,KC10,Teleaulax,155000
+2019-08-03,8,8,KC10,Thalassionema nitzschioides,555
+2019-08-03,8,8,KC10,Thalassiosira,2775
+2019-08-05,8,8,DFO2,Amylax triacantha,4272
+2019-08-05,8,8,DFO2,Apedinella spinifera,11667
+2019-08-05,8,8,DFO2,Biddulphiales,11845
+2019-08-05,8,8,DFO2,Chaetoceros ceratosporus,89
+2019-08-05,8,8,DFO2,Chaetoceros socialis,267
+2019-08-05,8,8,DFO2,Ciliophrys infusionum,89
+2019-08-05,8,8,DFO2,Coscinodiscus,534
+2019-08-05,8,8,DFO2,Cylindrotheca closterium,267
+2019-08-05,8,8,DFO2,Dictyocha octonaria,89
+2019-08-05,8,8,DFO2,Dictyocha speculum,712
+2019-08-05,8,8,DFO2,Dinophyceae,890
+2019-08-05,8,8,DFO2,Dinophysis acuta,89
+2019-08-05,8,8,DFO2,Euglenozoa,356
+2019-08-05,8,8,DFO2,Gymnodinium,801
+2019-08-05,8,8,DFO2,Gyrodinium,178
+2019-08-05,8,8,DFO2,Hillea,361677
+2019-08-05,8,8,DFO2,Ochromonas,23333
+2019-08-05,8,8,DFO2,Oxytoxum,89
+2019-08-05,8,8,DFO2,Pennales,24223
+2019-08-05,8,8,DFO2,Phaeocystis pouchetii,350010
+2019-08-05,8,8,DFO2,Prorocentrum,3026
+2019-08-05,8,8,DFO2,Pseudo-nitzschia seriata,356
+2019-08-05,8,8,DFO2,Pterosperma,23333
+2019-08-05,8,8,DFO2,Pyramimonas,11667
+2019-08-05,8,8,DFO2,Pyramimonas grossii,58335
+2019-08-05,8,8,DFO2,Pyramimonas orientalis,221673
+2019-08-05,8,8,DFO2,Skeletonema marinoi,72816
+2019-08-05,8,8,DFO2,Teleaulax,210006
+2019-08-05,8,8,DFO2,Teleaulax acuta,11667
+2019-08-05,8,8,DFO2,Thalassionema nitzschioides,6408
+2019-08-05,8,8,DFO2,Thalassiosira,801
+2019-08-06,8,8,QCS01,Alexandrium catenella,144
+2019-08-06,8,8,QCS01,Asterionellopsis glacialis,1008
+2019-08-06,8,8,QCS01,Bacillariophyceae,144
+2019-08-06,8,8,QCS01,Biddulphiales,148750
+2019-08-06,8,8,QCS01,Cerataulina bicornis,288
+2019-08-06,8,8,QCS01,Ceratium fusus,288
+2019-08-06,8,8,QCS01,Ceratium lineatum,1296
+2019-08-06,8,8,QCS01,Chaetoceros,1008
+2019-08-06,8,8,QCS01,Chaetoceros ceratosporus,288
+2019-08-06,8,8,QCS01,Chaetoceros cinctus,2160
+2019-08-06,8,8,QCS01,Chaetoceros debilis,5472
+2019-08-06,8,8,QCS01,Chaetoceros decipiens,576
+2019-08-06,8,8,QCS01,Chaetoceros laciniosus,1008
+2019-08-06,8,8,QCS01,Chaetoceros seiracanthus,1152
+2019-08-06,8,8,QCS01,Chaetoceros similis,864
+2019-08-06,8,8,QCS01,Chaetoceros simplex,432
+2019-08-06,8,8,QCS01,Chaetoceros socialis,720
+2019-08-06,8,8,QCS01,Chaetoceros subtilis,720
+2019-08-06,8,8,QCS01,Chaetoceros tenuissimus,52500
+2019-08-06,8,8,QCS01,Coscinodiscus,288
+2019-08-06,8,8,QCS01,Cylindrotheca closterium,7488
+2019-08-06,8,8,QCS01,Dactyliosolen fragilissimus,576
+2019-08-06,8,8,QCS01,Dactyliosolen phuketensis,432
+2019-08-06,8,8,QCS01,Detonula pumila,1296
+2019-08-06,8,8,QCS01,Dictyocha,1728
+2019-08-06,8,8,QCS01,Dictyocha fibula,144
+2019-08-06,8,8,QCS01,Dictyocha speculum,1296
+2019-08-06,8,8,QCS01,Dinobryon,720
+2019-08-06,8,8,QCS01,Dinophyceae,432
+2019-08-06,8,8,QCS01,Dinophysis,144
+2019-08-06,8,8,QCS01,Dinophysis acuminata,144
+2019-08-06,8,8,QCS01,Dinophysis fortii,144
+2019-08-06,8,8,QCS01,Ditylum brightwellii,288
+2019-08-06,8,8,QCS01,Eucampia zodiacus,4320
+2019-08-06,8,8,QCS01,Euglenozoa,288
+2019-08-06,8,8,QCS01,Guinardia delicatula,3888
+2019-08-06,8,8,QCS01,Gymnodinium,1152
+2019-08-06,8,8,QCS01,Gyrodinium,144
+2019-08-06,8,8,QCS01,Hillea,113750
+2019-08-06,8,8,QCS01,Katodinium,288
+2019-08-06,8,8,QCS01,Katodinium glaucum,288
+2019-08-06,8,8,QCS01,Leptocylindrus danicus,40430
+2019-08-06,8,8,QCS01,Navicula,2160
+2019-08-06,8,8,QCS01,Ochromonas,17500
+2019-08-06,8,8,QCS01,Pennales,18364
+2019-08-06,8,8,QCS01,Phaeocystis pouchetii,8750
+2019-08-06,8,8,QCS01,Pleurosigma,144
+2019-08-06,8,8,QCS01,Protoperidinium steinii,288
+2019-08-06,8,8,QCS01,Pseudo-nitzschia delicatissima,1872
+2019-08-06,8,8,QCS01,Pseudo-nitzschia multiseries,1152
+2019-08-06,8,8,QCS01,Pseudo-nitzschia seriata,6624
+2019-08-06,8,8,QCS01,Pterosperma,61250
+2019-08-06,8,8,QCS01,Pyramimonas,8750
+2019-08-06,8,8,QCS01,Pyramimonas grossii,17500
+2019-08-06,8,8,QCS01,Rhizosolenia setigera,21000
+2019-08-06,8,8,QCS01,Scrippsiella trochoidea,288
+2019-08-06,8,8,QCS01,Skeletonema marinoi,11232
+2019-08-06,8,8,QCS01,Teleaulax,113750
+2019-08-06,8,8,QCS01,Thalassiosira,3024
+2019-08-06,8,8,QCS01,Thalassiosira rotula,864
+2019-08-31,8,9,QCS01,Apedinella spinifera,17500
+2019-08-31,8,9,QCS01,Bacillariophyceae,222
+2019-08-31,8,9,QCS01,Biddulphiales,555
+2019-08-31,8,9,QCS01,Cerataulina bicornis,444
+2019-08-31,8,9,QCS01,Ceratium lineatum,222
+2019-08-31,8,9,QCS01,Chaetoceros,333
+2019-08-31,8,9,QCS01,Chaetoceros debilis,555
+2019-08-31,8,9,QCS01,Chaetoceros decipiens,666
+2019-08-31,8,9,QCS01,Chaetoceros laciniosus,1332
+2019-08-31,8,9,QCS01,Chaetoceros similis,333
+2019-08-31,8,9,QCS01,Chaetoceros tenuissimus,17500
+2019-08-31,8,9,QCS01,Cylindrotheca closterium,2109
+2019-08-31,8,9,QCS01,Dactyliosolen fragilissimus,3774
+2019-08-31,8,9,QCS01,Dactyliosolen phuketensis,444
+2019-08-31,8,9,QCS01,Dictyocha,111
+2019-08-31,8,9,QCS01,Dictyocha speculum,1665
+2019-08-31,8,9,QCS01,Dinobryon,17500
+2019-08-31,8,9,QCS01,Dinophyceae,2886
+2019-08-31,8,9,QCS01,Ditylum brightwellii,111
+2019-08-31,8,9,QCS01,Eucampia zodiacus,666
+2019-08-31,8,9,QCS01,Euglenozoa,2331
+2019-08-31,8,9,QCS01,Guinardia delicatula,2331
+2019-08-31,8,9,QCS01,Gymnodinium,3885
+2019-08-31,8,9,QCS01,Gyrodinium,555
+2019-08-31,8,9,QCS01,Heterosigma akashiwo,8750
+2019-08-31,8,9,QCS01,Hillea,498750
+2019-08-31,8,9,QCS01,Katodinium,2997
+2019-08-31,8,9,QCS01,Leptocylindrus danicus,2331
+2019-08-31,8,9,QCS01,Meringosphaera,8750
+2019-08-31,8,9,QCS01,Navicula,333
+2019-08-31,8,9,QCS01,Odontella longicruris,222
+2019-08-31,8,9,QCS01,Oxyphysis oxytoxoides,222
+2019-08-31,8,9,QCS01,Pennales,2442
+2019-08-31,8,9,QCS01,Phaeocystis pouchetii,8750
+2019-08-31,8,9,QCS01,Prorocentrum,777
+2019-08-31,8,9,QCS01,Prorocentrum gracile,3330
+2019-08-31,8,9,QCS01,Prorocentrum micans,333
+2019-08-31,8,9,QCS01,Protoperidinium,111
+2019-08-31,8,9,QCS01,Pseudo-nitzschia delicatissima,888
+2019-08-31,8,9,QCS01,Pseudo-nitzschia multiseries,333
+2019-08-31,8,9,QCS01,Pseudo-nitzschia seriata,2109
+2019-08-31,8,9,QCS01,Pterosperma,105000
+2019-08-31,8,9,QCS01,Pyramimonas,17500
+2019-08-31,8,9,QCS01,Pyramimonas grossii,26250
+2019-08-31,8,9,QCS01,Pyramimonas orientalis,52500
+2019-08-31,8,9,QCS01,Rhizosolenia setigera,111
+2019-08-31,8,9,QCS01,Scrippsiella precaria,999
+2019-08-31,8,9,QCS01,Scrippsiella trochoidea,3552
+2019-08-31,8,9,QCS01,Skeletonema marinoi,6105
+2019-08-31,8,9,QCS01,Teleaulax,157500
+2019-08-31,8,9,QCS01,Tetraselmis gracilis,52500
+2019-08-31,8,9,QCS01,Thalassionema nitzschioides,222
+2019-08-31,8,9,QCS01,Thalassiosira,5883
+2019-08-31,8,9,QCS01,Thalassiosira rotula,888
+2019-09-01,9,9,KC10,Alexandrium catenella,666
+2019-09-01,9,9,KC10,Apedinella spinifera,11667
+2019-09-01,9,9,KC10,Biddulphiales,23555
+2019-09-01,9,9,KC10,Ceratium fusus,222
+2019-09-01,9,9,KC10,Ceratium lineatum,333
+2019-09-01,9,9,KC10,Chaetoceros cinctus,444
+2019-09-01,9,9,KC10,Chaetoceros laciniosus,222
+2019-09-01,9,9,KC10,Chaetoceros similis,333
+2019-09-01,9,9,KC10,Chaetoceros tenuissimus,23333
+2019-09-01,9,9,KC10,Cylindrotheca closterium,1554
+2019-09-01,9,9,KC10,Dactyliosolen fragilissimus,555
+2019-09-01,9,9,KC10,Dictyocha,1443
+2019-09-01,9,9,KC10,Dictyocha fibula,111
+2019-09-01,9,9,KC10,Dictyocha speculum,2442
+2019-09-01,9,9,KC10,Dinobryon,11667
+2019-09-01,9,9,KC10,Dinophyceae,2220
+2019-09-01,9,9,KC10,Dinophysis acuminata,333
+2019-09-01,9,9,KC10,Eucampia zodiacus,111
+2019-09-01,9,9,KC10,Euglenozoa,555
+2019-09-01,9,9,KC10,Guinardia delicatula,666
+2019-09-01,9,9,KC10,Gymnodinium,3552
+2019-09-01,9,9,KC10,Hillea,280008
+2019-09-01,9,9,KC10,Katodinium,2109
+2019-09-01,9,9,KC10,Leptocylindrus danicus,666
+2019-09-01,9,9,KC10,Olisthodiscus,361677
+2019-09-01,9,9,KC10,Oxyphysis oxytoxoides,111
+2019-09-01,9,9,KC10,Pennales,666
+2019-09-01,9,9,KC10,Phaeocystis pouchetii,11667
+2019-09-01,9,9,KC10,Prorocentrum,1998
+2019-09-01,9,9,KC10,Prorocentrum gracile,2664
+2019-09-01,9,9,KC10,Prorocentrum micans,222
+2019-09-01,9,9,KC10,Protoperidinium,111
+2019-09-01,9,9,KC10,Protoperidinium conicum,111
+2019-09-01,9,9,KC10,Protoperidinium steinii,111
+2019-09-01,9,9,KC10,Pseudo-nitzschia delicatissima,222
+2019-09-01,9,9,KC10,Pseudo-nitzschia seriata,111
+2019-09-01,9,9,KC10,Pterosperma,46668
+2019-09-01,9,9,KC10,Pyramimonas,11667
+2019-09-01,9,9,KC10,Pyramimonas grossii,35001
+2019-09-01,9,9,KC10,Pyramimonas orientalis,93336
+2019-09-01,9,9,KC10,Rhizosolenia setigera,111
+2019-09-01,9,9,KC10,Scrippsiella precaria,666
+2019-09-01,9,9,KC10,Scrippsiella trochoidea,3108
+2019-09-01,9,9,KC10,Skeletonema marinoi,999
+2019-09-01,9,9,KC10,Teleaulax,280008
+2019-09-01,9,9,KC10,Tetraselmis gracilis,11667
+2019-09-01,9,9,KC10,Thalassiosira,333
+2019-09-02,9,9,DFO2,Biddulphiales,11799
+2019-09-02,9,9,DFO2,Ceratium fusus,48
+2019-09-02,9,9,DFO2,Chaetoceros ceratosporus,48
+2019-09-02,9,9,DFO2,Chaetoceros cinctus,576
+2019-09-02,9,9,DFO2,Chaetoceros simplex,48
+2019-09-02,9,9,DFO2,Chaetoceros socialis,6
+2019-09-02,9,9,DFO2,Chaetoceros tenuissimus,7866
+2019-09-02,9,9,DFO2,Ciliophrys infusionum,3933
+2019-09-02,9,9,DFO2,Cylindrotheca closterium,912
+2019-09-02,9,9,DFO2,Dactyliosolen fragilissimus,192
+2019-09-02,9,9,DFO2,Dictyocha,192
+2019-09-02,9,9,DFO2,Dictyocha speculum,528
+2019-09-02,9,9,DFO2,Dinophyceae,240
+2019-09-02,9,9,DFO2,Dinophysis fortii,48
+2019-09-02,9,9,DFO2,Ditylum brightwellii,96
+2019-09-02,9,9,DFO2,Euglenozoa,240
+2019-09-02,9,9,DFO2,Gymnodinium,192
+2019-09-02,9,9,DFO2,Gyrodinium,336
+2019-09-02,9,9,DFO2,Hillea,121923
+2019-09-02,9,9,DFO2,Katodinium,48
+2019-09-02,9,9,DFO2,Leptocylindrus danicus,144
+2019-09-02,9,9,DFO2,Pennales,192
+2019-09-02,9,9,DFO2,Phaeocystis pouchetii,11799
+2019-09-02,9,9,DFO2,Prorocentrum,1776
+2019-09-02,9,9,DFO2,Protoperidinium,96
+2019-09-02,9,9,DFO2,Pseudo-nitzschia multiseries,336
+2019-09-02,9,9,DFO2,Pseudo-nitzschia seriata,528
+2019-09-02,9,9,DFO2,Pterosperma,3933
+2019-09-02,9,9,DFO2,Pyramimonas orientalis,7866
+2019-09-02,9,9,DFO2,Rhizosolenia setigera,240
+2019-09-02,9,9,DFO2,Skeletonema marinoi,1053927
+2019-09-02,9,9,DFO2,Teleaulax,94392
+2019-09-02,9,9,DFO2,Teleaulax amphioxeia,3933
+2019-09-02,9,9,DFO2,Thalassionema nitzschioides,2352
+2019-09-02,9,9,DFO2,Thalassiosira,960
+2019-10-01,10,10,KC10,Alexandrium catenella,48
+2019-10-01,10,10,KC10,Biddulphiales,6074
+2019-10-01,10,10,KC10,Cerataulina bicornis,48
+2019-10-01,10,10,KC10,Chaetoceros,576
+2019-10-01,10,10,KC10,Chaetoceros decipiens,192
+2019-10-01,10,10,KC10,Chaetoceros seiracanthus,288
+2019-10-01,10,10,KC10,Chaetoceros simplex,288
+2019-10-01,10,10,KC10,Chaetoceros socialis,432
+2019-10-01,10,10,KC10,Chaetoceros tenuissimus,6169
+2019-10-01,10,10,KC10,Ciliophrys infusionum,48
+2019-10-01,10,10,KC10,Cylindrotheca closterium,576
+2019-10-01,10,10,KC10,Dictyocha,624
+2019-10-01,10,10,KC10,Dictyocha fibula,48
+2019-10-01,10,10,KC10,Dictyocha speculum,288
+2019-10-01,10,10,KC10,Dinobryon,5834
+2019-10-01,10,10,KC10,Dinophyceae,240
+2019-10-01,10,10,KC10,Ditylum brightwellii,144
+2019-10-01,10,10,KC10,Eucampia groenlandica,48
+2019-10-01,10,10,KC10,Eucampia zodiacus,528
+2019-10-01,10,10,KC10,Euglenozoa,2917
+2019-10-01,10,10,KC10,Gonyaulax,48
+2019-10-01,10,10,KC10,Guinardia delicatula,192
+2019-10-01,10,10,KC10,Gymnodinium,336
+2019-10-01,10,10,KC10,Gyrodinium,96
+2019-10-01,10,10,KC10,Heterosigma akashiwo,2917
+2019-10-01,10,10,KC10,Hillea,67091
+2019-10-01,10,10,KC10,Katodinium,96
+2019-10-01,10,10,KC10,Leptocylindrus danicus,1920
+2019-10-01,10,10,KC10,Paralia sulcata,336
+2019-10-01,10,10,KC10,Pennales,3109
+2019-10-01,10,10,KC10,Prorocentrum,2304
+2019-10-01,10,10,KC10,Pseudo-nitzschia delicatissima,480
+2019-10-01,10,10,KC10,Pseudo-nitzschia multiseries,384
+2019-10-01,10,10,KC10,Pseudo-nitzschia seriata,96
+2019-10-01,10,10,KC10,Pterosperma,11668
+2019-10-01,10,10,KC10,Pyramimonas grossii,5834
+2019-10-01,10,10,KC10,Rhizosolenia setigera,1680
+2019-10-01,10,10,KC10,Skeletonema marinoi,3264
+2019-10-01,10,10,KC10,Teleaulax,72925
+2019-10-01,10,10,KC10,Teleaulax amphioxeia,2917
+2019-10-01,10,10,KC10,Thalassionema nitzschioides,48
+2019-10-01,10,10,KC10,Thalassiosira,288
+2019-10-04,10,10,DFO2,Biddulphiales,4375
+2019-10-04,10,10,DFO2,Chaetoceros,23636
+2019-10-04,10,10,DFO2,Chaetoceros cinctus,160
+2019-10-04,10,10,DFO2,Chaetoceros tenuissimus,4415
+2019-10-04,10,10,DFO2,Ciliophrys infusionum,4375
+2019-10-04,10,10,DFO2,Cylindrotheca closterium,240
+2019-10-04,10,10,DFO2,Dictyocha speculum,40
+2019-10-04,10,10,DFO2,Gymnodinium,160
+2019-10-04,10,10,DFO2,Gyrodinium,80
+2019-10-04,10,10,DFO2,Hillea,148750
+2019-10-04,10,10,DFO2,Katodinium,40
+2019-10-04,10,10,DFO2,Leptocylindrus danicus,160
+2019-10-04,10,10,DFO2,Prorocentrum,4375
+2019-10-04,10,10,DFO2,Pseudo-nitzschia multiseries,80
+2019-10-04,10,10,DFO2,Pseudo-nitzschia seriata,120
+2019-10-04,10,10,DFO2,Pyramimonas grossii,21875
+2019-10-04,10,10,DFO2,Pyramimonas orientalis,30625
+2019-10-04,10,10,DFO2,Skeletonema marinoi,4080
+2019-10-04,10,10,DFO2,Teleaulax,153125
+2019-10-04,10,10,DFO2,Teleaulax acuta,4375
+2019-10-04,10,10,DFO2,Thalassionema nitzschioides,320
+2019-10-04,10,10,DFO2,Thalassiosira,200
+2019-10-05,10,10,QCS01,Biddulphiales,148
+2019-10-05,10,10,QCS01,Ceratium lineatum,74
+2019-10-05,10,10,QCS01,Chaetoceros,814
+2019-10-05,10,10,QCS01,Chaetoceros cinctus,1184
+2019-10-05,10,10,QCS01,Chaetoceros convolutus,74
+2019-10-05,10,10,QCS01,Chaetoceros debilis,7252
+2019-10-05,10,10,QCS01,Chaetoceros decipiens,296
+2019-10-05,10,10,QCS01,Chaetoceros seiracanthus,1036
+2019-10-05,10,10,QCS01,Ciliophrys infusionum,11667
+2019-10-05,10,10,QCS01,Cylindrotheca closterium,518
+2019-10-05,10,10,QCS01,Dactyliosolen fragilissimus,2590
+2019-10-05,10,10,QCS01,Dactyliosolen phuketensis,370
+2019-10-05,10,10,QCS01,Detonula pumila,370
+2019-10-05,10,10,QCS01,Dictyocha,74
+2019-10-05,10,10,QCS01,Dictyocha speculum,74
+2019-10-05,10,10,QCS01,Dinophyceae,222
+2019-10-05,10,10,QCS01,Dinophysis rotundata,74
+2019-10-05,10,10,QCS01,Eucampia zodiacus,370
+2019-10-05,10,10,QCS01,Euglenozoa,222
+2019-10-05,10,10,QCS01,Gymnodinium,444
+2019-10-05,10,10,QCS01,Gyrodinium,1036
+2019-10-05,10,10,QCS01,Heterosigma akashiwo,7778
+2019-10-05,10,10,QCS01,Hillea,81669
+2019-10-05,10,10,QCS01,Katodinium,296
+2019-10-05,10,10,QCS01,Leptocylindrus danicus,3848
+2019-10-05,10,10,QCS01,Membraneis challengeri,148
+2019-10-05,10,10,QCS01,Pennales,2368
+2019-10-05,10,10,QCS01,Phaeocystis pouchetii,120559
+2019-10-05,10,10,QCS01,Prorocentrum gracile,222
+2019-10-05,10,10,QCS01,Prorocentrum micans,74
+2019-10-05,10,10,QCS01,Protoperidinium,74
+2019-10-05,10,10,QCS01,Pseudo-nitzschia delicatissima,1998
+2019-10-05,10,10,QCS01,Pseudo-nitzschia multiseries,2664
+2019-10-05,10,10,QCS01,Pseudo-nitzschia seriata,14688
+2019-10-05,10,10,QCS01,Pyramimonas orientalis,3889
+2019-10-05,10,10,QCS01,Rhizosolenia setigera,740
+2019-10-05,10,10,QCS01,Scrippsiella trochoidea,74
+2019-10-05,10,10,QCS01,Skeletonema marinoi,666
+2019-10-05,10,10,QCS01,Teleaulax,120559
+2019-10-05,10,10,QCS01,Thalassionema nitzschioides,518
+2019-10-05,10,10,QCS01,Thalassiosira,1924
+2020-05-01,5,5,QCS01,Apedinella spinifera,3889
+2020-05-01,5,5,QCS01,Attheya,3889
+2020-05-01,5,5,QCS01,Biddulphiales,39322
+2020-05-01,5,5,QCS01,Cerataulina bicornis,288
+2020-05-01,5,5,QCS01,Cerataulina pelagica,144
+2020-05-01,5,5,QCS01,Chaetoceros ceratosporus,720
+2020-05-01,5,5,QCS01,Chaetoceros cinctus,33899
+2020-05-01,5,5,QCS01,Chaetoceros debilis,8352
+2020-05-01,5,5,QCS01,Chaetoceros decipiens,1440
+2020-05-01,5,5,QCS01,Chaetoceros diadema,1152
+2020-05-01,5,5,QCS01,Chaetoceros didymus,1008
+2020-05-01,5,5,QCS01,Chaetoceros laciniosus,4752
+2020-05-01,5,5,QCS01,Chaetoceros radicans,42918
+2020-05-01,5,5,QCS01,Chaetoceros seiracanthus,4320
+2020-05-01,5,5,QCS01,Chaetoceros similis,1728
+2020-05-01,5,5,QCS01,Chaetoceros socialis,34128
+2020-05-01,5,5,QCS01,Chaetoceros tenuissimus,7922
+2020-05-01,5,5,QCS01,Coscinodiscus,144
+2020-05-01,5,5,QCS01,Cylindrotheca closterium,2160
+2020-05-01,5,5,QCS01,Dactyliosolen fragilissimus,1296
+2020-05-01,5,5,QCS01,Dactyliosolen phuketensis,432
+2020-05-01,5,5,QCS01,Dictyocha,432
+2020-05-01,5,5,QCS01,Dictyocha speculum,144
+2020-05-01,5,5,QCS01,Dinophyceae,1440
+2020-05-01,5,5,QCS01,Dinophysis acuminata,144
+2020-05-01,5,5,QCS01,Ditylum brightwellii,576
+2020-05-01,5,5,QCS01,Euglenozoa,144
+2020-05-01,5,5,QCS01,Gonyaulax,144
+2020-05-01,5,5,QCS01,Gymnodinium,720
+2020-05-01,5,5,QCS01,Gyrodinium,720
+2020-05-01,5,5,QCS01,Hillea,23334
+2020-05-01,5,5,QCS01,Katodinium,19445
+2020-05-01,5,5,QCS01,Meringosphaera mediterranea,3889
+2020-05-01,5,5,QCS01,Navicula,144
+2020-05-01,5,5,QCS01,Pennales,1728
+2020-05-01,5,5,QCS01,Phaeocystis pouchetii,4176
+2020-05-01,5,5,QCS01,Pleurosigma,144
+2020-05-01,5,5,QCS01,Protoperidinium,144
+2020-05-01,5,5,QCS01,Protoperidinium conicum,288
+2020-05-01,5,5,QCS01,Protoperidinium steinii,144
+2020-05-01,5,5,QCS01,Pseudo-nitzschia delicatissima,2016
+2020-05-01,5,5,QCS01,Pseudo-nitzschia multiseries,7632
+2020-05-01,5,5,QCS01,Pseudo-nitzschia seriata,2016
+2020-05-01,5,5,QCS01,Pterosperma,15556
+2020-05-01,5,5,QCS01,Pyramimonas orientalis,23334
+2020-05-01,5,5,QCS01,Rhizosolenia setigera,144
+2020-05-01,5,5,QCS01,Scrippsiella precaria,288
+2020-05-01,5,5,QCS01,Skeletonema marinoi,244928
+2020-05-01,5,5,QCS01,Teleaulax,62224
+2020-05-01,5,5,QCS01,Teleaulax amphioxeia,3889
+2020-05-01,5,5,QCS01,Thalassionema nitzschioides,2736
+2020-05-01,5,5,QCS01,Thalassiosira,69856
+2020-05-01,5,5,QCS01,Thalassiosira nordenskioeldii,91760
+2020-05-01,5,5,QCS01,Thalassiosira pacifica,100000
+2020-05-01,5,5,QCS01,Thalassiosira rotula,26400
+2020-05-04,5,5,DFO2,Apedinella spinifera,2917
+2020-05-04,5,5,DFO2,Attheya,11667
+2020-05-04,5,5,DFO2,Biddulphiales,3006
+2020-05-04,5,5,DFO2,Cerataulina bicornis,89
+2020-05-04,5,5,DFO2,Chaetoceros,356
+2020-05-04,5,5,DFO2,Chaetoceros cinctus,979
+2020-05-04,5,5,DFO2,Chaetoceros debilis,1157
+2020-05-04,5,5,DFO2,Chaetoceros radicans,1335
+2020-05-04,5,5,DFO2,Chaetoceros simplex,178
+2020-05-04,5,5,DFO2,Chaetoceros socialis,1157
+2020-05-04,5,5,DFO2,Chaetoceros tenuissimus,8751
+2020-05-04,5,5,DFO2,Corythodinium,11322
+2020-05-04,5,5,DFO2,Cylindrotheca closterium,890
+2020-05-04,5,5,DFO2,Dactyliosolen fragilissimus,356
+2020-05-04,5,5,DFO2,Dinophyceae,3115
+2020-05-04,5,5,DFO2,Euglenozoa,178
+2020-05-04,5,5,DFO2,Gonyaulax,178
+2020-05-04,5,5,DFO2,Gymnodinium,445
+2020-05-04,5,5,DFO2,Gyrodinium,178
+2020-05-04,5,5,DFO2,Hillea,40838
+2020-05-04,5,5,DFO2,Katodinium,178
+2020-05-04,5,5,DFO2,Katodinium glaucum,89
+2020-05-04,5,5,DFO2,Pennales,4074
+2020-05-04,5,5,DFO2,Pseudo-nitzschia delicatissima,356
+2020-05-04,5,5,DFO2,Pseudo-nitzschia multiseries,979
+2020-05-04,5,5,DFO2,Scrippsiella precaria,267
+2020-05-04,5,5,DFO2,Scrippsiella trochoidea,2136
+2020-05-04,5,5,DFO2,Skeletonema marinoi,244052
+2020-05-04,5,5,DFO2,Teleaulax,58340
+2020-05-04,5,5,DFO2,Teleaulax acuta,17502
+2020-05-04,5,5,DFO2,Thalassionema nitzschioides,890
+2020-05-04,5,5,DFO2,Thalassiosira,24400
+2020-05-04,5,5,DFO2,Thalassiosira nordenskioeldii,8188
+2020-05-04,5,5,DFO2,Thalassiosira pacifica,11211
+2020-05-04,5,5,DFO2,Thalassiosira rotula,534
+2020-06-04,6,6,KC10,Biddulphiales,25000
+2020-06-04,6,6,KC10,Ceratium furca,200
+2020-06-04,6,6,KC10,Ceratium lineatum,200
+2020-06-04,6,6,KC10,Chaetoceros,200
+2020-06-04,6,6,KC10,Chaetoceros cinctus,1200
+2020-06-04,6,6,KC10,Chaetoceros debilis,2000
+2020-06-04,6,6,KC10,Chaetoceros decipiens,200
+2020-06-04,6,6,KC10,Chaetoceros socialis,1400
+2020-06-04,6,6,KC10,Chaetoceros subtilis,600
+2020-06-04,6,6,KC10,Chaetoceros tenuissimus,5000
+2020-06-04,6,6,KC10,Cylindrotheca closterium,2000
+2020-06-04,6,6,KC10,Dactyliosolen fragilissimus,600
+2020-06-04,6,6,KC10,Dactyliosolen phuketensis,2400
+2020-06-04,6,6,KC10,Detonula pumila,1000
+2020-06-04,6,6,KC10,Dictyocha speculum,1800
+2020-06-04,6,6,KC10,Dinophyceae,4000
+2020-06-04,6,6,KC10,Dinophysis acuminata,200
+2020-06-04,6,6,KC10,Euglenozoa,800
+2020-06-04,6,6,KC10,Gonyaulax,1200
+2020-06-04,6,6,KC10,Guinardia delicatula,800
+2020-06-04,6,6,KC10,Gymnodinium,2400
+2020-06-04,6,6,KC10,Gyrodinium,3000
+2020-06-04,6,6,KC10,Hillea,90000
+2020-06-04,6,6,KC10,Katodinium,20000
+2020-06-04,6,6,KC10,Leptocylindrus danicus,3600
+2020-06-04,6,6,KC10,Pennales,16000
+2020-06-04,6,6,KC10,Protoperidinium,800
+2020-06-04,6,6,KC10,Protoperidinium steinii,200
+2020-06-04,6,6,KC10,Pseudo-nitzschia delicatissima,5000
+2020-06-04,6,6,KC10,Pseudo-nitzschia multiseries,2800
+2020-06-04,6,6,KC10,Pseudo-nitzschia seriata,2600
+2020-06-04,6,6,KC10,Pterosperma,5000
+2020-06-04,6,6,KC10,Pyramimonas orientalis,20000
+2020-06-04,6,6,KC10,Skeletonema marinoi,780000
+2020-06-04,6,6,KC10,Teleaulax,175000
+2020-06-04,6,6,KC10,Thalassionema nitzschioides,800
+2020-06-04,6,6,KC10,Thalassiosira,8000
+2020-06-06,6,6,DFO2,Apedinella spinifera,7778
+2020-06-06,6,6,DFO2,Attheya,89
+2020-06-06,6,6,DFO2,Biddulphiales,3978
+2020-06-06,6,6,DFO2,Chaetoceros,623
+2020-06-06,6,6,DFO2,Chaetoceros ceratosporus,445
+2020-06-06,6,6,DFO2,Chaetoceros cinctus,10858
+2020-06-06,6,6,DFO2,Chaetoceros danicus,356
+2020-06-06,6,6,DFO2,Chaetoceros debilis,979
+2020-06-06,6,6,DFO2,Chaetoceros radicans,175
+2020-06-06,6,6,DFO2,Chaetoceros simplex,89
+2020-06-06,6,6,DFO2,Chaetoceros socialis,1780
+2020-06-06,6,6,DFO2,Chaetoceros subtilis,356
+2020-06-06,6,6,DFO2,Chaetoceros tenuissimus,42778
+2020-06-06,6,6,DFO2,Ciliophrys infusionum,178
+2020-06-06,6,6,DFO2,Corythodinium,6586
+2020-06-06,6,6,DFO2,Cylindrotheca closterium,3382
+2020-06-06,6,6,DFO2,Dactyliosolen fragilissimus,1424
+2020-06-06,6,6,DFO2,Dactyliosolen phuketensis,356
+2020-06-06,6,6,DFO2,Detonula pumila,178
+2020-06-06,6,6,DFO2,Dictyocha,267
+2020-06-06,6,6,DFO2,Dictyocha speculum,178
+2020-06-06,6,6,DFO2,Dinophyceae,1246
+2020-06-06,6,6,DFO2,Dinophysis acuminata,89
+2020-06-06,6,6,DFO2,Dinophysis acuta,89
+2020-06-06,6,6,DFO2,Euglenozoa,267
+2020-06-06,6,6,DFO2,Gonyaulax,178
+2020-06-06,6,6,DFO2,Gymnodinium,623
+2020-06-06,6,6,DFO2,Gyrodinium,356
+2020-06-06,6,6,DFO2,Hillea,93336
+2020-06-06,6,6,DFO2,Katodinium,89
+2020-06-06,6,6,DFO2,Pennales,6737
+2020-06-06,6,6,DFO2,Pseudo-nitzschia delicatissima,1157
+2020-06-06,6,6,DFO2,Pseudo-nitzschia multiseries,6408
+2020-06-06,6,6,DFO2,Pseudo-nitzschia seriata,534
+2020-06-06,6,6,DFO2,Pyramimonas grossii,11667
+2020-06-06,6,6,DFO2,Pyramimonas orientalis,23334
+2020-06-06,6,6,DFO2,Pyrocystis lunula,89
+2020-06-06,6,6,DFO2,Rhizosolenia setigera,89
+2020-06-06,6,6,DFO2,Skeletonema marinoi,301920
+2020-06-06,6,6,DFO2,Teleaulax,77780
+2020-06-06,6,6,DFO2,Thalassionema nitzschioides,267
+2020-06-06,6,6,DFO2,Thalassiosira,1335
+2020-06-08,6,6,QCS01,Apedinella spinifera,3182
+2020-06-08,6,6,QCS01,Attheya,3182
+2020-06-08,6,6,QCS01,Bacteriastrum delicatulum,8208
+2020-06-08,6,6,QCS01,Biddulphiales,4478
+2020-06-08,6,6,QCS01,Ceratium lineatum,144
+2020-06-08,6,6,QCS01,Chaetoceros cinctus,25400
+2020-06-08,6,6,QCS01,Chaetoceros compressus,3600
+2020-06-08,6,6,QCS01,Chaetoceros danicus,288
+2020-06-08,6,6,QCS01,Chaetoceros debilis,2016
+2020-06-08,6,6,QCS01,Chaetoceros decipiens,1152
+2020-06-08,6,6,QCS01,Chaetoceros radicans,2880
+2020-06-08,6,6,QCS01,Chaetoceros seiracanthus,2016
+2020-06-08,6,6,QCS01,Chaetoceros socialis,24480
+2020-06-08,6,6,QCS01,Ciliophrys infusionum,144
+2020-06-08,6,6,QCS01,Cylindrotheca closterium,1296
+2020-06-08,6,6,QCS01,Dactyliosolen fragilissimus,144
+2020-06-08,6,6,QCS01,Dactyliosolen phuketensis,288
+2020-06-08,6,6,QCS01,Detonula pumila,2016
+2020-06-08,6,6,QCS01,Dictyocha speculum,1008
+2020-06-08,6,6,QCS01,Dinophyceae,3168
+2020-06-08,6,6,QCS01,Dinophysis acuminata,144
+2020-06-08,6,6,QCS01,Euglenozoa,432
+2020-06-08,6,6,QCS01,Gonyaulax,288
+2020-06-08,6,6,QCS01,Guinardia delicatula,4752
+2020-06-08,6,6,QCS01,Gymnodinium,864
+2020-06-08,6,6,QCS01,Gyrodinium,1296
+2020-06-08,6,6,QCS01,Hillea,9546
+2020-06-08,6,6,QCS01,Katodinium,22274
+2020-06-08,6,6,QCS01,Leptocylindrus danicus,3024
+2020-06-08,6,6,QCS01,Licmophora,144
+2020-06-08,6,6,QCS01,Pennales,14140
+2020-06-08,6,6,QCS01,Phaeocystis pouchetii,49000
+2020-06-08,6,6,QCS01,Pleurosigma,288
+2020-06-08,6,6,QCS01,Protoperidinium,144
+2020-06-08,6,6,QCS01,Protoperidinium steinii,864
+2020-06-08,6,6,QCS01,Pseudo-nitzschia delicatissima,6624
+2020-06-08,6,6,QCS01,Pseudo-nitzschia multiseries,3024
+2020-06-08,6,6,QCS01,Pseudo-nitzschia seriata,4752
+2020-06-08,6,6,QCS01,Pterosperma,9546
+2020-06-08,6,6,QCS01,Rhizosolenia setigera,432
+2020-06-08,6,6,QCS01,Scrippsiella precaria,1728
+2020-06-08,6,6,QCS01,Scrippsiella trochoidea,144
+2020-06-08,6,6,QCS01,Skeletonema marinoi,321200
+2020-06-08,6,6,QCS01,Stephanopyxis turris,288
+2020-06-08,6,6,QCS01,Teleaulax,136826
+2020-06-08,6,6,QCS01,Thalassionema nitzschioides,720
+2020-06-08,6,6,QCS01,Thalassiosira,5040
+2020-07-02,7,7,KC10,Attheya,17500
+2020-07-02,7,7,KC10,Biddulphiales,13532
+2020-07-02,7,7,KC10,Cerataulina bicornis,1555
+2020-07-02,7,7,KC10,Cerataulina pelagica,6531
+2020-07-02,7,7,KC10,Chaetoceros,3110
+2020-07-02,7,7,KC10,Chaetoceros cinctus,11196
+2020-07-02,7,7,KC10,Chaetoceros danicus,1244
+2020-07-02,7,7,KC10,Chaetoceros debilis,622
+2020-07-02,7,7,KC10,Chaetoceros decipiens,1555
+2020-07-02,7,7,KC10,Chaetoceros similis,622
+2020-07-02,7,7,KC10,Chaetoceros socialis,2177
+2020-07-02,7,7,KC10,Chaetoceros tenuissimus,5833
+2020-07-02,7,7,KC10,Corythodinium,311
+2020-07-02,7,7,KC10,Cylindrotheca closterium,933
+2020-07-02,7,7,KC10,Dactyliosolen fragilissimus,2799
+2020-07-02,7,7,KC10,Dictyocha speculum,2488
+2020-07-02,7,7,KC10,Dinophyceae,3110
+2020-07-02,7,7,KC10,Dinophysis acuminata,311
+2020-07-02,7,7,KC10,Eucampia groenlandica,311
+2020-07-02,7,7,KC10,Gonyaulax,311
+2020-07-02,7,7,KC10,Guinardia delicatula,9019
+2020-07-02,7,7,KC10,Gymnodinium,1244
+2020-07-02,7,7,KC10,Gyrodinium,1866
+2020-07-02,7,7,KC10,Hillea,507471
+2020-07-02,7,7,KC10,Leptocylindrus danicus,3732
+2020-07-02,7,7,KC10,Pennales,12910
+2020-07-02,7,7,KC10,Pseudo-nitzschia delicatissima,311
+2020-07-02,7,7,KC10,Pseudo-nitzschia multiseries,1555
+2020-07-02,7,7,KC10,Pseudo-nitzschia seriata,5287
+2020-07-02,7,7,KC10,Pterosperma,5833
+2020-07-02,7,7,KC10,Pyramimonas grossii,5833
+2020-07-02,7,7,KC10,Pyramimonas orientalis,11666
+2020-07-02,7,7,KC10,Skeletonema marinoi,2153792
+2020-07-02,7,7,KC10,Teleaulax,373312
+2020-07-02,7,7,KC10,Tetraselmis gracilis,5833
+2020-07-02,7,7,KC10,Thalassionema nitzschioides,8397
+2020-07-02,7,7,KC10,Thalassiosira,4665
+2020-07-02,7,7,KC10,Thalassiosira rotula,1555
+2020-07-05,7,7,QCS01,Attheya,3500
+2020-07-05,7,7,QCS01,Biddulphiales,15221
+2020-07-05,7,7,QCS01,Cerataulina bicornis,888
+2020-07-05,7,7,QCS01,Cerataulina pelagica,333
+2020-07-05,7,7,QCS01,Ceratium lineatum,222
+2020-07-05,7,7,QCS01,Chaetoceros,2442
+2020-07-05,7,7,QCS01,Chaetoceros cinctus,6549
+2020-07-05,7,7,QCS01,Chaetoceros danicus,1554
+2020-07-05,7,7,QCS01,Chaetoceros debilis,222
+2020-07-05,7,7,QCS01,Chaetoceros didymus,111
+2020-07-05,7,7,QCS01,Chaetoceros laciniosus,888
+2020-07-05,7,7,QCS01,Chaetoceros socialis,6327
+2020-07-05,7,7,QCS01,Chaetoceros tenuissimus,17500
+2020-07-05,7,7,QCS01,Ciliophrys infusionum,111
+2020-07-05,7,7,QCS01,Cylindrotheca closterium,888
+2020-07-05,7,7,QCS01,Dactyliosolen fragilissimus,1221
+2020-07-05,7,7,QCS01,Dactyliosolen phuketensis,444
+2020-07-05,7,7,QCS01,Detonula pumila,777
+2020-07-05,7,7,QCS01,Dictyocha,222
+2020-07-05,7,7,QCS01,Dictyocha speculum,666
+2020-07-05,7,7,QCS01,Dinophyceae,666
+2020-07-05,7,7,QCS01,Eucampia groenlandica,777
+2020-07-05,7,7,QCS01,Euglenozoa,3500
+2020-07-05,7,7,QCS01,Guinardia delicatula,3219
+2020-07-05,7,7,QCS01,Gymnodinium,777
+2020-07-05,7,7,QCS01,Gyrodinium,1221
+2020-07-05,7,7,QCS01,Hillea,98000
+2020-07-05,7,7,QCS01,Katodinium,3500
+2020-07-05,7,7,QCS01,Leptocylindrus danicus,1665
+2020-07-05,7,7,QCS01,Meringosphaera,7000
+2020-07-05,7,7,QCS01,Pennales,888
+2020-07-05,7,7,QCS01,Pleurosigma,111
+2020-07-05,7,7,QCS01,Protoperidinium steinii,222
+2020-07-05,7,7,QCS01,Pseudo-nitzschia delicatissima,444
+2020-07-05,7,7,QCS01,Pseudo-nitzschia multiseries,3219
+2020-07-05,7,7,QCS01,Pseudo-nitzschia seriata,5328
+2020-07-05,7,7,QCS01,Pyramimonas,7000
+2020-07-05,7,7,QCS01,Pyramimonas grossii,3500
+2020-07-05,7,7,QCS01,Pyramimonas orientalis,21000
+2020-07-05,7,7,QCS01,Pyrocystis lunula,111
+2020-07-05,7,7,QCS01,Scrippsiella precaria,333
+2020-07-05,7,7,QCS01,Scrippsiella trochoidea,222
+2020-07-05,7,7,QCS01,Skeletonema marinoi,1704000
+2020-07-05,7,7,QCS01,Teleaulax,91000
+2020-07-05,7,7,QCS01,Teleaulax acuta,3500
+2020-07-05,7,7,QCS01,Thalassionema nitzschioides,10656
+2020-07-05,7,7,QCS01,Thalassiosira,5217
+2020-07-05,7,7,QCS01,Thalassiosira rotula,333
+2020-07-06,7,7,DFO2,Biddulphiales,4633
+2020-07-06,7,7,DFO2,Chaetoceros cinctus,620
+2020-07-06,7,7,DFO2,Chaetoceros similis,744
+2020-07-06,7,7,DFO2,Chaetoceros subtilis,186
+2020-07-06,7,7,DFO2,Chaetoceros tenuissimus,11667
+2020-07-06,7,7,DFO2,Ciliophrys infusionum,434
+2020-07-06,7,7,DFO2,Corythodinium,15556
+2020-07-06,7,7,DFO2,Cylindrotheca closterium,620
+2020-07-06,7,7,DFO2,Dictyocha,186
+2020-07-06,7,7,DFO2,Dinobryon,7778
+2020-07-06,7,7,DFO2,Dinophyceae,19445
+2020-07-06,7,7,DFO2,Dinophysis acuminata,62
+2020-07-06,7,7,DFO2,Euglenozoa,62
+2020-07-06,7,7,DFO2,Gonyaulax,62
+2020-07-06,7,7,DFO2,Gymnodinium,682
+2020-07-06,7,7,DFO2,Gyrodinium,186
+2020-07-06,7,7,DFO2,Hillea,155560
+2020-07-06,7,7,DFO2,Katodinium,3889
+2020-07-06,7,7,DFO2,Navicula,62
+2020-07-06,7,7,DFO2,Pennales,434
+2020-07-06,7,7,DFO2,Pseudo-nitzschia multiseries,186
+2020-07-06,7,7,DFO2,Pseudo-nitzschia seriata,62
+2020-07-06,7,7,DFO2,Pyramimonas,7778
+2020-07-06,7,7,DFO2,Pyramimonas grossii,3889
+2020-07-06,7,7,DFO2,Pyramimonas orientalis,23334
+2020-07-06,7,7,DFO2,Scrippsiella trochoidea,62
+2020-07-06,7,7,DFO2,Skeletonema marinoi,73600
+2020-07-06,7,7,DFO2,Teleaulax,159449
+2020-07-06,7,7,DFO2,Tetraselmis gracilis,3889
+2020-07-06,7,7,DFO2,Thalassionema nitzschioides,372
+2020-07-06,7,7,DFO2,Thalassiosira,1116
+2020-08-07,8,8,KC10,Asterionellopsis glacialis,2880
+2020-08-07,8,8,KC10,Attheya,8750
+2020-08-07,8,8,KC10,Biddulphiales,44614
+2020-08-07,8,8,KC10,Cerataulina pelagica,432
+2020-08-07,8,8,KC10,Chaetoceros,864
+2020-08-07,8,8,KC10,Chaetoceros ceratosporus,144
+2020-08-07,8,8,KC10,Chaetoceros cinctus,31200
+2020-08-07,8,8,KC10,Chaetoceros debilis,21456
+2020-08-07,8,8,KC10,Chaetoceros decipiens,288
+2020-08-07,8,8,KC10,Chaetoceros didymus,1152
+2020-08-07,8,8,KC10,Chaetoceros laciniosus,6336
+2020-08-07,8,8,KC10,Chaetoceros radicans,1152
+2020-08-07,8,8,KC10,Chaetoceros seiracanthus,1152
+2020-08-07,8,8,KC10,Chaetoceros similis,720
+2020-08-07,8,8,KC10,Chaetoceros simplex,288
+2020-08-07,8,8,KC10,Chaetoceros socialis,20800
+2020-08-07,8,8,KC10,Chaetoceros tenuissimus,26250
+2020-08-07,8,8,KC10,Cylindrotheca closterium,3456
+2020-08-07,8,8,KC10,Dactyliosolen fragilissimus,432
+2020-08-07,8,8,KC10,Dactyliosolen phuketensis,144
+2020-08-07,8,8,KC10,Dictyocha,144
+2020-08-07,8,8,KC10,Dictyocha speculum,288
+2020-08-07,8,8,KC10,Dinobryon,8750
+2020-08-07,8,8,KC10,Dinophyceae,1296
+2020-08-07,8,8,KC10,Euglenozoa,17500
+2020-08-07,8,8,KC10,Gonyaulax,144
+2020-08-07,8,8,KC10,Guinardia delicatula,288
+2020-08-07,8,8,KC10,Gymnodinium,576
+2020-08-07,8,8,KC10,Gyrodinium,144
+2020-08-07,8,8,KC10,Hillea,131250
+2020-08-07,8,8,KC10,Katodinium,26250
+2020-08-07,8,8,KC10,Leptocylindrus danicus,1872
+2020-08-07,8,8,KC10,Pennales,37016
+2020-08-07,8,8,KC10,Phaeocystis pouchetii,26600
+2020-08-07,8,8,KC10,Protoperidinium steinii,144
+2020-08-07,8,8,KC10,Pseudo-nitzschia delicatissima,5472
+2020-08-07,8,8,KC10,Pseudo-nitzschia multiseries,20160
+2020-08-07,8,8,KC10,Pseudo-nitzschia seriata,3744
+2020-08-07,8,8,KC10,Pyramimonas grossii,8750
+2020-08-07,8,8,KC10,Pyramimonas orientalis,17500
+2020-08-07,8,8,KC10,Rhizosolenia setigera,864
+2020-08-07,8,8,KC10,Scrippsiella precaria,576
+2020-08-07,8,8,KC10,Scrippsiella trochoidea,144
+2020-08-07,8,8,KC10,Skeletonema marinoi,662000
+2020-08-07,8,8,KC10,Teleaulax,122500
+2020-08-07,8,8,KC10,Thalassionema nitzschioides,576
+2020-08-07,8,8,KC10,Thalassiosira,24400
+2020-08-07,8,8,KC10,Thalassiosira nordenskioeldii,1152
+2020-08-07,8,8,KC10,Thalassiosira rotula,1872
+2020-08-08,8,8,DFO2,Biddulphiales,5982
+2020-08-08,8,8,DFO2,Chaetoceros,222
+2020-08-08,8,8,DFO2,Chaetoceros socialis,8750
+2020-08-08,8,8,DFO2,Chaetoceros tenuissimus,20419
+2020-08-08,8,8,DFO2,Ciliophrys infusionum,296
+2020-08-08,8,8,DFO2,Cylindrotheca closterium,296
+2020-08-08,8,8,DFO2,Dictyocha,222
+2020-08-08,8,8,DFO2,Dinophyceae,1924
+2020-08-08,8,8,DFO2,Dinophysis acuminata,74
+2020-08-08,8,8,DFO2,Dinophysis fortii,148
+2020-08-08,8,8,DFO2,Euglenozoa,20419
+2020-08-08,8,8,DFO2,Gonyaulax,222
+2020-08-08,8,8,DFO2,Guinardia delicatula,444
+2020-08-08,8,8,DFO2,Gymnodinium,888
+2020-08-08,8,8,DFO2,Gyrodinium,592
+2020-08-08,8,8,DFO2,Hillea,35004
+2020-08-08,8,8,DFO2,Katodinium,2917
+2020-08-08,8,8,DFO2,Leptocylindrus danicus,444
+2020-08-08,8,8,DFO2,Licmophora,74
+2020-08-08,8,8,DFO2,Oxyphysis oxytoxoides,74
+2020-08-08,8,8,DFO2,Pennales,962
+2020-08-08,8,8,DFO2,Prorocentrum gracile,296
+2020-08-08,8,8,DFO2,Prorocentrum micans,74
+2020-08-08,8,8,DFO2,Protoperidinium,222
+2020-08-08,8,8,DFO2,Protoperidinium conicum,74
+2020-08-08,8,8,DFO2,Protoperidinium steinii,74
+2020-08-08,8,8,DFO2,Pseudo-nitzschia delicatissima,370
+2020-08-08,8,8,DFO2,Pseudo-nitzschia seriata,370
+2020-08-08,8,8,DFO2,Pterosperma,2917
+2020-08-08,8,8,DFO2,Pyramimonas orientalis,11668
+2020-08-08,8,8,DFO2,Scrippsiella precaria,5106
+2020-08-08,8,8,DFO2,Scrippsiella trochoidea,74
+2020-08-08,8,8,DFO2,Skeletonema marinoi,1486000
+2020-08-08,8,8,DFO2,Teleaulax,29170
+2020-08-08,8,8,DFO2,Thalassionema nitzschioides,1258
+2020-08-08,8,8,DFO2,Thalassiosira,1110
+2020-08-08,8,8,DFO2,Thalassiosira rotula,518
+2020-09-03,9,9,KC10,Apedinella spinifera,8750
+2020-09-03,9,9,KC10,Asterionellopsis glacialis,178
+2020-09-03,9,9,KC10,Biddulphiales,30714
+2020-09-03,9,9,KC10,Ceratium lineatum,89
+2020-09-03,9,9,KC10,Ceratium symmetricum,89
+2020-09-03,9,9,KC10,Chaetoceros,89
+2020-09-03,9,9,KC10,Chaetoceros cinctus,5429
+2020-09-03,9,9,KC10,Chaetoceros danicus,178
+2020-09-03,9,9,KC10,Chaetoceros debilis,2848
+2020-09-03,9,9,KC10,Chaetoceros laciniosus,267
+2020-09-03,9,9,KC10,Chaetoceros seiracanthus,979
+2020-09-03,9,9,KC10,Chaetoceros similis,267
+2020-09-03,9,9,KC10,Chaetoceros tenuissimus,8750
+2020-09-03,9,9,KC10,Ciliophrys infusionum,89
+2020-09-03,9,9,KC10,Cylindrotheca closterium,979
+2020-09-03,9,9,KC10,Dactyliosolen fragilissimus,267
+2020-09-03,9,9,KC10,Detonula pumila,979
+2020-09-03,9,9,KC10,Dictyocha,534
+2020-09-03,9,9,KC10,Dictyocha speculum,623
+2020-09-03,9,9,KC10,Dinobryon,8750
+2020-09-03,9,9,KC10,Dinophyceae,534
+2020-09-03,9,9,KC10,Eucampia zodiacus,89
+2020-09-03,9,9,KC10,Euglenozoa,267
+2020-09-03,9,9,KC10,Guinardia delicatula,623
+2020-09-03,9,9,KC10,Gymnodinium,623
+2020-09-03,9,9,KC10,Gyrodinium,178
+2020-09-03,9,9,KC10,Hillea,214375
+2020-09-03,9,9,KC10,Katodinium,4375
+2020-09-03,9,9,KC10,Leptocylindrus danicus,178
+2020-09-03,9,9,KC10,Pennales,7579
+2020-09-03,9,9,KC10,Pleurosigma,178
+2020-09-03,9,9,KC10,Protoperidinium,178
+2020-09-03,9,9,KC10,Pseudo-nitzschia delicatissima,1068
+2020-09-03,9,9,KC10,Pseudo-nitzschia multiseries,1513
+2020-09-03,9,9,KC10,Pseudo-nitzschia seriata,1157
+2020-09-03,9,9,KC10,Pterosperma,4375
+2020-09-03,9,9,KC10,Pyramimonas grossii,8750
+2020-09-03,9,9,KC10,Rhizosolenia setigera,534
+2020-09-03,9,9,KC10,Skeletonema marinoi,360312
+2020-09-03,9,9,KC10,Teleaulax,196875
+2020-09-03,9,9,KC10,Teleaulax acuta,8750
+2020-09-03,9,9,KC10,Teleaulax amphioxeia,8750
+2020-09-03,9,9,KC10,Tetraselmis gracilis,4375
+2020-09-03,9,9,KC10,Thalassiosira,11303
+2020-09-03,9,9,KC10,Thalassiosira nordenskioeldii,1068
+2020-09-03,9,9,KC10,Thalassiosira rotula,178
+2020-09-04,9,9,QCS01,Apedinella spinifera,7000
+2020-09-04,9,9,QCS01,Biddulphiales,21333
+2020-09-04,9,9,QCS01,Ceratium lineatum,111
+2020-09-04,9,9,QCS01,Ceratium tripos,111
+2020-09-04,9,9,QCS01,Chaetoceros,1332
+2020-09-04,9,9,QCS01,Chaetoceros cinctus,1554
+2020-09-04,9,9,QCS01,Chaetoceros debilis,3330
+2020-09-04,9,9,QCS01,Chaetoceros decipiens,1221
+2020-09-04,9,9,QCS01,Chaetoceros radicans,444
+2020-09-04,9,9,QCS01,Chaetoceros tenuissimus,49000
+2020-09-04,9,9,QCS01,Ciliophrys infusionum,666
+2020-09-04,9,9,QCS01,Cylindrotheca closterium,1110
+2020-09-04,9,9,QCS01,Dactyliosolen fragilissimus,1665
+2020-09-04,9,9,QCS01,Dactyliosolen phuketensis,111
+2020-09-04,9,9,QCS01,Detonula pumila,888
+2020-09-04,9,9,QCS01,Dictyocha,111
+2020-09-04,9,9,QCS01,Dictyocha speculum,333
+2020-09-04,9,9,QCS01,Dinophyceae,444
+2020-09-04,9,9,QCS01,Ditylum brightwellii,333
+2020-09-04,9,9,QCS01,Eucampia zodiacus,1332
+2020-09-04,9,9,QCS01,Euglenozoa,777
+2020-09-04,9,9,QCS01,Guinardia delicatula,444
+2020-09-04,9,9,QCS01,Gymnodinium,1998
+2020-09-04,9,9,QCS01,Gyrodinium,1443
+2020-09-04,9,9,QCS01,Hillea,224000
+2020-09-04,9,9,QCS01,Katodinium,7000
+2020-09-04,9,9,QCS01,Leptocylindrus danicus,222
+2020-09-04,9,9,QCS01,Pennales,20771
+2020-09-04,9,9,QCS01,Phaeocystis pouchetii,7000
+2020-09-04,9,9,QCS01,Pleurosigma,111
+2020-09-04,9,9,QCS01,Prorocentrum gracile,111
+2020-09-04,9,9,QCS01,Pseudo-nitzschia delicatissima,1776
+2020-09-04,9,9,QCS01,Pseudo-nitzschia multiseries,888
+2020-09-04,9,9,QCS01,Pseudo-nitzschia seriata,333
+2020-09-04,9,9,QCS01,Pterosperma,7000
+2020-09-04,9,9,QCS01,Pyramimonas,30000
+2020-09-04,9,9,QCS01,Pyramimonas grossii,21000
+2020-09-04,9,9,QCS01,Pyramimonas orientalis,28000
+2020-09-04,9,9,QCS01,Rhizosolenia setigera,111
+2020-09-04,9,9,QCS01,Scrippsiella precaria,333
+2020-09-04,9,9,QCS01,Skeletonema marinoi,14097
+2020-09-04,9,9,QCS01,Teleaulax,189000
+2020-09-04,9,9,QCS01,Thalassionema nitzschioides,2442
+2020-09-04,9,9,QCS01,Thalassiosira,3663
+2020-09-04,9,9,QCS01,Thalassiosira nordenskioeldii,333
+2020-09-04,9,9,QCS01,Thalassiosira rotula,333
+2020-09-05,9,9,DFO2,Biddulphiales,7978
+2020-09-05,9,9,DFO2,Chaetoceros,320
+2020-09-05,9,9,DFO2,Chaetoceros cinctus,120
+2020-09-05,9,9,DFO2,Chaetoceros similis,120
+2020-09-05,9,9,DFO2,Chaetoceros socialis,160
+2020-09-05,9,9,DFO2,Chaetoceros tenuissimus,15556
+2020-09-05,9,9,DFO2,Ciliophrys infusionum,120
+2020-09-05,9,9,DFO2,Cylindrotheca closterium,520
+2020-09-05,9,9,DFO2,Dictyocha,120
+2020-09-05,9,9,DFO2,Dinophyceae,320
+2020-09-05,9,9,DFO2,Dinophysis acuminata,40
+2020-09-05,9,9,DFO2,Dinophysis acuta,40
+2020-09-05,9,9,DFO2,Euglenozoa,7778
+2020-09-05,9,9,DFO2,Gymnodinium,760
+2020-09-05,9,9,DFO2,Gyrodinium,960
+2020-09-05,9,9,DFO2,Hillea,143893
+2020-09-05,9,9,DFO2,Katodinium,23334
+2020-09-05,9,9,DFO2,Pennales,480
+2020-09-05,9,9,DFO2,Prorocentrum,200
+2020-09-05,9,9,DFO2,Prorocentrum gracile,40
+2020-09-05,9,9,DFO2,Pseudo-nitzschia delicatissima,120
+2020-09-05,9,9,DFO2,Pseudo-nitzschia multiseries,280
+2020-09-05,9,9,DFO2,Pterosperma,15556
+2020-09-05,9,9,DFO2,Pyramimonas,3889
+2020-09-05,9,9,DFO2,Scrippsiella precaria,200
+2020-09-05,9,9,DFO2,Skeletonema marinoi,179968
+2020-09-05,9,9,DFO2,Teleaulax,66113
+2020-09-05,9,9,DFO2,Teleaulax amphioxeia,7778
+2020-09-05,9,9,DFO2,Thalassionema nitzschioides,1640
+2020-09-05,9,9,DFO2,Thalassiosira,1080
+2020-10-01,10,10,KC10,Biddulphiales,777
+2020-10-01,10,10,KC10,Cerataulina bicornis,1110
+2020-10-01,10,10,KC10,Ceratium lineatum,111
+2020-10-01,10,10,KC10,Chaetoceros,555
+2020-10-01,10,10,KC10,Chaetoceros ceratosporus,111
+2020-10-01,10,10,KC10,Chaetoceros debilis,20200
+2020-10-01,10,10,KC10,Chaetoceros laciniosus,444
+2020-10-01,10,10,KC10,Chaetoceros seiracanthus,2220
+2020-10-01,10,10,KC10,Chaetoceros similis,1110
+2020-10-01,10,10,KC10,Ciliophrys infusionum,111
+2020-10-01,10,10,KC10,Corythodinium,222
+2020-10-01,10,10,KC10,Cylindrotheca closterium,222
+2020-10-01,10,10,KC10,Dactyliosolen fragilissimus,444
+2020-10-01,10,10,KC10,Dictyocha,2775
+2020-10-01,10,10,KC10,Dictyocha fibula,111
+2020-10-01,10,10,KC10,Dictyocha speculum,333
+2020-10-01,10,10,KC10,Dinophyceae,2886
+2020-10-01,10,10,KC10,Dinophysis acuminata,222
+2020-10-01,10,10,KC10,Dinophysis fortii,111
+2020-10-01,10,10,KC10,Ditylum brightwellii,2331
+2020-10-01,10,10,KC10,Eucampia groenlandica,555
+2020-10-01,10,10,KC10,Eucampia zodiacus,2220
+2020-10-01,10,10,KC10,Euglenozoa,333
+2020-10-01,10,10,KC10,Gonyaulax,333
+2020-10-01,10,10,KC10,Gymnodinium,4551
+2020-10-01,10,10,KC10,Gyrodinium,666
+2020-10-01,10,10,KC10,Hillea,215000
+2020-10-01,10,10,KC10,Katodinium,666
+2020-10-01,10,10,KC10,Pennales,5333
+2020-10-01,10,10,KC10,Phaeocystis pouchetii,4329
+2020-10-01,10,10,KC10,Prorocentrum gracile,5217
+2020-10-01,10,10,KC10,Prorocentrum micans,222
+2020-10-01,10,10,KC10,Protoperidinium,222
+2020-10-01,10,10,KC10,Protoperidinium steinii,444
+2020-10-01,10,10,KC10,Pseudo-nitzschia multiseries,222
+2020-10-01,10,10,KC10,Pseudo-nitzschia seriata,222
+2020-10-01,10,10,KC10,Pterosperma,5000
+2020-10-01,10,10,KC10,Pyramimonas grossii,5000
+2020-10-01,10,10,KC10,Pyramimonas orientalis,25000
+2020-10-01,10,10,KC10,Rhizosolenia setigera,222
+2020-10-01,10,10,KC10,Scrippsiella precaria,444
+2020-10-01,10,10,KC10,Scrippsiella trochoidea,111
+2020-10-01,10,10,KC10,Skeletonema marinoi,386400
+2020-10-01,10,10,KC10,Teleaulax,190000
+2020-10-01,10,10,KC10,Teleaulax amphioxeia,10000
+2020-10-01,10,10,KC10,Thalassionema nitzschioides,4662
+2020-10-01,10,10,KC10,Thalassiosira,2997
+2020-10-01,10,10,KC10,Thalassiosira nordenskioeldii,3330
+2020-10-01,10,10,KC10,Thalassiosira rotula,1776
+2020-10-02,10,10,QCS01,Alexandrium catenella,296
+2020-10-02,10,10,QCS01,Apedinella spinifera,3500
+2020-10-02,10,10,QCS01,Biddulphiales,7000
+2020-10-02,10,10,QCS01,Cerataulina bicornis,74
+2020-10-02,10,10,QCS01,Ceratium,74
+2020-10-02,10,10,QCS01,Ceratium lineatum,222
+2020-10-02,10,10,QCS01,Chaetoceros cinctus,6586
+2020-10-02,10,10,QCS01,Chaetoceros convolutus,222
+2020-10-02,10,10,QCS01,Chaetoceros danicus,1406
+2020-10-02,10,10,QCS01,Chaetoceros debilis,2146
+2020-10-02,10,10,QCS01,Chaetoceros decipiens,444
+2020-10-02,10,10,QCS01,Chaetoceros didymus,444
+2020-10-02,10,10,QCS01,Chaetoceros radicans,2294
+2020-10-02,10,10,QCS01,Chaetoceros seiracanthus,148
+2020-10-02,10,10,QCS01,Chaetoceros socialis,222
+2020-10-02,10,10,QCS01,Chaetoceros tenuissimus,148
+2020-10-02,10,10,QCS01,Ciliophrys infusionum,74
+2020-10-02,10,10,QCS01,Cylindrotheca closterium,148
+2020-10-02,10,10,QCS01,Dactyliosolen fragilissimus,148
+2020-10-02,10,10,QCS01,Dactyliosolen phuketensis,74
+2020-10-02,10,10,QCS01,Dictyocha,1110
+2020-10-02,10,10,QCS01,Dictyocha fibula,74
+2020-10-02,10,10,QCS01,Dictyocha octonaria,148
+2020-10-02,10,10,QCS01,Dictyocha speculum,1184
+2020-10-02,10,10,QCS01,Dinophyceae,1924
+2020-10-02,10,10,QCS01,Dinophysis acuminata,370
+2020-10-02,10,10,QCS01,Dinophysis fortii,74
+2020-10-02,10,10,QCS01,Ditylum brightwellii,148
+2020-10-02,10,10,QCS01,Eucampia groenlandica,74
+2020-10-02,10,10,QCS01,Euglenozoa,370
+2020-10-02,10,10,QCS01,Guinardia delicatula,444
+2020-10-02,10,10,QCS01,Gymnodinium,2368
+2020-10-02,10,10,QCS01,Gyrodinium,1998
+2020-10-02,10,10,QCS01,Hillea,80500
+2020-10-02,10,10,QCS01,Katodinium,962
+2020-10-02,10,10,QCS01,Pennales,962
+2020-10-02,10,10,QCS01,Prorocentrum gracile,444
+2020-10-02,10,10,QCS01,Prorocentrum micans,148
+2020-10-02,10,10,QCS01,Protoperidinium steinii,222
+2020-10-02,10,10,QCS01,Pseudo-nitzschia multiseries,1036
+2020-10-02,10,10,QCS01,Pseudo-nitzschia seriata,74
+2020-10-02,10,10,QCS01,Pterosperma,14000
+2020-10-02,10,10,QCS01,Pyramimonas grossii,7000
+2020-10-02,10,10,QCS01,Pyramimonas orientalis,3500
+2020-10-02,10,10,QCS01,Rhizosolenia setigera,148
+2020-10-02,10,10,QCS01,Scrippsiella precaria,296
+2020-10-02,10,10,QCS01,Skeletonema marinoi,284152
+2020-10-02,10,10,QCS01,Teleaulax,105000
+2020-10-02,10,10,QCS01,Teleaulax acuta,3500
+2020-10-02,10,10,QCS01,Teleaulax amphioxeia,10500
+2020-10-02,10,10,QCS01,Thalassionema nitzschioides,1110
+2020-10-02,10,10,QCS01,Thalassiosira,1332
+2020-10-02,10,10,QCS01,Thalassiosira rotula,444
+2020-10-04,10,10,DFO2,Apedinella spinifera,2188
+2020-10-04,10,10,DFO2,Biddulphiales,40
+2020-10-04,10,10,DFO2,Chaetoceros ceratosporus,40
+2020-10-04,10,10,DFO2,Chaetoceros subtilis,40
+2020-10-04,10,10,DFO2,Dictyocha,40
+2020-10-04,10,10,DFO2,Dictyocha speculum,160
+2020-10-04,10,10,DFO2,Dinophyceae,120
+2020-10-04,10,10,DFO2,Euglenozoa,40
+2020-10-04,10,10,DFO2,Gymnodinium,160
+2020-10-04,10,10,DFO2,Gyrodinium,160
+2020-10-04,10,10,DFO2,Hillea,43760
+2020-10-04,10,10,DFO2,Katodinium,2188
+2020-10-04,10,10,DFO2,Pennales,40
+2020-10-04,10,10,DFO2,Prorocentrum minimum,7068
+2020-10-04,10,10,DFO2,Pterosperma,6564
+2020-10-04,10,10,DFO2,Pyramimonas grossii,4376
+2020-10-04,10,10,DFO2,Pyramimonas orientalis,8752
+2020-10-04,10,10,DFO2,Scrippsiella precaria,120
+2020-10-04,10,10,DFO2,Skeletonema marinoi,247200
+2020-10-04,10,10,DFO2,Teleaulax,98460
+2020-10-04,10,10,DFO2,Teleaulax acuta,8752
+2020-10-04,10,10,DFO2,Teleaulax amphioxeia,4376
+2020-10-04,10,10,DFO2,Thalassionema nitzschioides,80
+2020-10-04,10,10,DFO2,Thalassiosira,440
+2018-05-29,5,5,QU39,Apedinella spinifera,4375
+2018-05-29,5,5,QU39,Chaetoceros simplex,4375
+2018-05-29,5,5,QU39,Cylindrotheca closterium,560
+2018-05-29,5,5,QU39,Dactyliosolen fragilissimus,160
+2018-05-29,5,5,QU39,Dactyliosolen phuketensis,80
+2018-05-29,5,5,QU39,Dictyocha,40
+2018-05-29,5,5,QU39,Dictyocha speculum,280
+2018-05-29,5,5,QU39,Dinobryon,4375
+2018-05-29,5,5,QU39,Dinophyceae,200
+2018-05-29,5,5,QU39,Ditylum brightwellii,40
+2018-05-29,5,5,QU39,Eucampia zodiacus,80
+2018-05-29,5,5,QU39,Guinardia delicatula,360
+2018-05-29,5,5,QU39,Gymnodinium,440
+2018-05-29,5,5,QU39,Gyrodinium,120
+2018-05-29,5,5,QU39,Hillea,345625
+2018-05-29,5,5,QU39,Katodinium,240
+2018-05-29,5,5,QU39,Katodinium glaucum,40
+2018-05-29,5,5,QU39,Pennales,760
+2018-05-29,5,5,QU39,Protoperidinium,40
+2018-05-29,5,5,QU39,Pseudo-nitzschia delicatissima,560
+2018-05-29,5,5,QU39,Pseudo-nitzschia multiseries,1760
+2018-05-29,5,5,QU39,Pseudo-nitzschia seriata,240
+2018-05-29,5,5,QU39,Pyramimonas grossii,52500
+2018-05-29,5,5,QU39,Pyramimonas orientalis,21875
+2018-05-29,5,5,QU39,Rhizosolenia setigera,10040
+2018-05-29,5,5,QU39,Scrippsiella precaria,40
+2018-05-29,5,5,QU39,Scrippsiella trochoidea,240
+2018-05-29,5,5,QU39,Skeletonema marinoi,4160
+2018-05-29,5,5,QU39,Teleaulax,223125
+2018-05-29,5,5,QU39,Tetraselmis gracilis,4375
+2018-05-29,5,5,QU39,Thalassionema nitzschioides,80
+2018-05-29,5,5,QU39,Thalassiosira,60
+2018-06-26,6,6,QU39,Bacillariophyceae,40
+2018-06-26,6,6,QU39,Cylindrotheca closterium,40
+2018-06-26,6,6,QU39,Hillea,24500
+2018-06-26,6,6,QU39,Pyramimonas orientalis,1750
+2018-06-26,6,6,QU39,Teleaulax,21000
+2018-06-26,6,6,QU39,Tetraselmis gracilis,3000
+2018-07-23,7,7,QU39,Ceratium horridum,40
+2018-07-23,7,7,QU39,Chaetoceros,80
+2018-07-23,7,7,QU39,Chaetoceros convolutus,440
+2018-07-23,7,7,QU39,Chaetoceros laciniosus,1040
+2018-07-23,7,7,QU39,Chaetoceros radicans,760
+2018-07-23,7,7,QU39,Cylindrotheca closterium,880
+2018-07-23,7,7,QU39,Dactyliosolen fragilissimus,560
+2018-07-23,7,7,QU39,Dactyliosolen phuketensis,160
+2018-07-23,7,7,QU39,Detonula pumila,160
+2018-07-23,7,7,QU39,Dictyocha,320
+2018-07-23,7,7,QU39,Dictyocha speculum,80
+2018-07-23,7,7,QU39,Dinophyceae,40
+2018-07-23,7,7,QU39,Guinardia delicatula,360
+2018-07-23,7,7,QU39,Gymnodinium,480
+2018-07-23,7,7,QU39,Gyrodinium,680
+2018-07-23,7,7,QU39,Hillea,301875
+2018-07-23,7,7,QU39,Katodinium,320
+2018-07-23,7,7,QU39,Pennales,280
+2018-07-23,7,7,QU39,Protoperidinium steinii,40
+2018-07-23,7,7,QU39,Pseudo-nitzschia delicatissima,280
+2018-07-23,7,7,QU39,Pseudo-nitzschia multiseries,560
+2018-07-23,7,7,QU39,Pseudo-nitzschia seriata,240
+2018-07-23,7,7,QU39,Pyramimonas orientalis,13125
+2018-07-23,7,7,QU39,Rhizosolenia setigera,40
+2018-07-23,7,7,QU39,Scrippsiella trochoidea,40
+2018-07-23,7,7,QU39,Skeletonema marinoi,420
+2018-07-23,7,7,QU39,Teleaulax,188125
+2018-07-23,7,7,QU39,Teleaulax amphioxeia,8750
+2018-07-23,7,7,QU39,Thalassionema nitzschioides,200
+2018-07-23,7,7,QU39,Thalassiosira,1440
+2018-07-23,7,7,QU39,Thalassiosira rotula,680
+2018-08-21,8,8,QU39,Cylindrotheca closterium,80
+2018-08-21,8,8,QU39,Dactyliosolen fragilissimus,80
+2018-08-21,8,8,QU39,Dictyocha speculum,2560
+2018-08-21,8,8,QU39,Gymnodinium,400
+2018-08-21,8,8,QU39,Gyrodinium,560
+2018-08-21,8,8,QU39,Hillea,280000
+2018-08-21,8,8,QU39,Katodinium,80
+2018-08-21,8,8,QU39,Navicula,40
+2018-08-21,8,8,QU39,Pennales,80
+2018-08-21,8,8,QU39,Pseudo-nitzschia seriata,200
+2018-08-21,8,8,QU39,Pyramimonas orientalis,2500
+2018-08-21,8,8,QU39,Rhizosolenia setigera,240
+2018-08-21,8,8,QU39,Scrippsiella precaria,120
+2018-08-21,8,8,QU39,Skeletonema marinoi,160
+2018-08-21,8,8,QU39,Teleaulax,200000
+2018-08-21,8,8,QU39,Teleaulax acuta,22500
+2018-08-21,8,8,QU39,Teleaulax amphioxeia,17500
+2018-08-21,8,8,QU39,Thalassionema nitzschioides,40
+2018-08-21,8,8,QU39,Thalassiosira,80
+2018-08-21,8,8,QU39,Thalassiosira rotula,80
+2018-09-13,9,9,QU39,Chaetoceros convolutus,80
+2018-09-13,9,9,QU39,Dictyocha,40
+2018-09-13,9,9,QU39,Gymnodinium,480
+2018-09-13,9,9,QU39,Hillea,519694
+2018-09-13,9,9,QU39,Pennales,80
+2018-09-13,9,9,QU39,Pseudo-nitzschia delicatissima,240
+2018-09-13,9,9,QU39,Pseudo-nitzschia multiseries,440
+2018-09-13,9,9,QU39,Pseudo-nitzschia seriata,120
+2018-09-13,9,9,QU39,Pyramimonas grossii,5303
+2018-09-13,9,9,QU39,Scrippsiella trochoidea,40
+2018-09-13,9,9,QU39,Teleaulax,254544
+2018-09-13,9,9,QU39,Teleaulax acuta,5303
+2018-09-13,9,9,QU39,Teleaulax amphioxeia,5303
+2018-09-13,9,9,QU39,Thalassionema nitzschioides,160
+2018-10-24,10,10,QU39,Asterionellopsis glacialis,3286
+2018-10-24,10,10,QU39,Biddulphiales,124
+2018-10-24,10,10,QU39,Cerataulina bicornis,620
+2018-10-24,10,10,QU39,Chaetoceros,2480
+2018-10-24,10,10,QU39,Chaetoceros cinctus,2914
+2018-10-24,10,10,QU39,Chaetoceros compressus,868
+2018-10-24,10,10,QU39,Chaetoceros convolutus,620
+2018-10-24,10,10,QU39,Chaetoceros danicus,62
+2018-10-24,10,10,QU39,Chaetoceros debilis,3596
+2018-10-24,10,10,QU39,Chaetoceros decipiens,4030
+2018-10-24,10,10,QU39,Chaetoceros diadema,1054
+2018-10-24,10,10,QU39,Chaetoceros didymus,1550
+2018-10-24,10,10,QU39,Chaetoceros laciniosus,4278
+2018-10-24,10,10,QU39,Chaetoceros radicans,682
+2018-10-24,10,10,QU39,Chaetoceros seiracanthus,8990
+2018-10-24,10,10,QU39,Chaetoceros simplex,62
+2018-10-24,10,10,QU39,Chaetoceros socialis,310
+2018-10-24,10,10,QU39,Chaetoceros tenuissimus,2059
+2018-10-24,10,10,QU39,Corethron criophilum,496
+2018-10-24,10,10,QU39,Cylindrotheca closterium,186
+2018-10-24,10,10,QU39,Dactyliosolen fragilissimus,3596
+2018-10-24,10,10,QU39,Dactyliosolen phuketensis,1426
+2018-10-24,10,10,QU39,Detonula pumila,124
+2018-10-24,10,10,QU39,Dinophyceae,124
+2018-10-24,10,10,QU39,Ditylum brightwellii,310
+2018-10-24,10,10,QU39,Eucampia groenlandica,434
+2018-10-24,10,10,QU39,Gymnodinium,124
+2018-10-24,10,10,QU39,Gyrodinium,124
+2018-10-24,10,10,QU39,Hillea,22649
+2018-10-24,10,10,QU39,Leptocylindrus danicus,186
+2018-10-24,10,10,QU39,Licmophora,62
+2018-10-24,10,10,QU39,Pennales,2369
+2018-10-24,10,10,QU39,Pseudo-nitzschia delicatissima,2046
+2018-10-24,10,10,QU39,Pseudo-nitzschia multiseries,186
+2018-10-24,10,10,QU39,Pseudo-nitzschia seriata,2666
+2018-10-24,10,10,QU39,Pyramimonas orientalis,2059
+2018-10-24,10,10,QU39,Scrippsiella trochoidea,62
+2018-10-24,10,10,QU39,Skeletonema marinoi,3224
+2018-10-24,10,10,QU39,Stephanopyxis turris,620
+2018-10-24,10,10,QU39,Teleaulax,18531
+2018-10-24,10,10,QU39,Teleaulax acuta,4118
+2018-10-24,10,10,QU39,Thalassionema nitzschioides,744
+2018-10-24,10,10,QU39,Thalassiosira,372
+2018-10-24,10,10,QU39,Thalassiosira nordenskioeldii,62
+2018-10-24,10,10,QU39,Thalassiosira rotula,310
+2019-05-09,5,5,QU39,Biddulphiales,26250
+2019-05-09,5,5,QU39,Chaetoceros,568750
+2019-05-09,5,5,QU39,Chaetoceros cinctus,962
+2019-05-09,5,5,QU39,Chaetoceros debilis,2886
+2019-05-09,5,5,QU39,Chaetoceros subtilis,888
+2019-05-09,5,5,QU39,Corethron criophilum,592
+2019-05-09,5,5,QU39,Cylindrotheca closterium,74
+2019-05-09,5,5,QU39,Dactyliosolen fragilissimus,518
+2019-05-09,5,5,QU39,Detonula pumila,296
+2019-05-09,5,5,QU39,Dictyocha speculum,74
+2019-05-09,5,5,QU39,Dinophyceae,518
+2019-05-09,5,5,QU39,Guinardia delicatula,296
+2019-05-09,5,5,QU39,Gymnodinium,2368
+2019-05-09,5,5,QU39,Gyrodinium,1628
+2019-05-09,5,5,QU39,Hillea,271250
+2019-05-09,5,5,QU39,Leptocylindrus danicus,370
+2019-05-09,5,5,QU39,Pennales,1258
+2019-05-09,5,5,QU39,Pseudo-nitzschia delicatissima,3404
+2019-05-09,5,5,QU39,Pseudo-nitzschia multiseries,1924
+2019-05-09,5,5,QU39,Pseudo-nitzschia seriata,518
+2019-05-09,5,5,QU39,Pyramimonas orientalis,8750
+2019-05-09,5,5,QU39,Rhizosolenia setigera,296
+2019-05-09,5,5,QU39,Scrippsiella precaria,74
+2019-05-09,5,5,QU39,Scrippsiella trochoidea,74
+2019-05-09,5,5,QU39,Skeletonema marinoi,52538
+2019-05-09,5,5,QU39,Teleaulax,218750
+2019-05-09,5,5,QU39,Thalassionema nitzschioides,370
+2019-05-09,5,5,QU39,Thalassiosira,5698
+2019-05-09,5,5,QU39,Thalassiosira pacifica,8066
+2019-06-04,6,6,QU39,Chrysophyceae,4375
+2019-06-04,6,6,QU39,Cylindrotheca closterium,80
+2019-06-04,6,6,QU39,Dictyocha speculum,1040
+2019-06-04,6,6,QU39,Gyrodinium,80
+2019-06-04,6,6,QU39,Hillea,406875
+2019-06-04,6,6,QU39,Pennales,480
+2019-06-04,6,6,QU39,Protoperidinium,40
+2019-06-04,6,6,QU39,Pseudo-nitzschia delicatissima,240
+2019-06-04,6,6,QU39,Pseudo-nitzschia multiseries,80
+2019-06-04,6,6,QU39,Pseudo-nitzschia seriata,280
+2019-06-04,6,6,QU39,Pyramimonas orientalis,17500
+2019-06-04,6,6,QU39,Rhizosolenia setigera,80
+2019-06-04,6,6,QU39,Skeletonema marinoi,640
+2019-06-04,6,6,QU39,Teleaulax,131250
+2019-06-04,6,6,QU39,Tetraselmis gracilis,4375
+2019-06-04,6,6,QU39,Thalassionema nitzschioides,160
+2019-06-04,6,6,QU39,Thalassiosira,560
+2019-07-09,7,7,QU39,Guinardia delicatula,560
+2019-07-09,7,7,QU39,Hillea,700000
+2019-07-09,7,7,QU39,Katodinium,40
+2019-07-09,7,7,QU39,Pennales,240
+2019-07-09,7,7,QU39,Pyramimonas grossii,42000
+2019-07-09,7,7,QU39,Pyramimonas orientalis,7000
+2019-07-09,7,7,QU39,Skeletonema marinoi,160
+2019-07-09,7,7,QU39,Teleaulax,49000
+2019-07-09,7,7,QU39,Thalassionema nitzschioides,280
+2019-08-07,8,8,QU39,Corethron criophilum,240
+2019-08-07,8,8,QU39,Dactyliosolen phuketensis,40
+2019-08-07,8,8,QU39,Dictyocha speculum,40
+2019-08-07,8,8,QU39,Gymnodinium,40
+2019-08-07,8,8,QU39,Gyrodinium,80
+2019-08-07,8,8,QU39,Hillea,714000
+2019-08-07,8,8,QU39,Katodinium,80
+2019-08-07,8,8,QU39,Pyramimonas grossii,7000
+2019-08-07,8,8,QU39,Pyramimonas orientalis,14000
+2019-08-07,8,8,QU39,Scrippsiella precaria,40
+2019-08-07,8,8,QU39,Scrippsiella trochoidea,40
+2019-08-07,8,8,QU39,Teleaulax,497000
+2019-08-07,8,8,QU39,Thalassionema nitzschioides,40
+2019-08-29,8,9,QU39,Biddulphiales,360
+2019-08-29,8,9,QU39,Cerataulina bicornis,40
+2019-08-29,8,9,QU39,Chaetoceros debilis,120
+2019-08-29,8,9,QU39,Corethron criophilum,40
+2019-08-29,8,9,QU39,Cylindrotheca closterium,40
+2019-08-29,8,9,QU39,Dactyliosolen fragilissimus,120
+2019-08-29,8,9,QU39,Dactyliosolen phuketensis,120
+2019-08-29,8,9,QU39,Dictyocha,360
+2019-08-29,8,9,QU39,Dictyocha speculum,120
+2019-08-29,8,9,QU39,Ditylum brightwellii,40
+2019-08-29,8,9,QU39,Eucampia groenlandica,280
+2019-08-29,8,9,QU39,Euglenozoa,280
+2019-08-29,8,9,QU39,Guinardia delicatula,200
+2019-08-29,8,9,QU39,Gymnodinium,480
+2019-08-29,8,9,QU39,Gyrodinium,440
+2019-08-29,8,9,QU39,Hemiaulus hauckii,40
+2019-08-29,8,9,QU39,Hillea,330565
+2019-08-29,8,9,QU39,Katodinium,40
+2019-08-29,8,9,QU39,Leptocylindrus danicus,200
+2019-08-29,8,9,QU39,Pennales,8218
+2019-08-29,8,9,QU39,Phaeocystis pouchetii,3889
+2019-08-29,8,9,QU39,Protoperidinium,40
+2019-08-29,8,9,QU39,Pseudo-nitzschia delicatissima,120
+2019-08-29,8,9,QU39,Pseudo-nitzschia multiseries,360
+2019-08-29,8,9,QU39,Pyramimonas,3889
+2019-08-29,8,9,QU39,Pyramimonas grossii,11667
+2019-08-29,8,9,QU39,Pyramimonas orientalis,27223
+2019-08-29,8,9,QU39,Rhizosolenia setigera,1760
+2019-08-29,8,9,QU39,Scrippsiella precaria,400
+2019-08-29,8,9,QU39,Scrippsiella trochoidea,520
+2019-08-29,8,9,QU39,Skeletonema marinoi,8954
+2019-08-29,8,9,QU39,Teleaulax,233340
+2019-08-29,8,9,QU39,Teleaulax amphioxeia,3889
+2019-08-29,8,9,QU39,Thalassionema nitzschioides,120
+2019-08-29,8,9,QU39,Thalassiosira,520
+2019-08-29,8,9,QU39,Thalassiosira rotula,200
+2019-10-09,10,10,QU39,Biddulphiales,40
+2019-10-09,10,10,QU39,Chaetoceros,80
+2019-10-09,10,10,QU39,Chaetoceros convolutus,120
+2019-10-09,10,10,QU39,Chaetoceros debilis,120
+2019-10-09,10,10,QU39,Chaetoceros laciniosus,480
+2019-10-09,10,10,QU39,Corethron criophilum,120
+2019-10-09,10,10,QU39,Dictyocha speculum,280
+2019-10-09,10,10,QU39,Dinophyceae,80
+2019-10-09,10,10,QU39,Gymnodinium,80
+2019-10-09,10,10,QU39,Hillea,416123
+2019-10-09,10,10,QU39,Licmophora,40
+2019-10-09,10,10,QU39,Pennales,200
+2019-10-09,10,10,QU39,Pleurosigma,40
+2019-10-09,10,10,QU39,Pseudo-nitzschia delicatissima,40
+2019-10-09,10,10,QU39,Pseudo-nitzschia multiseries,80
+2019-10-09,10,10,QU39,Pyramimonas grossii,3889
+2019-10-09,10,10,QU39,Pyramimonas orientalis,3889
+2019-10-09,10,10,QU39,Scrippsiella precaria,40
+2019-10-09,10,10,QU39,Teleaulax,101114
+2019-10-09,10,10,QU39,Thalassiosira,80
+2020-06-04,6,6,QU39,Biddulphiales,8790
+2020-06-04,6,6,QU39,Ciliophrys infusionum,40
+2020-06-04,6,6,QU39,Cylindrotheca closterium,760
+2020-06-04,6,6,QU39,Dictyocha,200
+2020-06-04,6,6,QU39,Dinophyceae,40
+2020-06-04,6,6,QU39,Ditylum brightwellii,40
+2020-06-04,6,6,QU39,Hillea,498750
+2020-06-04,6,6,QU39,Katodinium,120
+2020-06-04,6,6,QU39,Pennales,320
+2020-06-04,6,6,QU39,Pseudo-nitzschia multiseries,40
+2020-06-04,6,6,QU39,Pseudo-nitzschia seriata,120
+2020-06-04,6,6,QU39,Pterosperma,8750
+2020-06-04,6,6,QU39,Pyramimonas orientalis,43750
+2020-06-04,6,6,QU39,Scrippsiella trochoidea,80
+2020-06-04,6,6,QU39,Teleaulax,708750
+2020-06-04,6,6,QU39,Thalassionema nitzschioides,80
+2020-06-04,6,6,QU39,Thalassiosira,360
+2020-07-09,7,7,QU39,Biddulphiales,1750
+2020-07-09,7,7,QU39,Cerataulina bicornis,124
+2020-07-09,7,7,QU39,Ceratium fusus,124
+2020-07-09,7,7,QU39,Chaetoceros cinctus,1054
+2020-07-09,7,7,QU39,Chaetoceros debilis,248
+2020-07-09,7,7,QU39,Chaetoceros laciniosus,496
+2020-07-09,7,7,QU39,Chaetoceros socialis,558
+2020-07-09,7,7,QU39,Ciliophrys infusionum,62
+2020-07-09,7,7,QU39,Cylindrotheca closterium,62
+2020-07-09,7,7,QU39,Dictyocha,434
+2020-07-09,7,7,QU39,Dictyocha speculum,930
+2020-07-09,7,7,QU39,Dinophyceae,62
+2020-07-09,7,7,QU39,Dinophysis,124
+2020-07-09,7,7,QU39,Dinophysis acuminata,62
+2020-07-09,7,7,QU39,Dinophysis fortii,310
+2020-07-09,7,7,QU39,Dinophysis rotundata,62
+2020-07-09,7,7,QU39,Eutreptiella hirudoidea,62
+2020-07-09,7,7,QU39,Fragilariopsis,124
+2020-07-09,7,7,QU39,Guinardia delicatula,28048
+2020-07-09,7,7,QU39,Gymnodinium,868
+2020-07-09,7,7,QU39,Gyrodinium,124
+2020-07-09,7,7,QU39,Hillea,10500
+2020-07-09,7,7,QU39,Katodinium,21000
+2020-07-09,7,7,QU39,Oxyphysis oxytoxoides,62
+2020-07-09,7,7,QU39,Pennales,124
+2020-07-09,7,7,QU39,Protoperidinium,186
+2020-07-09,7,7,QU39,Pseudo-nitzschia delicatissima,62
+2020-07-09,7,7,QU39,Pseudo-nitzschia multiseries,248
+2020-07-09,7,7,QU39,Pseudo-nitzschia seriata,806
+2020-07-09,7,7,QU39,Rhizosolenia setigera,62
+2020-07-09,7,7,QU39,Skeletonema marinoi,744
+2020-07-09,7,7,QU39,Teleaulax,14000
+2020-07-09,7,7,QU39,Thalassionema nitzschioides,62
+2020-07-09,7,7,QU39,Thalassiosira,496
+2020-07-09,7,7,QU39,Thalassiosira rotula,310
+2020-08-04,8,8,QU39,Chaetoceros convolutus,280
+2020-08-04,8,8,QU39,Dictyocha,160
+2020-08-04,8,8,QU39,Dinophyceae,120
+2020-08-04,8,8,QU39,Euglenozoa,40
+2020-08-04,8,8,QU39,Hillea,283897
+2020-08-04,8,8,QU39,Katodinium,11667
+2020-08-04,8,8,QU39,Katodinium glaucum,80
+2020-08-04,8,8,QU39,Pennales,44
+2020-08-04,8,8,QU39,Pyramimonas grossii,7778
+2020-08-04,8,8,QU39,Pyramimonas orientalis,31112
+2020-08-04,8,8,QU39,Rhizosolenia setigera,160
+2020-08-04,8,8,QU39,Skeletonema marinoi,280
+2020-08-04,8,8,QU39,Teleaulax,268341
+2020-08-04,8,8,QU39,Thalassiosira,41
+2020-09-01,9,9,QU39,Asterionellopsis glacialis,178
+2020-09-01,9,9,QU39,Biddulphiales,14000
+2020-09-01,9,9,QU39,Cerataulina bicornis,89
+2020-09-01,9,9,QU39,Ceratium fusus,178
+2020-09-01,9,9,QU39,Chaetoceros,3382
+2020-09-01,9,9,QU39,Chaetoceros ceratosporus,89
+2020-09-01,9,9,QU39,Chaetoceros cinctus,14952
+2020-09-01,9,9,QU39,Chaetoceros convolutus,445
+2020-09-01,9,9,QU39,Chaetoceros danicus,445
+2020-09-01,9,9,QU39,Chaetoceros debilis,4183
+2020-09-01,9,9,QU39,Chaetoceros decipiens,1780
+2020-09-01,9,9,QU39,Chaetoceros diadema,1246
+2020-09-01,9,9,QU39,Chaetoceros laciniosus,4005
+2020-09-01,9,9,QU39,Chaetoceros radicans,1424
+2020-09-01,9,9,QU39,Chaetoceros seiracanthus,2759
+2020-09-01,9,9,QU39,Chaetoceros socialis,8010
+2020-09-01,9,9,QU39,Chaetoceros tenuissimus,178
+2020-09-01,9,9,QU39,Corethron criophilum,178
+2020-09-01,9,9,QU39,Coscinodiscus,89
+2020-09-01,9,9,QU39,Cylindrotheca closterium,1424
+2020-09-01,9,9,QU39,Dactyliosolen fragilissimus,89
+2020-09-01,9,9,QU39,Detonula pumila,1691
+2020-09-01,9,9,QU39,Dictyocha,445
+2020-09-01,9,9,QU39,Dictyocha fibula,356
+2020-09-01,9,9,QU39,Dictyocha speculum,1068
+2020-09-01,9,9,QU39,Dinophyceae,356
+2020-09-01,9,9,QU39,Dinophysis,89
+2020-09-01,9,9,QU39,Ditylum brightwellii,3204
+2020-09-01,9,9,QU39,Eucampia groenlandica,178
+2020-09-01,9,9,QU39,Guinardia delicatula,890
+2020-09-01,9,9,QU39,Gymnodinium,267
+2020-09-01,9,9,QU39,Gyrodinium,178
+2020-09-01,9,9,QU39,Hillea,245000
+2020-09-01,9,9,QU39,Katodinium,979
+2020-09-01,9,9,QU39,Navicula,89
+2020-09-01,9,9,QU39,Pennales,91623
+2020-09-01,9,9,QU39,Phaeocystis pouchetii,28000
+2020-09-01,9,9,QU39,Pleurosigma,89
+2020-09-01,9,9,QU39,Protoperidinium steinii,89
+2020-09-01,9,9,QU39,Pseudo-nitzschia delicatissima,178
+2020-09-01,9,9,QU39,Pseudo-nitzschia multiseries,1958
+2020-09-01,9,9,QU39,Pseudo-nitzschia seriata,7120
+2020-09-01,9,9,QU39,Pyramimonas grossii,14000
+2020-09-01,9,9,QU39,Pyramimonas orientalis,14000
+2020-09-01,9,9,QU39,Rhizosolenia setigera,979
+2020-09-01,9,9,QU39,Skeletonema marinoi,619455
+2020-09-01,9,9,QU39,Teleaulax,392000
+2020-09-01,9,9,QU39,Thalassionema nitzschioides,1157
+2020-09-01,9,9,QU39,Thalassiosira,5607
+2020-09-01,9,9,QU39,Thalassiosira rotula,6319
+2020-10-08,10,10,QU39,Apedinella spinifera,3500
+2020-10-08,10,10,QU39,Ciliophrys infusionum,200
+2020-10-08,10,10,QU39,Cylindrotheca closterium,240
+2020-10-08,10,10,QU39,Dictyocha,200
+2020-10-08,10,10,QU39,Dictyocha speculum,400
+2020-10-08,10,10,QU39,Dinophysis acuminata,40
+2020-10-08,10,10,QU39,Euglenozoa,80
+2020-10-08,10,10,QU39,Gymnodinium,600
+2020-10-08,10,10,QU39,Gyrodinium,280
+2020-10-08,10,10,QU39,Hillea,196000
+2020-10-08,10,10,QU39,Katodinium,200
+2020-10-08,10,10,QU39,Membraneis challengeri,80
+2020-10-08,10,10,QU39,Pennales,120
+2020-10-08,10,10,QU39,Prorocentrum micans,40
+2020-10-08,10,10,QU39,Pseudo-nitzschia seriata,40
+2020-10-08,10,10,QU39,Pterosperma,10500
+2020-10-08,10,10,QU39,Pyramimonas,3500
+2020-10-08,10,10,QU39,Pyramimonas grossii,10500
+2020-10-08,10,10,QU39,Pyramimonas orientalis,17500
+2020-10-08,10,10,QU39,Scrippsiella precaria,40
+2020-10-08,10,10,QU39,Skeletonema marinoi,120
+2020-10-08,10,10,QU39,Teleaulax,182000
+2020-10-08,10,10,QU39,Teleaulax acuta,3500
+2020-10-08,10,10,QU39,Thalassiosira,520
