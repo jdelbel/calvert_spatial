@@ -121,6 +121,35 @@ ggplot(dend_data$segments) +
   geom_text(data = dend_data$labels, aes(x, y, label = label),
             hjust = 1, angle = 90, size = 3)
 
+#Also check out https://stackoverflow.com/questions/21474388/colorize-clusters-in-dendogram-with-ggplot2
+
+#determine number of clusters (need to find ways to full determine this)
+cut <- 4
+
+#Find clusters
+clust <- cutree(dend_micro, k = cut)
+
+clust_df <- data.frame(label = names(clust), cluster = clust)
+
+# dendr[["labels"]] has the labels, merge with clust.df based on label column
+dend_data[["labels"]] <- merge(dend_data[["labels"]], clust_df, by="label")
+
+ggplot() + 
+  geom_segment(data = segment(dend_data), 
+               aes(x = x, y = y, xend = xend, yend = yend)) + 
+  geom_text(data = label(dend_data), aes(x, y, label = label, hjust = 0, 
+                                         color = as.factor(cluster)), size=3) +
+  coord_flip() + scale_y_reverse(expand=c(0.2, 0)) + 
+  theme(axis.line.y=element_blank(),
+        axis.ticks.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.title.y=element_blank(),
+        panel.background=element_rect(fill = "white"),
+        panel.grid=element_blank())
+
+#Really keen to get this going.
+#Silhoutette plots and other ways to determine clusters 
+#Make labels station and date. Color arms. Print. Add clusters to nMDS. Do results make any sense?
 
 ```
 
