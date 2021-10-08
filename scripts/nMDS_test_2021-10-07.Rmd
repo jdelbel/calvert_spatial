@@ -15,6 +15,7 @@ library(dendextend)
 library(colormap)
 library(indicspecies)
 library(fuzzySim)
+library(cluster)
 
 #Need to go through and test these
 
@@ -70,6 +71,7 @@ micro <- micro %>%
 ```
 
 ```{r}
+
 #Selecting columns
 micro <- micro %>% 
   select(date, month, month_surv, site_id, scientificName, species_sum)
@@ -100,59 +102,76 @@ transform_rel <- decostand(transform, method = "total")
 transform <- log10(transform + 1)
 
 transform_rel <- sqrt(transform_rel)
+```
 
-#Performing clustering - need to retry this, but turning off for now.
-dend_micro <- transform %>%
+
+```{r}
+#Setting rownames for hierarchical clustering
+clust <- transform
+
+rownames <- micro_piv %>% 
+  select(site_id, date) %>% 
+  unite(row_name, site_id:date, sep = "_")
+
+rownames_list <-rownames$row_name
+
+rownames(clust) <- rownames_list
+
+#Performing hierarchical clustering
+dend_micro <- clust %>%
   vegdist("bray") %>%
   hclust(method = "average") %>%
   as.dendrogram()
+
+
+fviz_nbclust(clust, FUN = hcut, method = "wss")
+fviz_nbclust(clust, FUN = hcut, method = "silhouette")
+gap_stat <- clusGap(clust, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
 ```
 
 ```{r}
 # http://www.sthda.com/english/wiki/beautiful-dendrogram-visualizations-in-r-5-must-known-methods-unsupervised-machine-learning
 
+#https://stackoverflow.com/questions/21474388/colorize-clusters-in-dendogram-with-ggplot2
+
 dend_data <- dendro_data(dend_micro, type = "rectangle")
 
-names(dend_data)
-head(dend_data$segments)
-
-ggplot(dend_data$segments) +
-  geom_segment(aes(x = x, y = y, xend = xend, yend = yend))+
-  geom_text(data = dend_data$labels, aes(x, y, label = label),
-            hjust = 1, angle = 90, size = 3)
-
-#Also check out https://stackoverflow.com/questions/21474388/colorize-clusters-in-dendogram-with-ggplot2
-
-#determine number of clusters (need to find ways to full determine this)
 cut <- 4
 
 #Find clusters
-clust <- cutree(dend_micro, k = cut)
+clust_find <- cutree(dend_micro, k = cut)
 
-clust_df <- data.frame(label = names(clust), cluster = clust)
+clust_df <- data.frame(label = names(clust_find), cluster = clust_find)
 
 # dendr[["labels"]] has the labels, merge with clust.df based on label column
-dend_data[["labels"]] <- merge(dend_data[["labels"]], clust_df, by="label")
+dend_data[["labels"]] <- merge(dend_data[["labels"]], clust_df, by = "label")
 
 ggplot() + 
-  geom_segment(data = segment(dend_data), 
-               aes(x = x, y = y, xend = xend, yend = yend)) + 
+  geom_segment(data = segment(dend_data),
+               aes(x = x, y = y, xend = xend, yend = yend)) +
   geom_text(data = label(dend_data), aes(x, y, label = label, hjust = 0, 
-                                         color = as.factor(cluster)), size=3) +
-  coord_flip() + scale_y_reverse(expand=c(0.2, 0)) + 
-  theme(axis.line.y=element_blank(),
-        axis.ticks.y=element_blank(),
-        axis.text.y=element_blank(),
-        axis.title.y=element_blank(),
-        panel.background=element_rect(fill = "white"),
-        panel.grid=element_blank())
+                                         color = as.factor(cluster)), size = 7) +
+  coord_flip() + 
+  scale_y_reverse(expand = c(0.2, 0)) + 
+  scale_color_discrete(name = "Cluster", labels = c("1", "2", "3", "4")) +
+  theme(legend.position = "none",
+        axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 20),
+        panel.background = element_rect(fill = "white"),
+        panel.grid = element_blank())
+
+ggsave(here("figures_new", "cluster.png"),
+       width = 17, height = 18, dpi = 300)
 
 #Really keen to get this going.
 #Silhoutette plots and other ways to determine clusters 
 #Make labels station and date. Color arms. Print. Add clusters to nMDS. Do results make any sense?
 
 ```
-
 
 ```{r}
 #Running nmds on entire dataset, without QU39 monthly averaged
