@@ -1,0 +1,221 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(gsw)
+library(here)
+library(patchwork)
+library(RColorBrewer)
+library(ggsci)
+```
+
+```{r}
+#Upload data
+data <- read_csv(here("outputs", "ctd_merge_master_2021-10-06.csv")) 
+
+#Found a duplicate for kC10 - 2020-07-02 - why? Need to investigate this and fix in my data standardization sheet, but just dealing with here for now.
+test <- data %>% 
+  group_by(date, site_id) %>% 
+  mutate(n = n()) %>% 
+  ungroup() %>% 
+  relocate(n, .after = "date") %>% 
+  filter(n > 1)
+
+data <- data %>% 
+  distinct(date, site_id, .keep_all = TRUE)
+
+#Found multiple times where not all three size fractions are present. These should be removed. Percentages not accurate here. 
+
+```
+
+
+```{r}
+#Boxplot panel. Physics, Chemical, Secchi 
+
+p1 <- data %>% 
+  ggplot(aes(x = as.factor(month_surv), y = temp_dm, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  scale_fill_npg() +
+  labs(y = "Temp (\u00B0C)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.07, 0.75),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- data %>% 
+  ggplot(aes(x = as.factor(month_surv), y = sal_dm, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir ='center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  scale_fill_npg() +
+  labs(y = "Salinity",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p3 <- data %>% 
+  ggplot(aes(x = as.factor(month_surv), y = delta_rho_dm, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir ='center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  scale_fill_npg() +
+  labs(y = expression(~ Delta * rho ~ "(30-2m)"),
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p4 <- data %>% 
+  ggplot(aes(x = as.factor(month_surv), y = no2_dm, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+   scale_fill_npg() +
+  labs(y = expression(NO[3]^{"-"} ~ "+" ~ NO[2]^{"-"}),
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p5 <- data %>% 
+  ggplot(aes(x = as.factor(month_surv), y = secchi_depth, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis='y', 
+               stackdir='center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  ylim(0, 15) +
+  scale_fill_npg() +
+  labs(y = "Secchi (m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- p1/p2/p3/p4/p5
+
+ggsave(here("figures_new", "box_descriptor_stats_2.png"), 
+       fig, width = 14, height = 15, dpi=300)
+```
+```{r}
+#Boxplot panel. Physics, Chemical, Secchi 
+
+p1 <- data %>% 
+  ggplot(aes(x = as.factor(month_surv), y = pico_chl, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  scale_fill_npg() +
+  labs(y = expression(chl[PICO] ~ (mg ~ m^{"-3"})),
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.07, 0.75),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p2 <- data %>% 
+  ggplot(aes(x = as.factor(month_surv), y = nano_chl, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir ='center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  scale_fill_npg() +
+  labs(y = expression(chl[NANO] ~ (mg ~ m^{"-3"})),
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p3 <- data %>% 
+  ggplot(aes(x = as.factor(month_surv), y = micro_chl, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir ='center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  scale_fill_npg() +
+  labs(y = expression(chl[MICRO] ~ (mg ~ m^{"-3"})),
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+p4 <- data %>% 
+  ggplot(aes(x = as.factor(month_surv), y = bulk_chl, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+   scale_fill_npg() +
+  labs(y = expression(chl[BULK] ~ (mg ~ m^{"-3"})),
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
+fig <- p1/p2/p3/p4
+
+ggsave(here("figures_new", "box_chl_stats.png"), 
+       fig, width = 14, height = 15, dpi=300)
+```
+
+
+
+
+
+
+
