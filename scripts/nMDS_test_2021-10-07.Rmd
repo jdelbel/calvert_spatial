@@ -16,6 +16,7 @@ library(colormap)
 library(indicspecies)
 library(fuzzySim)
 library(cluster)
+library(patchwork)
 
 #Need to go through and test these
 
@@ -106,6 +107,8 @@ transform_rel <- sqrt(transform_rel)
 
 
 ```{r}
+#Performing hierarchical clustering for count data
+
 #Setting rownames for hierarchical clustering
 clust <- transform
 
@@ -131,13 +134,36 @@ fviz_gap_stat(gap_stat)
 ```
 
 ```{r}
+#Performing hierarchical clustering for relative data
+
+#Setting rownames for hierarchical clustering
+clust_rel <- transform_rel
+
+rownames(clust_rel) <- rownames_list
+
+#Performing hierarchical clustering
+dend_micro_rel <- clust_rel %>%
+  vegdist("bray") %>%
+  hclust(method = "average") %>%
+  as.dendrogram()
+
+
+fviz_nbclust(clust, FUN = hcut, method = "wss")
+fviz_nbclust(clust, FUN = hcut, method = "silhouette")
+gap_stat <- clusGap(clust, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
+```
+
+
+
+```{r}
 # http://www.sthda.com/english/wiki/beautiful-dendrogram-visualizations-in-r-5-must-known-methods-unsupervised-machine-learning
 
 #https://stackoverflow.com/questions/21474388/colorize-clusters-in-dendogram-with-ggplot2
 
 dend_data <- dendro_data(dend_micro, type = "rectangle")
 
-cut <- 4
+cut <- 3
 
 #Find clusters
 clust_find <- cutree(dend_micro, k = cut)
@@ -165,6 +191,47 @@ ggplot() +
         panel.grid = element_blank())
 
 ggsave(here("figures_new", "cluster.png"),
+       width = 18, height = 18, dpi = 300)
+
+#Really keen to get this going.
+#Silhoutette plots and other ways to determine clusters 
+#Make labels station and date. Color arms. Print. Add clusters to nMDS. Do results make any sense?
+
+```
+```{r}
+#Dendrogram for relative data
+
+dend_data_rel <- dendro_data(dend_micro_rel, type = "rectangle")
+
+cut_rel <- 4
+
+#Find clusters
+clust_find_rel <- cutree(dend_micro_rel, k = cut_rel)
+
+clust_df_rel <- data.frame(label = names(clust_find), cluster = clust_find_rel)
+
+# dendr[["labels"]] has the labels, merge with clust.df based on label column
+dend_data_rel[["labels"]] <- merge(dend_data_rel[["labels"]],
+                                   clust_df_rel, by = "label")
+
+ggplot() + 
+  geom_segment(data = segment(dend_data_rel),
+               aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_text(data = label(dend_data_rel), aes(x, y, label = label, hjust = 0, 
+                                         color = as.factor(cluster)), size = 7) +
+  coord_flip() + 
+  scale_y_reverse(expand = c(0.2, 0)) + 
+  scale_color_discrete(name = "Cluster", labels = c("1", "2", "3", "4")) +
+  theme(legend.position = "none",
+        axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 20),
+        panel.background = element_rect(fill = "white"),
+        panel.grid = element_blank())
+
+ggsave(here("figures_new", "cluster_rel.png"),
        width = 17, height = 18, dpi = 300)
 
 #Really keen to get this going.
@@ -172,6 +239,9 @@ ggsave(here("figures_new", "cluster.png"),
 #Make labels station and date. Color arms. Print. Add clusters to nMDS. Do results make any sense?
 
 ```
+
+
+
 
 ```{r}
 #Running nmds on entire dataset, without QU39 monthly averaged
@@ -261,7 +331,7 @@ ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) +
   #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
   # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
   #           fontface = "bold", label = row.names(en_coord_cont)) + 
-  xlim(-0.5, 1.8) +
+  xlim(-0.5, 1.0) +
   theme(axis.title = element_text(size = 10, face = "bold", colour = "black"),
         panel.background = element_blank(),
         panel.border = element_rect(fill = NA, colour = "black"), 
@@ -270,21 +340,94 @@ ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) +
         legend.key = element_blank(), 
         legend.title = element_text(size = 10, face = "bold", colour = "black"), 
         legend.text = element_text(size = 9, colour = "black"),
-        legend.position = c(0.92, 0.6),
+        legend.position = c(0.94, 0.6),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+ggsave(here("figures_new", "nmds_micro_ggplot_month_station_relative.png"),
+       width = 6, height = 4.5, dpi = 300)
+```
+```{r}
+#Combining absolute and relative nmds
+
+p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores, aes(fill = as.factor(month), shape = site),
+             size = 6) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.8) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 20, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 18, colour = "black"),
+        legend.position = c(0.92, 0.68),
         legend.margin = margin(-0.3,0,0,0, unit = "cm"),
         text = element_text(size = 30)) +
   labs(fill = "Month", shape = "Station") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-ggsave(here("figures_new", "nmds_micro_ggplot_month_station_1perc.png"),
-       width = 6, height = 4.5, dpi = 300)
+p2 <- ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores.rel, aes(fill = as.factor(month), shape = site),
+             size = 6) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.0) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        # legend.key = element_blank(), 
+        # legend.title = element_text(size = 10, face = "bold", colour = "black"), 
+        # legend.text = element_text(size = 9, colour = "black"),
+        legend.position = "none",
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 25)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+fig <- p1/p2
+
+ggsave(here("figures_new", "nmds_absolute_rel_comb.png"), fig,
+       width = 10, height = 12, dpi = 300)
+
 ```
+
+
+
+
 
 ```{r}
 #separating treatments for following tests
 season <-  micro_piv$season
 site_id <- micro_piv$site_id
 month <- micro_piv$month
+
+#Adding region - should so this earlier - potentially in data standardization
+micro_piv <- micro_piv %>% 
+  mutate(region = case_when(site_id == "QU39" ~ "NSoG",
+                            !site_id == "QU39" ~ "Calvert")) %>% 
+  relocate(region, .after = "site_id")
+
+region <- micro_piv$region
+
 ```
 
 
@@ -299,6 +442,12 @@ ano_month
 
 ano_season = anosim(transform, season, distance = "bray", permutations = 9999)
 ano_season
+
+ano_region = anosim(transform, region, distance = "bray", permutations = 9999)
+ano_region
+
+#Site and region are significant (p = 0.0001), with region having the highest R (0.62 vs 0.27) 
+
 ```
 
 ```{r}
@@ -314,34 +463,14 @@ inv_site = multipatt(transform, site_id, func = "r.g",
 inv_month = multipatt(transform, month, func = "r.g",
                        control = how(nperm = 9999))
 
-summary(inv_site)
+#by region
+inv_region = multipatt(transform, region, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_region)
 ```
 
-```{r}
-#Uploading CTD data - https://jkzorz.github.io/2020/04/04/NMDS-extras.html
-# ctd <- read_csv(here("outputs", "ctd_merge.csv"))
-# 
-# ctd <- ctd %>% 
-#   rename(date = ymd, site_id = station, salinity = sal_dm, temperature = temp_dm)
-# 
-# #merging with micro data
-# 
-# micro_ctd <- micro_piv %>% 
-#   left_join(ctd, by = c("date", "site_id"))
-# 
-# env <- micro_ctd[,104:111]
-# 
-# en = envfit(nmds_all, env, permutations = 999, na.rm = TRUE)
-# 
-# en
-# 
-# en_coord_cont <- as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
-# 
-# #Can't figure out how to add these yet. Look into it as would be cool.
-# sp_cont <- as.data.frame(scores(nmds.spp.fit, "vectors")) * ordiArrowMul(en)
-# 
-# en_coord_cont <- en_coord_cont[c(1:2, 7),]
-```
+
 
 
 
