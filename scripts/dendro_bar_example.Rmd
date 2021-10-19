@@ -1,0 +1,80 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(tidyverse)
+library(ggdendro)
+library(vegan)
+library(colorspace)
+library(cowplot)
+
+t=read.table(text="Spain_EN 0.028152 0.971828 0.000010 0.000010
+Norway_Mesolithic 0.784705 0.083387 0.000010 0.131898
+Russia_Sunghir4 0.000010 0.000010 0.999970 0.000010
+Iran_Wezmeh_N 0.000010 0.492331 0.383227 0.124433
+Russia_DevilsCave_N 0.000010 0.000010 0.000010 0.999970
+Italy_North_Villabruna_HG 0.999970 0.000010 0.000010 0.000010
+Russia_HG_Karelia 0.527887 0.133179 0.072342 0.266593
+Russia_Yana_UP 0.000010 0.000014 0.999966 0.000010
+Georgia_Kotias 0.000010 0.537322 0.381313 0.081355
+China_SEastAsia_Island_EN 0.000010 0.000010 0.148652 0.851328
+Turkey_N 0.000010 0.999970 0.000010 0.000010
+USA_Ancient_Beringian 0.008591 0.000010 0.095008 0.896391
+Russia_Sidelkino_HG 0.624076 0.045350 0.105615 0.224958
+Russia_Kolyma_M 0.020197 0.000010 0.000010 0.979783
+China_Tianyuan 0.000010 0.000010 0.423731 0.576249",row.names=1)
+
+hc=hclust(dist(t),method="ward.D2")
+hc=reorder(hc,wts=-as.matrix(t)%*%seq(ncol(t))^2) # vegan::reorder.hclust
+tree=ggdendro::dendro_data(as.dendrogram(hc),type="rectangle")
+
+p1=ggplot(ggdendro::segment(tree))+
+geom_segment(aes(x=y,y=x,xend=yend,yend=xend),lineend="round",size=.4)+
+scale_x_continuous(expand=expansion(add=c(0,.01)))+ # don't crop half of line between top-level nodes
+scale_y_continuous(limits=.5+c(0,nrow(t)),expand=c(0,0))+
+theme(
+  axis.text=element_blank(),
+  axis.ticks=element_blank(),
+  axis.ticks.length=unit(0,"pt"), # remove extra space occupied by ticks
+  axis.title=element_blank(),
+  panel.background=element_rect(fill="white"),
+  panel.grid=element_blank(),
+  plot.margin=margin(5,5,5,0)
+)
+
+t=t[hc$labels[hc$order],]
+t2=data.frame(V1=rownames(t)[row(t)],V2=colnames(t)[col(t)],V3=unname(do.call(c,t)))
+lab=round(100*t2$V3)
+lab[lab==0]=""
+
+p2=ggplot(t2,aes(x=factor(V1,level=rownames(t)),y=V3,fill=V2))+
+geom_bar(stat="identity",width=1,position=position_fill(reverse=T))+
+geom_text(aes(label=lab),position=position_stack(vjust=.5,reverse=T),size=3.5)+
+coord_flip()+
+scale_x_discrete(expand=c(0,0))+
+scale_y_discrete(expand=c(0,0))+
+scale_fill_manual(values=colorspace::hex(HSV(head(seq(0,360,length.out=ncol(t)+1),-1),.5,1)))+
+theme(
+  axis.text=element_text(color="black",size=11),
+  axis.text.x=element_blank(),
+  axis.ticks=element_blank(),
+  axis.title=element_blank(),
+  legend.position="none",
+  plot.margin=margin(5,0,5,5)
+)
+
+cowplot::plot_grid(p2,p1,rel_widths=c(1,.4))
+ggsave("a.png",height=.25*nrow(t),width=7)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

@@ -25,7 +25,7 @@ library(patchwork)
 ```{r}
 #Upload data
 #Upload data from my master data standardization sheet
-micro <- read_csv(here("outputs", "micro_master_2021-10-06.csv")) 
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
 
 ```
 
@@ -35,6 +35,9 @@ micro <- read_csv(here("outputs", "micro_master_2021-10-06.csv"))
 #Only species occurring in 25% of the samples - could try this.
 
 #Could also try removing samples that represent <1% of abundance (currently switched on)
+
+micro <- micro %>% 
+  filter(trophicStatus == "auto")
 
 #Counting how many times each species is observed
 micro <- micro %>%
@@ -74,12 +77,12 @@ micro <- micro %>%
 ```{r}
 
 #Selecting columns
-micro <- micro %>% 
+micro_piv <- micro %>% 
   select(date, month, month_surv, site_id, scientificName, species_sum)
 
 
 #pivoting longer so species are columns. 
-micro_piv <- micro %>% 
+micro_piv <- micro_piv %>% 
   pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
   mutate_if(is.numeric, ~ replace_na(., 0))
 
@@ -163,7 +166,7 @@ fviz_gap_stat(gap_stat)
 
 dend_data <- dendro_data(dend_micro, type = "rectangle")
 
-cut <- 3
+cut <- 4
 
 #Find clusters
 clust_find <- cutree(dend_micro, k = cut)
@@ -190,7 +193,7 @@ ggplot() +
         panel.background = element_rect(fill = "white"),
         panel.grid = element_blank())
 
-ggsave(here("figures_new", "cluster.png"),
+ggsave(here("figures_new", "cluster_photo.png"),
        width = 18, height = 18, dpi = 300)
 
 #Really keen to get this going.
@@ -198,6 +201,87 @@ ggsave(here("figures_new", "cluster.png"),
 #Make labels station and date. Color arms. Print. Add clusters to nMDS. Do results make any sense?
 
 ```
+```{r}
+#Trying different visualizaton approach
+
+# https://stackoverflow.com/questions/44646488/stacked-bar-plot-with-hierarchical-clustering-dendrogram
+
+#First issue is that some metazoa and some 
+
+#Summing to group level
+t <- micro %>% 
+  group_by(date, site_id, group) %>% 
+  mutate(group_sum = sum(species_sum)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, group, group_sum)
+
+#pivoting longer so species are columns. 
+t <- t %>% 
+  pivot_wider(names_from = group, values_from = group_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+#Arranging according to site ID and date
+t <- t %>% 
+  arrange(site_id, date)
+
+#Pulling out species counts for transform and input into clustering and NMDS
+t <- t[, 3:ncol(t)]  
+
+rownames(t) <- rownames_list
+
+
+hc <- clust %>%
+  vegdist("bray") %>%
+  hclust(method = "average")
+
+hc <- reorder(hc, wts= -as.matrix(t) %*% seq(ncol(t))^2) # vegan::reorder.hclust
+tree = ggdendro::dendro_data(as.dendrogram(hc),type = "rectangle")
+
+p1=ggplot(ggdendro::segment(tree))+
+geom_segment(aes(x=y,y=x,xend=yend,yend=xend),lineend="round",size=.4)+
+scale_x_continuous(expand=expansion(add=c(0,.01)))+ # don't crop half of line between top-level nodes
+scale_y_continuous(limits=.5+c(0,nrow(t)),expand=c(0,0))+
+theme(
+  axis.text=element_blank(),
+  axis.ticks=element_blank(),
+  axis.ticks.length=unit(0,"pt"), # remove extra space occupied by ticks
+  axis.title=element_blank(),
+  panel.background=element_rect(fill="white"),
+  panel.grid=element_blank(),
+  plot.margin=margin(5,5,5,0)
+)
+
+t=t[hc$labels[hc$order],]
+t2=data.frame(V1=rownames(t)[row(t)],V2=colnames(t)[col(t)],V3=unname(do.call(c,t)))
+lab=round(100*t2$V3)
+lab[lab==0]=""
+
+p2=ggplot(t2,aes(x=factor(V1,level=rownames(t)),y=V3,fill=V2))+
+geom_bar(stat = "identity", width = 1, position = position_stack(reverse=T))+
+# geom_text(aes(label=lab),position=position_stack(vjust=.5,reverse=T),size=3.5)+
+coord_flip()+
+scale_x_discrete(expand=c(0,0))+
+scale_y_discrete(expand=c(0,0))+
+scale_fill_manual(values=colorspace::hex(HSV(head(seq(0,360,length.out=ncol(t)+1),-1),.5,1)))+
+theme(
+  axis.text=element_text(color="black",size=11),
+  axis.text.x=element_blank(),
+  axis.ticks=element_blank(),
+  axis.title=element_blank(),
+  legend.position="none",
+  plot.margin=margin(5,0,5,5)
+)
+
+cowplot::plot_grid(p2,p1,rel_widths=c(1,.4))
+# ggsave("a.png",height=.25*nrow(t),width=7)
+
+```
+
+
+
+
+
+
 ```{r}
 #Dendrogram for relative data
 
@@ -231,7 +315,7 @@ ggplot() +
         panel.background = element_rect(fill = "white"),
         panel.grid = element_blank())
 
-ggsave(here("figures_new", "cluster_rel.png"),
+ggsave(here("figures_new", "cluster_rel_photo.png"),
        width = 17, height = 18, dpi = 300)
 
 #Really keen to get this going.
@@ -317,7 +401,7 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
   labs(fill = "Month", shape = "Station") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-ggsave(here("figures_new", "nmds_micro_ggplot_month_station_1perc.png"),
+ggsave(here("figures_new", "nmds_micro_absolute_photo.png"),
        width = 6, height = 4.5, dpi = 300)
 ```
 ```{r}

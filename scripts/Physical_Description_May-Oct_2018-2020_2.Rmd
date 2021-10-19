@@ -19,13 +19,9 @@ data <- read_csv(here("outputs", "ctd_merge_master_2021-10-18.csv"))
 
 micro_long <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 
-#Found a duplicate for kC10 - 2020-07-02 - why? Need to investigate this and fix in my data standardization sheet, but just dealing with here for now.
-test <- data %>% 
-  group_by(date, site_id) %>% 
-  mutate(n = n()) %>% 
-  ungroup() %>% 
-  relocate(n, .after = "date") %>% 
-  filter(n > 1)
+#For some reason, Ebria tripartita is included as a photosynthetic dinoflagellate for 5 DFO records. Tried to back track this issue and couldn't find the source.
+ebria_issue <- micro_long %>% 
+  filter(scientificName == "Ebria tripartita" & group == "Dinoflagellata")
 
 data <- data %>% 
   distinct(date, site_id, .keep_all = TRUE)
