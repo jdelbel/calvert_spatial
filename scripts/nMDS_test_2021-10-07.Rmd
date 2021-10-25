@@ -98,12 +98,12 @@ micro_piv <- micro_piv %>%
   arrange(site_id, date)
 
 #Pulling out species counts for transform and input into clustering and NMDS
-transform <- micro_piv[, 6:ncol(micro_piv)]  
+species <- micro_piv[, 6:ncol(micro_piv)]  
 
 transform_rel <- decostand(transform, method = "total")
   
 #Log10 transformation +1 (as per Mahara)
-transform <- log10(transform + 1)
+transform <- log10(species + 1)
 
 transform_rel <- sqrt(transform_rel)
 ```
@@ -209,74 +209,143 @@ ggsave(here("figures_new", "cluster_photo.png"),
 #First issue is that some metazoa and some 
 
 #Summing to group level
-t <- micro %>% 
-  group_by(date, site_id, group) %>% 
-  mutate(group_sum = sum(species_sum)) %>% 
-  ungroup() %>% 
-  distinct(date, site_id, group, group_sum)
+# t <- micro %>% 
+#   group_by(date, site_id, group) %>% 
+#   mutate(group_sum = sum(species_sum)) %>% 
+#   ungroup() %>% 
+#   distinct(date, site_id, group, group_sum)
+# 
+# #pivoting longer so species are columns. 
+# t <- t %>% 
+#   pivot_wider(names_from = group, values_from = group_sum) %>% 
+#   mutate_if(is.numeric, ~ replace_na(., 0))
+# 
+# #Arranging according to site ID and date
+# # t <- t %>% 
+# #   arrange(site_id, date)
+# 
+# #Pulling out species counts for transform and input into clustering and NMDS
+# t <- t[, 3:ncol(t)]  
+# 
+# #Making rownames station and date.
+# rownames(t) <- rownames_list
+# 
+# #Performing clustering
+# hc <- clust %>%
+#   vegdist("bray") %>%
+#   hclust(method = "average")
+# 
+# #Not totally sure what this is doing - I think ordering.
+# hc <- reorder(hc, wts = -as.matrix(t) %*% seq(ncol(t))^2) # vegan::reorder.hclust
+# tree = ggdendro::dendro_data(as.dendrogram(hc), type = "rectangle")
+# 
+# #Plotting dendrogram
+# p1 <-  ggplot(ggdendro::segment(tree)) +
+#   geom_segment(aes(x = y, y = x, xend = yend,yend = xend),lineend = "round",
+#                size = .4) + 
+#   geom_text(data = label(tree), aes(x, y, label = label, hjust = 0, size = 7)) +
+#   scale_x_continuous(expand = expansion(add = c(0,.01))) + # don't crop half of line between top-level nodes
+#   scale_y_continuous(limits = .5 + c(0, nrow(t)), expand = c(0,0))+
+#   theme(axis.text = element_blank(),
+#         axis.ticks = element_blank(),
+#         axis.ticks.length = unit(0,"pt"), # remove extra space occupied by ticks
+#         axis.title = element_blank(),
+#         panel.background = element_rect(fill = "white"),
+#         panel.grid = element_blank(),
+#         plot.margin = margin(5, 5, 5, 0))
+# 
+# #I suspect this is reording the counts according to the clustering - but it's removing my labels
+# t <- t[hc$labels[hc$order], ]
+# 
+# #Not sure.
+# t2 <- data.frame(V1 = rownames(t)[row(t)], V2 = colnames(t)[col(t)], 
+#                   V3 = unname(do.call(c,t)))
+# 
+# # dendr[["labels"]] has the labels, merge with clust.df based on label column
+# test <- clust_df_rel <- data.frame(label = names(tree))
+# 
+# #Must be the labels, which I am not using.
+# lab <- round(100*t2$V3)
+# lab[lab == 0] = ""
+# 
+# #Plotting the stacked bar plot.
+# p2 <- ggplot(t2, aes(x = factor(V1, level = rownames(t)), y = V3, fill = V2)) +
+#   geom_bar(stat = "identity", width = 1, position = position_stack(reverse = T)) +
+# # geom_text(aes(label=lab),position=position_stack(vjust=.5,reverse=T),size=3.5)+
+#   coord_flip()+
+#   scale_x_discrete(expand = c(0, 0)) +
+#   scale_y_discrete(expand = c(0, 0)) +
+# # scale_fill_manual(values = colorspace::hex(HSV(head(seq(0,360,length.out=ncol(t) + 1),-1), .5, 1)))+
+#   theme(
+#   axis.text = element_text(color = "black", size = 11),
+#   axis.text.x = element_blank(),
+#   axis.ticks = element_blank(),
+#   axis.title = element_blank(),
+#   legend.position = "none",
+#   plot.margin = margin(5, 0, 5, 5))
+# 
+# cowplot::plot_grid(p2, p1, rel_widths = c(1,.4))
 
-#pivoting longer so species are columns. 
-t <- t %>% 
-  pivot_wider(names_from = group, values_from = group_sum) %>% 
-  mutate_if(is.numeric, ~ replace_na(., 0))
+# ggsave(here("figures_new", "test2.png"), height = .25*nrow(t),width = 7)
 
-#Arranging according to site ID and date
-t <- t %>% 
-  arrange(site_id, date)
-
-#Pulling out species counts for transform and input into clustering and NMDS
-t <- t[, 3:ncol(t)]  
-
-rownames(t) <- rownames_list
-
-
-hc <- clust %>%
-  vegdist("bray") %>%
-  hclust(method = "average")
-
-hc <- reorder(hc, wts= -as.matrix(t) %*% seq(ncol(t))^2) # vegan::reorder.hclust
-tree = ggdendro::dendro_data(as.dendrogram(hc),type = "rectangle")
-
-p1=ggplot(ggdendro::segment(tree))+
-geom_segment(aes(x=y,y=x,xend=yend,yend=xend),lineend="round",size=.4)+
-scale_x_continuous(expand=expansion(add=c(0,.01)))+ # don't crop half of line between top-level nodes
-scale_y_continuous(limits=.5+c(0,nrow(t)),expand=c(0,0))+
-theme(
-  axis.text=element_blank(),
-  axis.ticks=element_blank(),
-  axis.ticks.length=unit(0,"pt"), # remove extra space occupied by ticks
-  axis.title=element_blank(),
-  panel.background=element_rect(fill="white"),
-  panel.grid=element_blank(),
-  plot.margin=margin(5,5,5,0)
-)
-
-t=t[hc$labels[hc$order],]
-t2=data.frame(V1=rownames(t)[row(t)],V2=colnames(t)[col(t)],V3=unname(do.call(c,t)))
-lab=round(100*t2$V3)
-lab[lab==0]=""
-
-p2=ggplot(t2,aes(x=factor(V1,level=rownames(t)),y=V3,fill=V2))+
-geom_bar(stat = "identity", width = 1, position = position_stack(reverse=T))+
-# geom_text(aes(label=lab),position=position_stack(vjust=.5,reverse=T),size=3.5)+
-coord_flip()+
-scale_x_discrete(expand=c(0,0))+
-scale_y_discrete(expand=c(0,0))+
-scale_fill_manual(values=colorspace::hex(HSV(head(seq(0,360,length.out=ncol(t)+1),-1),.5,1)))+
-theme(
-  axis.text=element_text(color="black",size=11),
-  axis.text.x=element_blank(),
-  axis.ticks=element_blank(),
-  axis.title=element_blank(),
-  legend.position="none",
-  plot.margin=margin(5,0,5,5)
-)
-
-cowplot::plot_grid(p2,p1,rel_widths=c(1,.4))
-# ggsave("a.png",height=.25*nrow(t),width=7)
+# ggsave(here("figures_new", "test.png"),
+#        width = 16, height = 20, dpi = 300)
 
 ```
 
+```{r}
+# library(ggh4x)
+# 
+# #Summing to group level
+# t <- micro %>% 
+#   group_by(date, site_id, group) %>% 
+#   mutate(group_sum = sum(species_sum)) %>% 
+#   ungroup() %>% 
+#   distinct(date, site_id, group, group_sum)
+# 
+# #pivoting longer so species are columns. 
+# t <- t %>% 
+#   pivot_wider(names_from = group, values_from = group_sum) %>% 
+#   mutate_if(is.numeric, ~ replace_na(., 0))
+# 
+# #Arranging according to site ID and date
+# # t <- t %>% 
+# #   arrange(site_id, date)
+# 
+# #Pulling out species counts for transform and input into clustering and NMDS
+# t <- t[, 3:ncol(t)]  
+# 
+# #Making rownames station and date.
+# rownames(t) <- rownames_list
+# 
+# t2 = data.frame(V1=rownames(t)[row(t)],V2=colnames(t)[col(t)],V3=unname(do.call(c,t)))
+# hc=hclust(dist(t))
+# 
+# ggplot(t2,aes(x=factor(V1,level=rownames(t)),y=V3,fill=V2))+
+# geom_bar(stat="identity",width=1,position=position_stack(reverse=F))+
+# # geom_text(aes(label=round(V3)),position=position_stack(vjust=.5,reverse=F),size=3)+
+# scale_x_dendrogram(hclust=hc)+
+# scale_y_discrete(expand=c(0,0))+
+# # scale_fill_manual(values=colorspace::hex(HSV(head(seq(0,360,length.out=ncol(t)+1),-1),.5,1)))+
+# theme(
+#   axis.text=element_text(color="black",size=11),
+#   axis.text.x=element_text(angle=90,hjust=1,vjust=.5),
+#   axis.text.y=element_blank(),
+#   axis.ticks=element_blank(),
+#   axis.ticks.length=unit(14,"pt"), # height of dendrogram
+#   axis.title=element_blank(),
+#   legend.justification=c(0,1),
+#   legend.key=element_rect(fill=NA), # remove gray border around color squares
+#   legend.margin=margin(-6,0,0,0),
+#   legend.position= "none",
+#   legend.title=element_blank(),
+#   panel.background=element_rect(fill="white"),
+#   plot.margin=margin(5,0,5,5)
+# )
+# 
+# ggsave(here("figures_new", "test_3.png"),
+#         width = 16, height = 20, dpi = 300)
+```
 
 
 
@@ -554,6 +623,25 @@ inv_region = multipatt(transform, region, func = "r.g",
 summary(inv_region)
 ```
 
+```{r}
+#Want to look at diversity and richness.
+div <- diversity(species)
+
+div <- as.tibble(div)
+
+div$site_id <- micro_piv$site_id
+
+div$date <- micro_piv$date
+
+div <- div %>% 
+  rename(shannon = value)
+
+
+div %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = site_id, y = ))
+
+```
 
 
 
