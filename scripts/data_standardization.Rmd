@@ -513,7 +513,7 @@ ctd_merge_ds <- ctd_merge_ds %>%
 
 #Pulling out the data I want for analysis (May to October 2018-2021)
 ctd_merge_ds <- ctd_merge_ds %>% 
-  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11)
+  filter(date > "2018-01-01" & date < "2021-01-01" & month_surv > 4 & month_surv < 11)
 
 #In this final files, there were some CTD days where samples were not collected. Filtering these out.
 ctd_merge_ds <- ctd_merge_ds %>% 
@@ -576,7 +576,7 @@ micro_ds <- micro_ds %>%
 
 #Pulling out the data I want for analysis (May to October 2018-2021)
 micro_ds <- micro_ds %>% 
-  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11)
+  filter(date > "2018-01-01" & date < "2021-01-01" & month_surv > 4 & month_surv < 11)
 
 #Relocating month to be after date for visual ease
 micro_ds <- micro_ds %>% 

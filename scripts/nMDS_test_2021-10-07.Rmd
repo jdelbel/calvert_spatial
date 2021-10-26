@@ -27,6 +27,8 @@ library(patchwork)
 #Upload data from my master data standardization sheet
 micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
 
+#Master sheet is missing May 2020 data for QU39 and KC10...
+
 ```
 
 ```{r}
@@ -98,9 +100,10 @@ micro_piv <- micro_piv %>%
   arrange(site_id, date)
 
 #Pulling out species counts for transform and input into clustering and NMDS
-species <- micro_piv[, 6:ncol(micro_piv)]  
+species <- micro_piv[, 6:ncol(micro_piv)]
 
-transform_rel <- decostand(transform, method = "total")
+
+transform_rel <- decostand(species, method = "total")
   
 #Log10 transformation +1 (as per Mahara)
 transform <- log10(species + 1)
@@ -201,6 +204,7 @@ ggsave(here("figures_new", "cluster_photo.png"),
 #Make labels station and date. Color arms. Print. Add clusters to nMDS. Do results make any sense?
 
 ```
+
 ```{r}
 #Trying different visualizaton approach
 
@@ -354,38 +358,38 @@ ggsave(here("figures_new", "cluster_photo.png"),
 ```{r}
 #Dendrogram for relative data
 
-dend_data_rel <- dendro_data(dend_micro_rel, type = "rectangle")
-
-cut_rel <- 4
-
-#Find clusters
-clust_find_rel <- cutree(dend_micro_rel, k = cut_rel)
-
-clust_df_rel <- data.frame(label = names(clust_find), cluster = clust_find_rel)
-
-# dendr[["labels"]] has the labels, merge with clust.df based on label column
-dend_data_rel[["labels"]] <- merge(dend_data_rel[["labels"]],
-                                   clust_df_rel, by = "label")
-
-ggplot() + 
-  geom_segment(data = segment(dend_data_rel),
-               aes(x = x, y = y, xend = xend, yend = yend)) +
-  geom_text(data = label(dend_data_rel), aes(x, y, label = label, hjust = 0, 
-                                         color = as.factor(cluster)), size = 7) +
-  coord_flip() + 
-  scale_y_reverse(expand = c(0.2, 0)) + 
-  scale_color_discrete(name = "Cluster", labels = c("1", "2", "3", "4")) +
-  theme(legend.position = "none",
-        axis.line.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.text.x = element_text(size = 20),
-        panel.background = element_rect(fill = "white"),
-        panel.grid = element_blank())
-
-ggsave(here("figures_new", "cluster_rel_photo.png"),
-       width = 17, height = 18, dpi = 300)
+# dend_data_rel <- dendro_data(dend_micro_rel, type = "rectangle")
+# 
+# cut_rel <- 4
+# 
+# #Find clusters
+# clust_find_rel <- cutree(dend_micro_rel, k = cut_rel)
+# 
+# clust_df_rel <- data.frame(label = names(clust_find), cluster = clust_find_rel)
+# 
+# # dendr[["labels"]] has the labels, merge with clust.df based on label column
+# dend_data_rel[["labels"]] <- merge(dend_data_rel[["labels"]],
+#                                    clust_df_rel, by = "label")
+# 
+# ggplot() + 
+#   geom_segment(data = segment(dend_data_rel),
+#                aes(x = x, y = y, xend = xend, yend = yend)) +
+#   geom_text(data = label(dend_data_rel), aes(x, y, label = label, hjust = 0, 
+#                                          color = as.factor(cluster)), size = 7) +
+#   coord_flip() + 
+#   scale_y_reverse(expand = c(0.2, 0)) + 
+#   scale_color_discrete(name = "Cluster", labels = c("1", "2", "3", "4")) +
+#   theme(legend.position = "none",
+#         axis.line.y = element_blank(),
+#         axis.ticks.y = element_blank(),
+#         axis.text.y = element_blank(),
+#         axis.title.y = element_blank(),
+#         axis.text.x = element_text(size = 20),
+#         panel.background = element_rect(fill = "white"),
+#         panel.grid = element_blank())
+# 
+# ggsave(here("figures_new", "cluster_rel_photo.png"),
+#        width = 17, height = 18, dpi = 300)
 
 #Really keen to get this going.
 #Silhoutette plots and other ways to determine clusters 
@@ -401,7 +405,7 @@ ggsave(here("figures_new", "cluster_rel_photo.png"),
 nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
                          k = 2, trymax = 100) 
 
-#Decent stress score - 0.16
+#Decent stress score - 0.16 - ,
 
 nmds_rel <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
                          k = 2, trymax = 100) 
@@ -624,7 +628,7 @@ summary(inv_region)
 ```
 
 ```{r}
-#Want to look at diversity and richness.
+#Calculating Shannon diversity and putting in dataframe
 div <- diversity(species)
 
 div <- as.tibble(div)
@@ -633,13 +637,67 @@ div$site_id <- micro_piv$site_id
 
 div$date <- micro_piv$date
 
+div$month_surv <- micro_piv$month_surv
+
 div <- div %>% 
   rename(shannon = value)
+```
 
 
-div %>% 
-  mutate(month = lubridate::month(date)) %>% 
-  ggplot(aes(x = site_id, y = ))
+```{r}
+#Plotting diversity metrics
+f1 <- micro %>% 
+  group_by(date, site_id) %>% 
+  mutate(n_spec = n()) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, n_spec, .keep_all = TRUE) %>% 
+  ggplot(aes(x = site_id, y = n_spec, fill = site_id)) + 
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  facet_wrap(~ month_surv, nrow = 1) +
+  ggsci::scale_fill_npg() +
+  labs(y = "Richness (# of species)") +
+  theme_bw() +
+  theme(legend.position = c(0.05, 0.2),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 24),
+        axis.text = element_text(colour = "black"))
+  
+f2 <- div %>% 
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>%  
+  ggplot(aes(x = site_id, y = shannon, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  facet_wrap(~ month_surv, nrow = 1) +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  ggsci::scale_fill_npg() +
+  labs(y = "Shannon H") +
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 24),
+        axis.text = element_text(colour = "black"))
+
+fig <- f1/f2
+
+ggsave(here("figures_new", "richness_shannon_box.png"), fig,
+       width = 16, height = 8, dpi = 300)
+
+
+
 
 ```
 

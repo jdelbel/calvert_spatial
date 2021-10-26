@@ -29,20 +29,10 @@ library(ggforce)
 ```{r}
 #Upload data
 
-#ctd data with gsw calculations
-ctd_calcs <- read_csv(here("outputs", "ctd_calcs.csv")) 
+#All data merged to the CTD
+ctd_calcs <- read_csv(here("outputs", "ctd_merge_master_2021-10-18.csv")) 
 
-#delta rho data
-ctd_dd <- read_csv(here("outputs", "ctd_dd.csv"))
 
-#nutrient data
-nuts <- read_csv(here("outputs", "nuts.csv"))
-
-#turbidity data with offset corrections
-turb_corr <- read_csv(here("outputs", "corrected_turbidity_v1.csv"))
-
-#chl
-chl <- read_csv(here("files", "chl.csv"))
 
 ```
 
