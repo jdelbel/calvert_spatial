@@ -68,6 +68,86 @@ chl <- read_csv(here("files", "chl.csv"))
 ```
 
 ```{r}
+#Fixing some errors in the microscopy dataset
+
+#For some reason, Ebria was classed as a dinoflagellate in some instances. Fixing here and making a heterotroph.
+micro <- micro %>% 
+  mutate(group = case_when(scientificName == "Ebria tripartita" ~ "Ebriidea",
+         TRUE ~ as.character(as.character(group))),
+         trophicStatus = case_when(scientificName == "Ebria tripartita" ~ "hetero",
+         TRUE ~ as.character(as.character(trophicStatus))))
+
+#Pseudo-nitzschia - deli and multi cannot be discerned and need to be summed. Seriata is discernable and can be left.
+
+#Here, I filter out the P.deli and multi, sum their counts and rename them P.n.
+p_s <- micro %>% 
+  filter(scientificName == "Pseudo-nitzschia delicatissima" | 
+           scientificName == "Pseudo-nitzschia multiseries") %>% 
+  group_by(date, site_id) %>% 
+  mutate(count2 = sum(count)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, count2, .keep_all = TRUE) %>% 
+  mutate(scientificName = "Pseudo-nitzschia",
+         scientificName_accepted = "Pseudo-nitzschia",
+         orig_name = "Pseudo-nitzschia") %>% 
+  select(!count) %>% 
+  rename(count = count2)
+
+#Here, I remove P.deli and P.multi from the main sheet, so I can reintroduce the summed counts.
+micro <- micro %>% 
+  filter(!(scientificName == "Pseudo-nitzschia delicatissima" | 
+           scientificName == "Pseudo-nitzschia multiseries"))
+
+#Here, I reintroduce the summed counts as overarching Psuedo-nitzschia
+micro <- rbind(micro, p_s)
+
+#Arranging by date and station
+micro <- micro %>% 
+  arrange(date, site_id)
+
+#Test to see if it worked - looks like it did.
+p_n_check <- micro %>% 
+  filter(genus == "Pseudo-nitzschia") %>% 
+  distinct(scientificName)
+
+#Isolating ciliates to compare with microscopy data
+cil <- micro %>% 
+  filter(group == "Ciliophora") %>% 
+  group_by(date, site_id) %>% 
+  mutate(count2 = sum(count)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, count2, .keep_all = TRUE) %>% 
+  select(!count) %>% 
+  rename(count = count2) %>% 
+  mutate(scientificName = "ciliates",
+         scientificName_accepted = "ciliates",
+         orig_name = "ciliates")
+
+#Classifying the heterotrophic (as Identified by Louis, but probably more as is a really complex group. These are the ones usually considered) dinoflagellates as hetero.
+
+# Gymnodinium, Gyrodinium and Katodinium
+micro <- micro %>% 
+  mutate(trophicStatus = case_when(genus == "Gymnodinium" ~ "hetero",
+         TRUE ~ as.character(as.character(trophicStatus))),
+         trophicStatus = case_when(genus == "Gyrodinium" ~ "hetero",
+         TRUE ~ as.character(as.character(trophicStatus))),
+         trophicStatus = case_when(genus == "Katodinium" ~ "hetero",
+         TRUE ~ as.character(as.character(trophicStatus))))
+
+dino_het <- micro %>% 
+  filter(genus == "Gymnodinium" | genus == "Gyrodinium" | genus == "Katodinium") %>% 
+  group_by(date, site_id) %>% 
+  mutate(count2 = sum(count)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, count2, .keep_all = TRUE) %>% 
+  select(!count) %>% 
+  rename(count = count2) %>% 
+  mutate(scientificName = "dino_het",
+         scientificName_accepted = "dino_het",
+         orig_name = "dino_het")
+```
+
+```{r}
 #Making changes to datasets to make them easier to work with.
 
 #making CTD labels shorter and easier to work with. Selecting the columns I want to work with.
@@ -368,6 +448,13 @@ micro_piv <- micro %>%
 #Selecting columns for easier tranformation to wide format.
 micro_piv <- micro_piv %>%
   select(date, site_id, scientificName, species_sum)
+
+cil_piv <- cil %>%
+  select(date, site_id, scientificName, count)
+
+dino_het_piv <- dino_het %>%
+  select(date, site_id, scientificName, count)
+
   
 # This is where I lose group level data - need to reformat this for plotting at group level etc.
 # micro <- micro %>%
@@ -383,6 +470,16 @@ micro_piv <- micro_piv %>%
 #pivoting longer so species are columns. 
 micro_piv <- micro_piv %>% 
   pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0)) %>% 
+  arrange(site_id, date)
+
+cil_piv <- cil_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = count) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0)) %>% 
+  arrange(site_id, date)
+
+dino_het_piv <- dino_het_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = count) %>% 
   mutate_if(is.numeric, ~ replace_na(., 0)) %>% 
   arrange(site_id, date)
 ```
@@ -457,8 +554,9 @@ ctd_merge <- ctd_dm %>%
   left_join(nuts_dm_bd) %>% 
   left_join(secchi) %>% 
   left_join(chl_merge) %>% 
+  left_join(cil_piv) %>% 
+  left_join(dino_het_piv) %>% 
   left_join(micro_piv)
-
 ```
 
 ```{r}
@@ -583,6 +681,33 @@ micro_ds <- micro_ds %>%
   relocate(month, .after = date) %>% 
   relocate(month_surv, .after = month)
 
+#Isolating ciliates to compare with microscopy data
+cil_ds <- micro_ds %>% 
+  filter(group == "Ciliophora") %>% 
+  group_by(date, site_id) %>% 
+  mutate(count2 = sum(count)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, count2, .keep_all = TRUE) %>% 
+  select(!count) %>% 
+  rename(count = count2) %>% 
+  mutate(scientificName = "ciliates",
+         scientificName_accepted = "ciliates",
+         orig_name = "ciliates")
+
+#Classifying the heterotrophic (as Identified by Louis, but probably more as is a really complex group. These are the ones usually considered) dinoflagellates as hetero.
+dino_het_ds <- micro_ds %>% 
+  filter(genus == "Gymnodinium" | genus == "Gyrodinium" | genus == "Katodinium") %>% 
+  group_by(date, site_id) %>% 
+  mutate(count2 = sum(count)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, count2, .keep_all = TRUE) %>% 
+  select(!count) %>% 
+  rename(count = count2) %>% 
+  mutate(scientificName = "dino_het",
+         scientificName_accepted = "dino_het",
+         orig_name = "dino_het")
+
+#Might be advantageous to have the species not summed - still separated out.
 ```
 
 
@@ -599,6 +724,12 @@ write_csv(ctd_merge_ds, here("outputs", "ctd_merge_master_2021-10-18.csv"))
 
 #Exporting as a csv to pull into other analysis.
 write_csv(micro_ds, here("outputs", "micro_master_2021-10-18.csv"))
+
+#Exporting as a csv to pull into other analysis.
+write_csv(cil_ds, here("outputs", "ciliate_master_2021-10-18.csv"))
+
+#Exporting as a csv to pull into other analysis.
+write_csv(dino_het_ds, here("outputs", "dino-het_master_2021-10-18.csv"))
 
 ```
 
