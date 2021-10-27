@@ -128,11 +128,20 @@ nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
 nmds_rel <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
                          k = 2, trymax = 100) 
 
+nmds_cal <-  metaMDS(transform_cal, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Decent stress score - 0.16 - ,
+
+nmds_rel <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
 
 #Checking stressplot for fit
 stressplot(nmds)
 
 stressplot(nmds_rel)
+
+stressplot(nmds_cal)
 ```
 ```{r}
 
@@ -140,8 +149,8 @@ stressplot(nmds_rel)
 
 # https://www.rpubs.com/RGrieger/545184
 
-nmds_sp <- envfit(nmds, transform, permutations = 999)
-head(nmds_sp)
+# nmds_sp <- envfit(nmds, transform, permutations = 999)
+# head(nmds_sp)
 
 ```
 
@@ -161,6 +170,10 @@ data.scores$site = micro_piv$site_id
 data.scores.rel = as.data.frame(scores(nmds_rel))
 data.scores.rel$month_surv = micro_piv$month_surv
 data.scores.rel$site = micro_piv$site_id
+
+data.scores.cal = as.data.frame(scores(nmds_cal))
+data.scores.cal$month_surv = micro_piv_cal$month_surv
+data.scores.cal$site = micro_piv_cal$site_id
 
 ```
 
@@ -284,16 +297,45 @@ ggsave(here("figures_new", "nmds_absolute_rel_comb.png"), fig,
        width = 10, height = 12, dpi = 300)
 
 ```
+```{r}
 
+ggplot(data = data.scores.cal, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores.cal, aes(fill = as.factor(month_surv), shape = site),
+             size = 4) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.0) +
+  theme(axis.title = element_text(size = 10, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 10, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 9, colour = "black"),
+        legend.position = c(0.94, 0.6),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
 
+# ggsave(here("figures_new", "nmds_micro_ggplot_cal.png"),
+#        width = 6, height = 4.5, dpi = 300)
 
-
+```
 
 ```{r}
 #separating treatments for following tests
 season <-  micro_piv$season
 site_id <- micro_piv$site_id
 month <- micro_piv$month
+
+site_id_cal <- micro_piv_cal$site_id
 
 #Adding region - should so this earlier - potentially in data standardization
 micro_piv <- micro_piv %>% 
@@ -313,6 +355,10 @@ region <- micro_piv$region
 #ANOSIM test to see if groupings statistically significant
 ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
 ano_site
+
+ano_site_cal = anosim(transform_cal, site_id_cal, 
+                      distance = "bray", permutations = 9999)
+ano_site_cal
 
 ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
 ano_month
@@ -336,6 +382,11 @@ inv_season = multipatt(transform, season, func = "r.g",
 #by site
 inv_site = multipatt(transform, site_id, func = "r.g",
                        control = how(nperm = 9999))
+#by site calvert
+inv_site_cal = multipatt(transform_cal, site_id_cal, func = "r.g",
+                       control = how(nperm = 9999))
+
+
 #by month
 inv_month = multipatt(transform, month, func = "r.g",
                        control = how(nperm = 9999))
@@ -344,7 +395,7 @@ inv_month = multipatt(transform, month, func = "r.g",
 inv_region = multipatt(transform, region, func = "r.g",
                        control = how(nperm = 9999))
 
-summary(inv_region)
+summary(inv_site_cal)
 ```
 
 ```{r}
