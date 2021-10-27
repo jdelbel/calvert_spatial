@@ -437,11 +437,11 @@ head(nmds_sp)
 # spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
 
 data.scores = as.data.frame(scores(nmds))
-data.scores$month = micro_piv$month
+data.scores$month_surv = micro_piv$month_surv
 data.scores$site = micro_piv$site_id
 
 data.scores.rel = as.data.frame(scores(nmds_rel))
-data.scores.rel$month = micro_piv$month
+data.scores.rel$month_surv = micro_piv$month_surv
 data.scores.rel$site = micro_piv$site_id
 
 ```
@@ -450,7 +450,7 @@ data.scores.rel$site = micro_piv$site_id
 #Plotting nMDS - commented sections are for if I want to add environmental fits.
 
 ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores, aes(fill = as.factor(month), shape = site),
+  geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
              size = 4) + 
   scale_fill_brewer(palette = "RdYlBu") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
@@ -479,7 +479,7 @@ ggsave(here("figures_new", "nmds_micro_absolute_photo.png"),
 ```
 ```{r}
 ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores.rel, aes(fill = as.factor(month), shape = site),
+  geom_point(data = data.scores.rel, aes(fill = as.factor(month_surv), shape = site),
              size = 4) + 
   scale_fill_brewer(palette = "RdYlBu") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
@@ -510,7 +510,7 @@ ggsave(here("figures_new", "nmds_micro_ggplot_month_station_relative.png"),
 #Combining absolute and relative nmds
 
 p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores, aes(fill = as.factor(month), shape = site),
+  geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
              size = 6) + 
   scale_fill_brewer(palette = "RdYlBu") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
@@ -536,7 +536,7 @@ p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
 p2 <- ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores.rel, aes(fill = as.factor(month), shape = site),
+  geom_point(data = data.scores.rel, aes(fill = as.factor(month_surv), shape = site),
              size = 6) + 
   scale_fill_brewer(palette = "RdYlBu") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
