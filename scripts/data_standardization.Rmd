@@ -65,6 +65,12 @@ chem <- rbind(chem_c, chem_q)
 #Bringing in Chlorophyll
 chl <- read_csv(here("files", "chl.csv"))
 
+#Upload fecal pellet counts
+fec <- read_csv(here("files", "fecal.csv"))
+
+#Uploading metadata for fecal pellet counts
+meta <- read_csv(here("files", "meta_phyto_2021-06-21.csv"))
+
 ```
 
 ```{r}
@@ -260,7 +266,7 @@ CT <- gsw_CT_from_t(SA$SA, ctd$temp, ctd$pres)
 CT <- as.data.frame(CT)
 
 #Calculating Density
-rho = gsw_rho(SA$SA,CT$CT,ctd$pres)
+rho = gsw_rho(SA$SA, CT$CT, ctd$pres)
 
 #Converting Density to a dataframe
 rho <- as.data.frame(rho)
@@ -482,6 +488,44 @@ dino_het_piv <- dino_het_piv %>%
   pivot_wider(names_from = scientificName, values_from = count) %>% 
   mutate_if(is.numeric, ~ replace_na(., 0)) %>% 
   arrange(site_id, date)
+
+```
+
+```{r}
+#Working with fecal pellet data to make it mergeable with the rest of the data
+
+#limiting meta dataset to pertinent columns
+meta <- meta %>% 
+  select(hakai_id, date, site_id)
+
+#Renaming hakai ID column for merging
+fec <- fec %>% 
+  rename(hakai_id = `Hakai ID`)
+
+#Joining fecal pellet Hakai IDs with metadata so I can get dates. There are some with missing dates - no hakai_id match - why? Continuing as they may not be pertinent.
+fec <- fec %>% 
+  left_join(meta)
+
+fec_merge <- fec %>% 
+  select(date, site_id, fecal)
+```
+
+```{r}
+#Merging all of the microscopy data
+
+micro_merge <- micro_piv %>% 
+  left_join(cil_piv) %>% 
+  left_join((dino_het_piv)) %>% 
+  left_join(fec_merge)
+
+#Setting NA's to 0 - zeros emerged from merging with ciliate data. True zeros - days when they weren't observed represents a 0 count.
+micro_merge <- micro_merge %>% 
+  mutate_if(is.numeric , replace_na, replace = 0)
+
+micro_merge <- micro_merge %>% 
+  relocate(ciliates, .after = site_id) %>% 
+  relocate(dino_het, .after = site_id) %>% 
+  relocate(fecal, .after = site_id) 
 ```
 
 ```{r}
@@ -554,9 +598,15 @@ ctd_merge <- ctd_dm %>%
   left_join(nuts_dm_bd) %>% 
   left_join(secchi) %>% 
   left_join(chl_merge) %>% 
-  left_join(cil_piv) %>% 
-  left_join(dino_het_piv) %>% 
-  left_join(micro_piv)
+  left_join(micro_merge)  
+
+# 6 pairs of 2. As far as I can see, they are exactly the same, so I am going to remove them.
+ctd_merge_duplicates <- ctd_merge %>% 
+  janitor::get_dupes(date:Tabellaria)
+
+ctd_merge_2 <- ctd_merge %>% 
+  distinct(date, site_id, .keep_all = TRUE)
+
 ```
 
 ```{r}
@@ -710,6 +760,67 @@ dino_het_ds <- micro_ds %>%
 #Might be advantageous to have the species not summed - still separated out.
 ```
 
+```{r}
+#Downscale fecal pellets
+
+#Making a worksheet of just QU39 data
+fec_merge_qu39 <- fec_merge %>% 
+  filter(site_id == "QU39")
+
+#Selecting closest dates of QU39 to those of the Calvert surveys
+fec_merge_qu39 <- fec_merge_qu39 %>% 
+  filter(date == "2018-05-29" | #could also be 05-22
+         date == "2018-06-26" |
+         date == "2018-07-23" | # Could also be 07-16
+         date == "2018-08-21" | # 08-14, 08-28
+         date == "2018-09-13" |   
+         date == "2018-10-24" |
+         date == "2019-05-09" |
+         date == "2019-06-04" |
+         date == "2019-07-09" |
+         date == "2019-08-07" |
+         date == "2019-08-29" |
+         date == "2019-10-09" |
+         #date == "2019-11-26" | #removing this for multi-year analysis
+         date == "2020-04-29" | #Different month, but very close temporally
+         date == "2020-06-04" |
+         date == "2020-07-09" | # Also 06-30 - Tricky
+         date == "2020-08-04" | # Also 08-13 
+         date == "2020-09-01" |
+         date == "2020-10-08")
+            
+#Removing QU39 from ctd_merge file so I can reintroduce it with the down-scaled QU39 data
+fec_merge_no_QU39 <- fec_merge %>% 
+  filter(!(site_id == "QU39"))
+
+#Merging the down-scaled QU39 data back into the full dataset 
+fec_ds <- rbind(fec_merge_no_QU39, fec_merge_qu39)
+
+#Here, dates that were collected on the cusp of a month change, where the rest of survey was done in following month, are pushed forward to the next month. This helps with plotting by month or else I will get two surveys for a single month. 
+fec_ds <- fec_ds %>%  
+  mutate(month_surv = lubridate::month(date),
+         month_surv = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month_surv)))
+
+#Now adding the true month when data was collected back into datasheet.
+fec_ds <- fec_ds %>% 
+  mutate(month = lubridate::month(date))
+
+#Pulling out the data I want for analysis (May to October 2018-2021)
+fec_ds <- fec_ds %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month_surv > 4 & month_surv < 11)
+
+#Relocating month to be after date for visual ease
+fec_ds <- fec_ds %>% 
+  relocate(month, .after = date) %>% 
+  relocate(month_surv, .after = month)
+
+```
+
+
 
 
 ```{r}
@@ -730,6 +841,9 @@ write_csv(cil_ds, here("outputs", "ciliate_master_2021-10-18.csv"))
 
 #Exporting as a csv to pull into other analysis.
 write_csv(dino_het_ds, here("outputs", "dino-het_master_2021-10-18.csv"))
+
+#Exporting as a csv to pull into other analysis.
+write_csv(fec_ds, here("outputs", "fecal_master_2021-10-18.csv"))
 
 ```
 

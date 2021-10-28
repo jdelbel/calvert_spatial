@@ -19,9 +19,11 @@ data <- read_csv(here("outputs", "ctd_merge_master_2021-10-18.csv"))
 
 micro_long <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 
-#For some reason, Ebria tripartita is included as a photosynthetic dinoflagellate for 5 DFO records. Tried to back track this issue and couldn't find the source.
-ebria_issue <- micro_long %>% 
-  filter(scientificName == "Ebria tripartita" & group == "Dinoflagellata")
+cil <- read_csv(here("outputs", "ciliate_master_2021-10-18.csv"))
+
+dino <- read_csv(here("outputs", "dino-het_master_2021-10-18.csv"))
+
+fec <- read_csv(here("outputs", "fecal_master_2021-10-18.csv"))
 
 data <- data %>% 
   distinct(date, site_id, .keep_all = TRUE)
@@ -126,11 +128,11 @@ p5 <- data %>%
 
 fig <- p1/p2/p3/p4/p5
 
-ggsave(here("figures_new", "box_descriptor_stats_2.png"), 
+ggsave(here("figures_new", "box_descriptor_stats_3.png"), 
        fig, width = 14, height = 15, dpi=300)
 ```
 ```{r}
-#Boxplot panel. Physics, Chemical, Secchi 
+#Boxplot Chlorophyll size fractions.
 
 p1 <- data %>% 
   ggplot(aes(x = as.factor(month_surv), y = pico_chl, fill = site_id)) +
@@ -326,16 +328,12 @@ filter(trophicStatus == "auto" & group == "Chlorophyta-Prasinophyta") %>%
 
 fig2 <- p1/p2/p3/p4/p5
 
-ggsave(here("figures_new", "box_group_stats.png"), 
+ggsave(here("figures_new", "box_group_stats_2.png"), 
        fig2, width = 17, height = 19, dpi = 300)
 
 
 ```
 ```{r}
-test <- micro_long %>% 
-  filter(scientificName == "Ebria tripartita")
-
-
 #Looking at heterotrophic dinoflagellates
 micro_long %>% 
 filter(scientificName == "Gymnodinium" |
@@ -362,6 +360,27 @@ filter(scientificName == "Gymnodinium" |
         axis.text.x = element_blank(),
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
+
+dino %>% 
+  ggplot(aes(x = as.factor(month_surv), y = count, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+   scale_fill_npg() +
+  labs(y = "Hetero Dinos",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.8, 0.75),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+
 
 micro_long %>% 
 filter(scientificName == "Dinophysis" |
@@ -437,6 +456,39 @@ filter(group == "Ciliophora") %>%
         legend.title = element_blank(),
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
+
+cil %>% 
+  ggplot(aes(x = as.factor(month_surv), y = count, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+   scale_fill_npg() +
+  labs(y = "Cryptophyta",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fec %>% 
+  ggplot(aes(x = as.factor(month_surv), y = fecal, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+   scale_fill_npg() +
+  labs(y = "Cryptophyta",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
 ```
 
 
