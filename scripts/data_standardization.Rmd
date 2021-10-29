@@ -340,8 +340,8 @@ ctd_5 <- ctd %>%
   filter(pres == 5) %>% 
   rename(date_long = date) %>% 
   mutate(date = lubridate::date(date_long)) %>%
-  select(cast_pk, date, date_long, site_id = station, pres, temp, sal,
-         N2, delta_rho, turb_cor)
+  select(cast_pk, date, date_long, site_id = station, Latitude, Longitude, pres, 
+         temp, sal, N2, delta_rho, turb_cor)
 
 #Limited years to those being used for analysis
 ctd_5 <- ctd_5 %>% 
@@ -380,6 +380,18 @@ ctd_dm <- ctd_5 %>%
             delta_rho_dm = mean(delta_rho),
             turb_dm = mean(turb_cor)) %>% 
   ungroup()
+
+lat_long <- ctd_5 %>% 
+  select(date, site_id, lat = Latitude, long = Longitude) %>% 
+  group_by(date, site_id) %>% 
+  summarise(lat = mean(lat),
+            long = mean(long)) %>% 
+  ungroup()
+
+ctd_dm <- ctd_dm %>% 
+  left_join(lat_long) %>% 
+  relocate(lat, .after = site_id) %>% 
+  relocate(long, .after = lat)
 
 # Separating replicate nutrient data from 5m depth data. 
 ## Duplicates only from QU39 outside of the dates under investigation. Not bothering with looking at difference in time.
@@ -831,7 +843,7 @@ fec_ds <- fec_ds %>%
 #It's actually less - 59 - Why? One reason could be chlorophyll data, which I incorporated and may have had missing data. Incorporate here and see. 8 Chlorophyll samples missing - this explains the disparity. Should be good to go.
 
 #Exporting as a csv to pull into other analysis.
-write_csv(ctd_merge_ds, here("outputs", "ctd_merge_master_2021-10-18.csv"))
+write_csv(ctd_merge_ds, here("outputs", "ctd_merge_master_2021-10-18_lat-long.csv"))
 
 #Exporting as a csv to pull into other analysis.
 write_csv(micro_ds, here("outputs", "micro_master_2021-10-18.csv"))
