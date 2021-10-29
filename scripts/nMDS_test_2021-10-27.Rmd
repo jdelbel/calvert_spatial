@@ -471,6 +471,43 @@ ggsave(here("figures_new", "richness_shannon_box.png"), fig,
 
 
 ```
+```{r}
+#Looking at some of the indicator species
+micro %>% 
+  filter(scientificName == "Chaetoceros decipiens") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Dactyliosolen phuketensis") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Detonula pumila") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Ceratium lineatum") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Dactyliosolen fragilissimus") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Dinophysis acuta") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Biddulphiales") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+```
 
 
 

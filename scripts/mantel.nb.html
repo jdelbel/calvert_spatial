@@ -1752,101 +1752,12 @@ pre code {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0xvYWRpbmcgcGFja2FnZXNcbmxpYnJhcnkodGlkeXZlcnNlKVxubGlicmFyeShyZWFkeGwpXG5saWJyYXJ5KGdzdylcbmxpYnJhcnkoaGVyZSlcbmxpYnJhcnkodmVnYW4pXG5gYGAifQ== -->
-<pre class="r"><code>#Loading packages
-library(tidyverse)
-library(readxl)
-library(gsw)
-library(here)
-library(vegan)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZW9zcGhlcmUpXG5cbmBgYCJ9 -->
+<pre class="r"><code>library(geosphere)
+</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRdmVnYW6SIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVMb2FkaW5nIHJlcXVpcmVkIHBhY2thZ2U6IHBlcm11dGVcbkxvYWRpbmcgcmVxdWlyZWQgcGFja2FnZTogbGF0dGljZVxuVGhpcyBpcyB2ZWdhbiAyLjUtN1xuIn0= -->
-<pre><code>package 㤼㸱vegan㤼㸲 was built under R version 4.0.5Loading required package: permute
-Loading required package: lattice
-This is vegan 2.5-7</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShhZGVzcGF0aWFsKVxuYGBgIn0= -->
-<pre class="r"><code>library(adespatial)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRYWRlc3BhdGlhbJIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNVJlZ2lzdGVyZWQgUzMgbWV0aG9kcyBvdmVyd3JpdHRlbiBieSAnYWRlZ3JhcGhpY3MnOlxuICBtZXRob2QgICAgICAgICBmcm9tXG4gIGJpcGxvdC5kdWRpICAgIGFkZTRcbiAga3Bsb3QuZm91Y2FydCAgYWRlNFxuICBrcGxvdC5tY29hICAgICBhZGU0XG4gIGtwbG90Lm1mYSAgICAgIGFkZTRcbiAga3Bsb3QucHRhICAgICAgYWRlNFxuICBrcGxvdC5zZXBhbiAgICBhZGU0XG4gIGtwbG90LnN0YXRpcyAgIGFkZTRcbiAgc2NhdHRlci5jb2EgICAgYWRlNFxuICBzY2F0dGVyLmR1ZGkgICBhZGU0XG4gIHNjYXR0ZXIubmlwYWxzIGFkZTRcbiAgc2NhdHRlci5wY28gICAgYWRlNFxuICBzY29yZS5hY20gICAgICBhZGU0XG4gIHNjb3JlLm1peCAgICAgIGFkZTRcbiAgc2NvcmUucGNhICAgICAgYWRlNFxuICBzY3JlZXBsb3QuZHVkaSBhZGU0XG5SZWdpc3RlcmVkIFMzIG1ldGhvZCBvdmVyd3JpdHRlbiBieSAnc3BkZXAnOlxuICBtZXRob2QgICBmcm9tXG4gIHBsb3QubXN0IGFwZSBcblJlZ2lzdGVyZWQgUzMgbWV0aG9kcyBvdmVyd3JpdHRlbiBieSAnYWRlc3BhdGlhbCc6XG4gIG1ldGhvZCAgICAgICAgICAgICBmcm9tICAgICAgIFxuICBwbG90Lm11bHRpc3BhdGkgICAgYWRlZ3JhcGhpY3NcbiAgcHJpbnQubXVsdGlzcGF0aSAgIGFkZTQgICAgICAgXG4gIHN1bW1hcnkubXVsdGlzcGF0aSBhZGU0ICAgICAgIFxuIn0= -->
-<pre><code>package 㤼㸱adespatial㤼㸲 was built under R version 4.0.5Registered S3 methods overwritten by &#39;adegraphics&#39;:
-  method         from
-  biplot.dudi    ade4
-  kplot.foucart  ade4
-  kplot.mcoa     ade4
-  kplot.mfa      ade4
-  kplot.pta      ade4
-  kplot.sepan    ade4
-  kplot.statis   ade4
-  scatter.coa    ade4
-  scatter.dudi   ade4
-  scatter.nipals ade4
-  scatter.pco    ade4
-  score.acm      ade4
-  score.mix      ade4
-  score.pca      ade4
-  screeplot.dudi ade4
-Registered S3 method overwritten by &#39;spdep&#39;:
-  method   from
-  plot.mst ape 
-Registered S3 methods overwritten by &#39;adespatial&#39;:
-  method             from       
-  plot.multispati    adegraphics
-  print.multispati   ade4       
-  summary.multispati ade4       </code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ29yZClcbmBgYCJ9 -->
-<pre class="r"><code>library(ggord)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ29yZOOkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41XG4ifQ== -->
-<pre><code>package 㤼㸱ggord㤼㸲 was built under R version 4.0.5</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShmdXp6eVNpbSlcbmBgYCJ9 -->
-<pre class="r"><code>library(fuzzySim)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFmdXp6eVNpbeOkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41XG5BdHRhY2hpbmcgcGFja2FnZTog46S847ixZnV6enlTaW3jpLzjuLJcblxuVGhlIGZvbGxvd2luZyBvYmplY3QgaXMgbWFza2VkIGZyb20g46S847ixcGFja2FnZTpwdXJycuOkvOO4sjpcblxuICAgIHRyYW5zcG9zZVxuIn0= -->
-<pre><code>package 㤼㸱fuzzySim㤼㸲 was built under R version 4.0.5
-Attaching package: 㤼㸱fuzzySim㤼㸲
-
-The following object is masked from 㤼㸱package:purrr㤼㸲:
-
-    transpose</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0Zyb20gaHR0cHM6Ly9yc3R1ZGlvLXB1YnMtc3RhdGljLnMzLmFtYXpvbmF3cy5jb20vNjk0MDE2X2UyZDUzZDY1ODU4ZDRhMTk4NTYxNmZhMzg1NWQyMzdmLmh0bWwjMV9QYWNrYWdlc19uZWVkZWRcblxuI0ZvciBwbG90dGluZyB3aXRoIGdncGxvdDJcblxubGlicmFyeShCaW9kaXZlcnNpdHlSKVxuYGBgIn0= -->
-<pre class="r"><code>#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
-
-#For plotting with ggplot2
-
-library(BiodiversityR)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFCaW9kaXZlcnNpdHlS46S847iyIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVMb2FkaW5nIHJlcXVpcmVkIHBhY2thZ2U6IHRjbHRrXG5SZWdpc3RlcmVkIFMzIG1ldGhvZCBvdmVyd3JpdHRlbiBieSAnaHRtbHdpZGdldHMnOlxuICBtZXRob2QgICAgICAgICAgIGZyb20gICAgICAgICBcbiAgcHJpbnQuaHRtbHdpZGdldCB0b29sczpyc3R1ZGlvXG5SZWdpc3RlcmVkIFMzIG1ldGhvZCBvdmVyd3JpdHRlbiBieSAnZGF0YS50YWJsZSc6XG4gIG1ldGhvZCAgICAgICAgICAgZnJvbVxuICBwcmludC5kYXRhLnRhYmxlICAgICBcbkJpb2RpdmVyc2l0eVIgMi4xMy0xOiBVc2UgY29tbWFuZCBCaW9kaXZlcnNpdHlSR1VJKCkgdG8gbGF1bmNoIHRoZSBHcmFwaGljYWwgVXNlciBJbnRlcmZhY2U7IFxudG8gc2VlIGNoYW5nZXMgdXNlIEJpb2RpdmVyc2l0eVJHVUkoY2hhbmdlTG9nPVRSVUUsIGJhY2t3YXJkLmNvbXBhdGliaWxpdHkubWVzc2FnZXM9VFJVRSlcbiJ9 -->
-<pre><code>package 㤼㸱BiodiversityR㤼㸲 was built under R version 4.0.5Loading required package: tcltk
-Registered S3 method overwritten by &#39;htmlwidgets&#39;:
-  method           from         
-  print.htmlwidget tools:rstudio
-Registered S3 method overwritten by &#39;data.table&#39;:
-  method           from
-  print.data.table     
-BiodiversityR 2.13-1: Use command BiodiversityRGUI() to launch the Graphical User Interface; 
-to see changes use BiodiversityRGUI(changeLog=TRUE, backward.compatibility.messages=TRUE)</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ3NjaSlcbmBgYCJ9 -->
-<pre class="r"><code>library(ggsci)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ3NjaeOkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC4zXG4ifQ== -->
-<pre><code>package 㤼㸱ggsci㤼㸲 was built under R version 4.0.3</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ3JlcGVsKVxuYGBgIn0= -->
-<pre class="r"><code>library(ggrepel)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ3JlcGVs46S847iyIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVcbiJ9 -->
-<pre><code>package 㤼㸱ggrepel㤼㸲 was built under R version 4.0.5</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ2ZvcmNlKVxuYGBgIn0= -->
-<pre class="r"><code>library(ggforce)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ2ZvcmNl46S847iyIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVcbiJ9 -->
-<pre><code>package 㤼㸱ggforce㤼㸲 was built under R version 4.0.5</code></pre>
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZW9zcGhlcmXjpLzjuLIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNVxuIn0= -->
+<pre><code>package 㤼㸱geosphere㤼㸲 was built under R version 4.0.5</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1857,12 +1768,12 @@ to see changes use BiodiversityRGUI(changeLog=TRUE, backward.compatibility.messa
 mm &lt;- read_csv(here(&quot;outputs&quot;, &quot;ctd_merge_master_2021-10-18_lat-long.csv&quot;)) 
 </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjcgQ29sdW1uczogMTU4XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICAgICgxKTogc2l0ZV9pZFxuZGJsICAoMTU2KTogbW9udGgsIG1vbnRoX3N1cnYsIGxhdCwgbG9uZywgdGVtcF9kbSwgc2FsX2RtLCBOMl9kbSwgZGVsdGFfcmhvX2RtLCB0dXJiX2RtLCBubzJfZG0sIHNpbzJfZC4uLlxuZGF0ZSAgICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjcgQ29sdW1uczogMTU4XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgICAoMSk6IHNpdGVfaWRcbmRibCAgKDE1Nik6IG1vbnRoLCBtb250aF9zdXJ2LCBsYXQsIGxvbmcsIHRlbXBfZG0sIHNhbF9kbSwgTjJfZG0sIGRlbHRhX3Job19kbSwgLi4uXG5kYXRlICAgKDEpOiBkYXRlXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
 <pre><code>Rows: 67 Columns: 158
--- Column specification -----------------------------------------------------------------------------------
+-- Column specification ------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr    (1): site_id
-dbl  (156): month, month_surv, lat, long, temp_dm, sal_dm, N2_dm, delta_rho_dm, turb_dm, no2_dm, sio2_d...
+dbl  (156): month, month_surv, lat, long, temp_dm, sal_dm, N2_dm, delta_rho_dm, ...
 date   (1): date
 
 i Use `spec()` to retrieve the full column specification for this data.
@@ -1888,7 +1799,7 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1J1bm5pbmcgd2l0aG91dCBDaGxvcm9waHlsbCBmaXJzdC5cblxuI1dpdGggdGhlIGNobG9yb3BoeWxsIGRhdGEgaW5jbHVkZWQsIHF1aXRlIGEgZmV3IGRhdGEgcG9pbnQgcmVtb3ZlZCAtIHRyeWluZyB3aXRob3V0IGNobG9yb3BoeWxsXG5tbV9ub19jaGwgPC0gbW0gJT4lIFxuICBzZWxlY3QoIShtaWNyb19jaGw6YnVsa19jaGwpKVxuXG4jUmVtb3ZlIHJvd3Mgd2l0aCBOYU5zXG5tbV9ub19jaGwgPC0gbW1fbm9fY2hsICU+JSBcbiAgZHJvcF9uYSgpXG5cbiNTZXBhcmF0aW5nIGludG8gcmVzcG9uc2UgdmFyaWFibGVzIChDSEVNVEFYKSBhbmQgRXhwbGFpbmF0b3J5IHZhcmlhYmxlcyAoRW52aXJvbm1lbnRhbClcbnJlc3AgPC0gbW1fbm9fY2hsWywgMTc6bmNvbChtbV9ub19jaGwpXVxuXG4jVGhpbmdzIHRvIGFkZCBUQ2hsYSwgV1NEUCwgaXNvIGRlcHRoLCBGV0MuLi5cbmV4cGwgPC0gbW1fbm9fY2hsWywgNToxM11cblxuZXhwbCA8LSBleHBsICU+JSBcbiAgc2VsZWN0KCFOMl9kbSlcbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1J1bm5pbmcgd2l0aG91dCBDaGxvcm9waHlsbCBmaXJzdC5cblxuI1dpdGggdGhlIGNobG9yb3BoeWxsIGRhdGEgaW5jbHVkZWQsIHF1aXRlIGEgZmV3IGRhdGEgcG9pbnQgcmVtb3ZlZCAtIHRyeWluZyB3aXRob3V0IGNobG9yb3BoeWxsXG5tbV9ub19jaGwgPC0gbW0gJT4lIFxuICBzZWxlY3QoIShtaWNyb19jaGw6YnVsa19jaGwpKVxuXG4jUmVtb3ZlIHJvd3Mgd2l0aCBOYU5zXG5tbV9ub19jaGwgPC0gbW1fbm9fY2hsICU+JSBcbiAgZHJvcF9uYSgpXG5cbiNTZXBhcmF0aW5nIGludG8gYWJ1bmRhbmNlIGRhdGFcbmFidW5kIDwtIG1tX25vX2NobFssIDE5Om5jb2wobW1fbm9fY2hsKV1cblxuI21ha2luZyBhIHZlY3RvciBmb3IgdGVtcGVyYXR1cmVcbnRlbXAgPC0gbW1fbm9fY2hsWywgN11cblxuI21ha2luZyBhIHZlY3RvciBmb3Igc2FsaW5pdHlcbnNhbCA8LSBtbV9ub19jaGxbLCA4XVxuXG4jZGVsdGFfcmhvXG5kciA8LSBtbV9ub19jaGxbLCAxMF1cblxuI3R1cmJcbnR1cmIgPC0gbW1fbm9fY2hsWywgMTFdXG5cbiNubzJcbm5vMiA8LSBtbV9ub19jaGxbLCAxMl1cblxuI3NpbzJcbnNpbzIgPC0gbW1fbm9fY2hsWywgMTNdXG5cbiNwbzRcbnBvNCA8LSBtbV9ub19jaGxbLCAxNF1cblxuI3NlY2NoaVxuc2VjIDwtIG1tX25vX2NobFssIDE1XVxuXG4jZmVjYWwgcGVsbGV0c1xuZmVjIDwtIG1tX25vX2NobFssIDE2XVxuXG4jY2lsaWF0ZXNcbmNpbCA8LSBtbV9ub19jaGxbLCAxOF1cbmBgYCJ9 -->
 <pre class="r"><code>#Running without Chlorophyll first.
 
 #With the chlorophyll data included, quite a few data point removed - trying without chlorophyll
@@ -1899,47 +1810,71 @@ mm_no_chl &lt;- mm %&gt;%
 mm_no_chl &lt;- mm_no_chl %&gt;% 
   drop_na()
 
-#Separating into response variables (CHEMTAX) and Explainatory variables (Environmental)
-resp &lt;- mm_no_chl[, 17:ncol(mm_no_chl)]
+#Separating into abundance data
+abund &lt;- mm_no_chl[, 19:ncol(mm_no_chl)]
 
-#Things to add TChla, WSDP, iso depth, FWC...
-expl &lt;- mm_no_chl[, 5:13]
+#making a vector for temperature
+temp &lt;- mm_no_chl[, 7]
 
-expl &lt;- expl %&gt;% 
-  select(!N2_dm)</code></pre>
+#making a vector for salinity
+sal &lt;- mm_no_chl[, 8]
+
+#delta_rho
+dr &lt;- mm_no_chl[, 10]
+
+#turb
+turb &lt;- mm_no_chl[, 11]
+
+#no2
+no2 &lt;- mm_no_chl[, 12]
+
+#sio2
+sio2 &lt;- mm_no_chl[, 13]
+
+#po4
+po4 &lt;- mm_no_chl[, 14]
+
+#secchi
+sec &lt;- mm_no_chl[, 15]
+
+#fecal pellets
+fec &lt;- mm_no_chl[, 16]
+
+#ciliates
+cil &lt;- mm_no_chl[, 18]</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGlzdC5zYWwgPSBkaXN0KHNhbCwgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuYGBgIn0= -->
-<pre class="r"><code>dist.sal = dist(sal, method = &quot;euclidean&quot;)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGlzdC5nZW8gPSBhcy5kaXN0KGQuZ2VvKVxuXG5gYGAifQ== -->
+<pre class="r"><code>dist.geo = as.dist(d.geo)
 </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3IgaW4gYXMubWF0cml4KHgpIDogb2JqZWN0ICdzYWwnIG5vdCBmb3VuZFxuIn0= -->
-<pre><code>Error in as.matrix(x) : object &#39;sal&#39; not found</code></pre>
+<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3IgaW4gYXMuZGlzdChkLmdlbykgOiBvYmplY3QgJ2QuZ2VvJyBub3QgZm91bmRcbiJ9 -->
+<pre><code>Error in as.dist(d.geo) : object &#39;d.geo&#39; not found</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYWJ1bmRfY2lsXG5cbmBgYCJ9 -->
-<pre class="r"><code>abund_cil
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYWJ1bmRfZ2VvXG5cbmBgYCJ9 -->
+<pre class="r"><code>abund_geo
 </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmNpbCwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4wNjYwMyBcbiAgICAgIFNpZ25pZmljYW5jZTogMC4xMjgxIFxuXG5VcHBlciBxdWFudGlsZXMgb2YgcGVybXV0YXRpb25zIChudWxsIG1vZGVsKTpcbiAgIDkwJSAgICA5NSUgIDk3LjUlICAgIDk5JSBcbjAuMDc1NyAwLjEwMDcgMC4xMjI4IDAuMTQ5OCBcblBlcm11dGF0aW9uOiBmcmVlXG5OdW1iZXIgb2YgcGVybXV0YXRpb25zOiA5OTk5XG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmdlbywgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4xNjg3IFxuICAgICAgU2lnbmlmaWNhbmNlOiAzZS0wNCBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA1MzYgMC4wNzAxIDAuMDg2OCAwLjEwNTUgXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
-mantel(xdis = dist.abund, ydis = dist.cil, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
+mantel(xdis = dist.abund, ydis = dist.geo, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: 0.06603 
-      Significance: 0.1281 
+Mantel statistic r: 0.1687 
+      Significance: 3e-04 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0757 0.1007 0.1228 0.1498 
+0.0536 0.0701 0.0868 0.1055 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
@@ -1952,7 +1887,7 @@ Number of permutations: 9999</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2siDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQogDQoNCmBgYHtyfQ0KI0xvYWRpbmcgcGFja2FnZXMNCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShyZWFkeGwpDQpsaWJyYXJ5KGdzdykNCmxpYnJhcnkoaGVyZSkNCmxpYnJhcnkodmVnYW4pDQpsaWJyYXJ5KGFkZXNwYXRpYWwpDQpsaWJyYXJ5KGdnb3JkKQ0KbGlicmFyeShmdXp6eVNpbSkNCg0KI0Zyb20gaHR0cHM6Ly9yc3R1ZGlvLXB1YnMtc3RhdGljLnMzLmFtYXpvbmF3cy5jb20vNjk0MDE2X2UyZDUzZDY1ODU4ZDRhMTk4NTYxNmZhMzg1NWQyMzdmLmh0bWwjMV9QYWNrYWdlc19uZWVkZWQNCg0KI0ZvciBwbG90dGluZyB3aXRoIGdncGxvdDINCg0KbGlicmFyeShCaW9kaXZlcnNpdHlSKQ0KbGlicmFyeShnZ3NjaSkNCmxpYnJhcnkoZ2dyZXBlbCkNCmxpYnJhcnkoZ2dmb3JjZSkNCmBgYA0KDQpgYGB7cn0NCiNVcGxvYWQgZGF0YQ0KDQojQWxsIGRhdGEgbWVyZ2VkIHRvIHRoZSBDVEQNCm1tIDwtIHJlYWRfY3N2KGhlcmUoIm91dHB1dHMiLCAiY3RkX21lcmdlX21hc3Rlcl8yMDIxLTEwLTE4X2xhdC1sb25nLmNzdiIpKSANCg0KYGBgDQpgYGB7cn0NCiNDb3VsZCB0cnkgdG8gbGltaXQgY3J5cHRpYyBzcGVjaWVzIHRoYXQgaW5mbHVlbmNlIHN0YXRzLiBMZWF2aW5nIG9mZiBmb3Igbm93Lg0KDQojT25seSBzcGVjaWVzIG9jY3VycmluZyBpbiAyNSUgb2YgdGhlIHNhbXBsZXMgLSBjb3VsZCB0cnkgdGhpcy4NCg0KIyBDb3VudGluZyBob3cgbWFueSB0aW1lcyBlYWNoIHNwZWNpZXMgaXMgb2JzZXJ2ZWQNCiMgbWljcm8gPC0gbWljcm8gJT4lDQojICAgIGdyb3VwX2J5KHNjaWVudGlmaWNOYW1lKSAlPiUNCiMgICAgbXV0YXRlKG51bV9vY2N1cnJlbmNlID0gbigpKQ0KDQojIHJlbW92aW5nIHNwZWNpZXMgdGhhdCBoYXZlIG5vdCBiZWVuIG9ic2VydmVkIGF0IGxlYXN0IHR3aWNlLg0KIyBtaWNybyA8LSBtaWNybyAlPiUNCiMgICBmaWx0ZXIobnVtX29jY3VycmVuY2UgPiAyKQ0KYGBgDQoNCmBgYHtyfQ0KI1J1bm5pbmcgd2l0aG91dCBDaGxvcm9waHlsbCBmaXJzdC4NCg0KI1dpdGggdGhlIGNobG9yb3BoeWxsIGRhdGEgaW5jbHVkZWQsIHF1aXRlIGEgZmV3IGRhdGEgcG9pbnQgcmVtb3ZlZCAtIHRyeWluZyB3aXRob3V0IGNobG9yb3BoeWxsDQptbV9ub19jaGwgPC0gbW0gJT4lIA0KICBzZWxlY3QoIShtaWNyb19jaGw6YnVsa19jaGwpKQ0KDQojUmVtb3ZlIHJvd3Mgd2l0aCBOYU5zDQptbV9ub19jaGwgPC0gbW1fbm9fY2hsICU+JSANCiAgZHJvcF9uYSgpDQoNCiNTZXBhcmF0aW5nIGludG8gYWJ1bmRhbmNlIGRhdGENCmFidW5kIDwtIG1tX25vX2NobFssIDE5Om5jb2wobW1fbm9fY2hsKV0NCg0KI21ha2luZyBhIHZlY3RvciBmb3IgdGVtcGVyYXR1cmUNCnRlbXAgPC0gbW1fbm9fY2hsWywgN10NCg0KI21ha2luZyBhIHZlY3RvciBmb3Igc2FsaW5pdHkNCnNhbCA8LSBtbV9ub19jaGxbLCA4XQ0KDQojZGVsdGFfcmhvDQpkciA8LSBtbV9ub19jaGxbLCAxMF0NCg0KI3R1cmINCnR1cmIgPC0gbW1fbm9fY2hsWywgMTFdDQoNCiNubzINCm5vMiA8LSBtbV9ub19jaGxbLCAxMl0NCg0KI3NpbzINCnNpbzIgPC0gbW1fbm9fY2hsWywgMTNdDQoNCiNwbzQNCnBvNCA8LSBtbV9ub19jaGxbLCAxNF0NCg0KI3NlY2NoaQ0Kc2VjIDwtIG1tX25vX2NobFssIDE1XQ0KDQojZmVjYWwgcGVsbGV0cw0KZmVjIDwtIG1tX25vX2NobFssIDE2XQ0KDQojY2lsaWF0ZXMNCmNpbCA8LSBtbV9ub19jaGxbLCAxOF0NCmBgYA0KDQpgYGB7cn0NCiMgQ3JlYXRpbmcgZGlzdGFuY2UgbWF0cmljZXMgZm9yIE1hbnRlbCB0ZXN0cw0KDQojQWJ1bmRhbmNlIGJ5IGJyYXkgY3VydGlzDQpkaXN0LmFidW5kIDwtIHZlZ2Rpc3QoYWJ1bmQsIG1ldGhvZCA9ICJicmF5IikNCg0KI1RlbXBlcmF0dXJlIGJ5IGV1Y2xpZGVhbiANCmRpc3QudGVtcCA9IGRpc3QodGVtcCwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3Quc2FsID0gZGlzdChzYWwsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LmRyID0gZGlzdChkciwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3QudHVyYiA9IGRpc3QodHVyYiwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3Qubm8yID0gZGlzdChubzIsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LnNpbzIgPSBkaXN0KHNpbzIsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LnBvNCA9IGRpc3QocG80LCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC5wbzQgPSBkaXN0KHBvNCwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3Quc2VjID0gZGlzdChzZWMsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LmZlYyA9IGRpc3QoZmVjLCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC5jaWwgPSBkaXN0KGNpbCwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQpgYGANCg0KYGBge3J9DQphYnVuZF90ZW1wID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QudGVtcCwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfdGVtcA0KDQphYnVuZF9zYWwgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5zYWwsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX3NhbA0KDQphYnVuZF9kciA9IG1hbnRlbChkaXN0LmFidW5kLCBkaXN0LmRyLCBtZXRob2QgPSAic3BlYXJtYW4iLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpDQphYnVuZF9kcg0KDQphYnVuZF90dXJiID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QudHVyYiwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfdHVyYg0KDQphYnVuZF9ubzIgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5ubzIsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX25vMg0KDQphYnVuZF9zaW8yID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3Quc2lvMiwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfc2lvMg0KDQphYnVuZF9wbzQgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5wbzQsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX3BvNA0KDQphYnVuZF9zZWMgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5zZWMsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX3NlYw0KDQphYnVuZF9mZWMgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5mZWMsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX2ZlYw0KDQphYnVuZF9jaWwgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5jaWwsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX2NpbA0KDQpgYGANCmBgYHtyfQ0KI0FkZCBsYXQgYW5kIGxvbmcgaW50byBjdGRfbWVyZ2Ugd29ya3NoZWV0IC0gZGF0YSBzdGFuZGFyZGl6YXRpb24gc2hlZXQuDQpgYGANCg0KDQoNCg0K</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2siDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQogDQoNCmBgYHtyfQ0KI0xvYWRpbmcgcGFja2FnZXMNCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShyZWFkeGwpDQpsaWJyYXJ5KGhlcmUpDQpsaWJyYXJ5KHZlZ2FuKQ0KbGlicmFyeShnZW9zcGhlcmUpDQpgYGANCg0KYGBge3J9DQojVXBsb2FkIGRhdGENCg0KI0FsbCBkYXRhIG1lcmdlZCB0byB0aGUgQ1REDQptbSA8LSByZWFkX2NzdihoZXJlKCJvdXRwdXRzIiwgImN0ZF9tZXJnZV9tYXN0ZXJfMjAyMS0xMC0xOF9sYXQtbG9uZy5jc3YiKSkgDQoNCmBgYA0KYGBge3J9DQojQ291bGQgdHJ5IHRvIGxpbWl0IGNyeXB0aWMgc3BlY2llcyB0aGF0IGluZmx1ZW5jZSBzdGF0cy4gTGVhdmluZyBvZmYgZm9yIG5vdy4NCg0KI09ubHkgc3BlY2llcyBvY2N1cnJpbmcgaW4gMjUlIG9mIHRoZSBzYW1wbGVzIC0gY291bGQgdHJ5IHRoaXMuDQoNCiMgQ291bnRpbmcgaG93IG1hbnkgdGltZXMgZWFjaCBzcGVjaWVzIGlzIG9ic2VydmVkDQojIG1pY3JvIDwtIG1pY3JvICU+JQ0KIyAgICBncm91cF9ieShzY2llbnRpZmljTmFtZSkgJT4lDQojICAgIG11dGF0ZShudW1fb2NjdXJyZW5jZSA9IG4oKSkNCg0KIyByZW1vdmluZyBzcGVjaWVzIHRoYXQgaGF2ZSBub3QgYmVlbiBvYnNlcnZlZCBhdCBsZWFzdCB0d2ljZS4NCiMgbWljcm8gPC0gbWljcm8gJT4lDQojICAgZmlsdGVyKG51bV9vY2N1cnJlbmNlID4gMikNCmBgYA0KDQpgYGB7cn0NCiNSdW5uaW5nIHdpdGhvdXQgQ2hsb3JvcGh5bGwgZmlyc3QuDQoNCiNXaXRoIHRoZSBjaGxvcm9waHlsbCBkYXRhIGluY2x1ZGVkLCBxdWl0ZSBhIGZldyBkYXRhIHBvaW50IHJlbW92ZWQgLSB0cnlpbmcgd2l0aG91dCBjaGxvcm9waHlsbA0KbW1fbm9fY2hsIDwtIG1tICU+JSANCiAgc2VsZWN0KCEobWljcm9fY2hsOmJ1bGtfY2hsKSkNCg0KI1JlbW92ZSByb3dzIHdpdGggTmFOcw0KbW1fbm9fY2hsIDwtIG1tX25vX2NobCAlPiUgDQogIGRyb3BfbmEoKQ0KDQojU2VwYXJhdGluZyBpbnRvIGFidW5kYW5jZSBkYXRhDQphYnVuZCA8LSBtbV9ub19jaGxbLCAxOTpuY29sKG1tX25vX2NobCldDQoNCiNtYWtpbmcgYSB2ZWN0b3IgZm9yIHRlbXBlcmF0dXJlDQp0ZW1wIDwtIG1tX25vX2NobFssIDddDQoNCiNtYWtpbmcgYSB2ZWN0b3IgZm9yIHNhbGluaXR5DQpzYWwgPC0gbW1fbm9fY2hsWywgOF0NCg0KI2RlbHRhX3Jobw0KZHIgPC0gbW1fbm9fY2hsWywgMTBdDQoNCiN0dXJiDQp0dXJiIDwtIG1tX25vX2NobFssIDExXQ0KDQojbm8yDQpubzIgPC0gbW1fbm9fY2hsWywgMTJdDQoNCiNzaW8yDQpzaW8yIDwtIG1tX25vX2NobFssIDEzXQ0KDQojcG80DQpwbzQgPC0gbW1fbm9fY2hsWywgMTRdDQoNCiNzZWNjaGkNCnNlYyA8LSBtbV9ub19jaGxbLCAxNV0NCg0KI2ZlY2FsIHBlbGxldHMNCmZlYyA8LSBtbV9ub19jaGxbLCAxNl0NCg0KI2NpbGlhdGVzDQpjaWwgPC0gbW1fbm9fY2hsWywgMThdDQoNCmdlbyA8LSBkYXRhLmZyYW1lKG1tX25vX2NobCRsb25nLCBtbV9ub19jaGwkbGF0KQ0KYGBgDQoNCmBgYHtyfQ0KIyBDcmVhdGluZyBkaXN0YW5jZSBtYXRyaWNlcyBmb3IgTWFudGVsIHRlc3RzDQoNCiNBYnVuZGFuY2UgYnkgYnJheSBjdXJ0aXMNCmRpc3QuYWJ1bmQgPC0gdmVnZGlzdChhYnVuZCwgbWV0aG9kID0gImJyYXkiKQ0KDQojVGVtcGVyYXR1cmUgYnkgZXVjbGlkZWFuIA0KZGlzdC50ZW1wID0gZGlzdCh0ZW1wLCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC5zYWwgPSBkaXN0KHNhbCwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3QuZHIgPSBkaXN0KGRyLCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC50dXJiID0gZGlzdCh0dXJiLCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC5ubzIgPSBkaXN0KG5vMiwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3Quc2lvMiA9IGRpc3Qoc2lvMiwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3QucG80ID0gZGlzdChwbzQsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LnBvNCA9IGRpc3QocG80LCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC5zZWMgPSBkaXN0KHNlYywgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3QuZmVjID0gZGlzdChmZWMsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LmNpbCA9IGRpc3QoY2lsLCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZC5nZW8gPSBkaXN0bShnZW8sIGZ1biA9IGRpc3RIYXZlcnNpbmUpDQpkaXN0LmdlbyA9IGFzLmRpc3QoZC5nZW8pDQpgYGANCg0KYGBge3J9DQphYnVuZF90ZW1wID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QudGVtcCwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfdGVtcA0KDQphYnVuZF9zYWwgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5zYWwsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX3NhbA0KDQphYnVuZF9kciA9IG1hbnRlbChkaXN0LmFidW5kLCBkaXN0LmRyLCBtZXRob2QgPSAic3BlYXJtYW4iLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpDQphYnVuZF9kcg0KDQphYnVuZF90dXJiID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QudHVyYiwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfdHVyYg0KDQphYnVuZF9ubzIgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5ubzIsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX25vMg0KDQphYnVuZF9zaW8yID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3Quc2lvMiwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfc2lvMg0KDQphYnVuZF9wbzQgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5wbzQsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX3BvNA0KDQphYnVuZF9zZWMgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5zZWMsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX3NlYw0KDQphYnVuZF9mZWMgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5mZWMsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX2ZlYw0KDQphYnVuZF9jaWwgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5jaWwsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX2NpbA0KDQphYnVuZF9nZW8gPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5nZW8sIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX2dlbw0KYGBgDQpgYGB7cn0NCiNBZGQgbGF0IGFuZCBsb25nIGludG8gY3RkX21lcmdlIHdvcmtzaGVldCAtIGRhdGEgc3RhbmRhcmRpemF0aW9uIHNoZWV0Lg0KYGBgDQoNCg0KDQoNCg==</div>
 
 
 

@@ -21,6 +21,7 @@ library(geosphere)
 mm <- read_csv(here("outputs", "ctd_merge_master_2021-10-18_lat-long.csv")) 
 
 ```
+
 ```{r}
 #Could try to limit cryptic species that influence stats. Leaving off for now.
 
@@ -40,47 +41,58 @@ mm <- read_csv(here("outputs", "ctd_merge_master_2021-10-18_lat-long.csv"))
 #Running without Chlorophyll first.
 
 #With the chlorophyll data included, quite a few data point removed - trying without chlorophyll
-mm_no_chl <- mm %>% 
+mm <- mm %>% 
   select(!(micro_chl:bulk_chl))
 
+#Turned off as running all stations
+# mm <- mm %>% 
+#   filter(!site_id == "QU39")
+
 #Remove rows with NaNs
-mm_no_chl <- mm_no_chl %>% 
+mm <- mm %>% 
   drop_na()
 
 #Separating into abundance data
-abund <- mm_no_chl[, 19:ncol(mm_no_chl)]
+abund <- mm[, 19:ncol(mm)]
 
 #making a vector for temperature
-temp <- mm_no_chl[, 7]
+temp <- mm[, 7]
 
 #making a vector for salinity
-sal <- mm_no_chl[, 8]
+sal <- mm[, 8]
 
 #delta_rho
-dr <- mm_no_chl[, 10]
+dr <- mm[, 10]
 
 #turb
-turb <- mm_no_chl[, 11]
+turb <- mm[, 11]
 
 #no2
-no2 <- mm_no_chl[, 12]
+no2 <- mm[, 12]
 
 #sio2
-sio2 <- mm_no_chl[, 13]
+sio2 <- mm[, 13]
 
 #po4
-po4 <- mm_no_chl[, 14]
+po4 <- mm[, 14]
 
 #secchi
-sec <- mm_no_chl[, 15]
+sec <- mm[, 15]
 
 #fecal pellets
-fec <- mm_no_chl[, 16]
+fec <- mm[, 16]
 
 #ciliates
-cil <- mm_no_chl[, 18]
+cil <- mm[, 18]
 
-geo <- data.frame(mm_no_chl$long, mm_no_chl$lat)
+#Coordinates
+geo <- data.frame(mm$long, mm$lat)
+
+#All environmental variables
+env <- mm[, 7:15]
+
+env <- env %>% 
+  select(!N2_dm)
 ```
 
 ```{r}
@@ -114,6 +126,12 @@ dist.cil = dist(cil, method = "euclidean")
 
 d.geo = distm(geo, fun = distHaversine)
 dist.geo = as.dist(d.geo)
+
+#scale data 
+scale.env = scale(env, center = TRUE, scale = TRUE)
+
+#create distance matrix of scaled data
+dist.env = dist(scale.env, method = "euclidean")
 ```
 
 ```{r}
@@ -149,6 +167,10 @@ abund_cil
 
 abund_geo = mantel(dist.abund, dist.geo, method = "spearman", permutations = 9999, na.rm = TRUE)
 abund_geo
+
+#run mantel test 
+abund_env = mantel(dist.abund, dist.env, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_env
 ```
 ```{r}
 #Add lat and long into ctd_merge worksheet - data standardization sheet.
