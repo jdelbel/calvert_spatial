@@ -154,15 +154,12 @@ ggsave(here("figures_new", "sample_number.png"),
 ```{r}
 #Microscopy 2019 timeseries - need to downscale QU39
 
-startTime <- as.Date("2019-05-01")
-endTime <- as.Date("2019-12-01")
+startTime <- as.Date("2018-05-01")
+endTime <- as.Date("2020-12-01")
 startEnd <- c(startTime, endTime)
 
 micro_sum %>% 
-  filter(date > "2019-05-01" & date < "2019-12-01" &
-         !group == "Unknown_Chlorophyta?" &
-         !group == "Unknown_Dinophyceae?" &
-         !group == "Unknown_flagellate") %>%
+  filter(date > "2018-05-01" & date < "2020-11-01") %>% 
   group_by(date, site_id) %>% 
   mutate(sum_all = sum(sum, na.rm = TRUE)) %>% 
   ggplot(aes(x = date, y = sum, group = group, fill = group)) +
@@ -184,7 +181,7 @@ micro_sum %>%
            y = bquote("Abundance (cells" ~ L^-1*")")) +
   theme(text = element_text(size = 25)) 
 
-ggsave(here("figures_new", "calvert_qu39_micro_2019-ts.png"),
+ggsave(here("figures_new", "calvert_qu39_micro_ds.png"),
        width = 17, height = 15, dpi = 300)
 
 ```
