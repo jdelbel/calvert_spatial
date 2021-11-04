@@ -30,7 +30,7 @@ library(ggforce)
 #Upload data
 
 #All data merged to the CTD
-mm <- read_csv(here("outputs", "ctd_merge_master_2021-10-18.csv")) 
+mm <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv")) 
 
 ```
 ```{r}
@@ -52,9 +52,8 @@ mm <- read_csv(here("outputs", "ctd_merge_master_2021-10-18.csv"))
 #Running without Chlorophyll first.
 
 #Just running Calvert data for this file
-mm <- mm %>% 
-  filter(!site_id == "QU39")
-
+# mm <- mm %>% 
+#   filter(!site_id == "QU39")
 
 #With the chlorophyll data included, quite a few data point removed - trying without chlorophyll
 mm_no_chl <- mm %>% 
@@ -65,10 +64,10 @@ mm_no_chl <- mm_no_chl %>%
   drop_na()
 
 #Separating into response variables (CHEMTAX) and Explainatory variables (Environmental)
-resp <- mm_no_chl[, 17:ncol(mm_no_chl)]
+resp <- mm_no_chl[, 19:151]
 
 #Things to add TChla, WSDP, iso depth, FWC...
-expl <- mm_no_chl[, 5:13]
+expl <- mm_no_chl[, 7:15]
 
 expl <- expl %>% 
   select(!N2_dm)
@@ -155,7 +154,7 @@ sel.osR2_adj$anova
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif <- subset(expl, select = c(secchi, sio2, temp))
+env.signif <- subset(expl, select = c(temp, po4, secchi, sal))
 
 #RDA using significant variables
 rda.signif <- rda(resp.hell ~ . ,data = env.signif)
@@ -308,18 +307,17 @@ sp_loc <-  as.data.frame(rda.sign.sum$species[,1:2])
 spl_10a_10p <- subset(sp_loc, rownames(sp_loc) %in% sel2)
 
 row.names(spl_10a_10p) <- c("P.n.s",
-                            "th.",
                             "P.o",
                             "Hill", 
                             "Tel", 
                             "C.t.", 
                             "P.n",
                             "S.m.",
+                            "C.",
                             "P.p",
                             "Bi.",
-                            "C.s",
-                            "C.c", 
-                            "Pt")
+                            "P.g.",
+                            "C.c")
 
 ggplot() + 
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
@@ -376,13 +374,13 @@ ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = c(0.07, 0.30),
+        legend.position = c(0.07, 0.66),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  labs(fill = "Station", shape = "Season")
+  labs(fill = "Season", shape = "Station")
 
-ggsave(here("figures_new", "rda_new_no_chla_scaled_s2_CALVERT.png"),
+ggsave(here("figures_new", "rda_all_s2_2021-11-04.png"),
         width = 6.2, height = 5, dpi = 300)
 ```
 
@@ -413,23 +411,23 @@ env_loc <-  as.data.frame(rda.sign.sum$biplot[,1:2])
 
 sp_loc <-  as.data.frame(rda.sign.sum$species[,1:2])
 
-sp_loc_short_10p <- subset(sp_loc, rownames(sp_loc) %in% sel)
-
-spl_10a_10p <- subset(sp_loc, rownames(sp_loc) %in% sel2)
-
-row.names(spl_10a_10p) <- c("P.n.s",
-                            "th.",
-                            "P.o",
-                            "Hill", 
-                            "Tel", 
-                            "C.t.", 
-                            "P.n",
-                            "S.m.",
-                            "P.p",
-                            "Bi.",
-                            "C.s",
-                            "C.c", 
-                            "Pt")
+# sp_loc_short_10p <- subset(sp_loc, rownames(sp_loc) %in% sel)
+# 
+# spl_10a_10p <- subset(sp_loc, rownames(sp_loc) %in% sel2)
+# 
+# row.names(spl_10a_10p) <- c("P.n.s",
+#                             "th.",
+#                             "P.o",
+#                             "Hill", 
+#                             "Tel", 
+#                             "C.t.", 
+#                             "P.n",
+#                             "S.m.",
+#                             "P.p",
+#                             "Bi.",
+#                             "C.s",
+#                             "C.c", 
+#                             "Pt")
 
 
 ggplot() + 
@@ -487,13 +485,13 @@ ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = c(0.93, 0.5),
+        legend.position = c(0.066, 0.66),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  labs(fill = "Station", shape = "Season")
+  labs(fill = "Season", shape = "Station")
 
-ggsave(here("figures_new", "rda_new_no_chla_scaled_s1_CALVERT.png"),
+ggsave(here("figures_new", "rda_all_s1_2021-11-04.png.png"),
        width = 6.2, height = 5, dpi = 300)
 ```
 

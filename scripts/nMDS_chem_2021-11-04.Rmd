@@ -1,0 +1,296 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+library(indicspecies)
+library(fuzzySim)
+library(cluster)
+library(patchwork)
+
+#Need to go through and test these
+
+```
+
+```{r}
+#Upload data
+#Upload data from my master data standardization sheet
+c <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv")) 
+
+#Master sheet is missing May 2020 data for QU39 and KC10...
+
+```
+
+
+```{r}
+
+#Arranging according to site ID and date
+c <- c %>% 
+  arrange(site_id, date)
+
+c_cal <- c %>% 
+  filter(!site_id == "QU39")
+
+#Pulling out species counts for transform and input into clustering and NMDS
+species <- c[, 5:ncol(c)]
+
+species_cal <- c_cal[, 5:ncol(c)]
+
+transform_rel <- decostand(species, method = "total")
+  
+#Log10 transformation +1 (as per Mahara)
+transform <- log10(species + 1)
+
+transform_cal <- log10(species_cal + 1)
+
+transform_rel <- sqrt(transform_rel)
+```
+
+```{r}
+#Running nmds on entire dataset, without QU39 monthly averaged
+nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Decent stress score - 0.13
+
+nmds_rel <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+# 0.11
+
+
+#Checking stressplot for fit
+stressplot(nmds)
+
+stressplot(nmds_rel)
+
+```
+
+
+```{r}
+#Pulling NMDS scores, months and stations for plotting NMDS is ggplot
+
+# https://stackoverflow.com/questions/14711470/plotting-envfit-vectors-vegan-package-in-ggplot2
+#If I want to try to get species vectors on plot try above link, near bottom
+# spp.scrs <- as.data.frame(scores(nmds_sp, display = "vectors"))
+# test <- as.data.frame(nmds_sp, display = "pvals")
+# spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
+
+data.scores = as.data.frame(scores(nmds))
+data.scores$month_surv = c$month_surv
+data.scores$site = c$site_id
+
+data.scores.rel = as.data.frame(scores(nmds_rel))
+data.scores.rel$month_surv = c$month_surv
+data.scores.rel$site = c$site_id
+
+```
+
+
+```{r}
+#Combining absolute and relative nmds
+
+p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
+             size = 6) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.2) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 20, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 18, colour = "black"),
+        legend.position = c(0.92, 0.68),
+        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+p2 <- ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores.rel, aes(fill = as.factor(month_surv), shape = site),
+             size = 6) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 0.9) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        # legend.key = element_blank(), 
+        # legend.title = element_text(size = 10, face = "bold", colour = "black"), 
+        # legend.text = element_text(size = 9, colour = "black"),
+        legend.position = "none",
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 25)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+fig <- p1/p2
+
+ggsave(here("figures_new", "nmds_chemtax_absolute_rel_comb.png"), fig,
+       width = 10, height = 12, dpi = 300)
+
+```
+
+```{r}
+#separating treatments for following tests
+season <-  c$season
+site_id <- c$site_id
+month <- c$month
+
+month_cal <- c_cal$month
+site_id_cal <- c_cal$site_id
+
+#Adding region - should so this earlier - potentially in data standardization
+c <- c %>% 
+  mutate(region = case_when(site_id == "QU39" ~ "NSoG",
+                            !site_id == "QU39" ~ "Calvert")) %>% 
+  relocate(region, .after = "site_id")
+
+region <- c$region
+
+
+
+```
+
+
+
+```{r}
+#ANOSIM test to see if groupings statistically significant
+ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
+ano_site
+
+
+# ano_site_cal = anosim(transform_cal, site_id_cal, 
+#                       distance = "bray", permutations = 9999)
+# ano_site_cal
+
+ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
+ano_month
+
+ano_region = anosim(transform, region, distance = "bray", permutations = 9999)
+ano_region
+
+#Site and region are significant (p = 0.0001), with region having the highest R (0.62 vs 0.27) 
+
+```
+
+```{r}
+#Indicator species analysis
+
+
+#by site
+inv_site = multipatt(transform, site_id, func = "r.g",
+                       control = how(nperm = 9999))
+#by site calvert
+inv_site_cal = multipatt(transform_cal, site_id_cal, func = "r.g",
+                       control = how(nperm = 9999))
+
+
+#by month
+inv_month = multipatt(transform, month, func = "r.g",
+                       control = how(nperm = 9999))
+
+#by region
+inv_region = multipatt(transform, region, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_site)
+```
+
+```{r}
+#Calculating Shannon diversity and putting in dataframe
+div <- diversity(species)
+
+div <- as.tibble(div)
+
+div$site_id <- c$site_id
+
+div$date <- c$date
+
+div$month_surv <- c$month_surv
+
+div <- div %>% 
+  rename(shannon = value)
+```
+
+
+```{r}
+
+  
+div %>% 
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>%  
+  ggplot(aes(x = site_id, y = shannon, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  facet_wrap(~ month_surv, nrow = 1) +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  ggsci::scale_fill_npg() +
+  labs(y = "Shannon H") +
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 24),
+        axis.text = element_text(colour = "black"))
+
+
+ggsave(here("figures_new", "richness_shannon_box_chemtax.png"),
+       width = 16, height = 4, dpi = 300)
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
