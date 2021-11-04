@@ -168,11 +168,14 @@ ctd <- ctd %>%
 
 #Renaming Chemtax columns to make them easier to work with. Selecting the columns I want for analysis.
 chem <- select(chem,
-               date = Date, site_id = Station,
-               depth, cyan = Cyanobacteria, hapto = Hapto,
-               green = `Prasinophytes-3`, cryp = Cryptophytes,
+               date = Date, site_id = Station, cyan = Cyanobacteria, 
+               hapto = Hapto, green = `Prasinophytes-3`, cryp = Cryptophytes,
                dino = `Dinoflagellates-1`, dict = Dictyo, raph = Raphido,
                diat = `Diatoms-1`)
+
+#Setting number of decimal places for chemtax data
+chem <- chem %>% 
+  mutate_at(vars(cyan:diat), funs(round(., 2)))
 
 #Selecting columns I need from the Secchi workbook. Removing two records where the secchi depth was 999.
 secchi <- secchi %>% 
@@ -211,10 +214,11 @@ ctd <- ctd %>%
 chem_tidy <- chem %>% 
   pivot_longer(c(cyan, hapto, green, cryp, dino, dict, raph, diat),
                  names_to = "phyto_group", values_to = "TChla") %>% 
-  group_by(date, site_id, depth) %>% 
+  group_by(date, site_id) %>% 
   mutate(TChla_sum = sum(TChla)) %>% 
   ungroup() %>% 
-  mutate(rel_abun = TChla/TChla_sum)
+  mutate(rel_abun = TChla/TChla_sum) %>% 
+  mutate_at(vars(TChla:rel_abun), funs(round(., 2)))
 
 
 #Instead of doing this each individually, might be best to do to final merged dataset.
@@ -225,29 +229,6 @@ ctd <- ctd %>%
          month = lubridate::month(date),
          day = lubridate::day(date))
 
-#Adding year/month/date columns to nutrients
-# nuts <- nuts %>%  
-#   mutate(year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          day = lubridate::day(date))
-
-#Adding year/month/date columns to microscopy
-# micro <- micro %>% 
-#     mutate(year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          day = lubridate::day(date))
-
-#Adding year/month/date columns to Chemtax Tidy/Long format
-# chem_tidy <- chem_tidy %>% 
-#     mutate(year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          day = lubridate::day(date))
-
-#Adding year/month/date columns to Chemtax wise format
-# chem <- chem %>% 
-#     mutate(year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          day = lubridate::day(date))
 ```
 
 ```{r}
@@ -610,13 +591,14 @@ ctd_merge <- ctd_dm %>%
   left_join(nuts_dm_bd) %>% 
   left_join(secchi) %>% 
   left_join(chl_merge) %>% 
-  left_join(micro_merge)  
+  left_join(micro_merge) %>% 
+  left_join(chem)
 
 # 6 pairs of 2. As far as I can see, they are exactly the same, so I am going to remove them.
 ctd_merge_duplicates <- ctd_merge %>% 
   janitor::get_dupes(date:Tabellaria)
 
-ctd_merge_2 <- ctd_merge %>% 
+ctd_merge <- ctd_merge %>% 
   distinct(date, site_id, .keep_all = TRUE)
 
 ```
@@ -773,6 +755,65 @@ dino_het_ds <- micro_ds %>%
 ```
 
 ```{r}
+#Creating down-scaled version of chemtax
+chem_qu39 <- chem %>% 
+  filter(site_id == "QU39")
+
+#Selecting closest dates of QU39 to those of the Calvert surveys
+chem_qu39 <- chem_qu39 %>% 
+  filter(date == "2018-05-29" | #could also be 05-22
+         date == "2018-06-26" |
+         date == "2018-07-23" | # Could also be 07-16
+         date == "2018-08-21" | # 08-14, 08-28
+         date == "2018-09-13" |   
+         date == "2018-10-24" |
+         date == "2019-05-09" |
+         date == "2019-06-04" |
+         date == "2019-07-09" |
+         date == "2019-08-07" |
+         date == "2019-08-29" |
+         date == "2019-10-09" |
+         #date == "2019-11-26" | #removing this for multi-year analysis
+         date == "2020-04-29" | #Different month, but very close temporally
+         date == "2020-06-04" |
+         date == "2020-07-09" | # Also 06-30 - Tricky
+         date == "2020-08-04" | # Also 08-13 
+         date == "2020-09-01" |
+         date == "2020-10-08")
+            
+#Removing QU39 from ctd_merge file so I can reintroduce it with the down-scaled QU39 data
+chem_no_QU39 <- chem %>% 
+  filter(!(site_id == "QU39"))
+
+#Merging the down-scaled QU39 data back into the full dataset 
+chem_ds <- rbind(chem_no_QU39, chem_qu39)
+
+#Here, dates that were collected on the cusp of a month change, where the rest of survey was done in following month, are pushed forward to the next month. This helps with plotting by month or else I will get two surveys for a single month. 
+chem_ds <- chem_ds %>%  
+  mutate(month_surv = lubridate::month(date),
+         month_surv = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month_surv)))
+
+#Now adding the true month when data was collected back into datasheet.
+chem_ds <- chem_ds %>% 
+  mutate(month = lubridate::month(date))
+
+#Pulling out the data I want for analysis (May to October 2018-2021)
+chem_ds <- chem_ds %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01" & month_surv > 4 & month_surv < 11)
+
+#Relocating month to be after date for visual ease
+chem_ds <- chem_ds %>% 
+  relocate(month, .after = date) %>% 
+  relocate(month_surv, .after = month)
+
+```
+
+
+```{r}
 #Downscale fecal pellets
 
 #Making a worksheet of just QU39 data
@@ -843,7 +884,7 @@ fec_ds <- fec_ds %>%
 #It's actually less - 59 - Why? One reason could be chlorophyll data, which I incorporated and may have had missing data. Incorporate here and see. 8 Chlorophyll samples missing - this explains the disparity. Should be good to go.
 
 #Exporting as a csv to pull into other analysis.
-write_csv(ctd_merge_ds, here("outputs", "ctd_merge_master_2021-10-18_lat-long.csv"))
+write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2021-11-04_chem.csv"))
 
 #Exporting as a csv to pull into other analysis.
 write_csv(micro_ds, here("outputs", "micro_master_2021-10-18.csv"))
@@ -857,6 +898,8 @@ write_csv(dino_het_ds, here("outputs", "dino-het_master_2021-10-18.csv"))
 #Exporting as a csv to pull into other analysis.
 write_csv(fec_ds, here("outputs", "fecal_master_2021-10-18.csv"))
 
+#Exporting as a csv to pull into other analysis.
+write_csv(chem_ds, here("outputs", "chemtax_master_2021-11-04.csv"))
 ```
 
 

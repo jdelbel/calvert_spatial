@@ -1,0 +1,528 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+library(indicspecies)
+library(fuzzySim)
+library(cluster)
+library(patchwork)
+
+#Need to go through and test these
+
+```
+
+```{r}
+#Upload data
+#Upload data from my master data standardization sheet
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+
+#Master sheet is missing May 2020 data for QU39 and KC10...
+
+```
+
+```{r}
+#Could try to limit cryptic species that influence stats. Leaving off for now.
+
+#Only species occurring in 25% of the samples - could try this.
+
+#Could also try removing samples that represent <1% of abundance (currently switched on)
+
+micro <- micro %>% 
+  filter(trophicStatus == "auto")
+
+#Counting how many times each species is observed
+micro <- micro %>%
+  group_by(scientificName) %>%
+  mutate(num_occurrence = n())
+
+#removing species that have not been observed at least twice.
+micro <- micro %>%
+  filter(num_occurrence > 2)
+
+#Method where I removed species not observed more than once resulted in 2420 records. Here I am trying a more convservative method where I remove any species that do not exceed 1% of abundance in any of the samples. The result is 1829 records - far fewer. Need to do a literature review here to see what is most appropriate, but I think this method is probably more focused.
+# micro_1perc <- micro %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(abund_sum = sum(species_sum)) %>% 
+#   ungroup
+# 
+# micro_1perc <- micro_1perc %>% 
+#   mutate(abund_rel = species_sum/abund_sum*100)
+# 
+# less_1perc <- micro_1perc %>% 
+#   group_by(scientificName) %>% 
+#   summarize(max = max(abund_rel)) %>% 
+#   ungroup() %>% 
+#   filter(max < 1)
+# 
+# sp_rem <- less_1perc$scientificName
+# 
+# micro_1perc <- micro %>%
+#   filter(!(scientificName %in% sp_rem))
+# 
+# micro <- micro_1perc
+
+#Result of analysis is pretty comparable. Lit review to determine best method.
+
+```
+
+```{r}
+
+#Selecting columns
+micro_piv <- micro %>% 
+  select(date, month, month_surv, site_id, scientificName, species_sum)
+
+
+#pivoting longer so species are columns. 
+micro_piv <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+#Roughly adding seasons - would like to make cosmological seasons
+micro_piv <- micro_piv %>%
+  mutate(season = case_when(month >= 4 & month <= 6 ~ "spring",
+                            month >= 7 & month <= 9 ~ "summer",
+                            month >= 10 & month <= 11 ~ "autumn",)) %>%
+  relocate(season, .after = month)
+
+#Arranging according to site ID and date
+micro_piv <- micro_piv %>% 
+  arrange(site_id, date)
+
+micro_piv_cal <- micro_piv %>% 
+  filter(!site_id == "QU39")
+
+#Pulling out species counts for transform and input into clustering and NMDS
+species <- micro_piv[, 6:ncol(micro_piv)]
+
+species_cal <- micro_piv_cal[, 6:ncol(micro_piv_cal)]
+
+transform_rel <- decostand(species, method = "total")
+  
+#Log10 transformation +1 (as per Mahara)
+transform <- log10(species + 1)
+
+#Issue because region added?
+transform_cal <- log10(species_cal + 1)
+
+transform_rel <- sqrt(transform_rel)
+```
+
+```{r}
+#Running nmds on entire dataset, without QU39 monthly averaged
+nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Decent stress score - 0.16 - ,
+
+nmds_rel <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+nmds_cal <-  metaMDS(transform_cal, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Decent stress score - 0.16 - ,
+
+nmds_rel <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Checking stressplot for fit
+stressplot(nmds)
+
+stressplot(nmds_rel)
+
+stressplot(nmds_cal)
+```
+```{r}
+
+#Calculating species scores that are driving the nmds
+
+# https://www.rpubs.com/RGrieger/545184
+
+# nmds_sp <- envfit(nmds, transform, permutations = 999)
+# head(nmds_sp)
+
+```
+
+```{r}
+#Pulling NMDS scores, months and stations for plotting NMDS is ggplot
+
+# https://stackoverflow.com/questions/14711470/plotting-envfit-vectors-vegan-package-in-ggplot2
+#If I want to try to get species vectors on plot try above link, near bottom
+# spp.scrs <- as.data.frame(scores(nmds_sp, display = "vectors"))
+# test <- as.data.frame(nmds_sp, display = "pvals")
+# spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
+
+data.scores = as.data.frame(scores(nmds))
+data.scores$month_surv = micro_piv$month_surv
+data.scores$site = micro_piv$site_id
+
+data.scores.rel = as.data.frame(scores(nmds_rel))
+data.scores.rel$month_surv = micro_piv$month_surv
+data.scores.rel$site = micro_piv$site_id
+
+data.scores.cal = as.data.frame(scores(nmds_cal))
+data.scores.cal$month_surv = micro_piv_cal$month_surv
+data.scores.cal$site = micro_piv_cal$site_id
+
+```
+
+```{r}
+#Plotting nMDS - commented sections are for if I want to add environmental fits.
+
+ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
+             size = 4) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.8) +
+  theme(axis.title = element_text(size = 10, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 10, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 9, colour = "black"),
+        legend.position = c(0.92, 0.6),
+        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+ggsave(here("figures_new", "nmds_micro_absolute_photo.png"),
+       width = 6, height = 4.5, dpi = 300)
+```
+```{r}
+ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores.rel, aes(fill = as.factor(month_surv), shape = site),
+             size = 4) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.0) +
+  theme(axis.title = element_text(size = 10, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 10, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 9, colour = "black"),
+        legend.position = c(0.94, 0.6),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+ggsave(here("figures_new", "nmds_micro_ggplot_month_station_relative.png"),
+       width = 6, height = 4.5, dpi = 300)
+```
+```{r}
+#Combining absolute and relative nmds
+
+p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
+             size = 6) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.8) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 20, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 18, colour = "black"),
+        legend.position = c(0.92, 0.68),
+        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+p2 <- ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores.rel, aes(fill = as.factor(month_surv), shape = site),
+             size = 6) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.0) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        # legend.key = element_blank(), 
+        # legend.title = element_text(size = 10, face = "bold", colour = "black"), 
+        # legend.text = element_text(size = 9, colour = "black"),
+        legend.position = "none",
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 25)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+fig <- p1/p2
+
+ggsave(here("figures_new", "nmds_absolute_rel_comb.png"), fig,
+       width = 10, height = 12, dpi = 300)
+
+```
+```{r}
+
+ggplot(data = data.scores.cal, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores.cal, aes(fill = as.factor(month_surv), shape = site),
+             size = 4) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+  #           fontface = "bold", label = row.names(en_coord_cont)) + 
+  xlim(-0.5, 1.0) +
+  theme(axis.title = element_text(size = 10, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 10, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 9, colour = "black"),
+        legend.position = c(0.94, 0.6),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+# ggsave(here("figures_new", "nmds_micro_ggplot_cal.png"),
+#        width = 6, height = 4.5, dpi = 300)
+
+```
+
+```{r}
+#separating treatments for following tests
+season <-  micro_piv$season
+site_id <- micro_piv$site_id
+month <- micro_piv$month
+
+site_id_cal <- micro_piv_cal$site_id
+
+#Adding region - should so this earlier - potentially in data standardization
+micro_piv <- micro_piv %>% 
+  mutate(region = case_when(site_id == "QU39" ~ "NSoG",
+                            !site_id == "QU39" ~ "Calvert")) %>% 
+  relocate(region, .after = "site_id")
+
+region <- micro_piv$region
+
+
+
+```
+
+
+
+```{r}
+#ANOSIM test to see if groupings statistically significant
+ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
+ano_site
+
+ano_site_cal = anosim(transform_cal, site_id_cal, 
+                      distance = "bray", permutations = 9999)
+ano_site_cal
+
+ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
+ano_month
+
+ano_season = anosim(transform, season, distance = "bray", permutations = 9999)
+ano_season
+
+ano_region = anosim(transform, region, distance = "bray", permutations = 9999)
+ano_region
+
+#Site and region are significant (p = 0.0001), with region having the highest R (0.62 vs 0.27) 
+
+```
+
+```{r}
+#Indicator species analysis
+
+#Indicators by season
+inv_season = multipatt(transform, season, func = "r.g",
+                       control = how(nperm = 9999))
+#by site
+inv_site = multipatt(transform, site_id, func = "r.g",
+                       control = how(nperm = 9999))
+#by site calvert
+inv_site_cal = multipatt(transform_cal, site_id_cal, func = "r.g",
+                       control = how(nperm = 9999))
+
+
+#by month
+inv_month = multipatt(transform, month, func = "r.g",
+                       control = how(nperm = 9999))
+
+#by region
+inv_region = multipatt(transform, region, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_site_cal)
+```
+
+```{r}
+#Calculating Shannon diversity and putting in dataframe
+div <- diversity(species)
+
+div <- as.tibble(div)
+
+div$site_id <- micro_piv$site_id
+
+div$date <- micro_piv$date
+
+div$month_surv <- micro_piv$month_surv
+
+div <- div %>% 
+  rename(shannon = value)
+```
+
+
+```{r}
+#Plotting diversity metrics
+f1 <- micro %>% 
+  group_by(date, site_id) %>% 
+  mutate(n_spec = n()) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, n_spec, .keep_all = TRUE) %>% 
+  ggplot(aes(x = site_id, y = n_spec, fill = site_id)) + 
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  facet_wrap(~ month_surv, nrow = 1) +
+  ggsci::scale_fill_npg() +
+  labs(y = "Richness (# of species)") +
+  theme_bw() +
+  theme(legend.position = c(0.05, 0.2),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 24),
+        axis.text = element_text(colour = "black"))
+  
+f2 <- div %>% 
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>%  
+  ggplot(aes(x = site_id, y = shannon, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  facet_wrap(~ month_surv, nrow = 1) +
+  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
+                              "QU39" = "E")) +
+  ggsci::scale_fill_npg() +
+  labs(y = "Shannon H") +
+  theme_bw() +
+  theme(strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        axis.title.x = element_blank(),
+        text = element_text(size = 24),
+        axis.text = element_text(colour = "black"))
+
+fig <- f1/f2
+
+ggsave(here("figures_new", "richness_shannon_box.png"), fig,
+       width = 16, height = 8, dpi = 300)
+
+
+
+
+```
+```{r}
+#Looking at some of the indicator species
+micro %>% 
+  filter(scientificName == "Chaetoceros decipiens") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Dactyliosolen phuketensis") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Detonula pumila") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Ceratium lineatum") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Dactyliosolen fragilissimus") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Dinophysis acuta") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+
+micro %>% 
+  filter(scientificName == "Biddulphiales") %>% 
+  ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
+  geom_point(pch = 21, size = 3)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
