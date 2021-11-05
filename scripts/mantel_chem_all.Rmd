@@ -1,0 +1,191 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+ 
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(geosphere)
+```
+
+```{r}
+#Upload data
+
+#All data merged to the CTD
+mm <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv")) 
+
+```
+
+```{r}
+#Could try to limit cryptic species that influence stats. Leaving off for now.
+
+#Only species occurring in 25% of the samples - could try this.
+
+# Counting how many times each species is observed
+# micro <- micro %>%
+#    group_by(scientificName) %>%
+#    mutate(num_occurrence = n())
+
+# removing species that have not been observed at least twice.
+# micro <- micro %>%
+#   filter(num_occurrence > 2)
+```
+
+```{r}
+#Running without Chlorophyll first.
+
+#With the chlorophyll data included, quite a few data point removed - trying without chlorophyll
+mm <- mm %>% 
+  select(date:secchi_depth, cyan:diat)
+
+#Turned off as running all stations
+# mm <- mm %>% 
+#   filter(!site_id == "QU39")
+
+#Remove rows with NaNs
+mm <- mm %>% 
+  drop_na()
+
+#Separating into abundance data
+abund <- mm[, 17:ncol(mm)]
+
+#making a vector for temperature
+temp <- mm[, 7]
+
+#making a vector for salinity
+sal <- mm[, 8]
+
+
+
+#delta_rho
+dr <- mm[, 10]
+
+#turb
+turb <- mm[, 11]
+
+#1026
+d26 <- mm[, 12]
+
+#no2
+no2 <- mm[, 13]
+
+#sio2
+sio2 <- mm[, 14]
+
+#po4
+po4 <- mm[, 15]
+
+# secchi
+sec <- mm[, 16]
+# 
+# #fecal pellets
+# fec <- mm[, 17]
+# 
+# #ciliates
+# cil <- mm[, 18]
+
+#Coordinates
+geo <- data.frame(mm$long, mm$lat)
+
+#All environmental variables
+env <- mm[, 7:16]
+
+env <- env %>% 
+  select(!N2_dm)
+```
+
+```{r}
+# Creating distance matrices for Mantel tests
+
+#Abundance by bray curtis
+dist.abund <- vegdist(abund, method = "bray")
+
+#Temperature by euclidean 
+dist.temp = dist(temp, method = "euclidean")
+
+dist.sal = dist(sal, method = "euclidean")
+
+dist.dr = dist(dr, method = "euclidean")
+
+dist.turb = dist(turb, method = "euclidean")
+
+dist.d26 = dist(d26, method = "euclidean")
+
+dist.no2 = dist(no2, method = "euclidean")
+
+dist.sio2 = dist(sio2, method = "euclidean")
+
+dist.po4 = dist(po4, method = "euclidean")
+
+dist.po4 = dist(po4, method = "euclidean")
+
+dist.sec = dist(sec, method = "euclidean")
+
+# dist.fec = dist(fec, method = "euclidean")
+# 
+# dist.cil = dist(cil, method = "euclidean")
+
+d.geo = distm(geo, fun = distHaversine)
+dist.geo = as.dist(d.geo)
+
+#scale data 
+scale.env = scale(env, center = TRUE, scale = TRUE)
+
+#create distance matrix of scaled data
+dist.env = dist(scale.env, method = "euclidean")
+```
+
+```{r}
+abund_temp = mantel(dist.abund, dist.temp, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_temp
+
+abund_sal = mantel(dist.abund, dist.sal, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_sal
+
+abund_dr = mantel(dist.abund, dist.dr, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_dr
+
+abund_turb = mantel(dist.abund, dist.turb, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_turb
+
+abund_d26 = mantel(dist.abund, dist.d26, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_d26
+
+abund_no2 = mantel(dist.abund, dist.no2, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_no2
+
+abund_sio2 = mantel(dist.abund, dist.sio2, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_sio2
+
+abund_po4 = mantel(dist.abund, dist.po4, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_po4
+
+abund_sec = mantel(dist.abund, dist.sec, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_sec
+
+# abund_fec = mantel(dist.abund, dist.fec, method = "spearman", permutations = 9999, na.rm = TRUE)
+# abund_fec
+# 
+# abund_cil = mantel(dist.abund, dist.cil, method = "spearman", permutations = 9999, na.rm = TRUE)
+# abund_cil
+
+abund_geo = mantel(dist.abund, dist.geo, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_geo
+
+#run mantel test 
+abund_env = mantel(dist.abund, dist.env, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_env
+```
+```{r}
+#Add lat and long into ctd_merge worksheet - data standardization sheet.
+```
+
+
+
+

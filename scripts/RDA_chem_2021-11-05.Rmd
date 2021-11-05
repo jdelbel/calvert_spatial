@@ -60,13 +60,14 @@ mm_chem <- mm_chem %>%
   drop_na()
 
 #Separating into response variables (CHEMTAX) and Explainatory variables (Environmental)
-resp <- mm_chem[, 16:23]
+resp <- mm_chem[, 17:24]
 
 #Things to add TChla, WSDP, iso depth, FWC...
-expl <- mm_chem[, 7:15]
+expl <- mm_chem[, 7:16]
 
 expl <- expl %>% 
-  select(!N2_dm)
+  select(!N2_dm) %>% 
+  select(!dep_26_dm)
 ```
 
 ```{r}
@@ -343,14 +344,14 @@ ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = c(0.07, 0.66),
+        legend.position = c(0.92, 0.29),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Season", shape = "Station")
 
 ggsave(here("figures_new", "rda_chem_all_s2_2021-11-05.png"),
-        width = 6.2, height = 5, dpi = 300)
+        width = 6.2, height = 5.3, dpi = 300)
 ```
 
 
@@ -435,14 +436,14 @@ ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = c(0.066, 0.66),
+        legend.position = c(0.92, 0.29),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Season", shape = "Station")
 
 ggsave(here("figures_new", "rda_chem_all_s1_2021-11-04.png.png"),
-       width = 6.2, height = 5, dpi = 300)
+       width = 6.2, height = 5.3, dpi = 300)
 ```
 
 

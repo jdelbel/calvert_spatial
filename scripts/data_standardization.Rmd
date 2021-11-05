@@ -266,6 +266,18 @@ bv <- bv %>%
 ctd <- cbind(ctd, SA, CT, rho, bv)
 ```
 ```{r}
+#Looking for 1026 depths 
+ctd_up <- ctd %>% 
+  select(cast_pk, pres, rho) %>% 
+  group_by(cast_pk) %>% 
+  filter(abs(rho - 1026) == min(abs(rho - 1026))) %>% 
+  ungroup() %>% 
+  select(cast_pk, dep_26 = pres)
+```
+
+
+
+```{r}
 #Performing calculations for delta_rho 
 
 #Finding minimum cast start depth for each profile to determine range of depths to use for density difference. Only 5 casts start deeper than three meters and only 1 doesn't go to 30m. Using 2 and 30 meters for delta_rho calculation
@@ -310,7 +322,8 @@ ctd_dd <- ctd_dd %>%
 #Merging/joining delta_rho and corrected turbidity into ctd datasheet
 ctd <- ctd %>% 
   left_join(ctd_dd) %>% 
-  left_join((turb_corr))
+  left_join(turb_corr) %>% 
+  left_join(ctd_up)
 ```
 
 ```{r}
@@ -322,7 +335,7 @@ ctd_5 <- ctd %>%
   rename(date_long = date) %>% 
   mutate(date = lubridate::date(date_long)) %>%
   select(cast_pk, date, date_long, site_id = station, Latitude, Longitude, pres, 
-         temp, sal, N2, delta_rho, turb_cor)
+         temp, sal, N2, delta_rho, turb_cor, dep_26)
 
 #Limited years to those being used for analysis
 ctd_5 <- ctd_5 %>% 
@@ -353,13 +366,14 @@ dup_ctd <- dup_ctd %>%
   mutate(time_diff = as.numeric(date_long - lag(date_long), units = "hours"))
 
 ctd_dm <- ctd_5 %>% 
-  select(date, site_id, temp:turb_cor) %>% 
+  select(date, site_id, temp:dep_26) %>% 
   group_by(date, site_id) %>% 
   summarise(temp_dm = mean(temp),
             sal_dm = mean(sal),
             N2_dm = mean(N2),
             delta_rho_dm = mean(delta_rho),
-            turb_dm = mean(turb_cor)) %>% 
+            turb_dm = mean(turb_cor),
+            dep_26_dm = mean(dep_26)) %>% 
   ungroup()
 
 lat_long <- ctd_5 %>% 

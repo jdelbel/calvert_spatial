@@ -15,7 +15,7 @@ library(ggsci)
 
 ```{r}
 #Upload data
-data <- read_csv(here("outputs", "ctd_merge_master_2021-10-18.csv")) 
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv")) 
 
 micro_long <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 
@@ -128,9 +128,173 @@ p5 <- data %>%
 
 fig <- p1/p2/p3/p4/p5
 
-ggsave(here("figures_new", "box_descriptor_stats_3.png"), 
-       fig, width = 14, height = 15, dpi=300)
+ggsave(here("figures_new", "box_descriptor_stats_4.png"), 
+       fig, width = 14, height = 18, dpi=300)
 ```
+```{r}
+f1 <- data %>% 
+  ggplot(aes(x = as.factor(month_surv), y = dep_26_dm, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir ='center', dotsize = 0.5,
+               position = position_dodge(0.8)) +
+  scale_fill_npg() +
+  labs(y = "1026 (m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.07, 0.75),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+f2 <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  ggplot(aes(x = as.factor(month_surv), y = dep_26_dm, fill = site_id)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir ='center', dotsize = 0.5,
+               position = position_dodge(0.8)) +
+  scale_fill_npg() +
+  labs(y = "1026 (m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.position = c(0.07, 0.2),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- f1/f2
+
+ggsave(here("figures_new", "box_1026.png"), fig, 
+       width = 14, height = 8, dpi = 300)
+```
+```{r}
+#Plotting 1026 at QCS01 timeseries
+f1 <- data %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(site_id == "QCS01") %>% 
+  ggplot(aes(x = yday, y = dep_26_dm)) +
+  geom_line(size = 1.5) +
+  geom_point(size = 2, pch = 21, fill = "white") +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  labs(x = "Year Day",
+       y = "1026 (m)") +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank()) + 
+  theme(text = element_text(size = 25)) 
+
+f2 <- data %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(site_id == "QCS01") %>% 
+  ggplot(aes(x = yday, y = temp_dm)) +
+  geom_line(size = 1.5) +
+  geom_point(size = 2, pch = 21, fill = "white") +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  labs(x = "Year Day",
+       y = "Temp") +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank()) + 
+  theme(text = element_text(size = 25))
+
+f3 <- data %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(site_id == "QCS01") %>% 
+  ggplot(aes(x = yday, y = sal_dm)) +
+  geom_line(size = 1.5) +
+  geom_point(size = 2, pch = 21, fill = "white") +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  labs(x = "Year Day",
+       y = "Sal") +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank()) + 
+  theme(text = element_text(size = 25)) 
+
+f4 <- data %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(site_id == "QCS01") %>% 
+  ggplot(aes(x = yday, y = hapto)) +
+  geom_line(size = 1.5) +
+  geom_point(size = 2, pch = 21, fill = "white") +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  labs(x = "Year Day",
+       y = "Hapto (mg m-3)") +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank()) + 
+  theme(text = element_text(size = 25)) 
+
+f5 <- data %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(site_id == "QCS01") %>% 
+  ggplot(aes(x = yday, y = `Phaeocystis pouchetii`)) +
+  geom_line(size = 1.5) +
+  geom_point(size = 2, pch = 21, fill = "white") +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  labs(x = "Year Day",
+       y = "P.p. (cells L-1)") +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank()) + 
+  theme(text = element_text(size = 25)) 
+
+f6 <- micro_long %>%
+  filter(site_id == "QCS01") %>% 
+  group_by(date) %>% 
+  mutate(n_spec = n()) %>% 
+  ungroup() %>% 
+  distinct(date, n_spec, .keep_all = TRUE) %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = n_spec)) +
+  geom_line(size = 1.5) +
+  geom_point(size = 2, pch = 21, fill = "white") +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  labs(x = "Year Day",
+       y = "Richness") +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank()) +
+  theme(text = element_text(size = 25)) 
+  
+fig <- f1/f2/f3/f4/f5/f6
+
+ggsave(here("figures_new", "Event_QCS01_upwelling.png"), fig, 
+       width = 16, height = 18, dpi = 300)
+```
+
+
+
 ```{r}
 #Boxplot Chlorophyll size fractions.
 

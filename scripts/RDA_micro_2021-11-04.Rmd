@@ -64,13 +64,14 @@ mm_no_chl <- mm_no_chl %>%
   drop_na()
 
 #Separating into response variables (CHEMTAX) and Explainatory variables (Environmental)
-resp <- mm_no_chl[, 19:151]
+resp <- mm_no_chl[, 20:152]
 
 #Things to add TChla, WSDP, iso depth, FWC...
-expl <- mm_no_chl[, 7:15]
+expl <- mm_no_chl[, 7:16]
 
 expl <- expl %>% 
-  select(!N2_dm)
+  select(!N2_dm) %>% 
+  select(!dep_26_dm)
 ```
 
 ```{r}

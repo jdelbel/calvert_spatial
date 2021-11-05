@@ -466,11 +466,10 @@ fig <- f1/f2
 
 ggsave(here("figures_new", "richness_shannon_box.png"), fig,
        width = 16, height = 8, dpi = 300)
-
-
-
-
 ```
+
+
+
 ```{r}
 #Looking at some of the indicator species
 micro %>% 
