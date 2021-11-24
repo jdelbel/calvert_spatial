@@ -8,7 +8,7 @@ output: html_notebook
 library(tidyverse)
 library(readxl)
 library(here)
-library(vegan)
+nq_conc_t
 library(factoextra)
 library(ggdendro)
 library(dendextend)
@@ -208,6 +208,7 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 ggsave(here("figures_new", "nmds_micro_absolute_photo.png"),
        width = 6, height = 4.5, dpi = 300)
 ```
+
 ```{r}
 ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores.rel, aes(fill = as.factor(month_surv), shape = site),
@@ -237,6 +238,8 @@ ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) +
 ggsave(here("figures_new", "nmds_micro_ggplot_month_station_relative.png"),
        width = 6, height = 4.5, dpi = 300)
 ```
+
+
 ```{r}
 #Combining absolute and relative nmds
 
