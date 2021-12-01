@@ -379,7 +379,7 @@ ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = c(0.07, 0.66),
+        legend.position = c(0.07, 0.69),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
@@ -490,13 +490,13 @@ ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = c(0.066, 0.66),
+        legend.position = c(0.93, 0.30),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Season", shape = "Station")
 
-ggsave(here("figures_new", "rda_calvert_scaling1.png.png"),
+ggsave(here("figures_rev2", "rda_calvert_scaling1.png.png"),
        width = 6.2, height = 5, dpi = 300)
 ```
 
