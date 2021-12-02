@@ -353,7 +353,7 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Season", shape = "Station")
 
-ggsave(here("figures_rev2", "rda_chem_calvert_scaling1.png"),
+ggsave(here("figures_rev2", "rda_chem_calvert_scaling2.png"),
         width = 6.2, height = 5.3, dpi = 300)
 ```
 

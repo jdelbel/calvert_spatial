@@ -71,7 +71,23 @@ fec <- read_csv(here("files", "fecal.csv"))
 #Uploading metadata for fecal pellet counts
 meta <- read_csv(here("files", "meta_phyto_2021-06-21.csv"))
 
+test2 <- micro %>% 
+  filter(site_id == "QU39" & date > "2018-01-01" & date < "2021-01-01") %>% 
+  distinct(date)
 ```
+
+```{r}
+#List for downscaling QU39 to KC10
+
+qu39_list <- c("2018-01-09", "2018-02-19", "2018-03-27", "2018-04-24", 
+               "2018-05-22", "2018-06-26", "2018-07-16", "2018-08-21",
+               "2018-09-13", "2018-10-24", "2018-11-19", "2019-01-23",
+               "2019-02-12", "2019-03-12", )
+
+```
+
+
+
 
 ```{r}
 #Fixing some errors in the microscopy dataset
@@ -275,8 +291,6 @@ ctd_up <- ctd %>%
   select(cast_pk, dep_26 = pres)
 ```
 
-
-
 ```{r}
 #Performing calculations for delta_rho 
 
@@ -335,7 +349,8 @@ ctd_5 <- ctd %>%
   rename(date_long = date) %>% 
   mutate(date = lubridate::date(date_long)) %>%
   select(cast_pk, date, date_long, site_id = station, Latitude, Longitude, pres, 
-         temp, sal, N2, delta_rho, turb_cor, dep_26)
+         temp, sal, N2, delta_rho, turb_cor, flu = `Fluorometry Chlorophyll (ug/L)`,
+         dep_26)
 
 #Limited years to those being used for analysis
 ctd_5 <- ctd_5 %>% 
@@ -373,6 +388,7 @@ ctd_dm <- ctd_5 %>%
             N2_dm = mean(N2),
             delta_rho_dm = mean(delta_rho),
             turb_dm = mean(turb_cor),
+            flu_dm = mean(flu),
             dep_26_dm = mean(dep_26)) %>% 
   ungroup()
 
@@ -769,6 +785,14 @@ dino_het_ds <- micro_ds %>%
 ```
 
 ```{r}
+#Creating micro worksheet with all data points for KC10 and QU39 2018 - 2020
+
+micro_kc10 <- micro %>% 
+  filter(site_id == "KC10" | site_id == "QU39") %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01")
+```
+
+```{r}
 #Creating down-scaled version of chemtax
 chem_qu39 <- chem %>% 
   filter(site_id == "QU39")
@@ -898,10 +922,13 @@ fec_ds <- fec_ds %>%
 #It's actually less - 59 - Why? One reason could be chlorophyll data, which I incorporated and may have had missing data. Incorporate here and see. 8 Chlorophyll samples missing - this explains the disparity. Should be good to go.
 
 #Exporting as a csv to pull into other analysis.
-write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2021-11-04_chem.csv"))
+write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2021-12-01_chem.csv"))
 
 #Exporting as a csv to pull into other analysis.
 write_csv(micro_ds, here("outputs", "micro_master_2021-10-18.csv"))
+
+#Exporting non-downscaled kc10 and QU39 dataset.
+write_csv(micro_kc10, here("outputs", "micro_kc10_2021-12-01.csv"))
 
 #Exporting as a csv to pull into other analysis.
 write_csv(cil_ds, here("outputs", "ciliate_master_2021-10-18.csv"))
@@ -916,6 +943,24 @@ write_csv(fec_ds, here("outputs", "fecal_master_2021-10-18.csv"))
 write_csv(chem_ds, here("outputs", "chemtax_master_2021-11-04.csv"))
 ```
 
+```{r}
+#Looking into fluorometer - chl relationship
+ctd_merge_ds %>% 
+  ggplot(aes(x = bulk_chl, y = flu_dm)) +
+  geom_point() +
+  xlim(0, 25) +
+  ylim(0, 25)
+
+test <- ctd_merge_ds %>%
+  filter(!is.na(diat)) %>% 
+  mutate(tchla = cyan + hapto + green + cryp + dino + dict + raph + diat)
+
+test %>% 
+  ggplot(aes(x = flu_dm, y = tchla)) +
+  geom_point() +
+  xlim(0, 25) +
+  ylim(0, 25)
+```
 
 
 

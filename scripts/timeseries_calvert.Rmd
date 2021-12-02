@@ -228,6 +228,42 @@ month_labels <- c('J','F','M','A','M','J','J','A','S','O','N','D')
 ```
 
 ```{r}
+
+chem_tidy %>% 
+  filter(date > "2018-04-01" & date < "2020-11-01" & !site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = TChla_mean, fill = fct_rev(phyto_group))) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = TChla_sum), size = 2) +
+  scale_fill_manual(values = palette_chem) +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11)) +
+  guides(fill = guide_legend(nrow = 1)) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day",
+           y = bquote("TChl (mg" ~ m^-3*")")) +
+  theme(text = element_text(size = 25)) 
+
+ggsave(here("figures_rev2", "timeseries_calvert_chem.png"),
+       width = 16, height = 10, dpi = 300)
+
+```
+
+
+
+
+
+
+
+
+```{r}
 #Plot chemtax data by station - biomass
 chem_tidy %>%
   ggplot() +
