@@ -71,18 +71,28 @@ fec <- read_csv(here("files", "fecal.csv"))
 #Uploading metadata for fecal pellet counts
 meta <- read_csv(here("files", "meta_phyto_2021-06-21.csv"))
 
+test1 <- micro %>% 
+  filter(site_id == "KC10" & date > "2018-01-01" & date < "2021-01-01") %>% 
+  distinct(date)
+
 test2 <- micro %>% 
   filter(site_id == "QU39" & date > "2018-01-01" & date < "2021-01-01") %>% 
   distinct(date)
 ```
 
 ```{r}
-#List for downscaling QU39 to KC10
+#List for down-scaling QU39 to KC10
+
+#2019-04-02 is wuite a ways off from 2019-04-18 at KC10. For some reason not much data at QU39 in this year/month.
 
 qu39_list <- c("2018-01-09", "2018-02-19", "2018-03-27", "2018-04-24", 
                "2018-05-22", "2018-06-26", "2018-07-16", "2018-08-21",
                "2018-09-13", "2018-10-24", "2018-11-19", "2019-01-23",
-               "2019-02-12", "2019-03-12", )
+               "2019-02-12", "2019-03-12", "2019-04-02", "2019-05-09",
+               "2019-06-04", "2019-07-09", "2019-07-30", "2019-08-29",
+               "2019-09-24", "2019-11-26", "2020-02-05", "2020-04-29",
+               "2020-06-04", "2020-06-30", "2020-08-04", "2020-09-01",
+               "2020-10-08", "2020-11-05", "2020-12-01")
 
 ```
 
@@ -790,6 +800,47 @@ dino_het_ds <- micro_ds %>%
 micro_kc10 <- micro %>% 
   filter(site_id == "KC10" | site_id == "QU39") %>% 
   filter(date > "2018-01-01" & date < "2021-01-01")
+
+#Creating worksheet where QU39 is down-scaled to comparable dates as KC10.
+micro_kc10_qu39 <- micro_kc10 %>%
+  filter(site_id == "QU39") %>% 
+  filter(date == "2018-01-09" | 
+         date == "2018-02-19" |
+         date == "2018-03-27" | 
+         date == "2018-04-24" |
+         date == "2018-05-22" |
+         date == "2018-06-26" |
+         date == "2018-07-16" |
+         date == "2018-08-21" |
+         date == "2018-09-13" | 
+         date == "2018-10-24" | 
+         date == "2018-11-19" |
+         date == "2019-01-23" |
+         date == "2019-02-12" |
+         date == "2019-03-12" |
+         date == "2019-04-02" |
+         date == "2019-05-09" |
+         date == "2019-06-04" |
+         date == "2019-07-09" |
+         date == "2019-07-30" |
+         date == "2019-08-29" |
+         date == "2019-09-24" |
+         date == "2019-11-26" |
+         date == "2020-02-05" |
+         date == "2020-04-29" |
+         date == "2020-06-04" |
+         date == "2020-06-30" |
+         date == "2020-08-04" |
+         date == "2020-09-01" |
+         date == "2020-10-08" |
+         date == "2020-11-05" |
+         date == "2020-12-01")
+
+micro_kc10_no_qu39 <- micro_kc10 %>% 
+  filter(!site_id == "QU39")
+
+micro_kc10_ds <- rbind(micro_kc10_no_qu39, micro_kc10_qu39)
+
 ```
 
 ```{r}
@@ -929,6 +980,9 @@ write_csv(micro_ds, here("outputs", "micro_master_2021-10-18.csv"))
 
 #Exporting non-downscaled kc10 and QU39 dataset.
 write_csv(micro_kc10, here("outputs", "micro_kc10_2021-12-01.csv"))
+
+#Exporting downscaled kc10 and QU39 dataset.
+write_csv(micro_kc10_ds, here("outputs", "micro_kc10_ds_2021-12-01.csv"))
 
 #Exporting as a csv to pull into other analysis.
 write_csv(cil_ds, here("outputs", "ciliate_master_2021-10-18.csv"))

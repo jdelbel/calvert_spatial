@@ -18,6 +18,9 @@ library(readxl)
 
 micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 
+micro_kc10 <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv"))
+
+micro_kc10_ds <- read_csv(here("outputs", "micro_kc10_ds_2021-12-01.csv"))
 ```
 
 ```{r}
@@ -84,6 +87,60 @@ micro_sum_qu39 <- micro %>%
 micro_sum <- rbind(micro_sum_dfo2, micro_sum_kc10, micro_sum_qcs01, micro_sum_qu39)
 ```
 ```{r}
+#Summing species for the KC10-QU39 Timeseries
+micro_kc10_sum <- micro_kc10 %>%
+  filter(trophicStatus == "auto" &
+          site_id == "KC10") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "KC10") #replace NAs, created by complete, with 0s
+
+micro_sum_qu39 <- micro_kc10 %>%
+  filter(trophicStatus == "auto" &
+          site_id == "QU39") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "QU39")
+
+micro_sum_2 <- rbind(micro_kc10_sum, micro_sum_qu39)
+
+#Doing the same for the QU39 downscaled timeseries
+
+micro_kc10_ds_sum <- micro_kc10_ds %>%
+  filter(trophicStatus == "auto" &
+          site_id == "KC10") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "KC10") #replace NAs, created by complete, with 0s
+
+micro_sum_ds_qu39 <- micro_kc10_ds %>%
+  filter(trophicStatus == "auto" &
+          site_id == "QU39") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "QU39")
+
+micro_sum_3 <- rbind(micro_kc10_ds_sum, micro_sum_ds_qu39)
+```
+
+
+```{r}
 #Set order or groups for plotting
 
 micro_sum$group <- factor(micro_sum$group,
@@ -101,6 +158,39 @@ micro_sum$group <- factor(micro_sum$group,
                                     "Unknown_Dinophyceae?", #Y
                                     "Unknown_flagellate" #Y
                                     ))
+
+micro_sum_2$group <- factor(micro_sum_2$group,
+                         levels = c("Bacillariophyta", #Y
+                                    "Chrysophyta", #Y
+                                    "Dictyochophyta", #Y
+                                    "Raphidiophyta", #Y
+                                    "Dinoflagellata", #Y
+                                    "Cryptophyta",#Y
+                                    "Chlorophyta-Prasinophyta", #Y 
+                                    "Euglenophyta", #Y
+                                    "Prymnesiophyta-Haptophyta", #Y 
+                                    "Cyanobacteria", #Y
+                                    "Unknown_Chlorophyta?", #Y
+                                    "Unknown_Dinophyceae?", #Y
+                                    "Unknown_flagellate" #Y
+                                    ))
+
+micro_sum_3$group <- factor(micro_sum_3$group,
+                         levels = c("Bacillariophyta", #Y
+                                    "Chrysophyta", #Y
+                                    "Dictyochophyta", #Y
+                                    "Raphidiophyta", #Y
+                                    "Dinoflagellata", #Y
+                                    "Cryptophyta",#Y
+                                    "Chlorophyta-Prasinophyta", #Y 
+                                    "Euglenophyta", #Y
+                                    "Prymnesiophyta-Haptophyta", #Y 
+                                    "Cyanobacteria", #Y
+                                    "Unknown_Chlorophyta?", #Y
+                                    "Unknown_Dinophyceae?", #Y
+                                    "Unknown_flagellate" #Y
+                                    ))
+
 ```
 
 ```{r}
@@ -147,7 +237,7 @@ ggsave(here("figures_new", "sample_number.png"),
 
 ```{r}
 
-#Microscopy 2019 timeseries - need to downscale QU39
+#Microscopy May - October 2018-2019 time-series - Calvert
 
 micro_sum %>% 
   filter(date > "2018-04-01" & date < "2020-11-01" & !site_id == "QU39") %>% 
@@ -177,6 +267,71 @@ ggsave(here("figures_rev2", "timeseries_calvert.png"),
        width = 17, height = 10, dpi = 300)
 
 ```
+
+```{r}
+
+#Microscopy May - October 2018-2019 time-series - Calvert
+
+micro_sum_2 %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(sum, na.rm = TRUE)) %>%
+  ungroup() %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = sum, group = group, fill = group)) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = sum_all), size = 2) +
+  scale_fill_manual(values = color_palette_micro) +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11)) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day",
+           y = bquote("Abundance (cells" ~ L^-1*")")) +
+  theme(text = element_text(size = 25)) 
+
+ggsave(here("figures_rev2", "timeseries_kc10_qu39.png"),
+       width = 17, height = 10, dpi = 300)
+
+```
+```{r}
+
+#Microscopy May - October 2018-2019 time-series - Calvert
+
+micro_sum_3 %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(sum, na.rm = TRUE)) %>%
+  ungroup() %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = sum, group = group, fill = group)) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = sum_all), size = 2) +
+  scale_fill_manual(values = color_palette_micro) +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11)) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day",
+           y = bquote("Abundance (cells" ~ L^-1*")")) +
+  theme(text = element_text(size = 25)) 
+
+ggsave(here("figures_rev2", "timeseries_kc10_qu39_downscaled.png"),
+       width = 17, height = 10, dpi = 300)
+
+```
+
+
 
 Working with chemtax data
 
@@ -724,7 +879,6 @@ micro_ds_full %>%
   geom_point() +
   facet_wrap(~year)
 ```
-
 
 
 
