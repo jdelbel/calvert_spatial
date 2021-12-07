@@ -421,7 +421,7 @@ ano_year_rel
 ```{r}
 #Indicator species analysis
 
-#Indicators by season
+#Indicators by station
 inv_site = multipatt(transform, site_id, func = "r.g",
                        control = how(nperm = 9999))
 
@@ -437,7 +437,7 @@ summary(inv_month)
 ```
 
 ```{r}
-#by region
+#by year
 inv_year = multipatt(transform, year, func = "r.g",
                        control = how(nperm = 9999))
 
