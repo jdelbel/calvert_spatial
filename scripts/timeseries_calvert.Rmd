@@ -21,6 +21,9 @@ micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 micro_kc10 <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv"))
 
 micro_kc10_ds <- read_csv(here("outputs", "micro_kc10_ds_2021-12-01.csv"))
+
+#Upload data
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv")) 
 ```
 
 ```{r}
@@ -267,6 +270,13 @@ ggsave(here("figures_rev2", "timeseries_calvert.png"),
        width = 17, height = 10, dpi = 300)
 
 ```
+
+```{r}
+#Tried adding chlorophyll to the area plot - too complex, not going to work.
+```
+
+
+
 
 ```{r}
 

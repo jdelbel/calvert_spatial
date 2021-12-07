@@ -148,173 +148,223 @@ p6 <- data %>%
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
 
-
-
 fig <- p1/p2/p3/p4/p5/p6
 
 ggsave(here("figures_rev2", "drivers.png"), 
-       fig, width = 16, height = 22, dpi = 300)
+       fig, width = 16, height = 18, dpi = 300)
 ```
+
 ```{r}
-f1 <- data %>% 
-  ggplot(aes(x = as.factor(month_surv), y = dep_26_dm, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir ='center', dotsize = 0.5,
-               position = position_dodge(0.8)) +
-  scale_fill_npg() +
-  labs(y = "1026 (m)",
-       x = "Month") +
+#Trying to look at these like time-series similar to how I plotted microscopy - work on this, likely won't use, so keeping rough for now, but could come into play.
+data_long <- data %>% 
+  select(date, month_surv, site_id, temp_dm, sal_dm, delta_rho_dm, no2_dm, secchi_depth,
+         bulk_chl) %>%
+  pivot_longer(c(temp_dm, sal_dm, delta_rho_dm, no2_dm, secchi_depth,
+         bulk_chl), names_to = "meas", values_to = "val") %>% 
+  mutate(yday = lubridate::yday(date),
+         year = lubridate::year(date),
+         month = lubridate::month(date))
+
+data_long %>%  
+  ggplot(aes(x = yday, y = val, group = site_id, fill = site_id, color = site_id)) +
+  geom_line()+
+  geom_point(size = 2) +
+  facet_grid(meas ~ year, scales = "free_y") +
   theme_bw() +
-  theme(legend.position = c(0.07, 0.75),
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
         legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
+        text = element_text(size = 11)) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day") 
+  theme(text = element_text(size = 25))
 
-f2 <- data %>% 
-  filter(!site_id == "QU39") %>% 
-  ggplot(aes(x = as.factor(month_surv), y = dep_26_dm, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir ='center', dotsize = 0.5,
-               position = position_dodge(0.8)) +
-  scale_fill_npg() +
-  labs(y = "1026 (m)",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = c(0.07, 0.2),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
+ggsave(here("figures_rev2", "timeseries_drivers.png"),
+       width = 17, height = 10, dpi = 300)
+```
 
-fig <- f1/f2
+```{r}
+#Looking at some summary statistics
+test <- data_long %>% 
+  filter(meas == "no2_dm") %>% 
+  group_by(month_surv, site_id) %>% 
+  summarize(min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE),
+            mean = mean(val, na.rm = TRUE),
+            median = median(val, na.rm = TRUE),
+            iqr = IQR(val, , na.rm = TRUE))
 
-ggsave(here("figures_new", "box_1026.png"), fig, 
-       width = 14, height = 8, dpi = 300)
+test2 <- data_long %>% 
+  filter(meas == "sal_dm") %>% 
+  group_by(site_id) %>% 
+  summarize(min = min(val),
+            max = max(val),
+            mean = mean(val))
+```
+
+
+
+```{r}
+# f1 <- data %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = dep_26_dm, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir ='center', dotsize = 0.5,
+#                position = position_dodge(0.8)) +
+#   scale_fill_npg() +
+#   labs(y = "1026 (m)",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = c(0.07, 0.75),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# f2 <- data %>% 
+#   filter(!site_id == "QU39") %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = dep_26_dm, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir ='center', dotsize = 0.5,
+#                position = position_dodge(0.8)) +
+#   scale_fill_npg() +
+#   labs(y = "1026 (m)",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = c(0.07, 0.2),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         axis.title.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# fig <- f1/f2
+# 
+# ggsave(here("figures_new", "box_1026.png"), fig, 
+#        width = 14, height = 8, dpi = 300)
 ```
 ```{r}
 #Plotting 1026 at QCS01 timeseries
-f1 <- data %>% 
-  mutate(year = lubridate::year(date),
-         month = lubridate::month(date),
-         yday = lubridate::yday(date)) %>% 
-  filter(site_id == "QCS01") %>% 
-  ggplot(aes(x = yday, y = dep_26_dm)) +
-  geom_line(size = 1.5) +
-  geom_point(size = 2, pch = 21, fill = "white") +
-  facet_grid(site_id ~ year) +
-  theme_bw() +
-  labs(x = "Year Day",
-       y = "1026 (m)") +
-  theme(strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank()) + 
-  theme(text = element_text(size = 25)) 
-
-f2 <- data %>% 
-  mutate(year = lubridate::year(date),
-         month = lubridate::month(date),
-         yday = lubridate::yday(date)) %>% 
-  filter(site_id == "QCS01") %>% 
-  ggplot(aes(x = yday, y = temp_dm)) +
-  geom_line(size = 1.5) +
-  geom_point(size = 2, pch = 21, fill = "white") +
-  facet_grid(site_id ~ year) +
-  theme_bw() +
-  labs(x = "Year Day",
-       y = "Temp") +
-  theme(strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank()) + 
-  theme(text = element_text(size = 25))
-
-f3 <- data %>% 
-  mutate(year = lubridate::year(date),
-         month = lubridate::month(date),
-         yday = lubridate::yday(date)) %>% 
-  filter(site_id == "QCS01") %>% 
-  ggplot(aes(x = yday, y = sal_dm)) +
-  geom_line(size = 1.5) +
-  geom_point(size = 2, pch = 21, fill = "white") +
-  facet_grid(site_id ~ year) +
-  theme_bw() +
-  labs(x = "Year Day",
-       y = "Sal") +
-  theme(strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank()) + 
-  theme(text = element_text(size = 25)) 
-
-f4 <- data %>% 
-  mutate(year = lubridate::year(date),
-         month = lubridate::month(date),
-         yday = lubridate::yday(date)) %>% 
-  filter(site_id == "QCS01") %>% 
-  ggplot(aes(x = yday, y = hapto)) +
-  geom_line(size = 1.5) +
-  geom_point(size = 2, pch = 21, fill = "white") +
-  facet_grid(site_id ~ year) +
-  theme_bw() +
-  labs(x = "Year Day",
-       y = "Hapto (mg m-3)") +
-  theme(strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank()) + 
-  theme(text = element_text(size = 25)) 
-
-f5 <- data %>% 
-  mutate(year = lubridate::year(date),
-         month = lubridate::month(date),
-         yday = lubridate::yday(date)) %>% 
-  filter(site_id == "QCS01") %>% 
-  ggplot(aes(x = yday, y = `Phaeocystis pouchetii`)) +
-  geom_line(size = 1.5) +
-  geom_point(size = 2, pch = 21, fill = "white") +
-  facet_grid(site_id ~ year) +
-  theme_bw() +
-  labs(x = "Year Day",
-       y = "P.p. (cells L-1)") +
-  theme(strip.background = element_blank(),
-        strip.text = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank()) + 
-  theme(text = element_text(size = 25)) 
-
-f6 <- micro_long %>%
-  filter(site_id == "QCS01") %>% 
-  group_by(date) %>% 
-  mutate(n_spec = n()) %>% 
-  ungroup() %>% 
-  distinct(date, n_spec, .keep_all = TRUE) %>% 
-  mutate(year = lubridate::year(date),
-         month = lubridate::month(date),
-         yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = n_spec)) +
-  geom_line(size = 1.5) +
-  geom_point(size = 2, pch = 21, fill = "white") +
-  facet_grid(site_id ~ year) +
-  theme_bw() +
-  labs(x = "Year Day",
-       y = "Richness") +
-  theme(strip.background = element_blank(),
-        strip.text = element_blank()) +
-  theme(text = element_text(size = 25)) 
-  
-fig <- f1/f2/f3/f4/f5/f6
-
-ggsave(here("figures_new", "Event_QCS01_upwelling.png"), fig, 
-       width = 16, height = 18, dpi = 300)
+# f1 <- data %>% 
+#   mutate(year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          yday = lubridate::yday(date)) %>% 
+#   filter(site_id == "QCS01") %>% 
+#   ggplot(aes(x = yday, y = dep_26_dm)) +
+#   geom_line(size = 1.5) +
+#   geom_point(size = 2, pch = 21, fill = "white") +
+#   facet_grid(site_id ~ year) +
+#   theme_bw() +
+#   labs(x = "Year Day",
+#        y = "1026 (m)") +
+#   theme(strip.background = element_blank(),
+#         strip.text = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank()) + 
+#   theme(text = element_text(size = 25)) 
+# 
+# f2 <- data %>% 
+#   mutate(year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          yday = lubridate::yday(date)) %>% 
+#   filter(site_id == "QCS01") %>% 
+#   ggplot(aes(x = yday, y = temp_dm)) +
+#   geom_line(size = 1.5) +
+#   geom_point(size = 2, pch = 21, fill = "white") +
+#   facet_grid(site_id ~ year) +
+#   theme_bw() +
+#   labs(x = "Year Day",
+#        y = "Temp") +
+#   theme(strip.background = element_blank(),
+#         strip.text = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank()) + 
+#   theme(text = element_text(size = 25))
+# 
+# f3 <- data %>% 
+#   mutate(year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          yday = lubridate::yday(date)) %>% 
+#   filter(site_id == "QCS01") %>% 
+#   ggplot(aes(x = yday, y = sal_dm)) +
+#   geom_line(size = 1.5) +
+#   geom_point(size = 2, pch = 21, fill = "white") +
+#   facet_grid(site_id ~ year) +
+#   theme_bw() +
+#   labs(x = "Year Day",
+#        y = "Sal") +
+#   theme(strip.background = element_blank(),
+#         strip.text = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank()) + 
+#   theme(text = element_text(size = 25)) 
+# 
+# f4 <- data %>% 
+#   mutate(year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          yday = lubridate::yday(date)) %>% 
+#   filter(site_id == "QCS01") %>% 
+#   ggplot(aes(x = yday, y = hapto)) +
+#   geom_line(size = 1.5) +
+#   geom_point(size = 2, pch = 21, fill = "white") +
+#   facet_grid(site_id ~ year) +
+#   theme_bw() +
+#   labs(x = "Year Day",
+#        y = "Hapto (mg m-3)") +
+#   theme(strip.background = element_blank(),
+#         strip.text = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank()) + 
+#   theme(text = element_text(size = 25)) 
+# 
+# f5 <- data %>% 
+#   mutate(year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          yday = lubridate::yday(date)) %>% 
+#   filter(site_id == "QCS01") %>% 
+#   ggplot(aes(x = yday, y = `Phaeocystis pouchetii`)) +
+#   geom_line(size = 1.5) +
+#   geom_point(size = 2, pch = 21, fill = "white") +
+#   facet_grid(site_id ~ year) +
+#   theme_bw() +
+#   labs(x = "Year Day",
+#        y = "P.p. (cells L-1)") +
+#   theme(strip.background = element_blank(),
+#         strip.text = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank()) + 
+#   theme(text = element_text(size = 25)) 
+# 
+# f6 <- micro_long %>%
+#   filter(site_id == "QCS01") %>% 
+#   group_by(date) %>% 
+#   mutate(n_spec = n()) %>% 
+#   ungroup() %>% 
+#   distinct(date, n_spec, .keep_all = TRUE) %>% 
+#   mutate(year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          yday = lubridate::yday(date)) %>% 
+#   ggplot(aes(x = yday, y = n_spec)) +
+#   geom_line(size = 1.5) +
+#   geom_point(size = 2, pch = 21, fill = "white") +
+#   facet_grid(site_id ~ year) +
+#   theme_bw() +
+#   labs(x = "Year Day",
+#        y = "Richness") +
+#   theme(strip.background = element_blank(),
+#         strip.text = element_blank()) +
+#   theme(text = element_text(size = 25)) 
+#   
+# fig <- f1/f2/f3/f4/f5/f6
+# 
+# ggsave(here("figures_new", "Event_QCS01_upwelling.png"), fig, 
+#        width = 16, height = 18, dpi = 300)
 ```
 
 
@@ -323,6 +373,7 @@ ggsave(here("figures_new", "Event_QCS01_upwelling.png"), fig,
 #Boxplot Chlorophyll size fractions.
 
 p1 <- data %>% 
+  filter(!(is.na(pico_chl) | is.na(nano_chl) | is.na(micro_chl))) %>% 
   ggplot(aes(x = as.factor(month_surv), y = pico_chl, fill = site_id)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
                color = "black", lwd = 0.7) +
@@ -342,6 +393,7 @@ p1 <- data %>%
         axis.text = element_text(colour = "black"))
 
 p2 <- data %>% 
+  filter(!(is.na(pico_chl) | is.na(nano_chl) | is.na(micro_chl))) %>%
   ggplot(aes(x = as.factor(month_surv), y = nano_chl, fill = site_id)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
                color = "black", lwd = 0.7) +
@@ -360,6 +412,7 @@ p2 <- data %>%
         axis.text = element_text(colour = "black"))
 
 p3 <- data %>% 
+  filter(!(is.na(pico_chl) | is.na(nano_chl) | is.na(micro_chl))) %>%
   ggplot(aes(x = as.factor(month_surv), y = micro_chl, fill = site_id)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
                color = "black", lwd = 0.7) +
