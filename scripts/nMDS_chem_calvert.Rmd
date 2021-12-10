@@ -38,22 +38,130 @@ c <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv"))
 c <- c %>% 
   arrange(site_id, date)
 
-c_cal <- c %>% 
+c <- c %>% 
   filter(!site_id == "QU39")
+
+c <- c %>% 
+  mutate(year = lubridate::year(date))
 
 #Pulling out species counts for transform and input into clustering and NMDS
 species <- c[, 5:ncol(c)]
-
-species_cal <- c_cal[, 5:ncol(c)]
 
 transform_rel <- decostand(species, method = "total")
   
 #Log10 transformation +1 (as per Mahara)
 transform <- log10(species + 1)
 
-transform_cal <- log10(species_cal + 1)
-
 transform_rel <- sqrt(transform_rel)
+```
+
+```{r}
+#Create rownames for dendrogram
+labs <- c %>%
+  select(site_id, date) %>% 
+  unite(sample_name, c(site_id, date), sep = "_")
+
+labs_list <- labs$sample_name
+
+transform_hc <- transform
+
+rownames(transform_hc) <- labs_list
+```
+
+
+```{r}
+#Performing hierarchical clustering
+
+#Calculating Bray-Curtis Distances
+dis <- vegdist(transform_hc, method = "bray")
+
+#Applying average linkage hierarchical clustering
+cluster.average <- hclust(dis, "average")
+
+```
+
+
+```{r}
+# extract dendrogram segment data
+dend <- as.dendrogram(cluster.average)
+dendrogram_data <- dendro_data(dend)
+dendrogram_segments <- dendrogram_data$segments 
+```
+
+```{r}
+#Creating metadata sheet with 
+metadata <- c %>% 
+  select(site_id, date)
+
+#Making unique labels by combining site and date into single string
+metadata <- metadata %>% 
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+# get terminal dendrogram segments
+dendrogram_ends <- dendrogram_segments %>%
+ filter(yend == 0) %>% 
+ left_join(dendrogram_data$labels, by = "x") %>% 
+ rename(sample_name = label) %>% 
+ left_join(metadata, by = "sample_name") 
+
+```
+
+```{r}
+#I'm not 100% sure how this all works, but it does - sets up colors for the sites for plotting with dendrogram.
+
+# Generate custom color palette for dendrogram ends based on metadata variable - Site
+unique_vars <- levels(factor(dendrogram_ends$site_id)) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("row_id")
+
+# count number of unique variables
+color_count <- length(unique(unique_vars$.))
+
+# get RColorBrewer palette
+get_palette <- colorRampPalette(brewer.pal(n = 3, name = "Set1"))
+
+# produce RColorBrewer palette based on number of unique variables in metadata:
+palette <- get_palette(color_count) %>% 
+ as.data.frame() %>%
+ rename("color" = ".") %>%
+ rownames_to_column(var = "row_id")
+
+color_list <- left_join(unique_vars, palette, by = "row_id") %>%
+ select(-row_id)
+
+site_color <- as.character(color_list$color)
+names(site_color) <- color_list$.
+```
+
+```{r}
+# https://stackoverflow.com/questions/24140339/tree-cut-and-rectangles-around-clusters-for-a-horizontal-dendrogram-in-r
+#I think I could actually add some cluster rectangles here.
+
+
+#Plotting dendrogram - saving for incorporation later.
+p_dend <- ggplot() +
+ geom_segment(data = dendrogram_segments, 
+ aes(x=x, y=y, xend=xend, yend=yend)) +
+ geom_segment(data = dendrogram_ends, aes(x = x, y = y.x, xend = xend,
+                                          yend = yend, color = site_id), 
+              size = 2) +
+ geom_text(data = dendrogram_ends, aes(x = x, y = y.y, label = sample_name, 
+                                       color = site_id),
+           hjust = 0, angle = 0, size = 6) +
+ scale_color_manual(values = site_color) +
+ scale_y_reverse(limits = c(0.6, -0.3)) +
+ coord_flip() + 
+ theme_bw() + 
+ theme(legend.position = "none",
+       axis.title.x = element_blank(),
+       axis.title.y = element_blank(),
+       axis.text.y = element_blank(),
+       text = element_text(size = 30)) +
+ ylab("Distance") # flipped x and y coordinates for aesthetic reasons
+
+ 
+ggsave(here("figures_rev2", "hc_average_chemtax.png"), p_dend,
+       width = 6, height = 12, dpi = 300)
 ```
 
 ```{r}
@@ -76,7 +184,6 @@ stressplot(nmds_rel)
 
 ```
 
-
 ```{r}
 #Pulling NMDS scores, months and stations for plotting NMDS is ggplot
 
@@ -87,7 +194,7 @@ stressplot(nmds_rel)
 # spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
 
 data.scores = as.data.frame(scores(nmds))
-data.scores$month_surv = c$month_surv
+data.scores$year = c$year
 data.scores$site = c$site_id
 
 data.scores.rel = as.data.frame(scores(nmds_rel))
@@ -96,9 +203,8 @@ data.scores.rel$site = c$site_id
 
 ```
 
-
 ```{r}
-#Combining absolute and relative nmds
+#Combining station month and year plots with dendrogram - sort of cool, but now have to figure out why DFO2 different. This is where a heatmpa plot comes in?
 
 p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
@@ -110,7 +216,7 @@ p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
   #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
   # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
   #           fontface = "bold", label = row.names(en_coord_cont)) + 
-  xlim(-0.5, 1.2) +
+  # xlim(-0.4, 0.7) +
   theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
         panel.background = element_blank(),
         panel.border = element_rect(fill = NA, colour = "black"), 
@@ -120,43 +226,43 @@ p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
         legend.key = element_blank(), 
         legend.title = element_text(size = 20, face = "bold", colour = "black"), 
         legend.text = element_text(size = 18, colour = "black"),
-        legend.position = c(0.92, 0.68),
+        legend.position = c(0.90, 0.70),
         legend.margin = margin(-0.3,0,0,0, unit = "cm"),
         text = element_text(size = 30)) +
   labs(fill = "Month", shape = "Station") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-p2 <- ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores.rel, aes(fill = as.factor(month_surv), shape = site),
+p2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores, aes(fill = as.factor(year), shape = site),
              size = 6) + 
-  scale_fill_brewer(palette = "RdYlBu") +
-  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_fill_brewer(palette = "Dark2") +
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
-  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
-  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
-  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
-  #           fontface = "bold", label = row.names(en_coord_cont)) + 
-  xlim(-0.5, 0.9) +
+  # xlim(-0.4, 0.7) +
   theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
         panel.background = element_blank(),
         panel.border = element_rect(fill = NA, colour = "black"), 
         axis.ticks = element_blank(),
         axis.text = element_blank(),
-        # legend.key = element_blank(), 
-        # legend.title = element_text(size = 10, face = "bold", colour = "black"), 
-        # legend.text = element_text(size = 9, colour = "black"),
-        legend.position = "none",
-        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
-        text = element_text(size = 25)) +
-  labs(fill = "Month", shape = "Station") +
+        # axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 20, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 18, colour = "black"),
+        legend.position = c(0.90, 0.75),
+        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(shape = "Station", fill = "Year") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-fig <- p1/p2
 
-ggsave(here("figures_new", "nmds_chemtax_absolute_rel_comb.png"), fig,
-       width = 10, height = 12, dpi = 300)
+
+fig <- (p1/p2) | p_dend
+
+ggsave(here("figures_rev2", "nmds_dendro_chem.png"), fig,
+       width = 16, height = 12, dpi = 300)
 
 ```
+
 
 ```{r}
 #separating treatments for following tests

@@ -83,7 +83,6 @@ micro <- micro %>%
 micro_piv <- micro %>% 
   select(date, month, month_surv, site_id, scientificName, species_sum)
 
-
 #pivoting longer so species are columns. 
 micro_piv <- micro_piv %>% 
   pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
@@ -121,68 +120,61 @@ transform_rel <- sqrt(transform_rel)
 ```
 
 ```{r}
-#Trying clustering... again.
-labs <- micro_piv
-labs <- labs %>% 
-  select(site_id, date)
-labs2 <- labs %>% 
-  unite(site_date, c(site_id, date), sep = "_")
-labs3 <- labs2$site_date
+#Create rownames for dendrogram
+labs <- micro_piv %>%
+  select(site_id, date) %>% 
+  unite(sample_name, c(site_id, date), sep = "_")
 
-test <- transform
-rownames(test) <- labs3
+labs_list <- labs$sample_name
 
+transform_hc <- transform
 
-dis <- vegdist(test, method = "bray")
-cluster.average <- hclust(dis, "average"
-                          )
-
+rownames(transform_hc) <- labs_list
 ```
+
+
 
 ```{r}
-#I think I should have my nmds beside a dendrogram vertical. 
+#Performing hierarchical clustering
 
+#Calculating Bray-Curtis Distances
+dis <- vegdist(transform_hc, method = "bray")
 
-ggdendrogram(cluster.average, rotate = TRUE)
+#Applying average linkage hierarchical clustering
+cluster.average <- hclust(dis, "average")
 
-ggsave(here("figures_rev2", "test.png"),
-       width = 6, height = 12, dpi = 300)
 ```
 
-```{r}
-dend <- as.dendrogram(cluster.average)
-dend_data <- dendro_data(dend, type = "rectangle")
-
-dend_data$site = micro_piv$site_id
-```
 
 ```{r}
 # extract dendrogram segment data
+dend <- as.dendrogram(cluster.average)
 dendrogram_data <- dendro_data(dend)
-dendrogram_segments <- dend_data$segments # contains all dendrogram segment data
+dendrogram_segments <- dendrogram_data$segments 
 ```
 
-
-
 ```{r}
+#Creating metadata sheet with 
 metadata <- micro_piv %>% 
-  select(site_id)
+  select(site_id, date)
 
-metadata$sample_name <- labs3
+#Making unique labels by combining site and date into single string
+metadata <- metadata %>% 
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
 
 # get terminal dendrogram segments
 dendrogram_ends <- dendrogram_segments %>%
- filter(yend == 0) %>% # filter for terminal dendrogram ends
- left_join(dendrogram_data$labels, by = "x") %>% # .$labels contains the row names from dist_matrix (i.e., sample_name)
+ filter(yend == 0) %>% 
+ left_join(dendrogram_data$labels, by = "x") %>% 
  rename(sample_name = label) %>% 
  left_join(metadata, by = "sample_name") 
-# dataframe now contains only terminal dendrogram segments and merged metadata associated with each iris
-
 
 ```
 
 ```{r}
-# Generate custom color palette for dendrogram ends based on metadata variable
+#I'm not 100% sure how this all works, but it does - sets up colors for the sites for plotting with dendrogram.
+
+# Generate custom color palette for dendrogram ends based on metadata variable - Site
 unique_vars <- levels(factor(dendrogram_ends$site_id)) %>% 
   as.data.frame() %>% 
   rownames_to_column("row_id")
@@ -202,20 +194,22 @@ palette <- get_palette(color_count) %>%
 color_list <- left_join(unique_vars, palette, by = "row_id") %>%
  select(-row_id)
 
-species_color <- as.character(color_list$color)
-names(species_color) <- color_list$.
+site_color <- as.character(color_list$color)
+names(site_color) <- color_list$.
 ```
 
 ```{r}
-p <- ggplot() +
+#Plotting dendrogram - saving for incorporation later.
+p_dend <- ggplot() +
  geom_segment(data = dendrogram_segments, 
  aes(x=x, y=y, xend=xend, yend=yend)) +
- geom_segment(data = dendrogram_ends, aes(x=x, y=y.x, xend=xend, yend=yend, 
-                                          color = site_id), size = 2) +
- geom_text(data = dendrogram_ends, aes(x=x, y= y.y, label = sample_name, 
+ geom_segment(data = dendrogram_ends, aes(x = x, y = y.x, xend = xend,
+                                          yend = yend, color = site_id), 
+              size = 2) +
+ geom_text(data = dendrogram_ends, aes(x = x, y = y.y, label = sample_name, 
                                        color = site_id),
            hjust = 0, angle = 0, size = 6) +
- scale_color_manual(values = species_color) +
+ scale_color_manual(values = site_color) +
  scale_y_reverse(limits = c(0.6, -0.3)) +
  coord_flip() + 
  theme_bw() + 
@@ -227,7 +221,7 @@ p <- ggplot() +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
  
-ggsave(here("figures_rev2", "test3.png"),
+ggsave(here("figures_rev2", "hc_average.png"), p_dend,
        width = 6, height = 12, dpi = 300)
 ```
 
@@ -271,7 +265,7 @@ data.scores.rel$year = micro_piv$year
 ```
 
 ```{r}
-#Plotting nMDS - commented sections are for if I want to add environmental fits.
+#Plotting nMDS - commented sections are for if I want to add environmental fits. This is for the absolute data
 
 ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
@@ -303,6 +297,8 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 ```
 
 ```{r}
+#nmds plot for the relative data
+
 ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores.rel, aes(fill = as.factor(month_surv), shape = site),
              size = 4) + 
@@ -334,7 +330,7 @@ ggplot(data = data.scores.rel, aes(x = NMDS1, y = NMDS2)) +
 
 
 ```{r}
-#Combining absolute and relative nmds - It could be good to do this by year as well.
+#Combining absolute and relative nmds separated by station and month - It could be good to do this by year as well.
 
 p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
@@ -394,7 +390,7 @@ fig <- p1/p2
 
 ```
 ```{r}
-#Combining absolute and relative nmds - It could be good to do this by year as well.
+#Combining absolute and relative nmds - plots for both month and year
 
 p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
@@ -484,7 +480,7 @@ ggsave(here("figures_rev2", "nmds_CALVERT_year.png"), fig,
 
 ```
 ```{r}
-#Test combining dendrogram
+#Combining station month and year plots with dendrogram - sort of cool, but now have to figure out why DFO2 different. This is where a heatmpa plot comes in?
 
 p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
@@ -523,8 +519,8 @@ p2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
         panel.border = element_rect(fill = NA, colour = "black"), 
         axis.ticks = element_blank(),
         axis.text = element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
+        # axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
         legend.key = element_blank(), 
         legend.title = element_text(size = 20, face = "bold", colour = "black"), 
         legend.text = element_text(size = 18, colour = "black"),
@@ -536,12 +532,71 @@ p2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 
 
 
-fig <- (p1/p2) | p
+fig <- (p1/p2) | p_dend
 
 ggsave(here("figures_rev2", "nmds_dendro.png"), fig,
        width = 16, height = 12, dpi = 300)
 
 ```
+
+```{r}
+#Can I get the order the same as the 
+hc_order <- dendrogram_ends$sample_name
+
+
+
+
+#Want to try a heatmap in the order of the one in the dendrogram.
+micro_heat <- micro %>%
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE) %>% 
+  filter(!site_id == "QU39")
+
+# micro_heat %>% arrange(factor(sample_name, levels = hc_order)) 
+micro_heat$sample_name <- factor(micro_heat$sample_name, levels = unique(hc_order)) 
+
+#Setting order of species for figure
+micro_heat$species_order <- factor(micro_heat$scientificName,
+                                   (unique(micro_heat$scientificName
+                                              [order(micro_heat$group,
+                                                     micro_heat$scientificName)])))
+
+micro_heat_ds <- micro_heat %>% 
+  group_by(scientificName) %>% 
+  mutate(n = n()) %>% 
+  ungroup() %>% 
+  filter(n > 10)
+
+micro_heat %>%   
+  filter(group == "Bacillariophyta") %>% 
+  ggplot(aes(x = species_order, y = sample_name, fill = log10(count+1))) +
+  geom_tile(color = "black") +
+  scale_fill_gradient(name = "",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "top",
+        axis.line = element_line(colour = "black"))
+
+ggsave(here("figures_rev2", "heat_diatom.png"),
+       width = 16, height = 18, dpi = 300)
+```
+
+
+
+
 
 
 
