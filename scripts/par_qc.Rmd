@@ -155,7 +155,7 @@ dark_sdev_0 <- dark %>%
 
 ```{r}
 
-#Looking at dark values
+#Looking at dark values - need to remove cast with very large negative dark offset.
 dark %>% 
   ggplot(aes(x = date, y = dark_mean)) +
   geom_point(size = 5, pch = 21, fill = "grey", alpha = 0.9) +
@@ -172,3 +172,208 @@ ggsave(here("figures_qc", "par_dark.png"),
        width = 16, height = 16, dpi = 300)
 
 ```
+
+```{r}
+#creating numerical ascending group number for each profile so I can view them for spike qc
+par_qc1 <- par_qc1 %>% 
+  group_by(castpk) %>%
+  mutate(cast_num = cur_group_id(),
+         par_diff = par - lag(par)) %>% 
+  ungroup() 
+
+qc_prof_num <- par_qc1 %>% 
+  distinct(cast_num)
+```
+
+
+```{r}
+par_qc1 %>%  
+  filter(cast_num > 0 & cast_num < 85) %>% 
+  ggplot(aes(x = par, y = pres, fill = par_diff < 0)) +
+  geom_point(pch = 21, size = 4, color = "black") +
+  scale_fill_manual(values = c("red", "black")) +
+  facet_wrap(~ castpk, scales = "free_x", ncol = 10) +
+  scale_y_reverse(lim = c(50, 0)) +
+  theme(text = element_text(size = 18),
+        axis.text = element_text(colour = "black"))
+
+ggsave(here("figures_qc", "par_prof_1-83.png"), 
+       width = 16, height = 16, dpi = 300)
+```
+```{r}
+#This might be ok depsite very low offset (-15)
+par_qc1 %>%  
+  filter(castpk == "13575") %>% 
+  ggplot(aes(x = par, y = pres, fill = par_diff < 0)) +
+  geom_point(pch = 21, size = 4, color = "black") +
+  scale_fill_manual(values = c("red", "black")) +
+  facet_wrap(~ castpk, scales = "free_x", ncol = 10) +
+  scale_y_reverse(lim = c(50, 0)) +
+  theme(text = element_text(size = 18),
+        axis.text = element_text(colour = "black"))
+```
+```{r}
+#Casts that are very clearly in the boat shadow.
+spike <- c("12607", "14580", "14804", "15540")
+           
+```
+
+```{r}
+
+#Removing profiles that showed spikes
+par_qc2 <- par_qc1 %>% 
+  filter(!castpk %in% spike)
+
+#Determining how many profiles remaining - 74 (from original 83)
+par_qc2_total <- par_qc2 %>% 
+  distinct(castpk)
+
+```
+
+
+```{r}
+#Creating percentage of surface column so that z1% can be found
+
+#Pulling 1 m par values 
+par_1m <- par_qc2 %>% 
+  filter(pres == 1) %>% 
+  select(castpk, par_surf = par)
+
+#Joining surface values back into main worksheet
+par_qc2 <- par_qc2 %>% 
+  left_join(par_1m)
+
+#Calculating ratio of par at the surface (1m) to values below.
+par_qc2 <- par_qc2 %>% 
+  mutate(par_perc = par/par_surf)
+
+#Looking where the par ratio is greater than 1 - indicating surface shadow or cloud - 0 casts as already filtered out through visual inspection.
+#Doesn't eliminate chance of spike lower in profile.
+surf_low <- par_qc2 %>% 
+  filter(par_perc > 1) %>% 
+  group_by(castpk) %>% 
+  mutate(n_depths = n()) %>% 
+  ungroup() %>% 
+  distinct(castpk, .keep_all = TRUE)
+```
+
+
+
+
+```{r}
+#determining zeu so that it can be plotted for visual inspection
+
+#Creating separate datasheet for calculations
+zeu <- par_qc2
+
+#Find values less than 1% of surface light for each profile - Had this wrong - right now looking at 10%. Need 1%
+zeu <- zeu %>% 
+  group_by(castpk) %>% 
+  filter(par_perc <= 0.01) %>% 
+  ungroup()
+
+#Finding the shallowest value closest to 1% - Should try similar methods as to what I did with 0.75cd
+zeu <- zeu %>% 
+  group_by(castpk) %>% 
+  filter(pres == min(pres)) %>% 
+  ungroup()
+
+#Plotting to look for unrealistic values - seems to look OK, but weird DFO2 isn't considerably shallower than the other stations, no?
+zeu %>% 
+  ggplot(aes(x = date, y = pres, color = station)) +
+  geom_point()
+
+```
+```{r}
+#creating file to merge zeu depths back into main par data sheet
+zeu_merge <- zeu %>% 
+  select(castpk, zeu = pres)
+
+#Merging zeu depth into par datasheet
+par_qc3 <- par_qc2 %>% 
+  left_join(zeu_merge)
+
+#I am looking at casts were z1% was never reached. Looks like it was always reached.
+zeu_na <- par_qc3 %>% 
+  filter(is.na(zeu)) %>% 
+  distinct(castpk, .keep_all = TRUE)
+
+#Giving profiles a new sequential cast id for plotting
+par_qc3 <- par_qc3 %>% 
+  group_by(castpk) %>%
+  mutate(cast_num = cur_group_id()) %>% 
+  ungroup()
+```
+
+```{r}
+
+#Plotting profiles for re-inspection after spiked profile removal
+par_qc3 %>%  
+  ggplot(aes(x = par, y = pres, fill = par_diff < 0)) +
+  geom_point(pch = 21, size = 4, color = "black") +
+  geom_hline(aes(yintercept = zeu), color = "blue", size = 2) +
+  scale_fill_manual(values = c("red", "black")) +
+  facet_wrap(~ castpk, scales = "free_x", ncol = 20) +
+  scale_y_reverse(lim = c(50, 0)) +
+  theme(text = element_text(size = 18),
+        axis.text = element_text(colour = "black"))
+
+ggsave(here("figures_qc", "no-spike_profiles_1-80.png"), 
+       width = 32, height = 18, dpi = 300)
+
+```
+```{r}
+#They seem to look ok. Plotting in a different way and then should compare with Secchi
+
+zeu %>% 
+  ggplot(aes(x = date, y = pres, color = station)) +
+  geom_point() +
+  facet_wrap(~station, ncol = 1)
+
+```
+```{r}
+zeu %>%
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = pres, fill = station)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = station), color = "black", trim = FALSE, binaxis='y', 
+               stackdir='center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  # ylim(0, 15) +
+  ggsci::scale_fill_npg() +
+  labs(y = "Secchi (m)",
+       x = "Month") +
+  theme_bw() +
+  theme(legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+#Look for duplicates
+zeu <- zeu %>% 
+  select(date, site_id = station, zeu = pres) %>% 
+  group_by(date, site_id) %>% 
+  mutate(n = n()) %>% 
+  ungroup
+
+#Filtering for duplicates - 14 exist. Usually pretty comparable between casts, but one has very large difference. DFO2 2018-07-24. This is a time when I would have thought there would be a shallow z1% due to the freshet, but these are deep.
+zeu_dup <- zeu %>%
+  filter(n > 1)
+
+zeu_write <- zeu %>%
+  group_by(date, site_id) %>% 
+  mutate(zeu_dm = mean(zeu)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, zeu_dm, .keep_all = TRUE) %>% 
+  select(date, site_id, zeu_dm)
+  
+```
+
+```{r}
+#Sort of confusing - should bring into data-standardization sheet, merge and compare with other drivers. Could run RDA with z1% and see if significant.
+
+write_csv(zeu_write, here("outputs", "par_corrected.csv"))
+
+```
+
