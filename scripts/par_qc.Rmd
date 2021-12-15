@@ -1,0 +1,174 @@
+---
+title: "PAR QC for Calvert Spatial Manuscript"
+output: html_notebook
+---
+
+
+
+```{r}
+#Library
+
+library(tidyverse) #data wrangling
+library(readxl) #read excel/csv
+library(here) #file structure/organization
+```
+
+```{r}
+#turning off scientific notation 
+options(scipen = 999)
+```
+
+
+```{r}
+#Upload profile data
+ctd <- read_csv(here("files", "par.csv"))
+
+#Upload cast data - instrument number.
+ctd_meta <- read_csv(here("files", "par_meta.csv"))
+```
+
+```{r}
+#Data wrangling and standardization
+#Selecting CTD instrument serial number from metadata file
+ctd_meta <- ctd_meta %>% 
+  select(`Cast PK`, ctd_num = `CTD serial number`)
+
+#merging ctd number with CTD profile data
+ctd <- ctd %>% 
+  left_join(ctd_meta)
+
+#Select pertinent columns
+par <- ctd %>% 
+  select(castpk = `Cast PK`, station = Station, lat = Latitude, long = Longitude,
+         date_time = `Measurement time`, ctd_num, pres = `Pressure (dbar)`,
+         par = `PAR (umol m-2 s-1)`, par_flag = `PAR flag`,
+         flu = `Fluorometry Chlorophyll (ug/L)`, turb = `Turbidity (FTU)`)
+
+#Adding short date column
+par <- par %>% 
+  mutate(date = lubridate::date(date_time)) %>% 
+  relocate(date, .after = date_time)
+
+#Determining number of profiles
+par_total <- par %>% 
+  distinct(castpk)
+
+```
+
+```{r}
+#Starting QC process.
+
+
+#Determine if there are any casts that have no data - finding profiles with NAs. To assess if they are just single depth NAs or full profile, the number of NAs for each castPK are compared to the number of records for the total profile. Eliminated the next two steps in this step - compare total number of depths to NA depths. Here, there is only 1 profile with NAs and it is not the entire profile.
+no_data <- par %>% 
+  group_by(castpk) %>% 
+  mutate(n_tot = n()) %>% 
+  ungroup() %>% 
+  filter(is.na(par)) %>% 
+  group_by(castpk) %>% 
+  mutate(n_na = n()) %>% 
+  ungroup() %>% 
+  distinct(castpk, .keep_all = TRUE)
+
+#Creating list of castPKs with NAs
+no_data_list <- no_data$castpk
+
+#1 cast with NAs - it's not the entire profile, but the profile is negative, so likely bad. Removing here.
+```
+
+```{r}
+#Remove casts with no PAR data
+par <- par %>% 
+  filter(!(castpk %in% no_data_list))
+```
+
+```{r}
+#Look at shallowest and deepest depth and maximum par value for each profile
+prof_stats <- par %>% 
+  group_by(castpk) %>% 
+  summarize(min_depth = min(pres),
+         max_depth = max(pres),
+         min_par = min(par),
+         max_par = max(par),
+         sdev_par = sd(par))
+
+#Remove profiles where minimum depth is greater than 1m - 4 profiles. 2 from 2m, 1 from 4m and 1 from 24m.
+deep_start <- prof_stats %>% 
+  filter(min_depth > 1)
+
+#Remove profiles where the entire profile is negative (max value is negative) - 0 profiles.
+neg_prof <- prof_stats %>% 
+  filter(max_par < 0)
+
+#Looking at profiles where the standard deviation of the entire profile is zero - 0 profiles
+no_sdev <- prof_stats %>% 
+  filter(sdev_par == 0)
+
+#Making lists for removal
+deep_start_list <- deep_start$castpk
+neg_prof_list <- neg_prof$castpk
+no_sdev_list <- no_sdev$castpk
+
+#Removing profiles with deep starts and negative profiles from the par worksheet
+par_qc1 <- par %>% 
+  filter(!(castpk %in% deep_start_list | 
+             castpk %in% neg_prof_list |
+             castpk %in% no_sdev_list)) %>% 
+  arrange(castpk, pres)
+
+#Looking at total number of qc-1 profiles - only lost 5 profiles from original dataset here.
+par_qc1_total <- par_qc1 %>% 
+  distinct(castpk)
+
+```
+
+```{r}
+#investigation of instrument noise level - can this be determined using the deep dark approach? Using data below 50m depth to a accommodate shallow casts.Found profiles where the standard deviation is zero from the 20 dark points. See below - looks fine.
+
+#Found a problem where all only negative numbers are being included in the dark average resulting in a negative dark value - but they are just negative down-spikes and dark values are positive. This is an issue compared to profiles where all of the dark values are negative and this value needs to be added to the profile.
+
+#There is one cast with a very negative dark value castpk == 13575.
+
+dark <- par_qc1 %>%
+  filter(pres > 50) %>% 
+  group_by(castpk) %>%
+  filter(min_rank((par)) <= 20) %>%
+  mutate(min20_par_dark = par,
+         dark_mean = mean(par),
+         dark_sdev = sd(par),
+         dark_min_par = min(par),
+         dark_max_par = max(par),
+         dark_min_depth = min(pres),
+         dark_max_depth = max(pres)) %>%
+  ungroup() %>% 
+  distinct(castpk, .keep_all = TRUE)
+
+#Separating data where the maximum dark value used in the average is negative. 27, some around 1-2, most near 0. All have negative max dark values within 20 point window.
+dark_neg <- dark %>% 
+  filter(dark_max_par < 0)
+
+#Separating dark values where there is zero standard deviation over the 20 points - 0 profiles
+dark_sdev_0 <- dark %>% 
+  filter(dark_sdev == 0)
+
+```
+
+```{r}
+
+#Looking at dark values
+dark %>% 
+  ggplot(aes(x = date, y = dark_mean)) +
+  geom_point(size = 5, pch = 21, fill = "grey", alpha = 0.9) +
+  geom_errorbar(aes(ymin = dark_mean - dark_sdev,
+                    ymax = dark_mean + dark_sdev)) + 
+  facet_wrap(~ ctd_num, ncol = 1, scales = "free_y") +
+  labs(x = "Date",
+           y = "Profile Avg. 20 minimum PAR values") +
+  # scale_y_continuous(limits = c(0, NA)) +
+  theme_bw() +
+  theme(text = element_text(size = 25))
+
+ggsave(here("figures_qc", "par_dark.png"), 
+       width = 16, height = 16, dpi = 300)
+
+```
