@@ -59,19 +59,23 @@ mm_no_chl <- mm %>%
   select(!(micro_chl:bulk_chl)) %>% 
   select(!(cyan:diat))
   
-#Remove rows with NaNs - should select the ones I am using here before I delete NAs.
+#Removing columns-environmental drivers I'm not using before removing NAs as it preserved 2 more sites.
+mm_no_chl <- mm_no_chl %>% 
+  select(!N2_dm) %>% #Currently not using stability
+  select(!dep_26_dm) %>%  #Currently not using 1026 depth
+  select(!secchi_depth) %>% #not using z1% (zeu) in this file
+  select(!flu_dm) #not using CTD chl fluorescence
+
+#removing NAs for analysis
 mm_no_chl <- mm_no_chl %>% 
   drop_na()
 
-#Separating into response variables (microscopy counts) and Explainatory variables (Environmental)
-resp <- mm_no_chl[, 22:1]
+#Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
+resp <- mm_no_chl[, 18:131]
 
 #Things to add TChla, WSDP, iso depth, FWC...
-expl <- mm_no_chl[, 7:16]
+expl <- mm_no_chl[, 7:14]
 
-expl <- expl %>% 
-  select(!N2_dm) %>% 
-  select(!dep_26_dm)
 ```
 
 ```{r}
@@ -84,7 +88,7 @@ expl <- as.data.frame(expl)
 
 expl <- expl %>% 
   rename(temp = temp_dm, sal = sal_dm, drho = delta_rho_dm, turb = turb_dm,
-         no3_no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm, secchi = secchi_depth)
+         no3_no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm, zeu = zeu_dm)
 ```
 
 ```{r}
@@ -98,14 +102,13 @@ adjR2.tbrda <- RsquareAdj (tbRDA.all)$adj.r.squared
 
 adjR2.tbrda
 
-# Variables explain 41% of the variance
-#Constrained Variance = 54.73.46%
+
 # RDA1 - 
 # RDA2 - 
 # PCA1 - 
 # PCA2 - 
 
-#r2 = 0.41
+#r2 = 0.25
 
 #Global model significant to 0.001 
 ```
@@ -154,7 +157,7 @@ sel.osR2_adj$anova
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif <- subset(expl, select = c(temp, sio2, secchi))
+env.signif <- subset(expl, select = c(drho, sio2, zeu))
 
 #RDA using significant variables
 rda.signif <- rda(resp.hell ~ . ,data = env.signif)
@@ -162,13 +165,13 @@ rda.signif
 rda.sign.sum <- summary(rda.signif)
 
 rda.sign.sum
-#Total = 41.46%
-#Constrained = 37.5%
-#RDA1 = 27.43%
-#RDA2 = 6.1%
+#Total = 36%
+#Constrained = 26%
+#RDA1 = 18%
+#RDA2 = 7%
 
 #Adjusted R2 for the 1 significant variables
-#AdjR2 = 0.319
+#AdjR2 = 
 (R2adj <- RsquareAdj(rda.signif)$adj.r.squared)
 
 #ANOVA for testing significance of model and individual axes #Can do ANOVA by terms...
@@ -184,6 +187,7 @@ anova.cca(rda.signif, step = 1000, by = "axis")
 anova(rda.signif, by = "terms")
 
 ```
+
 ```{r}
 
 #Trying the same thing, but bringing in arrows from previous plot - trying scaling 2
@@ -307,17 +311,21 @@ sp_loc <-  as.data.frame(rda.sign.sum$species[,1:2])
 spl_10a_10p <- subset(sp_loc, rownames(sp_loc) %in% sel2)
 
 row.names(spl_10a_10p) <- c("P.n.s",
-                            "Th.",
-                            "P.o.", 
-                            "Hill.", 
-                            "Tel.", 
+                            "P.o",
+                            "Hill.",
+                            "Tel.",
                             "C.t.",
-                            "P.n.",
-                            "S.m.",
-                            "P.p",
+                            "S.m",
+                            "P.p.",
+                            "C.s.",
                             "C.c.",
-                            "P.t.",
-                            "Ol.")
+                            "P.t.")
+                            
+```
+
+
+```{r}
+#Plotting RDS scaling 2
 
 ggplot() + 
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
@@ -374,13 +382,13 @@ ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = c(0.07, 0.69),
+        legend.position = c(0.93, 0.69),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Season", shape = "Station")
 
-ggsave(here("figures_rev2", "rda_calvert_scaling2.png"),
+ggsave(here("figures_rev2", "rda_calvert_scaling2_zeu.png"),
         width = 6.2, height = 5, dpi = 300)
 ```
 
@@ -485,13 +493,13 @@ ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = c(0.93, 0.30),
+        legend.position = c(0.93, 0.69),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Season", shape = "Station")
 
-ggsave(here("figures_rev2", "rda_calvert_scaling1.png.png"),
+ggsave(here("figures_rev2", "rda_calvert_scaling1_zeu.png.png"),
        width = 6.2, height = 5, dpi = 300)
 ```
 
