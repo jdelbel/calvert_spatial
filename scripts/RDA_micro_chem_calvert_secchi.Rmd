@@ -63,7 +63,7 @@ mm_no_chl <- mm %>%
 mm_no_chl <- mm_no_chl %>% 
   drop_na()
 
-#Separating into response variables (microscopy counts) and Explainatory variables (Environmental)
+#Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
 resp <- mm_no_chl[, 22:1]
 
 #Things to add TChla, WSDP, iso depth, FWC...
