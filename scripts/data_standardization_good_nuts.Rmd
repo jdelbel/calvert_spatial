@@ -30,13 +30,13 @@ ctd <- read_csv(here("files", "ctd.csv"))
 turb_corr <- read_csv(here("outputs", "corrected_turbidity_v1.csv"))
 
 #Upload nutrient data (QC'd data from the portal)
-nuts <- read_csv(here("files", "nuts_2021-08-17.csv"))
-
-# Uploading nutrient data that is not finalized and has some errors - from Chris M. Using these data until finalized data are uploaded to the portal. Make sure that this step is removed for final analysis.
-nuts_bad <- read_xlsx(here("files", "nuts_bad_2020.xlsx"))
+nuts <- read_csv(here("files", "nuts_2021-12-15.csv"))
 
 #Upload secchi disk data
 secchi <- read_csv(here("files", "secchi.csv"))
+
+#Upload PAR derived zeu
+zeu <- read_csv(here("outputs", "par_corrected.csv"))
 
 #Upload Calvert microscopy data
 micro_c <- read_csv(here("files", "calvert.csv"))
@@ -74,19 +74,12 @@ fec <- read_csv(here("files", "fecal.csv"))
 #Uploading metadata for fecal pellet counts
 meta <- read_csv(here("files", "meta_phyto_2021-06-21.csv"))
 
-test1 <- micro %>% 
-  filter(site_id == "KC10" & date > "2018-01-01" & date < "2021-01-01") %>% 
-  distinct(date)
-
-test2 <- micro %>% 
-  filter(site_id == "QU39" & date > "2018-01-01" & date < "2021-01-01") %>% 
-  distinct(date)
 ```
 
 ```{r}
 #List for down-scaling QU39 to KC10
 
-#2019-04-02 is wuite a ways off from 2019-04-18 at KC10. For some reason not much data at QU39 in this year/month.
+#2019-04-02 is quite a ways off from 2019-04-18 at KC10. For some reason not much data at QU39 in this year/month.
 
 qu39_list <- c("2018-01-09", "2018-02-19", "2018-03-27", "2018-04-24", 
                "2018-05-22", "2018-06-26", "2018-07-16", "2018-08-21",
@@ -435,40 +428,6 @@ nuts_dm <- nuts_5 %>%
 ```
 
 ```{r}
-#Formatting the bad nutrient data for merging with the hakai portal dataset. This is awkardly placed here, but not bothering reformatting as it will be removed once the data has been uploaded to the portal.
-
-#Fixing column headers from the bad nutrient dataset
-nuts_bad <- nuts_bad %>%  
-  rename(hakai_id = `Sample ID`)
-
-#Finding records from the Hakai portal dataset that does not have any nutrient concentrations (post June 24th, 2020) - the metadata from these records will be matched with the HakaiIDS from the bad dataset
-nuts_nd <- nuts %>% 
-  filter(line_out_depth == 5 & date > "2020-06-24") %>% 
-  select(date, hakai_id, site_id)
-
-#Joining hakaiIDS from the bad nutrient dataset with the portal metadata (date and station). Checking for replicates. There are none for this subset of data.
-nuts_nd_join <- nuts_nd %>% 
-  left_join(nuts_bad, by = "hakai_id") %>% 
-  drop_na() %>% 
-  group_by(date, site_id) %>% 
-  mutate(n = n()) %>% 
-  ungroup()
-
-#Binding the "bad data" with the nutrient daily mean dataset to complete timeseries.
-nuts_nd_join <-  nuts_nd_join %>% 
-  select(date, site_id, no2_dm = `NO3+NO2`, sio2_dm = SiO2, po4_dm = PO4)
-
-nuts_dm <- nuts_dm %>% 
-  drop_na() 
-
-nuts_dm_bd <- rbind(nuts_nd_join, nuts_dm)
-
-nuts_dm_bd <- nuts_dm_bd %>% 
-  arrange(date, site_id)
-```
-
-
-```{r}
 #To merge with the environmental driver data, the microscopy needs to be transformed to wide format where species represent columns and samples represent rows. Up until now, I have done this in the individual statistical analysis workbooks, but better to do it once here. The only issue is that for some statistical analysis, I remove some species that are infrequently observed and I haven't decided on a final method for this. It needs to be done while the data is still in long format, so i will need two outputs. Less concerned about data matches for taxonomy anyways.
 
 ##Removing data outside of timeframe under investigation
@@ -631,11 +590,14 @@ chl_merge <- chl_sf_wide %>%
 #2020-09-22 - QU39 - programming issue, fixed
 
 ctd_merge <- ctd_dm %>% 
-  left_join(nuts_dm_bd) %>% 
+  left_join(nuts_dm) %>% 
   left_join(secchi) %>% 
+  left_join(zeu) %>% 
   left_join(chl_merge) %>% 
   left_join(micro_merge) %>% 
   left_join(chem)
+
+#I thintk this is where I would bring in the zeu depth.
 
 # 6 pairs of 2. As far as I can see, they are exactly the same, so I am going to remove them.
 ctd_merge_duplicates <- ctd_merge %>% 
@@ -976,7 +938,7 @@ fec_ds <- fec_ds %>%
 #It's actually less - 59 - Why? One reason could be chlorophyll data, which I incorporated and may have had missing data. Incorporate here and see. 8 Chlorophyll samples missing - this explains the disparity. Should be good to go.
 
 #Exporting as a csv to pull into other analysis.
-write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2021-12-01_chem.csv"))
+write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2021-12-15_zeu.csv"))
 
 #Exporting as a csv to pull into other analysis.
 write_csv(micro_ds, here("outputs", "micro_master_2021-10-18.csv"))
@@ -1019,6 +981,19 @@ test %>%
   ylim(0, 25)
 ```
 
+```{r}
+#Looking at par zeu to secchi relationship - What do you trust? Keep secchi_depth?
+
+ctd_merge_ds %>% 
+  ggplot(aes(x = zeu_dm, y = secchi_depth*2.8)) +
+  geom_point()
+
+ctd_merge_ds %>% 
+  ggplot(aes(x = date)) +
+  geom_point(aes(y = secchi_depth*2.8), color = "red") +
+  geom_point(aes(y = zeu_dm), color = "blue") +
+  facet_wrap(~site_id, ncol = 1)
+```
 
 
 
