@@ -164,7 +164,7 @@ p_dend <- ggplot() +
  geom_text(data = dendrogram_ends, aes(x = x, y = y.y, label = sample_name, 
                                        color = site_id),
            hjust = 0, angle = 0, size = 6) +
- geom_rect(data=rect, aes(xmin = X1-.3, xmax = X2+.3, ymin  =0, ymax = ymax), 
+ geom_rect(data = rect, aes(xmin = X1-.3, xmax = X2+.3, ymin = 0, ymax = ymax), 
             color = "red", fill = NA) +
  scale_color_manual(values = site_color) +
  scale_y_reverse(limits = c(0.6, -0.3)) +
