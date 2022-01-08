@@ -239,25 +239,92 @@ ggsave(here("figures_new", "sample_number.png"),
 ```
 
 ```{r}
-#Plotting Chl Timeseries
-f1 <- data %>% 
+#Plotting time-series of chl, temp, sal, nuts, secchi. For Chl, I want to use Chl for 2018 and HPLC for 2019 and 2020 as there is greater data availability. I need to merge the 2018 chl with the 2019-2020 HPLC.
+
+chl_bulk <- data %>%
+  select(date, site_id, bulk_chl) %>% 
+  filter(data < "2019-01-01") %>% 
+  rename(chl = bulk_chl)
+
+
+
+chl_bulk_fix <- chl_bulk %>% 
+  mutate(chl = (0.65*chl) + 0.59 )
+
+chem_tidy <- chem %>% 
+  pivot_longer(c(cyan, hapto, green, cryp, dino, dict, raph, diat),
+                 names_to = "phyto_group", values_to = "TChla") %>% 
+  group_by(date, site_id, phyto_group) %>% 
+  summarize(TChla_mean = mean(TChla)) %>% 
+  ungroup() %>% 
+  group_by(date, site_id) %>% 
+  mutate(TChla_sum = sum(TChla_mean)) %>% 
+  ungroup()
+
+chl_hplc <- chem_tidy %>% 
+  select(date, site_id, chl = TChla_sum) %>% 
+  distinct(date, site_id, chl, .keep_all = TRUE)
+
+chl_merge <- rbind(chl_bulk_fix, chl_hplc)
+
+
+#Looking at relationship between Chl and TCHLA
+chem_compare <- chl_hplc %>% 
+  rename(tchla = chl)  
+
+chl_compare <- data %>%
+  select(date, site_id, bulk_chl) %>% 
+  filter(data > "2019-01-01")
+
+chem_compare <- chem_compare %>% 
+  left_join(chl_compare)
+
+chem_compare %>% 
+  ggplot(aes(x = bulk_chl, y = tchla)) + 
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_abline(slope = 1, intercept = 0) +
+  ggpubr::stat_cor(label.y.npc = 1.0, vjust = 2, size = 8) +
+  ggpubr::stat_regline_equation(label.y = 18, size = 6) 
+  
+chl_lm = lm(bulk_chl~tchla, data = chem_compare) #Create the linear regression
+summary(chl_lm) #Review the results
+
+```
+
+```{r}
+blooms <- chl_merge %>% 
+  filter(chl >= 5)
+
+bloom_dates <- blooms$date
+
+micro_bloom <- micro %>% 
+  filter(date %in% bloom_dates) %>% 
+  select(date, site_id, scientificName, count)
+```
+
+```{r}
+f1 <- chl_merge %>% 
   filter(!site_id == "QU39") %>% 
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = bulk_chl, group = site_id, fill = site_id, 
+  ggplot(aes(x = yday, y = chl, group = site_id, fill = site_id, 
              color = site_id)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   geom_hline(yintercept = 5, linetype = "dashed", color = "black") +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 20)) +
+  labs(y = "Chl") +
   facet_wrap(~ year) +
   theme_bw() +
   theme(axis.title.x = element_blank(),
         axis.text.x =  element_blank(),
         strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        legend.position = c(0.95, 0.879),
+        # strip.text.x = element_blank(),
+        legend.title = element_blank(),
+        legend.position = c(0.92, 0.7),
+        legend.background = element_blank(),
         text = element_text(size = 30))
 
 f2 <- data %>% 
@@ -270,6 +337,7 @@ f2 <- data %>%
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   scale_y_continuous(expand = c(0, 0), limits = c(8, 16)) +
+  labs(y = "Temp") +
   facet_wrap(~ year) +
   theme_bw() +
   theme(axis.title.x = element_blank(),
@@ -290,6 +358,7 @@ f3 <- data %>%
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   scale_y_continuous(expand = c(0, 0), limits = c(27, 33), 
                      breaks = seq(27, 33, by = 2)) +
+  labs(y = "Salinity") +
   facet_wrap(~ year) +
   theme_bw() +
   theme(axis.title.x = element_blank(),
@@ -304,10 +373,12 @@ f4 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = no2_dm, group = site_id, fill = site_id,
+  ggplot(aes(x = yday, y = delta_rho_dm, group = site_id, fill = site_id,
              color = site_id)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 16)) +
+  labs(y = expression(~ Delta * rho)) +
   facet_wrap(~ year) +
   theme_bw() +
   theme(axis.title.x = element_blank(),
@@ -317,16 +388,19 @@ f4 <- data %>%
         legend.position = "none",
         text = element_text(size = 30))
 
+
 f5 <- data %>% 
   filter(!site_id == "QU39") %>% 
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = po4_dm, group = site_id, fill = site_id, 
+  ggplot(aes(x = yday, y = no2_dm, group = site_id, fill = site_id,
              color = site_id)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 20)) +
   facet_wrap(~ year) +
+  labs(y = expression(NO[3]^{"-"} ~ "+" ~ NO[2]^{"-"})) +
   theme_bw() +
   theme(axis.title.x = element_blank(),
         axis.text.x =  element_blank(),
@@ -340,10 +414,12 @@ f6 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = sio2_dm, group = site_id, fill = site_id,
+  ggplot(aes(x = yday, y = po4_dm, group = site_id, fill = site_id, 
              color = site_id)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1.6)) +
+  ylab(bquote(PO[4])) +
   facet_wrap(~ year) +
   theme_bw() +
   theme(axis.title.x = element_blank(),
@@ -358,21 +434,44 @@ f7 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = sio2_dm, group = site_id, fill = site_id,
+             color = site_id)) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 30)) +
+  ylab(bquote(SiO[4])) +
+  facet_wrap(~ year) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x =  element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 30))
+
+f8 <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
   ggplot(aes(x = yday, y = secchi_depth, group = site_id, fill = site_id,
              color = site_id)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 15)) +
+  ylab("Secchi") +
   facet_wrap(~ year) +
   theme_bw() +
-  theme(strip.background = element_blank(),
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
         strip.text.x = element_blank(),
         legend.position = "none",
-        text = element_text(size =30))
+        text = element_text(size = 30))
 
-fig <- f1/f2/f3/f4/f5/f6/f7
+fig <- f1/f2/f3/f4/f5/f6/f7/f8
 
-ggsave(here("figures_rev2", "test.png"), fig,
-       width = 17, height = 16, dpi = 300)
+ggsave(here("figures_rev2", "test5.png"), fig,
+       width = 16, height = 20, dpi = 300)
 ```
 
 
