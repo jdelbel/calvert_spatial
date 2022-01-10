@@ -150,11 +150,13 @@ cluster.average <- hclust(dis, "average")
 ```
 
 ```{r}
-# k <- 6
-# clust <- cutree(cluster.average, k = k)
-# 
-# clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
-#                                    cluster = factor(clust))
+k <- 5
+clust <- cutree(cluster.average, k = k)
+
+clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
+                                   cluster = factor(clust))
+
+# write_csv(clust.df, here("outputs", "clusters_micro.csv"))
 ```
 
 ```{r}
@@ -183,10 +185,10 @@ dendrogram_ends <- dendrogram_segments %>%
 ```
 
 ```{r}
-# dendrogram_data[["labels"]] <- merge(dendrogram_data[["labels"]], clust.df, by = "label")
-# rect <- aggregate(x~cluster, label(dendrogram_data), range)
-# rect <- data.frame(rect$cluster, rect$x)
-# ymax <- mean(cluster.average$height[length(cluster.average$height) - ((k-2):(k-1))])
+dendrogram_data[["labels"]] <- merge(dendrogram_data[["labels"]], clust.df, by = "label")
+rect <- aggregate(x~cluster, label(dendrogram_data), range)
+rect <- data.frame(rect$cluster, rect$x)
+ymax <- mean(cluster.average$height[length(cluster.average$height) - ((k-2):(k-1))])
 ```
 
 
@@ -228,8 +230,8 @@ p_dend <- ggplot() +
  geom_text(data = dendrogram_ends, aes(x = x, y = y.y, label = sample_name, 
                                        color = site_id),
            hjust = 0, angle = 0, size = 6) +
- # geom_rect(data = rect, aes(xmin = X1-.3, xmax = X2+.3, ymin = 0, ymax = ymax), 
- #            color = "red", fill = NA) +
+ geom_rect(data = rect, aes(xmin = X1-.3, xmax = X2+.3, ymin = 0, ymax = ymax),
+            color = "black", fill = NA, size = 0.8) +
  scale_color_manual(values = site_color) +
  scale_y_reverse(limits = c(0.6, -0.3)) +
  coord_flip() + 
@@ -242,7 +244,7 @@ p_dend <- ggplot() +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
  
-ggsave(here("figures_rev2", "hc_average.png"), p_dend,
+ggsave(here("figures_rev2", "hc_average_clusters_5.png"), p_dend,
        width = 6, height = 12, dpi = 300)
 ```
 
@@ -551,11 +553,9 @@ p2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
   labs(shape = "Station", fill = "Year") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-
-
 fig <- (p1/p2) | p_dend
 
-ggsave(here("figures_rev2", "nmds_dendro.png"), fig,
+ggsave(here("figures_rev2", "nmds_dendro_5_clust.png"), fig,
        width = 16, height = 12, dpi = 300)
 
 ```
@@ -668,6 +668,240 @@ micro_heat %>%
 ggsave(here("figures_rev2", "heat_indicator_2.png"),
        width = 13, height = 18, dpi = 300)
 ```
+```{r}
+#Indicator species from clustering - 5 clusters. 
+
+micro_heat %>%   
+  filter(scientificName == "Attheya" |
+           scientificName == "Chaetoceros laciniosus" |
+           scientificName == "Thalassiosira" |
+           scientificName == "Scrippsiella trochoidea" |
+           scientificName == "Atheya" |
+           scientificName == "Teleaulax acuta" |
+           scientificName == "Pseudo-nitzschia seriata" |
+           scientificName == "Hillea" |
+           scientificName == "Dactyliosolen phuketensis" | #good.
+           scientificName == "Thalassiosira rotula" | #good
+           scientificName == "Dactyliosolen fragilissimus" | #good
+           scientificName == "Chaetoceros debilis" | #good
+           scientificName == "Guinardia delicatula" | #good
+           scientificName == "Skeletonema marinoi") %>% 
+  ggplot(aes(x = species_order, y = sample_name, fill = log10(count+1))) +
+  geom_tile(color = "black", size = 1) +
+  facet_grid(.~group, scales = "free_x", space = "free") +
+  scale_fill_gradient(name = "",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  # scale_fill_gradient2(name = "",
+  #                      midpoint = 3,
+  #                      low = "white",
+  #                      mid = "blue",
+  #                      high = "#FF0000") +
+  scale_x_discrete(labels = c("Attheya" = "A.",
+                              "Chaetoceros debilis" = "C.d.",
+                              "Chaetoceros laciniosus" = "C.l.",
+                              # "Chaetoceros decipiens" = "C.dec.",
+                              # "Chaetoceros seiracanthus" = "C.s.",
+                              "Dactyliosolen fragilissimus" = "D.f.",
+                              "Dactyliosolen phuketensis" = "D.ph.",
+                              # "Detonula pumila" = "D.pu.",
+                              "Guinardia delicatula" = "G.d.",
+                              # "Rhizosolenia setigera" = "R.s.",
+                              "Pseudo-nitzschia seriata" = "P.n.s",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Thalassiosira" = "T.",
+                              "Thalassiosira rotula" = "T.r.",
+                              "Hillea" = "Hill.",
+                              "Teleaulax acuta" = "T.a.",
+                              "Scrippsiella trochoidea" = "S.t.")) +
+                              # "Ceratium lineatum" = "C.l.")) +
+  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 35),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.1, 0.03),
+        legend.position = "none",
+        # legend.direction = "horizontal",
+        axis.line = element_line(colour = "black"))
+
+ggsave(here("figures_rev2", "heat_indicator_5_clusters_abbr.png"),
+       width = 13, height = 18, dpi = 300)
+```
+```{r}
+#Indicator species from clustering - 5 clusters - organized by cluster.
+
+#Indicator species from clustering - 5 clusters. 
+micro_heat3 <- micro_heat
+
+clust_df <- clust.df %>% 
+  rename(sample_name = label)
+
+micro_heat3 <- micro_heat3 %>% 
+  left_join(clust_df) %>% 
+  relocate(cluster, .after = site_id)
+
+micro_heat3$sample_name <- factor(micro_heat3$sample_name,
+                                   (unique(micro_heat3$sample_name
+                                              [order(micro_heat3$cluster)])))
+
+
+micro_heat3 %>%   
+  filter(scientificName == "Attheya" |
+           scientificName == "Chaetoceros laciniosus" |
+           scientificName == "Thalassiosira" |
+           scientificName == "Scrippsiella trochoidea" |
+           scientificName == "Atheya" |
+           scientificName == "Teleaulax acuta" |
+           scientificName == "Pseudo-nitzschia seriata" |
+           scientificName == "Hillea" |
+           scientificName == "Dactyliosolen phuketensis" | #good.
+           scientificName == "Thalassiosira rotula" | #good
+           scientificName == "Dactyliosolen fragilissimus" | #good
+           scientificName == "Chaetoceros debilis" | #good
+           scientificName == "Guinardia delicatula" | #good
+           scientificName == "Skeletonema marinoi") %>% 
+  ggplot(aes(x = species_order, y = sample_name, fill = log10(count+1))) +
+  geom_tile(color = "black", size = 1) +
+  facet_grid(cluster ~ group, scales = "free", space = "free") +
+  scale_fill_gradient(name = "",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  # scale_fill_gradient2(name = "",
+  #                      midpoint = 3,
+  #                      low = "white",
+  #                      mid = "blue",
+  #                      high = "#FF0000") +
+  scale_x_discrete(labels = c("Attheya" = "A.",
+                              "Chaetoceros debilis" = "C.d.",
+                              "Chaetoceros laciniosus" = "C.l.",
+                              # "Chaetoceros decipiens" = "C.dec.",
+                              # "Chaetoceros seiracanthus" = "C.s.",
+                              "Dactyliosolen fragilissimus" = "D.f.",
+                              "Dactyliosolen phuketensis" = "D.ph.",
+                              # "Detonula pumila" = "D.pu.",
+                              "Guinardia delicatula" = "G.d.",
+                              # "Rhizosolenia setigera" = "R.s.",
+                              "Pseudo-nitzschia seriata" = "P.n.s",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Thalassiosira" = "T.",
+                              "Thalassiosira rotula" = "T.r.",
+                              "Hillea" = "Hill.",
+                              "Teleaulax acuta" = "T.a.",
+                              "Scrippsiella trochoidea" = "S.t.")) +
+                              # "Ceratium lineatum" = "C.l.")) +
+  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 35),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.1, 0.03),
+        legend.position = "none",
+        # legend.direction = "horizontal",
+        axis.line = element_line(colour = "black"))
+
+ggsave(here("figures_rev2", "heat_indicator_5_clusters_abbr_2.png"),
+       width = 13, height = 18, dpi = 300)
+```
+
+
+
+
+```{r}
+
+#Indicator species from clustering - 5 clusters. 
+# micro_heat %>% arrange(factor(sample_name, levels = hc_order)) 
+micro_heat2 <- micro_heat
+
+micro_heat2$sample_name <- factor(micro_heat2$sample_name,
+                                   (unique(micro_heat2$sample_name
+                                              [order(micro_heat$date)])))
+
+
+micro_heat2 %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(scientificName == "Ceratium horridum" |
+           scientificName == "Corethron criophilum" |
+           scientificName == "Teleaulax acuta" |
+           scientificName == "Protoperidinium" |
+           scientificName == "Prorocentrum" |
+           scientificName == "Phaeocystis pouchetii" |
+           scientificName == "Corythodinium" |
+           scientificName == "Gonyaulax" |
+           scientificName == "Dinophyceae" |
+           scientificName == "Skeletonema marinoi" |
+           scientificName == "Thalassiosira nordenskioeldii" |
+           scientificName == "Leptocylindrus danicus" |
+           scientificName == "Dinobryon" |
+           scientificName == "Pseudo-nitzschia seriata" |
+           scientificName == "Biddulphiales") %>% 
+  ggplot(aes(x = species_order, y = sample_name, fill = log10(count+1))) +
+  geom_tile(color = "black", size = 1) +
+  facet_grid(year ~ group, scales = "free", space = "free") +
+  scale_fill_gradient(name = "",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  # scale_fill_gradient2(name = "",
+  #                      midpoint = 3,
+  #                      low = "white",
+  #                      mid = "blue",
+  #                      high = "#FF0000") +
+  scale_x_discrete(labels = c("Biddulphiales" = "Bid.",
+                              "Corethron criophilum" = "C.c.",
+                              "Leptocylindrus danicus" = "L.d.",
+                              "Pseudo-nitzschia seriata" = "P.n.s",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Thalassiosira nordenskioeldii" = "T.n.",
+                              "Dinobryon" = "Db.",
+                              "Teleaulax acuta" = "T.a.",
+                              "Ceratium horridum" = "C.h.",
+                              "Corythodinium" = "C.",
+                              "Dinophyceae" = "D.",
+                              "Gonyaulax" = "G.",
+                              "Prorocentrum" = "Prc.",
+                              "Protoperidinium" = "Ptp.",
+                              "Phaeocystis pouchetii" = "P.p.")) +
+  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 35),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.1, 0.03),
+        legend.position = "none",
+        # legend.direction = "horizontal",
+        axis.line = element_line(colour = "black"))
+
+ggsave(here("figures_rev2", "heat_indicator_date_abbr.png"),
+       width = 13, height = 18, dpi = 300)
+
+```
+
+
+
 ```{r}
 #Trying with only the indicator species (p <0.05)
 
@@ -853,6 +1087,24 @@ year <- micro_piv$year
 
 ```
 
+```{r}
+#For clusters, need to merge on station/date code. 
+clust_analysis <- micro_piv %>%
+  unite(sample_name, c(site_id, date), sep = "_")
+
+clust_df <- clust.df %>% 
+  rename(sample_name = label)
+
+clust_analysis <- clust_analysis %>% 
+  left_join(clust_df) %>% 
+  relocate(cluster, .after = season)
+
+cluster <- clust_analysis$cluster
+
+
+```
+
+
 
 
 ```{r}
@@ -868,6 +1120,9 @@ ano_season
 
 ano_year = anosim(transform, year, distance = "bray", permutations = 9999)
 ano_year
+
+ano_cluster = anosim(transform, cluster, distance = "bray", permutations = 9999)
+ano_cluster
 
 #Site and region are significant (p = 0.0001), with region having the highest R (0.62 vs 0.27) 
 
@@ -901,6 +1156,15 @@ summary(inv_site)
 ```
 
 ```{r}
+#Trying SIMPER
+# inv_site = simper(transform, site_id, permutations = 9999)
+# 
+# summary(inv_site, ordered = TRUE)
+
+```
+
+
+```{r}
 #by month
 inv_month = multipatt(transform, month, func = "r.g",
                        control = how(nperm = 9999))
@@ -915,6 +1179,15 @@ inv_year = multipatt(transform, year, func = "r.g",
 
 summary(inv_year)
 ```
+
+```{r}
+#by year
+inv_cluster = multipatt(transform, cluster, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_cluster)
+```
+
 
 ```{r}
 #Calculating Shannon diversity and putting in dataframe
