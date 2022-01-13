@@ -49,26 +49,151 @@ clust <- clust %>%
 data <- data %>% 
   left_join(clust) %>% 
   relocate(cluster, .after = site_id)
+
+#Uploading chemtax data
+chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv")) 
 ```
 ```{r}
-data %>% 
-  ggplot(aes(x = as.factor(cluster), y = fecal)) +
+#So let's facet all of the drivers here
+#1) Get HPLC chl
+#2) Subset and make long format.
+#) Plot.
+```
+
+```{r}
+#Plotting time-series of chl, temp, sal, nuts, secchi. For Chl, I want to use Chl for 2018 and HPLC for 2019 and 2020 as there is greater data availability. I need to merge the 2018 chl with the 2019-2020 HPLC.
+
+chl_bulk <- data %>%
+  select(date, site_id, bulk_chl) %>% 
+  filter(date < "2019-01-01") %>% 
+  rename(chl = bulk_chl)
+
+chl_bulk_fix <- chl_bulk %>% 
+  mutate(chl = (0.65*chl) + 0.59 )
+
+chem_tidy <- chem %>% 
+  pivot_longer(c(cyan, hapto, green, cryp, dino, dict, raph, diat),
+                 names_to = "phyto_group", values_to = "TChla") %>% 
+  group_by(date, site_id, phyto_group) %>% 
+  summarize(TChla_mean = mean(TChla)) %>% 
+  ungroup() %>% 
+  group_by(date, site_id) %>% 
+  mutate(TChla_sum = sum(TChla_mean)) %>% 
+  ungroup()
+
+chl_hplc <- chem_tidy %>% 
+  select(date, site_id, chl = TChla_sum) %>% 
+  distinct(date, site_id, chl, .keep_all = TRUE)
+
+chl_merge <- rbind(chl_bulk_fix, chl_hplc)
+
+```
+
+```{r}
+clust_dend <- data %>% 
+  select(site_id, date, cluster, temp_dm, sal_dm, delta_rho_dm, turb_dm, 
+         no2_dm:secchi_depth)
+
+clust_dend <- clust_dend %>% 
+  left_join(chl_merge)
+
+clust_dend_tidy <- clust_dend %>% 
+  pivot_longer(c(temp_dm, sal_dm, delta_rho_dm, turb_dm, no2_dm, sio2_dm, 
+                 po4_dm, secchi_depth, chl), names_to = "parameter", 
+               values_to = "value")
+
+```
+
+
+```{r}
+clust_dend_tidy$order = factor(clust_dend_tidy$parameter,
+                               levels = c("chl","temp_dm","sal_dm","delta_rho_dm",
+                               "no2_dm", "sio2_dm", "po4_dm", "secchi_depth", 
+                               "turb_dm"))
+
+# New facet label names for supp variable
+supp.labs <- c("chl", "temp", "salinity", "delta_rho", "no3+no2", "sio2", "po4",
+               "secchi", "turbidity")
+names(supp.labs) <- c("chl","temp_dm","sal_dm","delta_rho_dm", "no2_dm", 
+                      "sio2_dm", "po4_dm", "secchi_depth", "turb_dm")
+
+
+clust_dend_tidy %>% 
+  ggplot(aes(x = as.factor(cluster), y = value)) +
   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
                color = "black", lwd = 0.7) +
   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
                stackdir = 'center', dotsize = 1,
                position = position_dodge(0.8)) +
+  facet_wrap(~order, scales = "free_y", 
+             labeller = labeller(order = supp.labs)) +
+  xlab("cluster") +
   scale_fill_npg() +
   theme_bw() +
-  theme(legend.position = c(0.07, 0.75),
+  theme(legend.position = c(0.23, 0.95),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        # axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+ggsave(here("figures_rev2", "clust_drivers.png"), 
+       width = 16, height = 18, dpi = 300)
+```
+```{r}
+clust_dend_tidy %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = as.factor(year), y = value)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  facet_wrap(~order, scales = "free_y", 
+             labeller = labeller(order = supp.labs)) +
+  xlab("cluster") +
+  scale_fill_npg() +
+  theme_bw() +
+  theme(legend.position = c(0.23, 0.95),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        # axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+ggsave(here("figures_rev2", "year_drivers.png"), 
+       width = 16, height = 18, dpi = 300)
+```
+```{r}
+clust_dend_tidy %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = as.factor(site_id), y = value)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = as.factor(year)), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  facet_wrap(~order, scales = "free_y", 
+             labeller = labeller(order = supp.labs)) +
+  xlab("cluster") +
+  scale_fill_npg() +
+  theme_bw() +
+  theme(legend.position = c(0.08, 0.95),
         legend.title = element_blank(),
         legend.background=element_blank(),
         axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        # axis.text.x = element_blank(),
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
-```
 
+ggsave(here("figures_rev2", "station_drivers.png"), 
+       width = 16, height = 18, dpi = 300)
+```
 
 ```{r}
 #Boxplot panel. Physics, Chemical, Secchi 

@@ -243,10 +243,8 @@ ggsave(here("figures_new", "sample_number.png"),
 
 chl_bulk <- data %>%
   select(date, site_id, bulk_chl) %>% 
-  filter(data < "2019-01-01") %>% 
+  filter(date < "2019-01-01") %>% 
   rename(chl = bulk_chl)
-
-
 
 chl_bulk_fix <- chl_bulk %>% 
   mutate(chl = (0.65*chl) + 0.59 )
