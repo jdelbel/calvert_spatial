@@ -678,413 +678,93 @@ chem_tidy %>%
   guides(fill = guide_legend(nrow = 1))
   
 ggsave(here("figures", "calvert_qu39_chem_relative_2019-ts.png"),
-       width=16, height=14, dpi=300)
-```
-```{r}
-#Trying to plot Relative in a different way - CHEMTAX
-chem_qu39_ds <- chem_tidy %>%
-  filter(site_id == "QU39")
-
-chem_qu39_ds <- chem_qu39_ds %>%
-  filter(date == "2019-05-09" |
-         date == "2019-06-04" |
-         date == "2019-07-09" |
-         date == "2019-08-07" |
-         date == "2019-08-29" |
-         date == "2019-10-09" |
-         #date == "2019-11-26" | #removing this for multi-year analysis
-         date == "2020-04-29" | #Different month, but very close temporally
-         date == "2020-06-04" |
-         date == "2020-07-09" | # Also 06-30 - Tricky
-         date == "2020-08-04" | # Also 08-13 
-         date == "2020-09-01" |
-         date == "2020-10-08")
-
-chem_ds <- chem_tidy %>%
-  filter(!site_id == "QU39")
-
-chem_ds <- rbind(chem_ds, chem_qu39_ds)
-
-# chem_ds <- chem_ds %>% 
-#   filter(date > "2019-05-01" & date < "2019-12-01") %>% 
-#   arrange(date)
-
-chem_ds <- chem_ds %>%  
-  mutate(month = lubridate::month(date),
-         month = case_when(date == "2019-08-29" ~ 9,
-                           date == "2019-08-31" ~ 9,
-                           date == "2020-04-29" ~ 5,
-                           date == "2020-04-30" ~ 5,
-                             TRUE ~ as.numeric (month)))
-    
-```
-
-
-```{r}
-micro_qu39_ds <- micro_sum %>%
-  filter(site_id == "QU39")
-
-micro_qu39_ds_distinct <- micro_qu39_ds %>%
-  mutate(month = lubridate::month(date)) %>% 
-  filter(date > "2018-01-01" & date < "2021-01-01" & month > 3 & month < 11) %>%
-  distinct(date, site_id)
-
-#Trying to plot Relative in a different way - CHEMTAX
-micro_qu39_ds <- micro_qu39_ds %>%
-  filter(date == "2018-05-29" | #could also be 05-22
-         date == "2018-06-26" |
-         date == "2018-07-23" | # Could also be 07-16
-         date == "2018-08-21" | # 08-14, 08-28
-         date == "2018-09-13" |   
-         date == "2018-10-24" |
-         date == "2019-05-09" |
-         date == "2019-06-04" |
-         date == "2019-07-09" |
-         date == "2019-08-07" |
-         date == "2019-08-29" |
-         date == "2019-10-09" |
-         #date == "2019-11-26" | #removing this for multi-year analysis
-         date == "2020-04-29" | #Different month, but very close temporally
-         date == "2020-06-04" |
-         date == "2020-07-09" | # Also 06-30 - Tricky
-         date == "2020-08-04" | # Also 08-13 
-         date == "2020-09-01" |
-         date == "2020-10-08")
-
-micro_ds <- micro_sum %>%
-  filter(!site_id == "QU39")
-
-micro_ds_distinct <- micro_ds %>% 
-  mutate(month = lubridate::month(date)) %>% 
-  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11) %>%
-  distinct(date, site_id) %>% 
-  mutate(row_n = row_number())
-
-micro_ds <- rbind(micro_ds, micro_qu39_ds)
-
-# micro_ds <- micro_ds %>% 
-#   filter(date > "2019-05-01" & date < "2019-12-01") %>% 
-#   arrange(date)
-
-micro_ds <- micro_ds %>%  
-  mutate(month = lubridate::month(date),
-         month = case_when(date == "2019-08-29" ~ 9,
-                           date == "2019-08-31" ~ 9,
-                           date == "2020-04-29" ~ 5,
-                           date == "2020-04-30" ~ 5,
-                             TRUE ~ as.numeric (month)))
+       width = 16, height = 14, dpi = 300)
 ```
 
 ```{r}
-p1 <- micro_ds %>% 
-  filter(!group == "Unknown_Chlorophyta?" &
-         !group == "Unknown_Dinophyceae?" &
-         !group == "Unknown_flagellate" &
-           date >= "2018-05-01" & date < "2018-11-01") %>% 
-  ggplot(aes(x = site_id, y = sum, fill = group)) +
-  geom_bar(position = "stack", stat = "identity", color = "black") +
-  ylim(y = c(0, 3500000)) +
-  facet_wrap(~ month, nrow = 1) +
-  scale_fill_manual(values = color_palette_micro) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  # labs(y = bquote("Abundance (cells" ~ L^-1*")")) +
+#Making timeseries plot of SF Chlorophyll in a similar way to the chemtax and microscopy data. Will likely plot as stacked bars and there are data gaps.
+
+#Subsetting size-fractionated chlorophyll data and removing rows with na's - need all three filters for plotting.
+sf <- data %>%
+  select(date:site_id, micro_chl:pico_chl) %>% 
+  filter(!(is.na(micro_chl) | is.na(nano_chl) | is.na(pico_chl)))
+
+#Making size-fractionated data tidy  
+sf_tidy <- sf %>% 
+  pivot_longer(c(micro_chl, nano_chl, pico_chl),
+                 names_to = "size", values_to = "chl") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sf_sum = sum(chl)) %>% 
+  ungroup()
+
+#List for order of size fractions from smallest to largest
+order_sf <- c("pico_chl", "nano_chl", "micro_chl")
+# order_sf <- c("micro_chl", "nano_chl", "pico_chl")
+
+
+#Applying order of size fractions to datasheet
+sf_tidy <- arrange(mutate(sf_tidy,
+                                size = factor(size,
+                                levels = order_sf)))
+
+#Arranging dataset by date and size.
+sf_tidy <- sf_tidy %>% 
+  arrange(date, size)
+
+```
+
+```{r}
+#Plotting size fraction timeseries -  stacked area plot
+
+sf_tidy %>% 
+  filter(date > "2018-04-01" & date < "2020-11-01" & !site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = chl, fill = fct_rev(size))) +
+  geom_area(position = "stack", size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = sf_sum), size = 2) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  facet_grid(site_id ~ year) +
+  labs(x = "Year Day",
+           y = bquote("TChl (mg" ~ m^-3*")")) +
   theme_bw() +
   theme(legend.position = "top",
         legend.direction = "horizontal",
         legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.title.y = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
+        text = element_text(size = 25))
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  
 
-p2 <- micro_ds %>% 
-  filter(!group == "Unknown_Chlorophyta?" &
-         !group == "Unknown_Dinophyceae?" &
-         !group == "Unknown_flagellate" &
-           date >= "2019-05-01" & date < "2019-11-01") %>% 
-  ggplot(aes(x = site_id, y = sum, fill = group)) +
-  geom_bar(position = "stack", stat = "identity", color = "black") +
-  ylim(y = c(0, 3500000)) +
-  facet_wrap(~ month, nrow = 1) +
-  scale_fill_manual(values = color_palette_micro) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  labs(y = bquote("Abund. (cells" ~ L^-1*")")) +
-  theme_bw() +
-  theme(strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        legend.position = "none",
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
+ggsave(here("figures_rev2", "timeseries_calvert_sf.png"),
+       width = 17, height = 10, dpi = 300)
 
-p3 <- micro_ds %>% 
-  filter(!group == "Unknown_Chlorophyta?" &
-         !group == "Unknown_Dinophyceae?" &
-         !group == "Unknown_flagellate" &
-          date > "2020-04-27" & date < "2020-11-01") %>% 
-  ggplot(aes(x = site_id, y = sum, fill = group)) +
-  geom_bar(position = "stack", stat = "identity", color = "black") +
-  ylim(y = c(0, 3500000)) +
-  facet_wrap(~ month, nrow = 1) +
-  scale_fill_manual(values = color_palette_micro) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  # labs(y = bquote("Abundance (cells" ~ L^-1*")")) +
-  theme_bw() +
-  theme(strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        legend.position = "none",
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-fig <-  p1/p2/p3
-
-ggsave(here("figures_new", "calvert_qu39_2018-2020_micro_box_absolute.png"), fig,
-       width = 20, height = 12, dpi = 300)
 ```
-
 ```{r}
-# p1 <- micro_ds %>% 
-#   filter(!group == "Unknown_Chlorophyta?" &
-#          !group == "Unknown_Dinophyceae?" &
-#          !group == "Unknown_flagellate" &
-#            date >= "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11) %>% 
-#   mutate(year = lubridate::year(date),
-#          row_n = row_number()) %>% 
-#   ggplot(aes(x = site_id, y = sum, fill = group)) +
-#   geom_bar(position = "stack", stat = "identity", color = "black") +
-#   geom_text(aes(label = row_n, group = site_id),  vjust = -1, data = micro_ds_distinct) +
-#   ylim(y = c(0, 3500000)) +
-#   facet_grid(year ~ month) +
-#   scale_fill_manual(values = color_palette_micro) +
-#   scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-#                               "QU39" = "E")) +
-#   # labs(y = bquote("Abundance (cells" ~ L^-1*")")) +
-#   theme_bw() +
-#   theme(legend.position = "top",
-#         legend.direction = "horizontal",
-#         legend.title = element_blank(),
-#         axis.title.x = element_blank(),
-#         axis.text.x = element_blank(),
-#         axis.title.y = element_blank(),
-#         text = element_text(size = 30),
-#         axis.text = element_text(colour = "black"))
-# 
-# 
-# 
-# ggsave(here("figures_new", "calvert_qu39_2018-2020_micro_box_absolute_grid.png"),
-#        width = 20, height = 12, dpi = 300)
-```
+#Plotting size fraction timeseries -  stacked area plot
 
-
-
-```{r}
-p1 <- chem_ds %>% 
-  filter(date >= "2019-05-01" & date < "2019-11-01") %>% 
-  ggplot(aes(x = site_id, y = TChla_mean, fill = fct_rev(phyto_group))) +
-  geom_bar(position = "stack", stat = "identity", color = "black") +
-  facet_wrap(~ month, nrow = 1) +
-  scale_fill_manual(values = palette_chem) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  labs(y = bquote("TChl (mg" ~ m^-3*")")) +
+sf_tidy %>% 
+  filter(date > "2018-04-01" & date < "2020-11-01" & !site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = as.factor(month_surv), y = chl, fill = fct_rev(size))) +
+  geom_bar(stat = "identity", position = "stack", size = 0.5, colour = "black") +
+  # geom_point(aes(x = yday, y = sf_sum), size = 2) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  facet_grid(site_id ~ year) +
+  labs(x = "Survey Month",
+           y = bquote("Chl (mg" ~ m^-3*")")) +
   theme_bw() +
   theme(legend.position = "top",
         legend.direction = "horizontal",
-        legend.title = element_blank()) +
-  theme(axis.title.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black")) +
-  guides(fill = guide_legend(nrow = 1))
+        legend.title = element_blank(),
+        text = element_text(size = 25))
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  
 
-p2 <- chem_ds %>% 
-  filter(date > "2020-04-27" & date < "2020-11-01") %>%  
-  ggplot(aes(x = site_id, y = TChla_mean, fill = fct_rev(phyto_group))) +
-  geom_bar(position = "stack", stat = "identity", color = "black") +
-  facet_wrap(~ month, nrow = 1) +
-  scale_fill_manual(values = palette_chem) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  labs(y = bquote("TChl (mg" ~ m^-3*")")) +
-  theme_bw() +
-  theme(strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        legend.position = "none",
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black")) +
-  guides(fill = guide_legend(nrow = 1))
+ggsave(here("figures_rev2", "timeseries_calvert_sf_bar.png"),
+       width = 17, height = 10, dpi = 300)
 
-fig <- p1/p2
-
-ggsave(here("figures_new", "calvert_qu39_2018-2020_chem_box_absolute.png"), fig,
-       width = 20, height = 10, dpi = 300)
 ```
-
-
-
-
-
-```{r}
-p1 <- micro_ds %>% 
-  filter(!group == "Unknown_Chlorophyta?" &
-         !group == "Unknown_Dinophyceae?" &
-         !group == "Unknown_flagellate" &
-           date >= "2019-05-01" & date <= "2019-12-01") %>% 
-  ggplot(aes(x = site_id, y = sum, fill = group)) +
-  geom_bar(position = "stack", stat = "identity") +
-  facet_wrap(~ month, nrow = 1) +
-  scale_fill_manual(values = color_palette_micro) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  labs(y = bquote("Abundance (cells" ~ L^-1*")")) +
-  theme_bw() +
-  theme(legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank()) +
-  theme(axis.title.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p2 <- chem_ds %>% 
-  filter(date >= "2019-05-01" & date <= "2019-12-01") %>% 
-  ggplot(aes(x = site_id, y = TChla_mean, fill = fct_rev(phyto_group))) +
-  geom_bar(position = "stack", stat = "identity") +
-  facet_wrap(~ month, nrow = 1) +
-  scale_fill_manual(values = palette_chem) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  labs(y = bquote("TChl (mg" ~ m^-3*")")) +
-  theme_bw() +
-  theme(legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank()) +
-  theme(axis.title.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black")) +
-  guides(fill = guide_legend(nrow = 1))
-
-fig <- p1/p2
-
-ggsave(here("figures_new", "calvert_qu39_2019_box_comb_absolute_test.png"), fig,
-       width = 20, height = 10, dpi = 300)
-```
-```{r}
-p1 <- micro_ds %>% 
-  filter(!group == "Unknown_Chlorophyta?" &
-         !group == "Unknown_Dinophyceae?" &
-         !group == "Unknown_flagellate" &
-           date >= "2019-05-01" & date <= "2019-12-01") %>%
-  ggplot(aes(x = site_id, y = sum, fill = group)) +
-  geom_bar(position = "fill", stat = "identity") +
-  facet_wrap(~ month, nrow = 1) +
-  scale_fill_manual(values = color_palette_micro) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  labs(y = bquote("Abundance (%)")) +
-  theme_bw() +
-  theme(legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank()) +
-  theme(axis.title.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p2 <- chem_ds %>% 
-  filter(date >= "2019-05-01" & date <= "2019-12-01") %>%
-  ggplot(aes(x = site_id, y = TChla_mean, fill = fct_rev(phyto_group))) +
-  geom_bar(position="fill", stat="identity") +
-  facet_wrap(~ month, nrow = 1) +
-  scale_fill_manual(values = palette_chem) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  labs(y = bquote("TChl (%)")) +
-  theme_bw() +
-  theme(legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank()) +
-  theme(axis.title.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black")) +
-  guides(fill = guide_legend(nrow = 1))
-
-fig <- p1/p2
-
-ggsave(here("figures_new", "calvert_qu39_2019_box_comb_test.png"), fig,
-       width = 20, height = 10, dpi = 300)
-```
-
-
-```{r}
-micro_qu39_ds_full <- micro %>%
-  filter(site_id == "QU39")
-
-micro_qu39_ds_full_distinct <- micro_qu39_ds_full %>%
-  mutate(month = lubridate::month(date)) %>% 
-  filter(date > "2018-01-01" & date < "2021-01-01" & month > 3 & month < 11) %>%
-  distinct(date, site_id)
-
-#Trying to plot Relative in a different way - CHEMTAX
-micro_qu39_ds_full <- micro_qu39_ds_full %>%
-  filter(date == "2018-05-29" | #could also be 05-22
-         date == "2018-06-26" |
-         date == "2018-07-23" | # Could also be 07-16
-         date == "2018-08-21" | # 08-14, 08-28
-         date == "2018-09-13" |   
-         date == "2018-10-24" |
-         date == "2019-05-09" |
-         date == "2019-06-04" |
-         date == "2019-07-09" |
-         date == "2019-08-07" |
-         date == "2019-08-29" |
-         date == "2019-10-09" |
-         #date == "2019-11-26" | #removing this for multi-year analysis
-         date == "2020-04-29" | #Different month, but very close temporally
-         date == "2020-06-04" |
-         date == "2020-07-09" | # Also 06-30 - Tricky
-         date == "2020-08-04" | # Also 08-13 
-         date == "2020-09-01" |
-         date == "2020-10-08")
-
-micro_ds_full <- micro %>%
-  filter(!site_id == "QU39")
-
-micro_ds_full_distinct <- micro_ds_full %>% 
-  mutate(month = lubridate::month(date)) %>% 
-  filter(date > "2018-01-01" & date < "2021-01-01" & month > 4 & month < 11) %>%
-  distinct(date, site_id) %>% 
-  mutate(row_n = row_number())
-
-micro_ds_full <- rbind(micro_ds_full, micro_qu39_ds_full)
-
-
-micro_ds_full <- micro_ds_full %>%  
-  mutate(month = lubridate::month(date),
-         month = case_when(date == "2019-08-29" ~ 9,
-                           date == "2019-08-31" ~ 9,
-                           date == "2020-04-29" ~ 5,
-                           date == "2020-04-30" ~ 5,
-                             TRUE ~ as.numeric (month)))
-
-micro_ds_full <- micro_ds_full %>% 
-  filter(date > "2018-01-01" & date < "2020-12-31" & month > 4 & month < 11)
-```
-
-```{r}
-micro_ds_full %>% 
-  filter(scientificName == "Thalassiosira rotula") %>%
-  mutate(year = lubridate::year(date)) %>% 
-  ggplot(aes(x = month, y = count, color = site_id)) +
-  geom_point() +
-  facet_wrap(~year)
-```
-
-
 
