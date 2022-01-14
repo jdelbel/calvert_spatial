@@ -176,15 +176,6 @@ abund_env
 #Add lat and long into ctd_merge worksheet - data standardization sheet.
 ```
 
-```{r}
-test2 <- as.tibble(scale.env)
-
-#Trying Bio-env analysis
-test <- bioenv(dist.abund ~ temp_dm + sal_dm + turb_dm + no2_dm + sio2_dm + po4_dm +
-                 secchi_depth, test2)
-test
-summary(test)
-```
 
 
 
