@@ -405,40 +405,58 @@ ggsave(here("figures_rev2", "bar_chemtax.png"),
 
 ```{r}
 #separating treatments for following tests
-season <-  c$season
 site_id <- c$site_id
 month <- c$month
+year <- c$year
 
-month_cal <- c_cal$month
-site_id_cal <- c_cal$site_id
+#Need to do one for cluster.
 
+
+#This is for QU39
 #Adding region - should so this earlier - potentially in data standardization
-c <- c %>% 
-  mutate(region = case_when(site_id == "QU39" ~ "NSoG",
-                            !site_id == "QU39" ~ "Calvert")) %>% 
-  relocate(region, .after = "site_id")
-
-region <- c$region
+# c <- c %>% 
+#   mutate(region = case_when(site_id == "QU39" ~ "NSoG",
+#                             !site_id == "QU39" ~ "Calvert")) %>% 
+#   relocate(region, .after = "site_id")
+# 
+# region <- c$region
 
 
 
 ```
 
 ```{r}
+#For clusters, need to merge on station/date code. 
+c <- c %>%
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+clust_df <- clust.df %>% 
+  rename(sample_name = label)
+
+c <- c %>% 
+  left_join(clust_df) %>% 
+  relocate(cluster, .after = month_surv)
+
+cluster <- c$cluster
+
+
+```
+
+
+```{r}
 #ANOSIM test to see if groupings statistically significant
 ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
 ano_site
 
-
-# ano_site_cal = anosim(transform_cal, site_id_cal, 
-#                       distance = "bray", permutations = 9999)
-# ano_site_cal
-
 ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
 ano_month
 
-ano_region = anosim(transform, region, distance = "bray", permutations = 9999)
-ano_region
+ano_year = anosim(transform, year, distance = "bray", permutations = 9999)
+ano_year
+
+ano_cluster = anosim(transform, cluster, distance = "bray", permutations = 9999)
+ano_cluster
+
 
 #Site and region are significant (p = 0.0001), with region having the highest R (0.62 vs 0.27) 
 
@@ -446,25 +464,42 @@ ano_region
 
 ```{r}
 #Indicator species analysis
+```
 
 
+```{r}
 #by site
 inv_site = multipatt(transform, site_id, func = "r.g",
                        control = how(nperm = 9999))
-#by site calvert
-inv_site_cal = multipatt(transform_cal, site_id_cal, func = "r.g",
-                       control = how(nperm = 9999))
+
+summary(inv_site)
+```
 
 
+```{r}
 #by month
 inv_month = multipatt(transform, month, func = "r.g",
                        control = how(nperm = 9999))
 
-#by region
-inv_region = multipatt(transform, region, func = "r.g",
+summary(inv_month)
+```
+
+
+```{r}
+#by year
+inv_year = multipatt(transform, year, func = "r.g",
                        control = how(nperm = 9999))
 
-summary(inv_site)
+summary(inv_year)
+```
+
+
+```{r}
+#by year
+inv_clust = multipatt(transform, cluster, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_clust)
 ```
 
 ```{r}
