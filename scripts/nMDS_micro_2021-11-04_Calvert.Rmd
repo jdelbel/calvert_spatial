@@ -668,74 +668,7 @@ micro_heat %>%
 ggsave(here("figures_rev2", "heat_indicator_2.png"),
        width = 13, height = 18, dpi = 300)
 ```
-```{r}
-#Indicator species from clustering - 5 clusters. 
 
-micro_heat %>%   
-  filter(scientificName == "Attheya" |
-           scientificName == "Chaetoceros laciniosus" |
-           scientificName == "Thalassiosira" |
-           scientificName == "Scrippsiella trochoidea" |
-           scientificName == "Atheya" |
-           scientificName == "Teleaulax acuta" |
-           scientificName == "Pseudo-nitzschia seriata" |
-           scientificName == "Hillea" |
-           scientificName == "Dactyliosolen phuketensis" | #good.
-           scientificName == "Thalassiosira rotula" | #good
-           scientificName == "Dactyliosolen fragilissimus" | #good
-           scientificName == "Chaetoceros debilis" | #good
-           scientificName == "Guinardia delicatula" | #good
-           scientificName == "Skeletonema marinoi") %>% 
-  ggplot(aes(x = species_order, y = sample_name, fill = log10(count+1))) +
-  geom_tile(color = "black", size = 1) +
-  facet_grid(.~group, scales = "free_x", space = "free") +
-  scale_fill_gradient(name = "",
-                      low = "#FFFFFF",
-                      high = "#012345") +
-  # scale_fill_gradient2(name = "",
-  #                      midpoint = 3,
-  #                      low = "white",
-  #                      mid = "blue",
-  #                      high = "#FF0000") +
-  scale_x_discrete(labels = c("Attheya" = "A.",
-                              "Chaetoceros debilis" = "C.d.",
-                              "Chaetoceros laciniosus" = "C.l.",
-                              # "Chaetoceros decipiens" = "C.dec.",
-                              # "Chaetoceros seiracanthus" = "C.s.",
-                              "Dactyliosolen fragilissimus" = "D.f.",
-                              "Dactyliosolen phuketensis" = "D.ph.",
-                              # "Detonula pumila" = "D.pu.",
-                              "Guinardia delicatula" = "G.d.",
-                              # "Rhizosolenia setigera" = "R.s.",
-                              "Pseudo-nitzschia seriata" = "P.n.s",
-                              "Skeletonema marinoi" = "S.m.",
-                              "Thalassiosira" = "T.",
-                              "Thalassiosira rotula" = "T.r.",
-                              "Hillea" = "Hill.",
-                              "Teleaulax acuta" = "T.a.",
-                              "Scrippsiella trochoidea" = "S.t.")) +
-                              # "Ceratium lineatum" = "C.l.")) +
-  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
-  theme_bw() +
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        # legend.position = "bottomright",
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        text = element_text(size = 35),
-        axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        # legend.position = c(0.1, 0.03),
-        legend.position = "none",
-        # legend.direction = "horizontal",
-        axis.line = element_line(colour = "black"))
-
-ggsave(here("figures_rev2", "heat_indicator_5_clusters_abbr.png"),
-       width = 13, height = 18, dpi = 300)
-```
 ```{r}
 #Indicator species from clustering - 5 clusters - organized by cluster.
 
@@ -781,8 +714,8 @@ micro_heat3 %>%
   #                      mid = "blue",
   #                      high = "#FF0000") +
   scale_x_discrete(labels = c("Attheya" = "A.",
-                              "Chaetoceros debilis" = "C.d.",
-                              "Chaetoceros laciniosus" = "C.l.",
+                              "Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros laciniosus" = "C.lac.",
                               # "Chaetoceros decipiens" = "C.dec.",
                               # "Chaetoceros seiracanthus" = "C.s.",
                               "Dactyliosolen fragilissimus" = "D.f.",
@@ -797,7 +730,6 @@ micro_heat3 %>%
                               "Hillea" = "Hill.",
                               "Teleaulax acuta" = "T.a.",
                               "Scrippsiella trochoidea" = "S.t.")) +
-                              # "Ceratium lineatum" = "C.l.")) +
   # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
   theme_bw() +
   theme(axis.title.x = element_blank(),
@@ -816,7 +748,7 @@ micro_heat3 %>%
         # legend.direction = "horizontal",
         axis.line = element_line(colour = "black"))
 
-ggsave(here("figures_rev2", "heat_indicator_5_clusters_abbr_2.png"),
+ggsave(here("figures_rev2", "heat_indicator_5_clusters_abbr_good.png"),
        width = 13, height = 18, dpi = 300)
 ```
 
@@ -939,7 +871,7 @@ scale_x_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
                               "Chaetoceros seiracanthus" = "C.s.",
                               "Dactyliosolen fragilissimus" = "D.f.",
                               "Dactyliosolen phuketensis" = "D.ph.",
-                              "Detonula pumila" = "D.pu.",
+                              "Detonula pumila" = "D.p.",
                               "Guinardia delicatula" = "G.d.",
                               "Rhizosolenia setigera" = "R.s.",
                               "Skeletonema marinoi" = "S.m.",
@@ -963,7 +895,7 @@ scale_x_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
         # legend.direction = "horizontal",
         axis.line = element_line(colour = "black"))
 
-ggsave(here("figures_rev2", "heat_indicator_site_abbr.png"),
+ggsave(here("figures_rev2", "heat_indicator_site_good.png"),
        width = 13, height = 18, dpi = 300)
 
 ```

@@ -88,6 +88,8 @@ clust <- cutree(cluster.average, k = k)
 
 clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
                                    cluster = factor(clust))
+
+# write_csv(clust.df, here("outputs", "clusters_chem.csv"))
 ```
 
 ```{r}
@@ -367,6 +369,47 @@ palette_chem <- c("#ff8000", #1 - Diatoms (orange)
 ```
 
 ```{r}
+#Plotting according to clusters.
+
+c_long_clust <- c_long_bar %>% 
+  left_join(clust.df_join)
+
+c_long_clust %>%   
+  ggplot(aes(x = TChla_mean, y = sample_name, fill = fct_rev(phyto_group))) +
+  geom_bar(stat = "identity") +
+  # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 0.5, ymax = 10.5), fill = NA, 
+  #           color = "black", size = 1) +
+  # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 10.5, ymax = 29.5), fill = NA, 
+  #           color = "black", size = 1) +
+  # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 29.5, ymax = 31.5), fill = NA, 
+  #           color = "black", size = 1) +
+  # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 31.5, ymax = 35.5), fill = NA, 
+  #           color = "black", size = 1) +
+  scale_fill_manual(values = palette_chem) +
+  theme_bw() +
+  facet_grid(cluster ~ ., scales = "free", space = "free") +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        axis.line = element_line(colour = "black")) +
+  guides(fill = guide_legend(nrow = 1)) 
+
+ggsave(here("figures_rev2", "bar_chemtax_cluster_2.png"),
+       width = 16, height = 18, dpi = 300)
+
+```
+```{r}
 c_long_bar %>%   
   ggplot(aes(x = TChla_mean, y = sample_name, fill = fct_rev(phyto_group))) +
   geom_bar(stat = "identity") +
@@ -401,7 +444,6 @@ ggsave(here("figures_rev2", "bar_chemtax.png"),
        width = 16, height = 18, dpi = 300)
 
 ```
-
 
 ```{r}
 #separating treatments for following tests
@@ -552,7 +594,6 @@ ggsave(here("figures_new", "richness_shannon_box_chemtax.png"),
 
 
 ```
-
 
 
 

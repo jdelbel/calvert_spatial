@@ -27,6 +27,8 @@ fec <- read_csv(here("outputs", "fecal_master_2021-10-18.csv"))
 
 clust <- read_csv(here("outputs", "clusters_micro.csv"))
 
+clust_chem <- read_csv(here("outputs", "clusters_chem.csv"))
+
 data <- data %>% 
   distinct(date, site_id, .keep_all = TRUE)
 
@@ -37,6 +39,8 @@ data <- data %>%
 #Found multiple times where not all three size fractions are present. These should be removed. Percentages not accurate here. 
 
 ```
+
+
 ```{r}
 #Merging data with clusters for analysis.
 
@@ -46,13 +50,22 @@ data <- data %>%
 clust <- clust %>% 
   rename(sample_name = label)
 
+clust_chem <- clust_chem %>% 
+  rename(sample_name = label,
+         clust_chem = cluster)
+
 data <- data %>% 
-  left_join(clust) %>% 
-  relocate(cluster, .after = site_id)
+  left_join(clust) %>%
+  left_join(clust_chem) %>% 
+  relocate(cluster, .after = site_id) %>% 
+  relocate(clust_chem, .after = cluster)
 
 #Uploading chemtax data
 chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv")) 
 ```
+
+
+
 ```{r}
 #So let's facet all of the drivers here
 #1) Get HPLC chl
@@ -91,8 +104,8 @@ chl_merge <- rbind(chl_bulk_fix, chl_hplc)
 
 ```{r}
 clust_dend <- data %>% 
-  select(site_id, date, cluster, temp_dm, sal_dm, delta_rho_dm, turb_dm, 
-         no2_dm:secchi_depth)
+  select(site_id, date, cluster, clust_chem, temp_dm, sal_dm, delta_rho_dm, 
+         turb_dm, no2_dm:secchi_depth)
 
 clust_dend <- clust_dend %>% 
   left_join(chl_merge)
@@ -142,6 +155,76 @@ clust_dend_tidy %>%
 ggsave(here("figures_rev2", "clust_drivers.png"), 
        width = 16, height = 18, dpi = 300)
 ```
+
+```{r}
+#Plotting chemtax clusters.
+
+clust_dend_tidy %>% 
+  filter(!is.na(clust_chem)) %>% 
+  ggplot(aes(x = as.factor(clust_chem), y = value)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  facet_wrap(~order, scales = "free_y", 
+             labeller = labeller(order = supp.labs)) +
+  xlab("cluster") +
+  scale_fill_npg() +
+  theme_bw() +
+  theme(legend.position = c(0.23, 0.95),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        # axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+ggsave(here("figures_rev2", "clust_drivers_chem.png"), 
+       width = 16, height = 18, dpi = 300)
+```
+```{r}
+#Plotting chemtax clusters - by phytoplankton groups.
+
+chem_tidy_clust <- chem_tidy %>%
+  filter(!site_id == "QU39") %>% 
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+chem_tidy_clust <- chem_tidy_clust %>% 
+  left_join(clust_chem)
+
+
+chem_tidy_clust %>% 
+  filter(!is.na(clust_chem)) %>% 
+  ggplot(aes(x = as.factor(phyto_group), y = TChla_mean, 
+             fill = as.factor(clust_chem))) +
+  geom_boxplot() +
+  # geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+  #              stackdir = 'center', dotsize = 1,
+  #              position = position_dodge(0.8)) +
+  # facet_wrap(~order, scales = "free_y", 
+  #            labeller = labeller(order = supp.labs)) +
+  xlab("Phyto Group") +
+  ylab("TChla") +
+  scale_fill_npg() +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.8),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+ggsave(here("figures_rev2", "clust_drivers_chem_test.png"), 
+       width = 16, height = 6, dpi = 300)
+```
+
+
+
+
 ```{r}
 clust_dend_tidy %>%
   mutate(year = lubridate::year(date)) %>% 
