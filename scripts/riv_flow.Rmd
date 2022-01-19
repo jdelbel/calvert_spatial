@@ -1,0 +1,38 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(tidyverse) #Data wrangling
+library(readxl) #Import excel files
+library(here) #File structure management
+```
+
+```{r}
+#Upload river data
+riv <- read_csv(here("files", "river.csv")) 
+```
+
+```{r}
+#Wrangle data to pertinent parameters and time-frame.
+
+riv <- riv %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+```
+
+```{r}
+#Plot discharge over three years
+riv %>% 
+  ggplot(aes(x = yday, y = dis, color = as.factor(year))) +
+  geom_line()
+```
+

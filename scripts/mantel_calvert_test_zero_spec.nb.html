@@ -1764,17 +1764,17 @@ library(geosphere)</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0FsbCBkYXRhIG1lcmdlZCB0byB0aGUgQ1REXG5tbSA8LSByZWFkX2NzdihoZXJlKFwib3V0cHV0c1wiLCBcImN0ZF9tZXJnZV8yMDIxLTExLTA0X2NoZW0uY3N2XCIpKSBcblxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0FsbCBkYXRhIG1lcmdlZCB0byB0aGUgQ1REXG5tbSA8LSByZWFkX2NzdihoZXJlKFwib3V0cHV0c1wiLCBcImN0ZF9tZXJnZV9tYXN0ZXJfMjAyMS0xMC0xOF9sYXQtbG9uZy5jc3ZcIikpIFxuXG5gYGAifQ== -->
 <pre class="r"><code>#All data merged to the CTD
-mm &lt;- read_csv(here(&quot;outputs&quot;, &quot;ctd_merge_2021-11-04_chem.csv&quot;)) 
+mm &lt;- read_csv(here(&quot;outputs&quot;, &quot;ctd_merge_master_2021-10-18_lat-long.csv&quot;)) 
 </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjYgQ29sdW1uczogMTY3XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICAgKDEpOiBzaXRlX2lkXG5kYmwgICgxNjUpOiBtb250aCwgbW9udGhfc3VydiwgbGF0LCBsb25nLCB0ZW1wX2RtLCBzYWxfZG0sIE4yX2RtLCBkZWx0YV9yaG9fZG0sIHR1cmJfZG0sIGRlcF8yNl9kbSwgbm8yX2RtLCAuLi5cbmRhdGUgICAoMSk6IGRhdGVcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
-<pre><code>Rows: 66 Columns: 167
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjcgQ29sdW1uczogMTU4XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICAgKDEpOiBzaXRlX2lkXG5kYmwgICgxNTYpOiBtb250aCwgbW9udGhfc3VydiwgbGF0LCBsb25nLCB0ZW1wX2RtLCBzYWxfZG0sIE4yX2RtLCBkZWx0YV9yaG9fZG0sIHR1cmJfZG0sIG5vMl9kbSwgc2lvMl9kbSwgcG8uLi5cbmRhdGUgICAoMSk6IGRhdGVcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
+<pre><code>Rows: 67 Columns: 158
 -- Column specification ----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr    (1): site_id
-dbl  (165): month, month_surv, lat, long, temp_dm, sal_dm, N2_dm, delta_rho_dm, turb_dm, dep_26_dm, no2_dm, ...
+dbl  (156): month, month_surv, lat, long, temp_dm, sal_dm, N2_dm, delta_rho_dm, turb_dm, no2_dm, sio2_dm, po...
 date   (1): date
 
 i Use `spec()` to retrieve the full column specification for this data.
@@ -1802,15 +1802,15 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1J1bm5pbmcgd2l0aG91dCBDaGxvcm9waHlsbCBmaXJzdC5cblxuI1dpdGggdGhlIGNobG9yb3BoeWxsIGRhdGEgaW5jbHVkZWQsIHF1aXRlIGEgZmV3IGRhdGEgcG9pbnQgcmVtb3ZlZCAtIHRyeWluZyB3aXRob3V0IGNobG9yb3BoeWxsXG5tbSA8LSBtbSAlPiUgXG4gIHNlbGVjdChkYXRlOnNlY2NoaV9kZXB0aCwgY3lhbjpkaWF0KVxuXG4jVHVybmVkIG9mZiBhcyBydW5uaW5nIGFsbCBzdGF0aW9uc1xubW0gPC0gbW0gJT4lXG4gIGZpbHRlcighc2l0ZV9pZCA9PSBcIlFVMzlcIilcblxuI1JlbW92ZSByb3dzIHdpdGggTmFOc1xubW0gPC0gbW0gJT4lIFxuICBkcm9wX25hKClcblxuI1NlcGFyYXRpbmcgaW50byBhYnVuZGFuY2UgZGF0YVxuYWJ1bmQgPC0gbW1bLCAxNzpuY29sKG1tKV1cblxuI21ha2luZyBhIHZlY3RvciBmb3IgdGVtcGVyYXR1cmVcbnRlbXAgPC0gbW1bLCA3XVxuXG4jbWFraW5nIGEgdmVjdG9yIGZvciBzYWxpbml0eVxuc2FsIDwtIG1tWywgOF1cblxuXG5cbiNkZWx0YV9yaG9cbmRyIDwtIG1tWywgMTBdXG5cbiN0dXJiXG50dXJiIDwtIG1tWywgMTFdXG5cbiMxMDI2XG5kMjYgPC0gbW1bLCAxMl1cblxuI25vMlxubm8yIDwtIG1tWywgMTNdXG5cbiNzaW8yXG5zaW8yIDwtIG1tWywgMTRdXG5cbiNwbzRcbnBvNCA8LSBtbVssIDE1XVxuXG4jIHNlY2NoaVxuc2VjIDwtIG1tWywgMTZdXG4jIFxuIyAjZmVjYWwgcGVsbGV0c1xuIyBmZWMgPC0gbW1bLCAxN11cbiMgXG4jICNjaWxpYXRlc1xuIyBjaWwgPC0gbW1bLCAxOF1cblxuI0Nvb3JkaW5hdGVzXG5nZW8gPC0gZGF0YS5mcmFtZShtbSRsb25nLCBtbSRsYXQpXG5cbiNBbGwgZW52aXJvbm1lbnRhbCB2YXJpYWJsZXNcbmVudiA8LSBtbVssIDc6MTZdXG5cbmVudiA8LSBlbnYgJT4lIFxuICBzZWxlY3QoIU4yX2RtKVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1J1bm5pbmcgd2l0aG91dCBDaGxvcm9waHlsbCBmaXJzdC5cblxuI1dpdGggdGhlIGNobG9yb3BoeWxsIGRhdGEgaW5jbHVkZWQsIHF1aXRlIGEgZmV3IGRhdGEgcG9pbnQgcmVtb3ZlZCAtIHRyeWluZyB3aXRob3V0IGNobG9yb3BoeWxsXG5tbSA8LSBtbSAlPiUgXG4gIHNlbGVjdCghKG1pY3JvX2NobDpidWxrX2NobCkpXG5cbiNGb3IgdGhpcyBmaWxlLCBJIGFtIG9ubHkgcnVubmluZyB0aGUgYW5hbHlzaXMgb24gQ2FsdmVydCBkYXRhIC0gcmVtb3ZpbmcgUVUzOVxubW0gPC0gbW0gJT4lIFxuICBmaWx0ZXIoIXNpdGVfaWQgPT0gXCJRVTM5XCIpXG5cbiNSZW1vdmUgcm93cyB3aXRoIE5hTnNcbm1tIDwtIG1tICU+JSBcbiAgZHJvcF9uYSgpXG5cbiNTZXBhcmF0aW5nIGludG8gYWJ1bmRhbmNlIGRhdGFcbmFidW5kIDwtIG1tWywgMTk6bmNvbChtbSldXG5cbiNtYWtpbmcgYSB2ZWN0b3IgZm9yIHRlbXBlcmF0dXJlXG50ZW1wIDwtIG1tWywgN11cblxuI21ha2luZyBhIHZlY3RvciBmb3Igc2FsaW5pdHlcbnNhbCA8LSBtbVssIDhdXG5cbiNkZWx0YV9yaG9cbmRyIDwtIG1tWywgMTBdXG5cbiN0dXJiXG50dXJiIDwtIG1tWywgMTFdXG5cbiNubzJcbm5vMiA8LSBtbVssIDEyXVxuXG4jc2lvMlxuc2lvMiA8LSBtbVssIDEzXVxuXG4jcG80XG5wbzQgPC0gbW1bLCAxNF1cblxuI3NlY2NoaVxuc2VjIDwtIG1tWywgMTVdXG5cbiNmZWNhbCBwZWxsZXRzXG5mZWMgPC0gbW1bLCAxNl1cblxuI2NpbGlhdGVzXG5jaWwgPC0gbW1bLCAxOF1cblxuI0Nvb3JkaW5hdGVzXG5nZW8gPC0gZGF0YS5mcmFtZShtbSRsb25nLCBtbSRsYXQpXG5cbiNBbGwgZW52aXJvbm1lbnRhbCB2YXJpYWJsZXNcbmVudiA8LSBtbVssIDc6MTVdXG5cbmVudiA8LSBlbnYgJT4lIFxuICBzZWxlY3QoIU4yX2RtKVxuYGBgIn0= -->
 <pre class="r"><code>#Running without Chlorophyll first.
 
 #With the chlorophyll data included, quite a few data point removed - trying without chlorophyll
 mm &lt;- mm %&gt;% 
-  select(date:secchi_depth, cyan:diat)
+  select(!(micro_chl:bulk_chl))
 
-#Turned off as running all stations
-mm &lt;- mm %&gt;%
+#For this file, I am only running the analysis on Calvert data - removing QU39
+mm &lt;- mm %&gt;% 
   filter(!site_id == &quot;QU39&quot;)
 
 #Remove rows with NaNs
@@ -1818,7 +1818,7 @@ mm &lt;- mm %&gt;%
   drop_na()
 
 #Separating into abundance data
-abund &lt;- mm[, 17:ncol(mm)]
+abund &lt;- mm[, 19:ncol(mm)]
 
 #making a vector for temperature
 temp &lt;- mm[, 7]
@@ -1826,40 +1826,35 @@ temp &lt;- mm[, 7]
 #making a vector for salinity
 sal &lt;- mm[, 8]
 
-
-
 #delta_rho
 dr &lt;- mm[, 10]
 
 #turb
 turb &lt;- mm[, 11]
 
-#1026
-d26 &lt;- mm[, 12]
-
 #no2
-no2 &lt;- mm[, 13]
+no2 &lt;- mm[, 12]
 
 #sio2
-sio2 &lt;- mm[, 14]
+sio2 &lt;- mm[, 13]
 
 #po4
-po4 &lt;- mm[, 15]
+po4 &lt;- mm[, 14]
 
-# secchi
-sec &lt;- mm[, 16]
-# 
-# #fecal pellets
-# fec &lt;- mm[, 17]
-# 
-# #ciliates
-# cil &lt;- mm[, 18]
+#secchi
+sec &lt;- mm[, 15]
+
+#fecal pellets
+fec &lt;- mm[, 16]
+
+#ciliates
+cil &lt;- mm[, 18]
 
 #Coordinates
 geo &lt;- data.frame(mm$long, mm$lat)
 
 #All environmental variables
-env &lt;- mm[, 7:16]
+env &lt;- mm[, 7:15]
 
 env &lt;- env %&gt;% 
   select(!N2_dm)</code></pre>
@@ -1868,7 +1863,7 @@ env &lt;- env %&gt;%
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBDcmVhdGluZyBkaXN0YW5jZSBtYXRyaWNlcyBmb3IgTWFudGVsIHRlc3RzXG5cbiNBYnVuZGFuY2UgYnkgYnJheSBjdXJ0aXNcbmRpc3QuYWJ1bmQgPC0gdmVnZGlzdChhYnVuZCwgbWV0aG9kID0gXCJicmF5XCIpXG5cbiNUZW1wZXJhdHVyZSBieSBldWNsaWRlYW4gXG5kaXN0LnRlbXAgPSBkaXN0KHRlbXAsIG1ldGhvZCA9IFwiZXVjbGlkZWFuXCIpXG5cbmRpc3Quc2FsID0gZGlzdChzYWwsIG1ldGhvZCA9IFwiZXVjbGlkZWFuXCIpXG5cbmRpc3QuZHIgPSBkaXN0KGRyLCBtZXRob2QgPSBcImV1Y2xpZGVhblwiKVxuXG5kaXN0LnR1cmIgPSBkaXN0KHR1cmIsIG1ldGhvZCA9IFwiZXVjbGlkZWFuXCIpXG5cbmRpc3QuZDI2ID0gZGlzdChkMjYsIG1ldGhvZCA9IFwiZXVjbGlkZWFuXCIpXG5cbmRpc3Qubm8yID0gZGlzdChubzIsIG1ldGhvZCA9IFwiZXVjbGlkZWFuXCIpXG5cbmRpc3Quc2lvMiA9IGRpc3Qoc2lvMiwgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuZGlzdC5wbzQgPSBkaXN0KHBvNCwgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuZGlzdC5wbzQgPSBkaXN0KHBvNCwgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuZGlzdC5zZWMgPSBkaXN0KHNlYywgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuIyBkaXN0LmZlYyA9IGRpc3QoZmVjLCBtZXRob2QgPSBcImV1Y2xpZGVhblwiKVxuIyBcbiMgZGlzdC5jaWwgPSBkaXN0KGNpbCwgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuZC5nZW8gPSBkaXN0bShnZW8sIGZ1biA9IGRpc3RIYXZlcnNpbmUpXG5kaXN0LmdlbyA9IGFzLmRpc3QoZC5nZW8pXG5cbiNzY2FsZSBkYXRhIFxuc2NhbGUuZW52ID0gc2NhbGUoZW52LCBjZW50ZXIgPSBUUlVFLCBzY2FsZSA9IFRSVUUpXG5cbiNjcmVhdGUgZGlzdGFuY2UgbWF0cml4IG9mIHNjYWxlZCBkYXRhXG5kaXN0LmVudiA9IGRpc3Qoc2NhbGUuZW52LCBtZXRob2QgPSBcImV1Y2xpZGVhblwiKVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBDcmVhdGluZyBkaXN0YW5jZSBtYXRyaWNlcyBmb3IgTWFudGVsIHRlc3RzXG5cbiNBYnVuZGFuY2UgYnkgYnJheSBjdXJ0aXNcbmRpc3QuYWJ1bmQgPC0gdmVnZGlzdChhYnVuZCwgbWV0aG9kID0gXCJicmF5XCIpXG5cbiNUZW1wZXJhdHVyZSBieSBldWNsaWRlYW4gXG5kaXN0LnRlbXAgPSBkaXN0KHRlbXAsIG1ldGhvZCA9IFwiZXVjbGlkZWFuXCIpXG5cbmRpc3Quc2FsID0gZGlzdChzYWwsIG1ldGhvZCA9IFwiZXVjbGlkZWFuXCIpXG5cbmRpc3QuZHIgPSBkaXN0KGRyLCBtZXRob2QgPSBcImV1Y2xpZGVhblwiKVxuXG5kaXN0LnR1cmIgPSBkaXN0KHR1cmIsIG1ldGhvZCA9IFwiZXVjbGlkZWFuXCIpXG5cbmRpc3Qubm8yID0gZGlzdChubzIsIG1ldGhvZCA9IFwiZXVjbGlkZWFuXCIpXG5cbmRpc3Quc2lvMiA9IGRpc3Qoc2lvMiwgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuZGlzdC5wbzQgPSBkaXN0KHBvNCwgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuZGlzdC5wbzQgPSBkaXN0KHBvNCwgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuZGlzdC5zZWMgPSBkaXN0KHNlYywgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuZGlzdC5mZWMgPSBkaXN0KGZlYywgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuZGlzdC5jaWwgPSBkaXN0KGNpbCwgbWV0aG9kID0gXCJldWNsaWRlYW5cIilcblxuZC5nZW8gPSBkaXN0bShnZW8sIGZ1biA9IGRpc3RIYXZlcnNpbmUpXG5kaXN0LmdlbyA9IGFzLmRpc3QoZC5nZW8pXG5cbiNzY2FsZSBkYXRhIFxuc2NhbGUuZW52ID0gc2NhbGUoZW52LCBjZW50ZXIgPSBUUlVFLCBzY2FsZSA9IFRSVUUpXG5cbiNjcmVhdGUgZGlzdGFuY2UgbWF0cml4IG9mIHNjYWxlZCBkYXRhXG5kaXN0LmVudiA9IGRpc3Qoc2NhbGUuZW52LCBtZXRob2QgPSBcImV1Y2xpZGVhblwiKVxuYGBgIn0= -->
 <pre class="r"><code># Creating distance matrices for Mantel tests
 
 #Abundance by bray curtis
@@ -1883,8 +1878,6 @@ dist.dr = dist(dr, method = &quot;euclidean&quot;)
 
 dist.turb = dist(turb, method = &quot;euclidean&quot;)
 
-dist.d26 = dist(d26, method = &quot;euclidean&quot;)
-
 dist.no2 = dist(no2, method = &quot;euclidean&quot;)
 
 dist.sio2 = dist(sio2, method = &quot;euclidean&quot;)
@@ -1895,9 +1888,9 @@ dist.po4 = dist(po4, method = &quot;euclidean&quot;)
 
 dist.sec = dist(sec, method = &quot;euclidean&quot;)
 
-# dist.fec = dist(fec, method = &quot;euclidean&quot;)
-# 
-# dist.cil = dist(cil, method = &quot;euclidean&quot;)
+dist.fec = dist(fec, method = &quot;euclidean&quot;)
+
+dist.cil = dist(cil, method = &quot;euclidean&quot;)
 
 d.geo = distm(geo, fun = distHaversine)
 dist.geo = as.dist(d.geo)
@@ -1916,19 +1909,19 @@ dist.env = dist(scale.env, method = &quot;euclidean&quot;)</code></pre>
 <pre class="r"><code>abund_temp = mantel(dist.abund, dist.temp, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
 abund_temp</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnRlbXAsIG1ldGhvZCA9IFwic3BlYXJtYW5cIiwgICAgICBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpIFxuXG5NYW50ZWwgc3RhdGlzdGljIHI6IDAuMDM5NTIgXG4gICAgICBTaWduaWZpY2FuY2U6IDAuMjQwMiBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA3ODcgMC4xMDYzIDAuMTI3MiAwLjE1NTUgXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnRlbXAsIG1ldGhvZCA9IFwic3BlYXJtYW5cIiwgICAgICBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpIFxuXG5NYW50ZWwgc3RhdGlzdGljIHI6IDAuMDY0OTggXG4gICAgICBTaWduaWZpY2FuY2U6IDAuMTEyOSBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA2ODkgMC4wOTA1IDAuMTA4MSAwLjEyODggXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
 mantel(xdis = dist.abund, ydis = dist.temp, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: 0.03952 
-      Significance: 0.2402 
+Mantel statistic r: 0.06498 
+      Significance: 0.1129 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0787 0.1063 0.1272 0.1555 
+0.0689 0.0905 0.1081 0.1288 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
@@ -1936,19 +1929,19 @@ Number of permutations: 9999</code></pre>
 <pre class="r"><code>abund_sal = mantel(dist.abund, dist.sal, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
 abund_sal</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnNhbCwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogLTAuMDI5NjIgXG4gICAgICBTaWduaWZpY2FuY2U6IDAuNjUwMSBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA4OTYgMC4xMTkwIDAuMTQzOSAwLjE3MTggXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnNhbCwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4wMDY3NjEgXG4gICAgICBTaWduaWZpY2FuY2U6IDAuNDM5MyBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA3MTcgMC4wOTIxIDAuMTA5OCAwLjEzMTIgXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
 mantel(xdis = dist.abund, ydis = dist.sal, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: -0.02962 
-      Significance: 0.6501 
+Mantel statistic r: 0.006761 
+      Significance: 0.4393 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0896 0.1190 0.1439 0.1718 
+0.0717 0.0921 0.1098 0.1312 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
@@ -1956,19 +1949,19 @@ Number of permutations: 9999</code></pre>
 <pre class="r"><code>abund_dr = mantel(dist.abund, dist.dr, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
 abund_dr</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmRyLCBtZXRob2QgPSBcInNwZWFybWFuXCIsICAgICAgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKSBcblxuTWFudGVsIHN0YXRpc3RpYyByOiAwLjA0MzI5IFxuICAgICAgU2lnbmlmaWNhbmNlOiAwLjI1NjkgXG5cblVwcGVyIHF1YW50aWxlcyBvZiBwZXJtdXRhdGlvbnMgKG51bGwgbW9kZWwpOlxuICAgOTAlICAgIDk1JSAgOTcuNSUgICAgOTklIFxuMC4wOTE3IDAuMTIyMSAwLjE0OTMgMC4xODQ0IFxuUGVybXV0YXRpb246IGZyZWVcbk51bWJlciBvZiBwZXJtdXRhdGlvbnM6IDk5OTlcbiJ9 -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmRyLCBtZXRob2QgPSBcInNwZWFybWFuXCIsICAgICAgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKSBcblxuTWFudGVsIHN0YXRpc3RpYyByOiAwLjAwMDE5MiBcbiAgICAgIFNpZ25pZmljYW5jZTogMC40ODUyIFxuXG5VcHBlciBxdWFudGlsZXMgb2YgcGVybXV0YXRpb25zIChudWxsIG1vZGVsKTpcbiAgIDkwJSAgICA5NSUgIDk3LjUlICAgIDk5JSBcbjAuMDc0NyAwLjA5NzUgMC4xMTgxIDAuMTQ1NSBcblBlcm11dGF0aW9uOiBmcmVlXG5OdW1iZXIgb2YgcGVybXV0YXRpb25zOiA5OTk5XG4ifQ== -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
 mantel(xdis = dist.abund, ydis = dist.dr, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: 0.04329 
-      Significance: 0.2569 
+Mantel statistic r: 0.000192 
+      Significance: 0.4852 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0917 0.1221 0.1493 0.1844 
+0.0747 0.0975 0.1181 0.1455 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
@@ -1976,39 +1969,19 @@ Number of permutations: 9999</code></pre>
 <pre class="r"><code>abund_turb = mantel(dist.abund, dist.turb, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
 abund_turb</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnR1cmIsIG1ldGhvZCA9IFwic3BlYXJtYW5cIiwgICAgICBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpIFxuXG5NYW50ZWwgc3RhdGlzdGljIHI6IDAuMTk2MyBcbiAgICAgIFNpZ25pZmljYW5jZTogMC4wMDY5IFxuXG5VcHBlciBxdWFudGlsZXMgb2YgcGVybXV0YXRpb25zIChudWxsIG1vZGVsKTpcbiAgIDkwJSAgICA5NSUgIDk3LjUlICAgIDk5JSBcbjAuMDk0OCAwLjEyNDIgMC4xNTI3IDAuMTgyNyBcblBlcm11dGF0aW9uOiBmcmVlXG5OdW1iZXIgb2YgcGVybXV0YXRpb25zOiA5OTk5XG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnR1cmIsIG1ldGhvZCA9IFwic3BlYXJtYW5cIiwgICAgICBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpIFxuXG5NYW50ZWwgc3RhdGlzdGljIHI6IDAuMDY3OTcgXG4gICAgICBTaWduaWZpY2FuY2U6IDAuMTMwNyBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA3NzYgMC4wOTk3IDAuMTIwNiAwLjE0NTkgXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
 mantel(xdis = dist.abund, ydis = dist.turb, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: 0.1963 
-      Significance: 0.0069 
+Mantel statistic r: 0.06797 
+      Significance: 0.1307 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0948 0.1242 0.1527 0.1827 
-Permutation: free
-Number of permutations: 9999</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYWJ1bmRfZDI2ID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QuZDI2LCBtZXRob2QgPSBcInNwZWFybWFuXCIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSlcbmFidW5kX2QyNlxuYGBgIn0= -->
-<pre class="r"><code>abund_d26 = mantel(dist.abund, dist.d26, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
-abund_d26</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmQyNiwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogLTAuMDYwNjIgXG4gICAgICBTaWduaWZpY2FuY2U6IDAuODY2MSBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA3NTUgMC4xMDMyIDAuMTI0NCAwLjE0NzIgXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
-<pre><code>
-Mantel statistic based on Spearman&#39;s rank correlation rho 
-
-Call:
-mantel(xdis = dist.abund, ydis = dist.d26, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
-
-Mantel statistic r: -0.06062 
-      Significance: 0.8661 
-
-Upper quantiles of permutations (null model):
-   90%    95%  97.5%    99% 
-0.0755 0.1032 0.1244 0.1472 
+0.0776 0.0997 0.1206 0.1459 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
@@ -2016,19 +1989,19 @@ Number of permutations: 9999</code></pre>
 <pre class="r"><code>abund_no2 = mantel(dist.abund, dist.no2, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
 abund_no2</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0Lm5vMiwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4xOTExIFxuICAgICAgU2lnbmlmaWNhbmNlOiAwLjAwMzMgXG5cblVwcGVyIHF1YW50aWxlcyBvZiBwZXJtdXRhdGlvbnMgKG51bGwgbW9kZWwpOlxuICAgOTAlICAgIDk1JSAgOTcuNSUgICAgOTklIFxuMC4wNzc4IDAuMTA1OSAwLjEyOTQgMC4xNTM5IFxuUGVybXV0YXRpb246IGZyZWVcbk51bWJlciBvZiBwZXJtdXRhdGlvbnM6IDk5OTlcbiJ9 -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0Lm5vMiwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4wNTAxNiBcbiAgICAgIFNpZ25pZmljYW5jZTogMC4xMzg2IFxuXG5VcHBlciBxdWFudGlsZXMgb2YgcGVybXV0YXRpb25zIChudWxsIG1vZGVsKTpcbiAgIDkwJSAgICA5NSUgIDk3LjUlICAgIDk5JSBcbjAuMDYwMCAwLjA3ODEgMC4wOTQ3IDAuMTE1MyBcblBlcm11dGF0aW9uOiBmcmVlXG5OdW1iZXIgb2YgcGVybXV0YXRpb25zOiA5OTk5XG4ifQ== -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
 mantel(xdis = dist.abund, ydis = dist.no2, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: 0.1911 
-      Significance: 0.0033 
+Mantel statistic r: 0.05016 
+      Significance: 0.1386 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0778 0.1059 0.1294 0.1539 
+0.0600 0.0781 0.0947 0.1153 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
@@ -2036,19 +2009,19 @@ Number of permutations: 9999</code></pre>
 <pre class="r"><code>abund_sio2 = mantel(dist.abund, dist.sio2, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
 abund_sio2</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnNpbzIsIG1ldGhvZCA9IFwic3BlYXJtYW5cIiwgICAgICBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpIFxuXG5NYW50ZWwgc3RhdGlzdGljIHI6IDAuMTM5MyBcbiAgICAgIFNpZ25pZmljYW5jZTogMC4wMTM4IFxuXG5VcHBlciBxdWFudGlsZXMgb2YgcGVybXV0YXRpb25zIChudWxsIG1vZGVsKTpcbiAgIDkwJSAgICA5NSUgIDk3LjUlICAgIDk5JSBcbjAuMDcyNSAwLjA5NzQgMC4xMTk0IDAuMTQ2NyBcblBlcm11dGF0aW9uOiBmcmVlXG5OdW1iZXIgb2YgcGVybXV0YXRpb25zOiA5OTk5XG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnNpbzIsIG1ldGhvZCA9IFwic3BlYXJtYW5cIiwgICAgICBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpIFxuXG5NYW50ZWwgc3RhdGlzdGljIHI6IDAuMTEzMiBcbiAgICAgIFNpZ25pZmljYW5jZTogMC4wMTEyIFxuXG5VcHBlciBxdWFudGlsZXMgb2YgcGVybXV0YXRpb25zIChudWxsIG1vZGVsKTpcbiAgIDkwJSAgICA5NSUgIDk3LjUlICAgIDk5JSBcbjAuMDU5OSAwLjA3NzcgMC4wOTU4IDAuMTE0MSBcblBlcm11dGF0aW9uOiBmcmVlXG5OdW1iZXIgb2YgcGVybXV0YXRpb25zOiA5OTk5XG4ifQ== -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
 mantel(xdis = dist.abund, ydis = dist.sio2, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: 0.1393 
-      Significance: 0.0138 
+Mantel statistic r: 0.1132 
+      Significance: 0.0112 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0725 0.0974 0.1194 0.1467 
+0.0599 0.0777 0.0958 0.1141 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
@@ -2056,19 +2029,19 @@ Number of permutations: 9999</code></pre>
 <pre class="r"><code>abund_po4 = mantel(dist.abund, dist.po4, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
 abund_po4</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnBvNCwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4xODA3IFxuICAgICAgU2lnbmlmaWNhbmNlOiAwLjAwNTMgXG5cblVwcGVyIHF1YW50aWxlcyBvZiBwZXJtdXRhdGlvbnMgKG51bGwgbW9kZWwpOlxuICAgOTAlICAgIDk1JSAgOTcuNSUgICAgOTklIFxuMC4wODIyIDAuMTA3OSAwLjEzMDggMC4xNTg1IFxuUGVybXV0YXRpb246IGZyZWVcbk51bWJlciBvZiBwZXJtdXRhdGlvbnM6IDk5OTlcbiJ9 -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnBvNCwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4wOTE3NiBcbiAgICAgIFNpZ25pZmljYW5jZTogMC4wNDA1IFxuXG5VcHBlciBxdWFudGlsZXMgb2YgcGVybXV0YXRpb25zIChudWxsIG1vZGVsKTpcbiAgIDkwJSAgICA5NSUgIDk3LjUlICAgIDk5JSBcbjAuMDY2MCAwLjA4NTYgMC4xMDQxIDAuMTI2NCBcblBlcm11dGF0aW9uOiBmcmVlXG5OdW1iZXIgb2YgcGVybXV0YXRpb25zOiA5OTk5XG4ifQ== -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
 mantel(xdis = dist.abund, ydis = dist.po4, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: 0.1807 
-      Significance: 0.0053 
+Mantel statistic r: 0.09176 
+      Significance: 0.0405 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0822 0.1079 0.1308 0.1585 
+0.0660 0.0856 0.1041 0.1264 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
@@ -2076,45 +2049,79 @@ Number of permutations: 9999</code></pre>
 <pre class="r"><code>abund_sec = mantel(dist.abund, dist.sec, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
 abund_sec</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnNlYywgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4xNDU2IFxuICAgICAgU2lnbmlmaWNhbmNlOiAwLjAxOSBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA4NTEgMC4xMTIzIDAuMTM3NiAwLjE2NjMgXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LnNlYywgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4xMjgxIFxuICAgICAgU2lnbmlmaWNhbmNlOiAwLjAxNzIgXG5cblVwcGVyIHF1YW50aWxlcyBvZiBwZXJtdXRhdGlvbnMgKG51bGwgbW9kZWwpOlxuICAgOTAlICAgIDk1JSAgOTcuNSUgICAgOTklIFxuMC4wNzY3IDAuMDk3MyAwLjExNzcgMC4xMzk1IFxuUGVybXV0YXRpb246IGZyZWVcbk51bWJlciBvZiBwZXJtdXRhdGlvbnM6IDk5OTlcbiJ9 -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
 mantel(xdis = dist.abund, ydis = dist.sec, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: 0.1456 
-      Significance: 0.019 
+Mantel statistic r: 0.1281 
+      Significance: 0.0172 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0851 0.1123 0.1376 0.1663 
+0.0767 0.0973 0.1177 0.1395 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBhYnVuZF9mZWMgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5mZWMsIG1ldGhvZCA9IFwic3BlYXJtYW5cIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKVxuIyBhYnVuZF9mZWNcbiMgXG4jIGFidW5kX2NpbCA9IG1hbnRlbChkaXN0LmFidW5kLCBkaXN0LmNpbCwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpXG4jIGFidW5kX2NpbFxuXG5hYnVuZF9nZW8gPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5nZW8sIG1ldGhvZCA9IFwic3BlYXJtYW5cIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKVxuYWJ1bmRfZ2VvXG5gYGAifQ== -->
-<pre class="r"><code># abund_fec = mantel(dist.abund, dist.fec, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
-# abund_fec
-# 
-# abund_cil = mantel(dist.abund, dist.cil, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
-# abund_cil
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYWJ1bmRfZmVjID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QuZmVjLCBtZXRob2QgPSBcInNwZWFybWFuXCIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSlcbmFidW5kX2ZlY1xuYGBgIn0= -->
+<pre class="r"><code>abund_fec = mantel(dist.abund, dist.fec, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
+abund_fec</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmZlYywgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogLTAuMDQzMDcgXG4gICAgICBTaWduaWZpY2FuY2U6IDAuNzgxNCBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA2OTkgMC4wOTA5IDAuMTA5NyAwLjEzMzIgXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
+<pre><code>
+Mantel statistic based on Spearman&#39;s rank correlation rho 
 
-abund_geo = mantel(dist.abund, dist.geo, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
+Call:
+mantel(xdis = dist.abund, ydis = dist.fec, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
+
+Mantel statistic r: -0.04307 
+      Significance: 0.7814 
+
+Upper quantiles of permutations (null model):
+   90%    95%  97.5%    99% 
+0.0699 0.0909 0.1097 0.1332 
+Permutation: free
+Number of permutations: 9999</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYWJ1bmRfY2lsID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QuY2lsLCBtZXRob2QgPSBcInNwZWFybWFuXCIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSlcbmFidW5kX2NpbFxuYGBgIn0= -->
+<pre class="r"><code>abund_cil = mantel(dist.abund, dist.cil, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
+abund_cil</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmNpbCwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4wODM5MSBcbiAgICAgIFNpZ25pZmljYW5jZTogMC4wOTg5IFxuXG5VcHBlciBxdWFudGlsZXMgb2YgcGVybXV0YXRpb25zIChudWxsIG1vZGVsKTpcbiAgIDkwJSAgICA5NSUgIDk3LjUlICAgIDk5JSBcbjAuMDgzNCAwLjEwOTEgMC4xMjc5IDAuMTUyNSBcblBlcm11dGF0aW9uOiBmcmVlXG5OdW1iZXIgb2YgcGVybXV0YXRpb25zOiA5OTk5XG4ifQ== -->
+<pre><code>
+Mantel statistic based on Spearman&#39;s rank correlation rho 
+
+Call:
+mantel(xdis = dist.abund, ydis = dist.cil, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
+
+Mantel statistic r: 0.08391 
+      Significance: 0.0989 
+
+Upper quantiles of permutations (null model):
+   90%    95%  97.5%    99% 
+0.0834 0.1091 0.1279 0.1525 
+Permutation: free
+Number of permutations: 9999</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYWJ1bmRfZ2VvID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QuZ2VvLCBtZXRob2QgPSBcInNwZWFybWFuXCIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSlcbmFidW5kX2dlb1xuYGBgIn0= -->
+<pre class="r"><code>abund_geo = mantel(dist.abund, dist.geo, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
 abund_geo</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmdlbywgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4wMTk0NSBcbiAgICAgIFNpZ25pZmljYW5jZTogMC4yOTgxIFxuXG5VcHBlciBxdWFudGlsZXMgb2YgcGVybXV0YXRpb25zIChudWxsIG1vZGVsKTpcbiAgIDkwJSAgICA5NSUgIDk3LjUlICAgIDk5JSBcbjAuMDU5NyAwLjA4MzEgMC4xMDM2IDAuMTMxOSBcblBlcm11dGF0aW9uOiBmcmVlXG5OdW1iZXIgb2YgcGVybXV0YXRpb25zOiA5OTk5XG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmdlbywgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogLTAuMDMyNjEgXG4gICAgICBTaWduaWZpY2FuY2U6IDAuNzc2NCBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA1NTUgMC4wNzM2IDAuMDkxMCAwLjExMTMgXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
 mantel(xdis = dist.abund, ydis = dist.geo, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: 0.01945 
-      Significance: 0.2981 
+Mantel statistic r: -0.03261 
+      Significance: 0.7764 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0597 0.0831 0.1036 0.1319 
+0.0555 0.0736 0.0910 0.1113 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
@@ -2123,19 +2130,19 @@ Number of permutations: 9999</code></pre>
 abund_env = mantel(dist.abund, dist.env, method = &quot;spearman&quot;, permutations = 9999, na.rm = TRUE)
 abund_env</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmVudiwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4yMjQzIFxuICAgICAgU2lnbmlmaWNhbmNlOiA3ZS0wNCBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA4MzUgMC4xMDc0IDAuMTMwMSAwLjE1NzggXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5NYW50ZWwgc3RhdGlzdGljIGJhc2VkIG9uIFNwZWFybWFuJ3MgcmFuayBjb3JyZWxhdGlvbiByaG8gXG5cbkNhbGw6XG5tYW50ZWwoeGRpcyA9IGRpc3QuYWJ1bmQsIHlkaXMgPSBkaXN0LmVudiwgbWV0aG9kID0gXCJzcGVhcm1hblwiLCAgICAgIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkgXG5cbk1hbnRlbCBzdGF0aXN0aWMgcjogMC4xNzUxIFxuICAgICAgU2lnbmlmaWNhbmNlOiA2ZS0wNCBcblxuVXBwZXIgcXVhbnRpbGVzIG9mIHBlcm11dGF0aW9ucyAobnVsbCBtb2RlbCk6XG4gICA5MCUgICAgOTUlICA5Ny41JSAgICA5OSUgXG4wLjA2NDggMC4wODM5IDAuMTAwNSAwLjEyMjcgXG5QZXJtdXRhdGlvbjogZnJlZVxuTnVtYmVyIG9mIHBlcm11dGF0aW9uczogOTk5OVxuIn0= -->
 <pre><code>
 Mantel statistic based on Spearman&#39;s rank correlation rho 
 
 Call:
 mantel(xdis = dist.abund, ydis = dist.env, method = &quot;spearman&quot;,      permutations = 9999, na.rm = TRUE) 
 
-Mantel statistic r: 0.2243 
-      Significance: 7e-04 
+Mantel statistic r: 0.1751 
+      Significance: 6e-04 
 
 Upper quantiles of permutations (null model):
    90%    95%  97.5%    99% 
-0.0835 0.1074 0.1301 0.1578 
+0.0648 0.0839 0.1005 0.1227 
 Permutation: free
 Number of permutations: 9999</code></pre>
 <!-- rnb-output-end -->
@@ -2147,8 +2154,26 @@ Number of permutations: 9999</code></pre>
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3VtbWFyeSh0ZXN0KVxuXG5gYGAifQ== -->
+<pre class="r"><code>summary(test)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHNpemUgY29ycmVsYXRpb25cbnNlY2NoaV9kZXB0aCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAxICAgICAgMC4xMjQ3XG5zaW8yX2RtIHNlY2NoaV9kZXB0aCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgMiAgICAgIDAuMTcyN1xudGVtcF9kbSBzaW8yX2RtIHNlY2NoaV9kZXB0aCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIDMgICAgICAwLjIxODdcbnRlbXBfZG0gc2lvMl9kbSBwbzRfZG0gc2VjY2hpX2RlcHRoICAgICAgICAgICAgICAgICAgICAgICAgICA0ICAgICAgMC4yMDk4XG50ZW1wX2RtIHNhbF9kbSBzaW8yX2RtIHBvNF9kbSBzZWNjaGlfZGVwdGggICAgICAgICAgICAgICAgICAgNSAgICAgIDAuMTkzMVxudGVtcF9kbSBzYWxfZG0gdHVyYl9kbSBzaW8yX2RtIHBvNF9kbSBzZWNjaGlfZGVwdGggICAgICAgICAgIDYgICAgICAwLjE4MDRcbnRlbXBfZG0gc2FsX2RtIHR1cmJfZG0gbm8yX2RtIHNpbzJfZG0gcG80X2RtIHNlY2NoaV9kZXB0aCAgICA3ICAgICAgMC4xNzAzXG4ifQ== -->
+<pre><code>                                                          size correlation
+secchi_depth                                                 1      0.1247
+sio2_dm secchi_depth                                         2      0.1727
+temp_dm sio2_dm secchi_depth                                 3      0.2187
+temp_dm sio2_dm po4_dm secchi_depth                          4      0.2098
+temp_dm sal_dm sio2_dm po4_dm secchi_depth                   5      0.1931
+temp_dm sal_dm turb_dm sio2_dm po4_dm secchi_depth           6      0.1804
+temp_dm sal_dm turb_dm no2_dm sio2_dm po4_dm secchi_depth    7      0.1703</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2siDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQogDQoNCmBgYHtyfQ0KI0xvYWRpbmcgcGFja2FnZXMNCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShyZWFkeGwpDQpsaWJyYXJ5KGhlcmUpDQpsaWJyYXJ5KHZlZ2FuKQ0KbGlicmFyeShnZW9zcGhlcmUpDQpgYGANCg0KYGBge3J9DQojVXBsb2FkIGRhdGENCg0KI0FsbCBkYXRhIG1lcmdlZCB0byB0aGUgQ1REDQptbSA8LSByZWFkX2NzdihoZXJlKCJvdXRwdXRzIiwgImN0ZF9tZXJnZV8yMDIxLTExLTA0X2NoZW0uY3N2IikpIA0KDQpgYGANCg0KYGBge3J9DQojQ291bGQgdHJ5IHRvIGxpbWl0IGNyeXB0aWMgc3BlY2llcyB0aGF0IGluZmx1ZW5jZSBzdGF0cy4gTGVhdmluZyBvZmYgZm9yIG5vdy4NCg0KI09ubHkgc3BlY2llcyBvY2N1cnJpbmcgaW4gMjUlIG9mIHRoZSBzYW1wbGVzIC0gY291bGQgdHJ5IHRoaXMuDQoNCiMgQ291bnRpbmcgaG93IG1hbnkgdGltZXMgZWFjaCBzcGVjaWVzIGlzIG9ic2VydmVkDQojIG1pY3JvIDwtIG1pY3JvICU+JQ0KIyAgICBncm91cF9ieShzY2llbnRpZmljTmFtZSkgJT4lDQojICAgIG11dGF0ZShudW1fb2NjdXJyZW5jZSA9IG4oKSkNCg0KIyByZW1vdmluZyBzcGVjaWVzIHRoYXQgaGF2ZSBub3QgYmVlbiBvYnNlcnZlZCBhdCBsZWFzdCB0d2ljZS4NCiMgbWljcm8gPC0gbWljcm8gJT4lDQojICAgZmlsdGVyKG51bV9vY2N1cnJlbmNlID4gMikNCmBgYA0KDQpgYGB7cn0NCiNSdW5uaW5nIHdpdGhvdXQgQ2hsb3JvcGh5bGwgZmlyc3QuDQoNCiNXaXRoIHRoZSBjaGxvcm9waHlsbCBkYXRhIGluY2x1ZGVkLCBxdWl0ZSBhIGZldyBkYXRhIHBvaW50IHJlbW92ZWQgLSB0cnlpbmcgd2l0aG91dCBjaGxvcm9waHlsbA0KbW0gPC0gbW0gJT4lIA0KICBzZWxlY3QoZGF0ZTpzZWNjaGlfZGVwdGgsIGN5YW46ZGlhdCkNCg0KI1R1cm5lZCBvZmYgYXMgcnVubmluZyBhbGwgc3RhdGlvbnMNCm1tIDwtIG1tICU+JQ0KICBmaWx0ZXIoIXNpdGVfaWQgPT0gIlFVMzkiKQ0KDQojUmVtb3ZlIHJvd3Mgd2l0aCBOYU5zDQptbSA8LSBtbSAlPiUgDQogIGRyb3BfbmEoKQ0KDQojU2VwYXJhdGluZyBpbnRvIGFidW5kYW5jZSBkYXRhDQphYnVuZCA8LSBtbVssIDE3Om5jb2wobW0pXQ0KDQojbWFraW5nIGEgdmVjdG9yIGZvciB0ZW1wZXJhdHVyZQ0KdGVtcCA8LSBtbVssIDddDQoNCiNtYWtpbmcgYSB2ZWN0b3IgZm9yIHNhbGluaXR5DQpzYWwgPC0gbW1bLCA4XQ0KDQoNCg0KI2RlbHRhX3Jobw0KZHIgPC0gbW1bLCAxMF0NCg0KI3R1cmINCnR1cmIgPC0gbW1bLCAxMV0NCg0KIzEwMjYNCmQyNiA8LSBtbVssIDEyXQ0KDQojbm8yDQpubzIgPC0gbW1bLCAxM10NCg0KI3NpbzINCnNpbzIgPC0gbW1bLCAxNF0NCg0KI3BvNA0KcG80IDwtIG1tWywgMTVdDQoNCiMgc2VjY2hpDQpzZWMgPC0gbW1bLCAxNl0NCiMgDQojICNmZWNhbCBwZWxsZXRzDQojIGZlYyA8LSBtbVssIDE3XQ0KIyANCiMgI2NpbGlhdGVzDQojIGNpbCA8LSBtbVssIDE4XQ0KDQojQ29vcmRpbmF0ZXMNCmdlbyA8LSBkYXRhLmZyYW1lKG1tJGxvbmcsIG1tJGxhdCkNCg0KI0FsbCBlbnZpcm9ubWVudGFsIHZhcmlhYmxlcw0KZW52IDwtIG1tWywgNzoxNl0NCg0KZW52IDwtIGVudiAlPiUgDQogIHNlbGVjdCghTjJfZG0pDQpgYGANCg0KYGBge3J9DQojIENyZWF0aW5nIGRpc3RhbmNlIG1hdHJpY2VzIGZvciBNYW50ZWwgdGVzdHMNCg0KI0FidW5kYW5jZSBieSBicmF5IGN1cnRpcw0KZGlzdC5hYnVuZCA8LSB2ZWdkaXN0KGFidW5kLCBtZXRob2QgPSAiYnJheSIpDQoNCiNUZW1wZXJhdHVyZSBieSBldWNsaWRlYW4gDQpkaXN0LnRlbXAgPSBkaXN0KHRlbXAsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LnNhbCA9IGRpc3Qoc2FsLCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC5kciA9IGRpc3QoZHIsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LnR1cmIgPSBkaXN0KHR1cmIsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LmQyNiA9IGRpc3QoZDI2LCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC5ubzIgPSBkaXN0KG5vMiwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3Quc2lvMiA9IGRpc3Qoc2lvMiwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3QucG80ID0gZGlzdChwbzQsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LnBvNCA9IGRpc3QocG80LCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC5zZWMgPSBkaXN0KHNlYywgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCiMgZGlzdC5mZWMgPSBkaXN0KGZlYywgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQojIA0KIyBkaXN0LmNpbCA9IGRpc3QoY2lsLCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZC5nZW8gPSBkaXN0bShnZW8sIGZ1biA9IGRpc3RIYXZlcnNpbmUpDQpkaXN0LmdlbyA9IGFzLmRpc3QoZC5nZW8pDQoNCiNzY2FsZSBkYXRhIA0Kc2NhbGUuZW52ID0gc2NhbGUoZW52LCBjZW50ZXIgPSBUUlVFLCBzY2FsZSA9IFRSVUUpDQoNCiNjcmVhdGUgZGlzdGFuY2UgbWF0cml4IG9mIHNjYWxlZCBkYXRhDQpkaXN0LmVudiA9IGRpc3Qoc2NhbGUuZW52LCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCmBgYA0KDQpgYGB7cn0NCmFidW5kX3RlbXAgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC50ZW1wLCBtZXRob2QgPSAic3BlYXJtYW4iLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpDQphYnVuZF90ZW1wDQoNCmFidW5kX3NhbCA9IG1hbnRlbChkaXN0LmFidW5kLCBkaXN0LnNhbCwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfc2FsDQoNCmFidW5kX2RyID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QuZHIsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX2RyDQoNCmFidW5kX3R1cmIgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC50dXJiLCBtZXRob2QgPSAic3BlYXJtYW4iLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpDQphYnVuZF90dXJiDQoNCmFidW5kX2QyNiA9IG1hbnRlbChkaXN0LmFidW5kLCBkaXN0LmQyNiwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfZDI2DQoNCmFidW5kX25vMiA9IG1hbnRlbChkaXN0LmFidW5kLCBkaXN0Lm5vMiwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfbm8yDQoNCmFidW5kX3NpbzIgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5zaW8yLCBtZXRob2QgPSAic3BlYXJtYW4iLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpDQphYnVuZF9zaW8yDQoNCmFidW5kX3BvNCA9IG1hbnRlbChkaXN0LmFidW5kLCBkaXN0LnBvNCwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfcG80DQoNCmFidW5kX3NlYyA9IG1hbnRlbChkaXN0LmFidW5kLCBkaXN0LnNlYywgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfc2VjDQoNCiMgYWJ1bmRfZmVjID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QuZmVjLCBtZXRob2QgPSAic3BlYXJtYW4iLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpDQojIGFidW5kX2ZlYw0KIyANCiMgYWJ1bmRfY2lsID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QuY2lsLCBtZXRob2QgPSAic3BlYXJtYW4iLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpDQojIGFidW5kX2NpbA0KDQphYnVuZF9nZW8gPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5nZW8sIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX2dlbw0KDQojcnVuIG1hbnRlbCB0ZXN0IA0KYWJ1bmRfZW52ID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QuZW52LCBtZXRob2QgPSAic3BlYXJtYW4iLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpDQphYnVuZF9lbnYNCmBgYA0KYGBge3J9DQojQWRkIGxhdCBhbmQgbG9uZyBpbnRvIGN0ZF9tZXJnZSB3b3Jrc2hlZXQgLSBkYXRhIHN0YW5kYXJkaXphdGlvbiBzaGVldC4NCmBgYA0KDQoNCg0KDQo=</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2siDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQogDQoNCmBgYHtyfQ0KI0xvYWRpbmcgcGFja2FnZXMNCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShyZWFkeGwpDQpsaWJyYXJ5KGhlcmUpDQpsaWJyYXJ5KHZlZ2FuKQ0KbGlicmFyeShnZW9zcGhlcmUpDQpgYGANCg0KYGBge3J9DQojVXBsb2FkIGRhdGENCg0KI0FsbCBkYXRhIG1lcmdlZCB0byB0aGUgQ1REDQptbSA8LSByZWFkX2NzdihoZXJlKCJvdXRwdXRzIiwgImN0ZF9tZXJnZV9tYXN0ZXJfMjAyMS0xMC0xOF9sYXQtbG9uZy5jc3YiKSkgDQoNCmBgYA0KDQpgYGB7cn0NCiNDb3VsZCB0cnkgdG8gbGltaXQgY3J5cHRpYyBzcGVjaWVzIHRoYXQgaW5mbHVlbmNlIHN0YXRzLiBMZWF2aW5nIG9mZiBmb3Igbm93Lg0KDQojT25seSBzcGVjaWVzIG9jY3VycmluZyBpbiAyNSUgb2YgdGhlIHNhbXBsZXMgLSBjb3VsZCB0cnkgdGhpcy4NCg0KIyBDb3VudGluZyBob3cgbWFueSB0aW1lcyBlYWNoIHNwZWNpZXMgaXMgb2JzZXJ2ZWQNCiMgbWljcm8gPC0gbWljcm8gJT4lDQojICAgIGdyb3VwX2J5KHNjaWVudGlmaWNOYW1lKSAlPiUNCiMgICAgbXV0YXRlKG51bV9vY2N1cnJlbmNlID0gbigpKQ0KDQojIHJlbW92aW5nIHNwZWNpZXMgdGhhdCBoYXZlIG5vdCBiZWVuIG9ic2VydmVkIGF0IGxlYXN0IHR3aWNlLg0KIyBtaWNybyA8LSBtaWNybyAlPiUNCiMgICBmaWx0ZXIobnVtX29jY3VycmVuY2UgPiAyKQ0KYGBgDQoNCmBgYHtyfQ0KI1J1bm5pbmcgd2l0aG91dCBDaGxvcm9waHlsbCBmaXJzdC4NCg0KI1dpdGggdGhlIGNobG9yb3BoeWxsIGRhdGEgaW5jbHVkZWQsIHF1aXRlIGEgZmV3IGRhdGEgcG9pbnQgcmVtb3ZlZCAtIHRyeWluZyB3aXRob3V0IGNobG9yb3BoeWxsDQptbSA8LSBtbSAlPiUgDQogIHNlbGVjdCghKG1pY3JvX2NobDpidWxrX2NobCkpDQoNCiNGb3IgdGhpcyBmaWxlLCBJIGFtIG9ubHkgcnVubmluZyB0aGUgYW5hbHlzaXMgb24gQ2FsdmVydCBkYXRhIC0gcmVtb3ZpbmcgUVUzOQ0KbW0gPC0gbW0gJT4lIA0KICBmaWx0ZXIoIXNpdGVfaWQgPT0gIlFVMzkiKQ0KDQojUmVtb3ZlIHJvd3Mgd2l0aCBOYU5zDQptbSA8LSBtbSAlPiUgDQogIGRyb3BfbmEoKQ0KDQojU2VwYXJhdGluZyBpbnRvIGFidW5kYW5jZSBkYXRhDQphYnVuZCA8LSBtbVssIDE5Om5jb2wobW0pXQ0KDQojbWFraW5nIGEgdmVjdG9yIGZvciB0ZW1wZXJhdHVyZQ0KdGVtcCA8LSBtbVssIDddDQoNCiNtYWtpbmcgYSB2ZWN0b3IgZm9yIHNhbGluaXR5DQpzYWwgPC0gbW1bLCA4XQ0KDQojZGVsdGFfcmhvDQpkciA8LSBtbVssIDEwXQ0KDQojdHVyYg0KdHVyYiA8LSBtbVssIDExXQ0KDQojbm8yDQpubzIgPC0gbW1bLCAxMl0NCg0KI3NpbzINCnNpbzIgPC0gbW1bLCAxM10NCg0KI3BvNA0KcG80IDwtIG1tWywgMTRdDQoNCiNzZWNjaGkNCnNlYyA8LSBtbVssIDE1XQ0KDQojZmVjYWwgcGVsbGV0cw0KZmVjIDwtIG1tWywgMTZdDQoNCiNjaWxpYXRlcw0KY2lsIDwtIG1tWywgMThdDQoNCiNDb29yZGluYXRlcw0KZ2VvIDwtIGRhdGEuZnJhbWUobW0kbG9uZywgbW0kbGF0KQ0KDQojQWxsIGVudmlyb25tZW50YWwgdmFyaWFibGVzDQplbnYgPC0gbW1bLCA3OjE1XQ0KDQplbnYgPC0gZW52ICU+JSANCiAgc2VsZWN0KCFOMl9kbSkNCmBgYA0KDQpgYGB7cn0NCiMgQ3JlYXRpbmcgZGlzdGFuY2UgbWF0cmljZXMgZm9yIE1hbnRlbCB0ZXN0cw0KDQojQWJ1bmRhbmNlIGJ5IGJyYXkgY3VydGlzDQpkaXN0LmFidW5kIDwtIHZlZ2Rpc3QoYWJ1bmQsIG1ldGhvZCA9ICJicmF5IikNCg0KI1RlbXBlcmF0dXJlIGJ5IGV1Y2xpZGVhbiANCmRpc3QudGVtcCA9IGRpc3QodGVtcCwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3Quc2FsID0gZGlzdChzYWwsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LmRyID0gZGlzdChkciwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3QudHVyYiA9IGRpc3QodHVyYiwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3Qubm8yID0gZGlzdChubzIsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LnNpbzIgPSBkaXN0KHNpbzIsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LnBvNCA9IGRpc3QocG80LCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC5wbzQgPSBkaXN0KHBvNCwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmRpc3Quc2VjID0gZGlzdChzZWMsIG1ldGhvZCA9ICJldWNsaWRlYW4iKQ0KDQpkaXN0LmZlYyA9IGRpc3QoZmVjLCBtZXRob2QgPSAiZXVjbGlkZWFuIikNCg0KZGlzdC5jaWwgPSBkaXN0KGNpbCwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQoNCmQuZ2VvID0gZGlzdG0oZ2VvLCBmdW4gPSBkaXN0SGF2ZXJzaW5lKQ0KZGlzdC5nZW8gPSBhcy5kaXN0KGQuZ2VvKQ0KDQojc2NhbGUgZGF0YSANCnNjYWxlLmVudiA9IHNjYWxlKGVudiwgY2VudGVyID0gVFJVRSwgc2NhbGUgPSBUUlVFKQ0KDQojY3JlYXRlIGRpc3RhbmNlIG1hdHJpeCBvZiBzY2FsZWQgZGF0YQ0KZGlzdC5lbnYgPSBkaXN0KHNjYWxlLmVudiwgbWV0aG9kID0gImV1Y2xpZGVhbiIpDQpgYGANCg0KYGBge3J9DQphYnVuZF90ZW1wID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QudGVtcCwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfdGVtcA0KDQphYnVuZF9zYWwgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5zYWwsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX3NhbA0KDQphYnVuZF9kciA9IG1hbnRlbChkaXN0LmFidW5kLCBkaXN0LmRyLCBtZXRob2QgPSAic3BlYXJtYW4iLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpDQphYnVuZF9kcg0KDQphYnVuZF90dXJiID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QudHVyYiwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfdHVyYg0KDQphYnVuZF9ubzIgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5ubzIsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX25vMg0KDQphYnVuZF9zaW8yID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3Quc2lvMiwgbWV0aG9kID0gInNwZWFybWFuIiwgcGVybXV0YXRpb25zID0gOTk5OSwgbmEucm0gPSBUUlVFKQ0KYWJ1bmRfc2lvMg0KDQphYnVuZF9wbzQgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5wbzQsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX3BvNA0KDQphYnVuZF9zZWMgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5zZWMsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX3NlYw0KDQphYnVuZF9mZWMgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5mZWMsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX2ZlYw0KDQphYnVuZF9jaWwgPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5jaWwsIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX2NpbA0KDQphYnVuZF9nZW8gPSBtYW50ZWwoZGlzdC5hYnVuZCwgZGlzdC5nZW8sIG1ldGhvZCA9ICJzcGVhcm1hbiIsIHBlcm11dGF0aW9ucyA9IDk5OTksIG5hLnJtID0gVFJVRSkNCmFidW5kX2dlbw0KDQojcnVuIG1hbnRlbCB0ZXN0IA0KYWJ1bmRfZW52ID0gbWFudGVsKGRpc3QuYWJ1bmQsIGRpc3QuZW52LCBtZXRob2QgPSAic3BlYXJtYW4iLCBwZXJtdXRhdGlvbnMgPSA5OTk5LCBuYS5ybSA9IFRSVUUpDQphYnVuZF9lbnYNCmBgYA0KYGBge3J9DQojQWRkIGxhdCBhbmQgbG9uZyBpbnRvIGN0ZF9tZXJnZSB3b3Jrc2hlZXQgLSBkYXRhIHN0YW5kYXJkaXphdGlvbiBzaGVldC4NCmBgYA0KDQpgYGB7cn0NCnRlc3QyIDwtIGFzLnRpYmJsZShzY2FsZS5lbnYpDQoNCiNUcnlpbmcgQmlvLWVudiBhbmFseXNpcw0KdGVzdCA8LSBiaW9lbnYoZGlzdC5hYnVuZCB+IHRlbXBfZG0gKyBzYWxfZG0gKyB0dXJiX2RtICsgbm8yX2RtICsgc2lvMl9kbSArIHBvNF9kbSArDQogICAgICAgICAgICAgICAgIHNlY2NoaV9kZXB0aCwgdGVzdDIpDQp0ZXN0DQpzdW1tYXJ5KHRlc3QpDQpgYGANCg0KDQoNCg==</div>
 
 
 
@@ -2195,7 +2220,7 @@ $(document).ready(function () {
 <!-- code folding -->
 <script>
 $(document).ready(function () {
-  window.initializeSourceEmbed("mantel_chem_calvert.Rmd");
+  window.initializeSourceEmbed("mantel_calvert_test_zero_spec.Rmd");
   window.initializeCodeFolding("show" === "show");
 });
 </script>

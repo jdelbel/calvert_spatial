@@ -383,7 +383,7 @@ ggplot() +
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  labs(fill = "Season", shape = "Station")
+  labs(fill = "Month", shape = "Station")
 
 ggsave(here("figures_rev2", "rda_calvert_scaling2.png"),
         width = 6.2, height = 5, dpi = 300)
@@ -494,9 +494,9 @@ ggplot() +
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  labs(fill = "Season", shape = "Station")
+  labs(fill = "Month", shape = "Station")
 
-ggsave(here("figures_rev2", "rda_calvert_scaling1.png.png"),
+ggsave(here("figures_rev2", "rda_calvert_scaling1_2.png.png"),
        width = 6.2, height = 5, dpi = 300)
 ```
 

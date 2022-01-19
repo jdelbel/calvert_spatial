@@ -1,0 +1,190 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+ 
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(geosphere)
+```
+
+```{r}
+#Upload data
+
+#All data merged to the CTD
+mm <- read_csv(here("outputs", "ctd_merge_master_2021-10-18_lat-long.csv")) 
+
+```
+
+```{r}
+#Could try to limit cryptic species that influence stats. Leaving off for now.
+
+#Only species occurring in 25% of the samples - could try this.
+
+# Counting how many times each species is observed
+# micro <- micro %>%
+#    group_by(scientificName) %>%
+#    mutate(num_occurrence = n())
+
+# removing species that have not been observed at least twice.
+# micro <- micro %>%
+#   filter(num_occurrence > 2)
+```
+
+```{r}
+#Running without Chlorophyll first.
+
+#With the chlorophyll data included, quite a few data point removed - trying without chlorophyll
+mm <- mm %>% 
+  select(!(micro_chl:bulk_chl))
+
+#For this file, I am only running the analysis on Calvert data - removing QU39
+mm <- mm %>% 
+  filter(!site_id == "QU39")
+
+#Remove rows with NaNs
+mm <- mm %>% 
+  drop_na()
+
+#Separating into abundance data
+abund <- mm[, 19:ncol(mm)]
+
+#making a vector for temperature
+temp <- mm[, 7]
+
+#making a vector for salinity
+sal <- mm[, 8]
+
+#delta_rho
+dr <- mm[, 10]
+
+#turb
+turb <- mm[, 11]
+
+#no2
+no2 <- mm[, 12]
+
+#sio2
+sio2 <- mm[, 13]
+
+#po4
+po4 <- mm[, 14]
+
+#secchi
+sec <- mm[, 15]
+
+#fecal pellets
+fec <- mm[, 16]
+
+#ciliates
+cil <- mm[, 18]
+
+#Coordinates
+geo <- data.frame(mm$long, mm$lat)
+
+#All environmental variables
+env <- mm[, 7:15]
+
+env <- env %>% 
+  select(!N2_dm)
+```
+
+```{r}
+# Creating distance matrices for Mantel tests
+
+#Abundance by bray curtis
+dist.abund <- vegdist(abund, method = "bray")
+
+#Temperature by euclidean 
+dist.temp = dist(temp, method = "euclidean")
+
+dist.sal = dist(sal, method = "euclidean")
+
+dist.dr = dist(dr, method = "euclidean")
+
+dist.turb = dist(turb, method = "euclidean")
+
+dist.no2 = dist(no2, method = "euclidean")
+
+dist.sio2 = dist(sio2, method = "euclidean")
+
+dist.po4 = dist(po4, method = "euclidean")
+
+dist.po4 = dist(po4, method = "euclidean")
+
+dist.sec = dist(sec, method = "euclidean")
+
+dist.fec = dist(fec, method = "euclidean")
+
+dist.cil = dist(cil, method = "euclidean")
+
+d.geo = distm(geo, fun = distHaversine)
+dist.geo = as.dist(d.geo)
+
+#scale data 
+scale.env = scale(env, center = TRUE, scale = TRUE)
+
+#create distance matrix of scaled data
+dist.env = dist(scale.env, method = "euclidean")
+```
+
+```{r}
+abund_temp = mantel(dist.abund, dist.temp, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_temp
+
+abund_sal = mantel(dist.abund, dist.sal, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_sal
+
+abund_dr = mantel(dist.abund, dist.dr, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_dr
+
+abund_turb = mantel(dist.abund, dist.turb, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_turb
+
+abund_no2 = mantel(dist.abund, dist.no2, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_no2
+
+abund_sio2 = mantel(dist.abund, dist.sio2, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_sio2
+
+abund_po4 = mantel(dist.abund, dist.po4, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_po4
+
+abund_sec = mantel(dist.abund, dist.sec, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_sec
+
+abund_fec = mantel(dist.abund, dist.fec, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_fec
+
+abund_cil = mantel(dist.abund, dist.cil, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_cil
+
+abund_geo = mantel(dist.abund, dist.geo, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_geo
+
+#run mantel test 
+abund_env = mantel(dist.abund, dist.env, method = "spearman", permutations = 9999, na.rm = TRUE)
+abund_env
+```
+```{r}
+#Add lat and long into ctd_merge worksheet - data standardization sheet.
+```
+
+```{r}
+test2 <- as.tibble(scale.env)
+
+#Trying Bio-env analysis
+test <- bioenv(dist.abund ~ temp_dm + sal_dm + turb_dm + no2_dm + sio2_dm + po4_dm +
+                 secchi_depth, test2)
+test
+summary(test)
+```
+
+
+

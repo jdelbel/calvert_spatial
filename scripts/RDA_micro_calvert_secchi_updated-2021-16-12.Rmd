@@ -390,9 +390,9 @@ ggplot() +
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  labs(fill = "Season", shape = "Station")
+  labs(fill = "Month", shape = "Station")
 
-ggsave(here("figures_rev2", "rda_calvert_scaling2.png"),
+ggsave(here("figures_rev2", "rda_calvert_scaling2_2.png"),
         width = 6.2, height = 5, dpi = 300)
 ```
 
@@ -501,9 +501,77 @@ ggplot() +
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 10)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  labs(fill = "Season", shape = "Station")
+  labs(fill = "Month", shape = "Station")
 
-ggsave(here("figures_rev2", "rda_calvert_scaling1.png.png"),
+ggsave(here("figures_rev2", "rda_calvert_scaling1_2.png.png"),
+       width = 6.2, height = 5, dpi = 300)
+```
+```{r}
+sites_loc_2 <- sites_loc %>% 
+  mutate(year = lubridate::year(date))
+
+ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_2, aes(x = axis1, y = axis2, fill = as.factor(year),
+                                   shape = site_id), 
+             size = 4, color = "black", alpha = 0.9) +
+  scale_fill_brewer(palette = "RdYlBu") + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  geom_segment(data = env_loc, aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
+                arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
+                              type = "closed"),
+                linetype = 1, size = 0.6, colour = "blue") +
+  geom_segment(data = spl_10a_10p, aes(x = 0, y = 0, xend = RDA1, yend = RDA2),
+                 arrow = arrow(angle = 22.5,length = unit(0.10,"cm"),
+                               type = "closed"),
+               linetype = 1, size = 0.3, colour = "darkgrey") +
+  geom_text_repel(data = spl_10a_10p, aes(RDA1, RDA2, 
+                                           label = row.names(spl_10a_10p)),
+                  # box.padding = unit(0.5, 'lines'),
+                  # point.padding = NA,
+                  # point.padding = unit(2, 'lines')) +
+                  segment.color = 'grey',
+                  segment.size = 0.5,
+                  segment.alpha = 0.7,
+                  arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = 0.2,
+                  # nudge_x = -0.2,
+                  force = 2,
+                  max.iter = 3e3) +
+  geom_text_repel(data = env_loc , aes(RDA1, RDA2, label = row.names(env_loc)),
+                  # box.padding = unit(0.8, 'lines'),
+                  # point.padding = NA,
+                  # point.padding = unit(1, 'lines'),
+                  # segment.color = 'blue',
+                  # segment.size = 0.5,
+                  # segment.alpha = 0.4,
+                  # arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = -0.07,
+                  # nudge_x = 0.3,
+                  force = 0.5,
+                  max.iter = 3e3) +
+  labs(x = paste("RDA 1 (", format(100 *rda.sign.sum$cont[[1]][2,1], digits = 3),
+               "%)", sep = ""),
+       y = paste("RDA 2 (", format(100 *rda.sign.sum$cont[[1]][2,2], digits = 2),
+               "%)", sep = "")) +
+ 
+  # coord_fixed(ratio = 1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.position = c(0.93, 0.69),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 10)) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  labs(fill = "Year", shape = "Station")
+
+ggsave(here("figures_rev2", "rda_calvert_scaling1_2_year.png.png"),
        width = 6.2, height = 5, dpi = 300)
 ```
 
