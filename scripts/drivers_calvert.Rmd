@@ -27,6 +27,8 @@ fec <- read_csv(here("outputs", "fecal_master_2021-10-18.csv"))
 
 clust <- read_csv(here("outputs", "clusters_micro.csv"))
 
+clust_6 <- read_csv(here("outputs", "clusters_micro_6.csv"))
+
 clust_chem <- read_csv(here("outputs", "clusters_chem.csv"))
 
 data <- data %>% 
@@ -47,7 +49,7 @@ data <- data %>%
 data <- data %>%
   unite(sample_name, c(site_id, date), sep = "_", remove = FALSE) 
 
-clust <- clust %>% 
+clust <- clust_6 %>% 
   rename(sample_name = label)
 
 clust_chem <- clust_chem %>% 
@@ -152,7 +154,7 @@ clust_dend_tidy %>%
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
 
-ggsave(here("figures_rev2", "clust_drivers.png"), 
+ggsave(here("figures_rev2", "clust_drivers_6.png"), 
        width = 16, height = 18, dpi = 300)
 ```
 

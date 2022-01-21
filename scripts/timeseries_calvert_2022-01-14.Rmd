@@ -332,7 +332,7 @@ f1 <- chl_merge %>%
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   geom_hline(yintercept = 5, linetype = "dashed", color = "black") +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, 20)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 15)) +
   labs(y = "Chl") +
   facet_wrap(~ year) +
   theme_bw() +
@@ -488,7 +488,7 @@ f8 <- data %>%
 
 fig <- f1/f2/f3/f4/f5/f6/f7/f8
 
-ggsave(here("figures_rev2", "test5_chl_fixed.png"), fig,
+ggsave(here("figures_rev2", "test5_chl_fixed_2.png"), fig,
        width = 16, height = 20, dpi = 300)
 ```
 

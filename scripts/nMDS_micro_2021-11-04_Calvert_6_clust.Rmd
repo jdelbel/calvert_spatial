@@ -156,7 +156,7 @@ clust <- cutree(cluster.average, k = k)
 clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
                                    cluster = factor(clust))
 
-# write_csv(clust.df, here("outputs", "clusters_micro.csv"))
+# write_csv(clust.df, here("outputs", "clusters_micro_6.csv"))
 ```
 
 ```{r}
@@ -244,7 +244,7 @@ p_dend <- ggplot() +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
  
-ggsave(here("figures_rev2", "hc_average_clusters_5.png"), p_dend,
+ggsave(here("figures_rev2", "hc_average_clusters_6.png"), p_dend,
        width = 6, height = 12, dpi = 300)
 ```
 
@@ -600,10 +600,77 @@ p2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 
 fig <- (p1/p2) | p_dend
 
-ggsave(here("figures_rev2", "nmds_dendro_5_clust.png"), fig,
+ggsave(here("figures_rev2", "nmds_dendro_6_clust.png"), fig,
        width = 16, height = 12, dpi = 300)
 
 ```
+```{r}
+#separating treatments for following tests
+season <-  micro_piv$season
+site_id <- micro_piv$site_id
+month <- micro_piv$month
+year <- micro_piv$year
+cluster <- micro_piv$cluster
+```
+
+
+
+```{r}
+#ANOSIM test to see if groupings statistically significant - abundance
+ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
+ano_site
+
+ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
+ano_month
+
+ano_season = anosim(transform, season, distance = "bray", permutations = 9999)
+ano_season
+
+ano_year = anosim(transform, year, distance = "bray", permutations = 9999)
+ano_year
+
+ano_cluster = anosim(transform, cluster, distance = "bray", permutations = 9999)
+ano_cluster
+
+#Site and region are significant (p = 0.0001), with region having the highest R (0.62 vs 0.27) 
+
+```
+
+
+```{r}
+#Indicator species analysis
+
+#Indicators by station
+inv_site = multipatt(transform, site_id, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_site)
+```
+
+```{r}
+#by month
+inv_month = multipatt(transform, month, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_month)
+```
+
+```{r}
+#by year
+inv_year = multipatt(transform, year, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_year)
+```
+
+```{r}
+#by cluster
+inv_cluster = multipatt(transform, cluster, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_cluster)
+```
+
 
 ```{r}
 #Can I get the order the same as the 
@@ -710,14 +777,18 @@ micro_heat %>%
         legend.direction = "horizontal",
         axis.line = element_line(colour = "black"))
 
-ggsave(here("figures_rev2", "heat_indicator_2.png"),
+ggsave(here("figures_rev2", "heat_indicator_2_6.png"),
        width = 13, height = 18, dpi = 300)
 ```
 
 ```{r}
-#Indicator species from clustering - 5 clusters - organized by cluster.
 
-#Indicator species from clustering - 5 clusters. 
+
+
+
+#Indicator species from clustering - 6 clusters - organized by cluster.
+
+#Indicator species from clustering - 6 clusters. 
 micro_heat3 <- micro_heat
 
 clust_df <- clust.df %>% 
@@ -727,26 +798,31 @@ micro_heat3 <- micro_heat3 %>%
   left_join(clust_df) %>% 
   relocate(cluster, .after = site_id)
 
+micro_heat3 <- micro_heat3 %>% 
+  mutate(group = case_when(scientificName == "Ciliophrys infusionum" ~ "Dictyochophyta",
+         TRUE ~ as.character(as.character(group))))
+
+
 micro_heat3$sample_name <- factor(micro_heat3$sample_name,
                                    (unique(micro_heat3$sample_name
                                               [order(micro_heat3$cluster)])))
 
-
 micro_heat3 %>%   
-  filter(scientificName == "Attheya" |
+  filter(scientificName == "Protoperidinium steinii" |
+           scientificName == "Thalassiosira nordenskioeldii" |
            scientificName == "Chaetoceros laciniosus" |
+           scientificName == "Ciliophrys infusionum" |
+           scientificName == "Chaetoceros debilis" |
+           scientificName == "Attheya" |
+           scientificName == "Leptocylindrus danicus" |
+           scientificName == "Dactyliosolen fragilissimus" |
            scientificName == "Thalassiosira" |
-           scientificName == "Scrippsiella trochoidea" |
-           scientificName == "Atheya" |
-           scientificName == "Teleaulax acuta" |
-           scientificName == "Pseudo-nitzschia seriata" |
+           scientificName == "Scrippsiella trochoidea" | #good.
+           scientificName == "Pseudo-nitzschia seriata" | #good
+           scientificName == "Pyramimonas orientalis" | #good
+           scientificName == "Apedinella spinifera" | #good
            scientificName == "Hillea" |
-           scientificName == "Dactyliosolen phuketensis" | #good.
-           scientificName == "Thalassiosira rotula" | #good
-           scientificName == "Dactyliosolen fragilissimus" | #good
-           scientificName == "Chaetoceros debilis" | #good
-           scientificName == "Guinardia delicatula" | #good
-           scientificName == "Skeletonema marinoi") %>% 
+           scientificName == "Skeletonema marinoi") %>%
   ggplot(aes(x = species_order, y = sample_name, fill = log10(count+1))) +
   geom_tile(color = "black", size = 1) +
   facet_grid(cluster ~ group, scales = "free", space = "free") +
@@ -761,19 +837,17 @@ micro_heat3 %>%
   scale_x_discrete(labels = c("Attheya" = "A.",
                               "Chaetoceros debilis" = "C.deb.",
                               "Chaetoceros laciniosus" = "C.lac.",
-                              # "Chaetoceros decipiens" = "C.dec.",
-                              # "Chaetoceros seiracanthus" = "C.s.",
                               "Dactyliosolen fragilissimus" = "D.f.",
-                              "Dactyliosolen phuketensis" = "D.ph.",
-                              # "Detonula pumila" = "D.pu.",
-                              "Guinardia delicatula" = "G.d.",
-                              # "Rhizosolenia setigera" = "R.s.",
+                              "Leptocylindrus danicus" = "L.d.",
                               "Pseudo-nitzschia seriata" = "P.n.s",
                               "Skeletonema marinoi" = "S.m.",
                               "Thalassiosira" = "T.",
-                              "Thalassiosira rotula" = "T.r.",
+                              "Thalassiosira nordenskioeldii" = "T.n.",
+                              "Pyramimonas orientalis" = "P.o.",
+                              "Apedinella spinifera" = "A.s.",
                               "Hillea" = "Hill.",
-                              "Teleaulax acuta" = "T.a.",
+                              "Ciliophrys infusionum" = "C.i.",
+                              "Protoperidinium steinii" = "P.s.",
                               "Scrippsiella trochoidea" = "S.t.")) +
   # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
   theme_bw() +
@@ -793,7 +867,7 @@ micro_heat3 %>%
         # legend.direction = "horizontal",
         axis.line = element_line(colour = "black"))
 
-ggsave(here("figures_rev2", "heat_indicator_5_clusters_abbr_good.png"),
+ggsave(here("figures_rev2", "heat_indicator_6_clusters_abbr_good_3.png"),
        width = 13, height = 18, dpi = 300)
 ```
 
@@ -802,8 +876,8 @@ ggsave(here("figures_rev2", "heat_indicator_5_clusters_abbr_good.png"),
 
 ```{r}
 
-#Indicator species from clustering - 5 clusters. 
-# micro_heat %>% arrange(factor(sample_name, levels = hc_order)) 
+#Year
+
 micro_heat2 <- micro_heat
 
 micro_heat2$sample_name <- factor(micro_heat2$sample_name,
@@ -874,6 +948,8 @@ micro_heat2 %>%
 
 ggsave(here("figures_rev2", "heat_indicator_date_abbr.png"),
        width = 13, height = 18, dpi = 300)
+
+
 
 ```
 ```{r}
@@ -1122,187 +1198,7 @@ ggsave(here("figures_rev2", "heat_indicator_3.png"),
 
 
 
-```{r}
-#separating treatments for following tests
-season <-  micro_piv$season
-site_id <- micro_piv$site_id
-month <- micro_piv$month
-year <- micro_piv$year
 
-```
-
-```{r}
-#For clusters, need to merge on station/date code. 
-clust_analysis <- micro_piv %>%
-  unite(sample_name, c(site_id, date), sep = "_")
-
-clust_df <- clust.df %>% 
-  rename(sample_name = label)
-
-clust_analysis <- clust_analysis %>% 
-  left_join(clust_df) %>% 
-  relocate(cluster, .after = season)
-
-cluster <- clust_analysis$cluster
-
-
-```
-
-
-
-
-```{r}
-#ANOSIM test to see if groupings statistically significant - abundance
-ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
-ano_site
-
-ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
-ano_month
-
-ano_season = anosim(transform, season, distance = "bray", permutations = 9999)
-ano_season
-
-ano_year = anosim(transform, year, distance = "bray", permutations = 9999)
-ano_year
-
-ano_cluster = anosim(transform, cluster, distance = "bray", permutations = 9999)
-ano_cluster
-
-#Site and region are significant (p = 0.0001), with region having the highest R (0.62 vs 0.27) 
-
-```
-```{r}
-#ANOSIM test to see if groupings statistically significant - relative
-ano_site_rel = anosim(transform_rel, site_id, distance = "bray", permutations = 9999)
-ano_site_rel
-
-ano_month_rel = anosim(transform_rel, month, distance = "bray", permutations = 9999)
-ano_month_rel
-
-ano_season_rel = anosim(transform_rel, season, distance = "bray", permutations = 9999)
-ano_season_rel
-
-ano_year_rel = anosim(transform_rel, year, distance = "bray", permutations = 9999)
-ano_year_rel
-
-#Site and region are significant (p = 0.0001), with region having the highest R (0.62 vs 0.27) 
-
-```
-
-```{r}
-#Indicator species analysis
-
-#Indicators by station
-inv_site = multipatt(transform, site_id, func = "r.g",
-                       control = how(nperm = 9999))
-
-summary(inv_site)
-```
-
-```{r}
-#Trying SIMPER
-# inv_site = simper(transform, site_id, permutations = 9999)
-# 
-# summary(inv_site, ordered = TRUE)
-
-```
-
-
-```{r}
-#by month
-inv_month = multipatt(transform, month, func = "r.g",
-                       control = how(nperm = 9999))
-
-summary(inv_month)
-```
-
-```{r}
-#by year
-inv_year = multipatt(transform, year, func = "r.g",
-                       control = how(nperm = 9999))
-
-summary(inv_year)
-```
-
-```{r}
-#by year
-inv_cluster = multipatt(transform, cluster, func = "r.g",
-                       control = how(nperm = 9999))
-
-summary(inv_cluster)
-```
-
-
-```{r}
-#Calculating Shannon diversity and putting in dataframe
-div <- diversity(species)
-
-div <- as.tibble(div)
-
-div$site_id <- micro_piv$site_id
-
-div$date <- micro_piv$date
-
-div$month_surv <- micro_piv$month_surv
-
-div <- div %>% 
-  rename(shannon = value)
-```
-
-
-```{r}
-#Plotting diversity metrics
-f1 <- micro %>% 
-  filter(!site_id == "QU39") %>% 
-  group_by(date, site_id) %>% 
-  mutate(n_spec = n()) %>% 
-  ungroup() %>% 
-  distinct(date, site_id, n_spec, .keep_all = TRUE) %>% 
-  ggplot(aes(x = site_id, y = n_spec, fill = site_id)) + 
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  facet_wrap(~ month_surv, nrow = 1) +
-  ggsci::scale_fill_npg() +
-  labs(y = "Richness (# of species)") +
-  theme_bw() +
-  theme(legend.position = c(0.05, 0.90),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 24),
-        axis.text = element_text(colour = "black"))
-  
-f2 <- div %>% 
-  mutate(month = lubridate::month(date),
-         year = lubridate::year(date)) %>%  
-  ggplot(aes(x = site_id, y = shannon, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  facet_wrap(~ month_surv, nrow = 1) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  ggsci::scale_fill_npg() +
-  labs(y = "Shannon H") +
-  theme_bw() +
-  theme(strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        legend.position = "none",
-        axis.title.x = element_blank(),
-        text = element_text(size = 24),
-        axis.text = element_text(colour = "black"))
-
-fig <- f1/f2
-
-ggsave(here("figures_rev2", "richness_shannon.png"), fig,
-       width = 16, height = 8, dpi = 300)
-```
 
 ```{r}
 #Looking at some of the indicator species
