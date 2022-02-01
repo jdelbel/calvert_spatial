@@ -443,8 +443,16 @@ micro <- micro %>%
   ungroup() 
 
 #Removing species that are clearly heterotrophs (some hetero/mixos remain in the photo class though)
-micro_piv <- micro %>% 
-  filter(trophicStatus == "auto")
+#Need to revamp this as nMDS now includes some heterotrophs...
+# micro_piv <- micro %>% 
+#   filter(trophicStatus == "auto")
+
+#For now, using the same as I have for nMDS - I really need to go through and clean this file up so it's more intiutive and errors aren't perpetuated. Right now, defeating purpose of doing it like this.
+micro_piv <- micro %>%
+  filter(!scientificName_accepted == "Cyanobacteria") %>% 
+  filter(!group == "Metazoa") %>% 
+  filter(!group == "Protozoa")
+
 
 #Selecting columns for easier tranformation to wide format.
 micro_piv <- micro_piv %>%
@@ -938,28 +946,28 @@ fec_ds <- fec_ds %>%
 #It's actually less - 59 - Why? One reason could be chlorophyll data, which I incorporated and may have had missing data. Incorporate here and see. 8 Chlorophyll samples missing - this explains the disparity. Should be good to go.
 
 #Exporting as a csv to pull into other analysis.
-write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2021-12-15_zeu.csv"))
+write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2022-02-01_het.csv"))
 
 #Exporting as a csv to pull into other analysis.
-write_csv(micro_ds, here("outputs", "micro_master_2021-10-18.csv"))
+write_csv(micro_ds, here("outputs", "micro_master_2022-02-01_het.csv"))
 
 #Exporting non-downscaled kc10 and QU39 dataset.
-write_csv(micro_kc10, here("outputs", "micro_kc10_2021-12-01.csv"))
+write_csv(micro_kc10, here("outputs", "micro_kc10_2022-02-01_het.csv"))
 
 #Exporting downscaled kc10 and QU39 dataset.
-write_csv(micro_kc10_ds, here("outputs", "micro_kc10_ds_2021-12-01.csv"))
+write_csv(micro_kc10_ds, here("outputs", "micro_kc10_ds_2022-02-01_het.csv"))
 
 #Exporting as a csv to pull into other analysis.
-write_csv(cil_ds, here("outputs", "ciliate_master_2021-10-18.csv"))
+write_csv(cil_ds, here("outputs", "ciliate_master_2022-02-01_het.csv"))
 
 #Exporting as a csv to pull into other analysis.
-write_csv(dino_het_ds, here("outputs", "dino-het_master_2021-10-18.csv"))
+write_csv(dino_het_ds, here("outputs", "dino-het_master_2022-02-01_het.csv"))
 
 #Exporting as a csv to pull into other analysis.
-write_csv(fec_ds, here("outputs", "fecal_master_2021-10-18.csv"))
+write_csv(fec_ds, here("outputs", "fecal_master_2022-02-01_het.csv"))
 
 #Exporting as a csv to pull into other analysis.
-write_csv(chem_ds, here("outputs", "chemtax_master_2021-11-04.csv"))
+write_csv(chem_ds, here("outputs", "chemtax_master_2022-02-01_het.csv"))
 ```
 
 ```{r}

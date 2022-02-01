@@ -328,12 +328,12 @@ spl_10a_10p <- subset(sp_loc, rownames(sp_loc) %in% sel2)
 
 row.names(spl_10a_10p) <- c("P.n.s",
                             "P.o",
+                            "P.s",
+                            "Ch.",
                             "Hill.",
                             "Tel.",
                             "S.m.",
                             "P.p.",
-                            "Bid.",
-                            "C.s.",
                             "C.c.",
                             "P.t.")
                             
@@ -404,7 +404,7 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Month", shape = "Station")
 
-ggsave(here("figures_rev2", "rda_calvert_scaling2_2.png"),
+ggsave(here("figures_rev2", "rda_calvert_scaling2_2_het.png"),
         width = 6.2, height = 5, dpi = 300)
 ```
 
@@ -515,7 +515,7 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Month", shape = "Station")
 
-ggsave(here("figures_rev2", "rda_calvert_scaling1_2.png.png"),
+ggsave(here("figures_rev2", "rda_calvert_scaling1_2_hetero.png.png"),
        width = 6.2, height = 5, dpi = 300)
 ```
 ```{r}

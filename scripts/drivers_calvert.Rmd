@@ -118,6 +118,8 @@ chl_hplc <- chem_tidy %>%
 #Merging the 2018 calibrated chlorophyll to the 2019 and 2020 TChla from HPLC.
 chl_merge <- rbind(chl_bulk_fix, chl_hplc)
 
+write_csv(chl_merge, here("outputs", "chl_hplc_merged.csv"))
+
 ```
 
 ```{r}
@@ -165,7 +167,9 @@ clust_dend_tidy$order = factor(clust_dend_tidy$parameter,
 
 # Creating correct facet label names for parameters/variables
 supp.labs <- c("chl", "temp", "salinity", "delta_rho", "no3+no2", "sio2", "po4",
-               "N:P", "Si:N", "Si_N_OR", "secchi", "turbidity")
+               "N:P", "Si:N", "Si:
+               N_OR", "secchi", "turbidity")
+
 names(supp.labs) <- c("chl","temp_dm","sal_dm","delta_rho_dm", "no2_dm", 
                       "sio2_dm", "po4_dm", "n_p", "si_n", "si_n_or", 
                       "secchi_depth", "turb_dm")
@@ -187,7 +191,7 @@ clust_dend_tidy %>%
   xlab("cluster") +
   scale_fill_npg() +
   theme_bw() +
-  theme(legend.position = c(0.23, 0.95),
+  theme(legend.position = c(0.16, 0.95),
         legend.title = element_blank(),
         legend.background=element_blank(),
         # axis.title.x = element_blank(),
@@ -197,7 +201,7 @@ clust_dend_tidy %>%
         axis.text = element_text(colour = "black"))
 
 ggsave(here("figures_rev2", "drivers_boxplot_chemtax_clusters.png"), 
-       width = 16, height = 18, dpi = 300)
+       width = 16, height = 14, dpi = 300)
 ```
 
 
@@ -216,7 +220,7 @@ clust_dend_tidy %>%
   xlab("cluster") +
   scale_fill_npg() +
   theme_bw() +
-  theme(legend.position = c(0.23, 0.95),
+  theme(legend.position = c(0.055, 0.95),
         legend.title = element_blank(),
         legend.background=element_blank(),
         # axis.title.x = element_blank(),
@@ -226,7 +230,7 @@ clust_dend_tidy %>%
         axis.text = element_text(colour = "black"))
 
 ggsave(here("figures_rev2", "drivers_boxplot_microscopy_annual.png"), 
-       width = 16, height = 18, dpi = 300)
+       width = 16, height = 14, dpi = 300)
 ```
 
 ```{r}
@@ -243,7 +247,7 @@ clust_dend_tidy %>%
   xlab("cluster") +
   scale_fill_npg() +
   theme_bw() +
-  theme(legend.position = c(0.08, 0.95),
+  theme(legend.position = c(0.055, 0.95),
         legend.title = element_blank(),
         legend.background=element_blank(),
         axis.title.x = element_blank(),
