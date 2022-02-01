@@ -15,22 +15,29 @@ library(ggsci)
 
 ```{r}
 #Upload data
+
+#microscopy and chemtax data merged with the ctd
 data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv")) 
 
+#Microscopy data alone in long format
 micro_long <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 
+#Ciliate counts
 cil <- read_csv(here("outputs", "ciliate_master_2021-10-18.csv"))
 
+#Main heterotrophic dinoflagellate counts
 dino <- read_csv(here("outputs", "dino-het_master_2021-10-18.csv"))
 
+#Fecal pellet counts
 fec <- read_csv(here("outputs", "fecal_master_2021-10-18.csv"))
 
-clust <- read_csv(here("outputs", "clusters_micro.csv"))
-
+#Microscopy clusters using 6 clusters - OUTDATED
 clust_6 <- read_csv(here("outputs", "clusters_micro_6.csv"))
 
+#Clusters from chemtax analysis
 clust_chem <- read_csv(here("outputs", "clusters_chem.csv"))
 
+#Not sure why I did this, but think it is to remove exact duplicates.
 data <- data %>% 
   distinct(date, site_id, .keep_all = TRUE)
 
@@ -46,23 +53,27 @@ data <- data %>%
 ```{r}
 #Merging data with clusters for analysis.
 
+#Making a merged site_id and date column so I can join the data with the cluster outputs
 data <- data %>%
   unite(sample_name, c(site_id, date), sep = "_", remove = FALSE) 
 
+#renaming the cluster name from the cluster sheet for merging with rest of data
 clust <- clust_6 %>% 
   rename(sample_name = label)
 
+#renaming the cluster name from the cluster sheet (for chemtax) for merging with rest of data
 clust_chem <- clust_chem %>% 
   rename(sample_name = label,
          clust_chem = cluster)
 
+#joining the microscopy and chemtax cluster numbers to the data
 data <- data %>% 
   left_join(clust) %>%
   left_join(clust_chem) %>% 
   relocate(cluster, .after = site_id) %>% 
   relocate(clust_chem, .after = cluster)
 
-#Uploading chemtax data
+#Uploading chemtax data -  why here?
 chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv")) 
 ```
 
@@ -76,16 +87,19 @@ chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv"))
 ```
 
 ```{r}
-#Plotting time-series of chl, temp, sal, nuts, secchi. For Chl, I want to use Chl for 2018 and HPLC for 2019 and 2020 as there is greater data availability. I need to merge the 2018 chl with the 2019-2020 HPLC.
+#For Chl, I want to use Chl for 2018 and HPLC for 2019 and 2020 as there is greater data availability. I need to merge the 2018 chl with the 2019-2020 HPLC, but first calibrate the 2018 chlorophyll so that is comparable to the HPLC in 2019 and 2020.
 
+#Separate chlorophyll data from before 2018
 chl_bulk <- data %>%
   select(date, site_id, bulk_chl) %>% 
   filter(date < "2019-01-01") %>% 
   rename(chl = bulk_chl)
 
+#For the pre-2018 data, make comparable through using the relationship between HPLC and chlorophyll from 2019 and 2020.
 chl_bulk_fix <- chl_bulk %>% 
   mutate(chl = (0.65*chl) + 0.59 )
 
+#Make the chemtax data long format and then calculate TChla from HPLC via addition of chlorophyll from each chemtax group. Was just easier than uploading another sheet to just the Tchla concentrations
 chem_tidy <- chem %>% 
   pivot_longer(c(cyan, hapto, green, cryp, dino, dict, raph, diat),
                  names_to = "phyto_group", values_to = "TChla") %>% 
@@ -96,70 +110,69 @@ chem_tidy <- chem %>%
   mutate(TChla_sum = sum(TChla_mean)) %>% 
   ungroup()
 
+#Separating out the calculated TChla concentrations from above.
 chl_hplc <- chem_tidy %>% 
   select(date, site_id, chl = TChla_sum) %>% 
   distinct(date, site_id, chl, .keep_all = TRUE)
 
+#Merging the 2018 calibrated chlorophyll to the 2019 and 2020 TChla from HPLC.
 chl_merge <- rbind(chl_bulk_fix, chl_hplc)
 
 ```
 
 ```{r}
+#Selecting the data I want to plot in the boxplots.
 clust_dend <- data %>% 
   select(site_id, date, cluster, clust_chem, temp_dm, sal_dm, delta_rho_dm, 
          turb_dm, no2_dm:secchi_depth)
 
+#Joining the re-calculated chlorophyll (from above) with the rest of the data
 clust_dend <- clust_dend %>% 
   left_join(chl_merge)
 
+#Adding nutrient ratios.
+clust_dend <- clust_dend %>% 
+  mutate(n_p = no2_dm/po4_dm,
+         si_n = sio2_dm/no2_dm)
+
+#For Si:N, there are some very high spikes. I am going to create an additional version with these spikes removed so you can see the trends from the other stations.
+out_rem <- clust_dend %>% 
+  select(site_id, date, si_n) %>% 
+  filter(si_n < 10) %>% 
+  rename(si_n_or = si_n)
+
+#Merging Si:N with spikes removed as a new column in the overarching datasheet
+clust_dend <- clust_dend %>% 
+  left_join(out_rem)
+
+#Making the clust_dend datasheet long format for plotting with facets in ggplot2.
 clust_dend_tidy <- clust_dend %>% 
   pivot_longer(c(temp_dm, sal_dm, delta_rho_dm, turb_dm, no2_dm, sio2_dm, 
-                 po4_dm, secchi_depth, chl), names_to = "parameter", 
+                 po4_dm, secchi_depth, chl, n_p, si_n, si_n_or), names_to = "parameter", 
                values_to = "value")
 
 ```
 
 
 ```{r}
+
+
+#Setting the order of the parameters for plotting -  this is the order they will show up as in the figure.
 clust_dend_tidy$order = factor(clust_dend_tidy$parameter,
                                levels = c("chl","temp_dm","sal_dm","delta_rho_dm",
-                               "no2_dm", "sio2_dm", "po4_dm", "secchi_depth", 
-                               "turb_dm"))
+                               "no2_dm", "sio2_dm", "po4_dm", "n_p", "si_n",
+                               "si_n_or", "secchi_depth", "turb_dm"))
 
-# New facet label names for supp variable
+# Creating correct facet label names for parameters/variables
 supp.labs <- c("chl", "temp", "salinity", "delta_rho", "no3+no2", "sio2", "po4",
-               "secchi", "turbidity")
+               "N:P", "Si:N", "Si_N_OR", "secchi", "turbidity")
 names(supp.labs) <- c("chl","temp_dm","sal_dm","delta_rho_dm", "no2_dm", 
-                      "sio2_dm", "po4_dm", "secchi_depth", "turb_dm")
-
-
-clust_dend_tidy %>% 
-  ggplot(aes(x = as.factor(cluster), y = value)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  facet_wrap(~order, scales = "free_y", 
-             labeller = labeller(order = supp.labs)) +
-  xlab("cluster") +
-  scale_fill_npg() +
-  theme_bw() +
-  theme(legend.position = c(0.23, 0.95),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        # axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        # axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-ggsave(here("figures_rev2", "clust_drivers_6.png"), 
-       width = 16, height = 18, dpi = 300)
+                      "sio2_dm", "po4_dm", "n_p", "si_n", "si_n_or", 
+                      "secchi_depth", "turb_dm")
 ```
 
 ```{r}
-#Plotting chemtax clusters.
+#Plotting chemtax clusters - this is still applicable.
 
 clust_dend_tidy %>% 
   filter(!is.na(clust_chem)) %>% 
@@ -183,47 +196,9 @@ clust_dend_tidy %>%
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
 
-ggsave(here("figures_rev2", "clust_drivers_chem.png"), 
+ggsave(here("figures_rev2", "drivers_boxplot_chemtax_clusters.png"), 
        width = 16, height = 18, dpi = 300)
 ```
-```{r}
-#Plotting chemtax clusters - by phytoplankton groups.
-
-chem_tidy_clust <- chem_tidy %>%
-  filter(!site_id == "QU39") %>% 
-  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
-
-chem_tidy_clust <- chem_tidy_clust %>% 
-  left_join(clust_chem)
-
-
-chem_tidy_clust %>% 
-  filter(!is.na(clust_chem)) %>% 
-  ggplot(aes(x = as.factor(phyto_group), y = TChla_mean, 
-             fill = as.factor(clust_chem))) +
-  geom_boxplot() +
-  # geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-  #              stackdir = 'center', dotsize = 1,
-  #              position = position_dodge(0.8)) +
-  # facet_wrap(~order, scales = "free_y", 
-  #            labeller = labeller(order = supp.labs)) +
-  xlab("Phyto Group") +
-  ylab("TChla") +
-  scale_fill_npg() +
-  theme_bw() +
-  theme(legend.position = c(0.1, 0.8),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        # axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-ggsave(here("figures_rev2", "clust_drivers_chem_test.png"), 
-       width = 16, height = 6, dpi = 300)
-```
-
 
 
 
@@ -236,7 +211,7 @@ clust_dend_tidy %>%
   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
                stackdir = 'center', dotsize = 1,
                position = position_dodge(0.8)) +
-  facet_wrap(~order, scales = "free_y", 
+  facet_wrap(~ order, scales = "free_y", 
              labeller = labeller(order = supp.labs)) +
   xlab("cluster") +
   scale_fill_npg() +
@@ -250,9 +225,10 @@ clust_dend_tidy %>%
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
 
-ggsave(here("figures_rev2", "year_drivers.png"), 
+ggsave(here("figures_rev2", "drivers_boxplot_microscopy_annual.png"), 
        width = 16, height = 18, dpi = 300)
 ```
+
 ```{r}
 clust_dend_tidy %>%
   mutate(year = lubridate::year(date)) %>% 
@@ -276,189 +252,88 @@ clust_dend_tidy %>%
         text = element_text(size = 30),
         axis.text = element_text(colour = "black"))
 
-ggsave(here("figures_rev2", "station_drivers.png"), 
-       width = 16, height = 18, dpi = 300)
+ggsave(here("figures_rev2", "drivers_boxplot_microscopy_station.png"), 
+       width = 16, height = 14, dpi = 300)
 ```
-
 ```{r}
-#Boxplot panel. Physics, Chemical, Secchi 
+#Plotting the parameters by micrscopy clusters - outdated so turning off.
 
-p1 <- data %>% 
-  ggplot(aes(x = as.factor(month_surv), y = temp_dm, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  scale_fill_npg() +
-  labs(y = "Temp (\u00B0C)",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = c(0.07, 0.75),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p2 <- data %>% 
-  ggplot(aes(x = as.factor(month_surv), y = sal_dm, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir ='center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  scale_fill_npg() +
-  labs(y = "Salinity",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p3 <- data %>% 
-  ggplot(aes(x = as.factor(month_surv), y = delta_rho_dm, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir ='center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  scale_fill_npg() +
-  labs(y = expression(~ Delta * rho ~ "(30-2m)"),
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p4 <- data %>% 
-  ggplot(aes(x = as.factor(month_surv), y = no2_dm, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = expression(NO[3]^{"-"} ~ "+" ~ NO[2]^{"-"}),
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p5 <- data %>% 
-  ggplot(aes(x = as.factor(month_surv), y = secchi_depth, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis='y', 
-               stackdir='center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  ylim(0, 15) +
-  scale_fill_npg() +
-  labs(y = "Secchi (m)",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p6 <- data %>% 
-  ggplot(aes(x = as.factor(month_surv), y = bulk_chl, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis='y', 
-               stackdir='center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  ylim(0, 15) +
-  scale_fill_npg() +
-  labs(y = expression(chl ~ (mg ~ m^{"-3"})),
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-fig <- p1/p2/p3/p4/p5/p6
-
-ggsave(here("figures_rev2", "drivers.png"), 
-       fig, width = 16, height = 18, dpi = 300)
-```
-
-```{r}
-#Trying to look at these like time-series similar to how I plotted microscopy - work on this, likely won't use, so keeping rough for now, but could come into play.
-data_long <- data %>% 
-  select(date, month_surv, site_id, temp_dm, sal_dm, delta_rho_dm, no2_dm, secchi_depth,
-         bulk_chl) %>%
-  pivot_longer(c(temp_dm, sal_dm, delta_rho_dm, no2_dm, secchi_depth,
-         bulk_chl), names_to = "meas", values_to = "val") %>% 
-  mutate(yday = lubridate::yday(date),
-         year = lubridate::year(date),
-         month = lubridate::month(date))
-
-data_long %>%  
-  ggplot(aes(x = yday, y = val, group = site_id, fill = site_id, color = site_id)) +
-  geom_line()+
-  geom_point(size = 2) +
-  facet_grid(meas ~ year, scales = "free_y") +
-  theme_bw() +
-  theme(legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        text = element_text(size = 11)) +
-        # strip.background = element_blank(),
-        # strip.text = element_blank()) + 
-  labs(x = "Year Day") 
-  theme(text = element_text(size = 25))
-
-ggsave(here("figures_rev2", "timeseries_drivers.png"),
-       width = 17, height = 10, dpi = 300)
-```
-
-```{r}
-#Looking at some summary statistics
-test <- data_long %>% 
-  filter(meas == "no2_dm") %>% 
-  group_by(month_surv, site_id) %>% 
-  summarize(min = min(val, na.rm = TRUE),
-            max = max(val, na.rm = TRUE),
-            mean = mean(val, na.rm = TRUE),
-            median = median(val, na.rm = TRUE),
-            iqr = IQR(val, , na.rm = TRUE))
-
-test2 <- data_long %>% 
-  filter(meas == "sal_dm") %>% 
-  group_by(site_id) %>% 
-  summarize(min = min(val),
-            max = max(val),
-            mean = mean(val))
-```
-
-
-
-```{r}
-# f1 <- data %>% 
-#   ggplot(aes(x = as.factor(month_surv), y = dep_26_dm, fill = site_id)) +
+# clust_dend_tidy %>% 
+#   ggplot(aes(x = as.factor(cluster), y = value)) +
 #   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
 #                color = "black", lwd = 0.7) +
 #   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-#                stackdir ='center', dotsize = 0.5,
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#   facet_wrap(~ order, scales = "free_y", 
+#              labeller = labeller(order = supp.labs)) +
+#   xlab("cluster") +
+#   scale_fill_npg() +
+#   theme_bw() +
+#   theme(legend.position = c(0.23, 0.95),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         # axis.title.x = element_blank(),
+#         axis.title.y = element_blank(),
+#         # axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# ggsave(here("figures_rev2", "clust_drivers_6.png"), 
+#        width = 16, height = 18, dpi = 300)
+```
+
+```{r}
+#Plotting chemtax clusters - by phytoplankton groups - not super intuitive, but interesting so turning off and keeping just in case.
+
+# chem_tidy_clust <- chem_tidy %>%
+#   filter(!site_id == "QU39") %>% 
+#   unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+# 
+# chem_tidy_clust <- chem_tidy_clust %>% 
+#   left_join(clust_chem)
+# 
+# 
+# chem_tidy_clust %>% 
+#   filter(!is.na(clust_chem)) %>% 
+#   ggplot(aes(x = as.factor(phyto_group), y = TChla_mean, 
+#              fill = as.factor(clust_chem))) +
+#   geom_boxplot() +
+#   # geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#   #              stackdir = 'center', dotsize = 1,
+#   #              position = position_dodge(0.8)) +
+#   # facet_wrap(~order, scales = "free_y", 
+#   #            labeller = labeller(order = supp.labs)) +
+#   xlab("Phyto Group") +
+#   ylab("TChla") +
+#   scale_fill_npg() +
+#   theme_bw() +
+#   theme(legend.position = c(0.1, 0.8),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.title.y = element_blank(),
+#         # axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# ggsave(here("figures_rev2", "clust_drivers_chem_test.png"), 
+#        width = 16, height = 6, dpi = 300)
+```
+
+
+```{r}
+#Boxplot panel. Physics, Chemical, Secchi. Old, but formatting useful for official plots. Commenting and keeping
+
+# p1 <- data %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = temp_dm, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
 #                position = position_dodge(0.8)) +
 #   scale_fill_npg() +
-#   labs(y = "1026 (m)",
+#   labs(y = "Temp (\u00B0C)",
 #        x = "Month") +
 #   theme_bw() +
 #   theme(legend.position = c(0.07, 0.75),
@@ -469,510 +344,472 @@ test2 <- data_long %>%
 #         text = element_text(size = 30),
 #         axis.text = element_text(colour = "black"))
 # 
-# f2 <- data %>% 
-#   filter(!site_id == "QU39") %>% 
-#   ggplot(aes(x = as.factor(month_surv), y = dep_26_dm, fill = site_id)) +
+# p2 <- data %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = sal_dm, fill = site_id)) +
 #   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
 #                color = "black", lwd = 0.7) +
 #   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-#                stackdir ='center', dotsize = 0.5,
+#                stackdir ='center', dotsize = 1,
 #                position = position_dodge(0.8)) +
 #   scale_fill_npg() +
-#   labs(y = "1026 (m)",
+#   labs(y = "Salinity",
 #        x = "Month") +
 #   theme_bw() +
-#   theme(legend.position = c(0.07, 0.2),
+#   theme(legend.position = "none",
 #         legend.title = element_blank(),
-#         legend.background=element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p3 <- data %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = delta_rho_dm, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir ='center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#   scale_fill_npg() +
+#   labs(y = expression(~ Delta * rho ~ "(30-2m)"),
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p4 <- data %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = no2_dm, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = expression(NO[3]^{"-"} ~ "+" ~ NO[2]^{"-"}),
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p5 <- data %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = secchi_depth, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis='y', 
+#                stackdir='center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#   ylim(0, 15) +
+#   scale_fill_npg() +
+#   labs(y = "Secchi (m)",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
 #         axis.title.x = element_blank(),
 #         text = element_text(size = 30),
 #         axis.text = element_text(colour = "black"))
 # 
-# fig <- f1/f2
-# 
-# ggsave(here("figures_new", "box_1026.png"), fig, 
-#        width = 14, height = 8, dpi = 300)
-```
-```{r}
-#Plotting 1026 at QCS01 timeseries
-# f1 <- data %>% 
-#   mutate(year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          yday = lubridate::yday(date)) %>% 
-#   filter(site_id == "QCS01") %>% 
-#   ggplot(aes(x = yday, y = dep_26_dm)) +
-#   geom_line(size = 1.5) +
-#   geom_point(size = 2, pch = 21, fill = "white") +
-#   facet_grid(site_id ~ year) +
+# p6 <- data %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = bulk_chl, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis='y', 
+#                stackdir='center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#   ylim(0, 15) +
+#   scale_fill_npg() +
+#   labs(y = expression(chl ~ (mg ~ m^{"-3"})),
+#        x = "Month") +
 #   theme_bw() +
-#   labs(x = "Year Day",
-#        y = "1026 (m)") +
-#   theme(strip.background = element_blank(),
-#         strip.text = element_blank(),
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
 #         axis.title.x = element_blank(),
-#         axis.text.x = element_blank()) + 
-#   theme(text = element_text(size = 25)) 
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
 # 
-# f2 <- data %>% 
-#   mutate(year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          yday = lubridate::yday(date)) %>% 
-#   filter(site_id == "QCS01") %>% 
-#   ggplot(aes(x = yday, y = temp_dm)) +
-#   geom_line(size = 1.5) +
-#   geom_point(size = 2, pch = 21, fill = "white") +
-#   facet_grid(site_id ~ year) +
-#   theme_bw() +
-#   labs(x = "Year Day",
-#        y = "Temp") +
-#   theme(strip.background = element_blank(),
-#         strip.text = element_blank(),
-#         axis.title.x = element_blank(),
-#         axis.text.x = element_blank()) + 
-#   theme(text = element_text(size = 25))
+# fig <- p1/p2/p3/p4/p5/p6
 # 
-# f3 <- data %>% 
-#   mutate(year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          yday = lubridate::yday(date)) %>% 
-#   filter(site_id == "QCS01") %>% 
-#   ggplot(aes(x = yday, y = sal_dm)) +
-#   geom_line(size = 1.5) +
-#   geom_point(size = 2, pch = 21, fill = "white") +
-#   facet_grid(site_id ~ year) +
-#   theme_bw() +
-#   labs(x = "Year Day",
-#        y = "Sal") +
-#   theme(strip.background = element_blank(),
-#         strip.text = element_blank(),
-#         axis.title.x = element_blank(),
-#         axis.text.x = element_blank()) + 
-#   theme(text = element_text(size = 25)) 
-# 
-# f4 <- data %>% 
-#   mutate(year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          yday = lubridate::yday(date)) %>% 
-#   filter(site_id == "QCS01") %>% 
-#   ggplot(aes(x = yday, y = hapto)) +
-#   geom_line(size = 1.5) +
-#   geom_point(size = 2, pch = 21, fill = "white") +
-#   facet_grid(site_id ~ year) +
-#   theme_bw() +
-#   labs(x = "Year Day",
-#        y = "Hapto (mg m-3)") +
-#   theme(strip.background = element_blank(),
-#         strip.text = element_blank(),
-#         axis.title.x = element_blank(),
-#         axis.text.x = element_blank()) + 
-#   theme(text = element_text(size = 25)) 
-# 
-# f5 <- data %>% 
-#   mutate(year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          yday = lubridate::yday(date)) %>% 
-#   filter(site_id == "QCS01") %>% 
-#   ggplot(aes(x = yday, y = `Phaeocystis pouchetii`)) +
-#   geom_line(size = 1.5) +
-#   geom_point(size = 2, pch = 21, fill = "white") +
-#   facet_grid(site_id ~ year) +
-#   theme_bw() +
-#   labs(x = "Year Day",
-#        y = "P.p. (cells L-1)") +
-#   theme(strip.background = element_blank(),
-#         strip.text = element_blank(),
-#         axis.title.x = element_blank(),
-#         axis.text.x = element_blank()) + 
-#   theme(text = element_text(size = 25)) 
-# 
-# f6 <- micro_long %>%
-#   filter(site_id == "QCS01") %>% 
-#   group_by(date) %>% 
-#   mutate(n_spec = n()) %>% 
-#   ungroup() %>% 
-#   distinct(date, n_spec, .keep_all = TRUE) %>% 
-#   mutate(year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          yday = lubridate::yday(date)) %>% 
-#   ggplot(aes(x = yday, y = n_spec)) +
-#   geom_line(size = 1.5) +
-#   geom_point(size = 2, pch = 21, fill = "white") +
-#   facet_grid(site_id ~ year) +
-#   theme_bw() +
-#   labs(x = "Year Day",
-#        y = "Richness") +
-#   theme(strip.background = element_blank(),
-#         strip.text = element_blank()) +
-#   theme(text = element_text(size = 25)) 
-#   
-# fig <- f1/f2/f3/f4/f5/f6
-# 
-# ggsave(here("figures_new", "Event_QCS01_upwelling.png"), fig, 
-#        width = 16, height = 18, dpi = 300)
+# ggsave(here("figures_rev2", "drivers.png"), 
+#        fig, width = 16, height = 18, dpi = 300)
 ```
 
 
 
+
+
+
+
+
+
+
+
 ```{r}
-#Boxplot Chlorophyll size fractions.
+#Boxplot Chlorophyll size fractions - commenting and turning off. Think I do this elsewhere, but keeping just in case.
 
-p1 <- data %>% 
-  filter(!(is.na(pico_chl) | is.na(nano_chl) | is.na(micro_chl))) %>% 
-  ggplot(aes(x = as.factor(month_surv), y = pico_chl, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  scale_fill_npg() +
-  labs(y = expression(chl[PICO] ~ (mg ~ m^{"-3"})),
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = c(0.07, 0.75),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p2 <- data %>% 
-  filter(!(is.na(pico_chl) | is.na(nano_chl) | is.na(micro_chl))) %>%
-  ggplot(aes(x = as.factor(month_surv), y = nano_chl, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir ='center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  scale_fill_npg() +
-  labs(y = expression(chl[NANO] ~ (mg ~ m^{"-3"})),
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p3 <- data %>% 
-  filter(!(is.na(pico_chl) | is.na(nano_chl) | is.na(micro_chl))) %>%
-  ggplot(aes(x = as.factor(month_surv), y = micro_chl, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir ='center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  scale_fill_npg() +
-  labs(y = expression(chl[MICRO] ~ (mg ~ m^{"-3"})),
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p4 <- data %>% 
-  ggplot(aes(x = as.factor(month_surv), y = bulk_chl, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = expression(chl[BULK] ~ (mg ~ m^{"-3"})),
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-
-fig <- p1/p2/p3/p4
-
-ggsave(here("figures_rev2", "chl_sf.png"), 
-       fig, width = 14, height = 15, dpi = 300)
+# p1 <- data %>% 
+#   filter(!(is.na(pico_chl) | is.na(nano_chl) | is.na(micro_chl))) %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = pico_chl, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#   scale_fill_npg() +
+#   labs(y = expression(chl[PICO] ~ (mg ~ m^{"-3"})),
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = c(0.07, 0.75),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p2 <- data %>% 
+#   filter(!(is.na(pico_chl) | is.na(nano_chl) | is.na(micro_chl))) %>%
+#   ggplot(aes(x = as.factor(month_surv), y = nano_chl, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir ='center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#   scale_fill_npg() +
+#   labs(y = expression(chl[NANO] ~ (mg ~ m^{"-3"})),
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p3 <- data %>% 
+#   filter(!(is.na(pico_chl) | is.na(nano_chl) | is.na(micro_chl))) %>%
+#   ggplot(aes(x = as.factor(month_surv), y = micro_chl, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir ='center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#   scale_fill_npg() +
+#   labs(y = expression(chl[MICRO] ~ (mg ~ m^{"-3"})),
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p4 <- data %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = bulk_chl, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = expression(chl[BULK] ~ (mg ~ m^{"-3"})),
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# 
+# fig <- p1/p2/p3/p4
+# 
+# ggsave(here("figures_rev2", "chl_sf.png"), 
+#        fig, width = 14, height = 15, dpi = 300)
 ```
 ```{r}
 #Looking at group level species abundance
 
-micro_groups <- micro_long %>% 
-  distinct(group)
-
-p1 <- micro_long %>% 
-filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
-  group_by(date, site_id) %>% 
-  mutate(sum_count = sum(count)) %>%
-  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
-  ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Diatoms (cells L)",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = c(0.8, 0.75),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p2 <- micro_long %>% 
-filter(trophicStatus == "auto" & group == "Dinoflagellata") %>% 
-  group_by(date, site_id) %>% 
-  mutate(sum_count = sum(count)) %>%
-  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
-  ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Dinos (cells L)",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p3 <- micro_long %>% 
-filter(trophicStatus == "auto" & group == "Chrysophyta") %>% 
-  group_by(date, site_id) %>% 
-  mutate(sum_count = sum(count)) %>%
-  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
-  ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Chryso (cells L)",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p4 <- micro_long %>% 
-filter(trophicStatus == "auto" & group == "Cryptophyta") %>% 
-  group_by(date, site_id) %>% 
-  mutate(sum_count = sum(count)) %>%
-  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
-  ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Crypto (cells L)",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-p5 <- micro_long %>% 
-filter(trophicStatus == "auto" & group == "Chlorophyta-Prasinophyta") %>% 
-  group_by(date, site_id) %>% 
-  mutate(sum_count = sum(count)) %>%
-  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
-  ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Chloro (cells L)",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-fig2 <- p1/p2/p3/p4/p5
-
-ggsave(here("figures_new", "box_group_stats_2.png"), 
-       fig2, width = 17, height = 19, dpi = 300)
+# micro_groups <- micro_long %>% 
+#   distinct(group)
+# 
+# p1 <- micro_long %>% 
+# filter(trophicStatus == "auto" & group == "Bacillariophyta") %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Diatoms (cells L)",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = c(0.8, 0.75),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p2 <- micro_long %>% 
+# filter(trophicStatus == "auto" & group == "Dinoflagellata") %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Dinos (cells L)",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p3 <- micro_long %>% 
+# filter(trophicStatus == "auto" & group == "Chrysophyta") %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Chryso (cells L)",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p4 <- micro_long %>% 
+# filter(trophicStatus == "auto" & group == "Cryptophyta") %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Crypto (cells L)",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# p5 <- micro_long %>% 
+# filter(trophicStatus == "auto" & group == "Chlorophyta-Prasinophyta") %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Chloro (cells L)",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# fig2 <- p1/p2/p3/p4/p5
+# 
+# ggsave(here("figures_new", "box_group_stats_2.png"), 
+#        fig2, width = 17, height = 19, dpi = 300)
 
 
 ```
 ```{r}
 #Looking at heterotrophic dinoflagellates
-micro_long %>% 
-filter(scientificName == "Gymnodinium" |
-       scientificName == "Gyrodinium" |
-       scientificName == "Katodinium" |
-       scientificName == "Katodinium glaucum") %>% 
-  group_by(date, site_id) %>% 
-  mutate(sum_count = sum(count)) %>%
-  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
-  ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Hetero Dinos",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = c(0.8, 0.75),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-dino %>% 
-  ggplot(aes(x = as.factor(month_surv), y = count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Hetero Dinos",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = c(0.8, 0.75),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-
-
-micro_long %>% 
-filter(scientificName == "Dinophysis" |
-       scientificName == "Dinophysis acuminata" |
-       scientificName == "Dinophysis acuta" |
-       scientificName == "Dinophysis fortii" |
-       scientificName == "Dinophysis rotundata" ) %>% 
-  group_by(date, site_id) %>% 
-  mutate(sum_count = sum(count)) %>%
-  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
-  ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Dinophysis",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = c(0.8, 0.75),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-micro_long %>% 
-filter(scientificName == "Protoperidinium" |
-       scientificName == "Protoperidinium conicum" |
-       scientificName == "Protoperidinium steinii") %>% 
-  group_by(date, site_id) %>% 
-  mutate(sum_count = sum(count)) %>%
-  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
-  ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Dinophysis",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = c(0.8, 0.75),
-        legend.title = element_blank(),
-        legend.background=element_blank(),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
+# micro_long %>% 
+# filter(scientificName == "Gymnodinium" |
+#        scientificName == "Gyrodinium" |
+#        scientificName == "Katodinium" |
+#        scientificName == "Katodinium glaucum") %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Hetero Dinos",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = c(0.8, 0.75),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# dino %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Hetero Dinos",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = c(0.8, 0.75),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# 
+# 
+# micro_long %>% 
+# filter(scientificName == "Dinophysis" |
+#        scientificName == "Dinophysis acuminata" |
+#        scientificName == "Dinophysis acuta" |
+#        scientificName == "Dinophysis fortii" |
+#        scientificName == "Dinophysis rotundata" ) %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Dinophysis",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = c(0.8, 0.75),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# micro_long %>% 
+# filter(scientificName == "Protoperidinium" |
+#        scientificName == "Protoperidinium conicum" |
+#        scientificName == "Protoperidinium steinii") %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Dinophysis",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = c(0.8, 0.75),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
 ```
 
 
 ```{r}
-micro_long %>% 
-filter(group == "Ciliophora") %>% 
-  group_by(date, site_id) %>% 
-  mutate(sum_count = sum(count)) %>%
-  distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
-  ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Cryptophyta",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-cil %>% 
-  ggplot(aes(x = as.factor(month_surv), y = count, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Cryptophyta",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
-
-fec %>% 
-  ggplot(aes(x = as.factor(month_surv), y = fecal, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-   scale_fill_npg() +
-  labs(y = "Cryptophyta",
-       x = "Month") +
-  theme_bw() +
-  theme(legend.position = "none",
-        legend.title = element_blank(),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"))
+# micro_long %>% 
+# filter(group == "Ciliophora") %>% 
+#   group_by(date, site_id) %>% 
+#   mutate(sum_count = sum(count)) %>%
+#   distinct(date, site_id, sum_count, .keep_all = TRUE) %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = sum_count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Cryptophyta",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# cil %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = count, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Cryptophyta",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+# 
+# fec %>% 
+#   ggplot(aes(x = as.factor(month_surv), y = fecal, fill = site_id)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#    scale_fill_npg() +
+#   labs(y = "Cryptophyta",
+#        x = "Month") +
+#   theme_bw() +
+#   theme(legend.position = "none",
+#         legend.title = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
 
 ```
 

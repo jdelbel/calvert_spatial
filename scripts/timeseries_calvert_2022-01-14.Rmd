@@ -30,8 +30,6 @@ chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv"))
 
 ```
 
-
-
 Working with microscopy data
 
 ```{r}
@@ -85,6 +83,7 @@ micro_sum_qu39 <- micro %>%
 
 micro_sum <- rbind(micro_sum_dfo2, micro_sum_kc10, micro_sum_qcs01, micro_sum_qu39)
 ```
+
 ```{r}
 #Summing species for the KC10-QU39 Timeseries
 micro_kc10_sum <- micro_kc10 %>%
@@ -488,9 +487,124 @@ f8 <- data %>%
 
 fig <- f1/f2/f3/f4/f5/f6/f7/f8
 
-ggsave(here("figures_rev2", "test5_chl_fixed_2.png"), fig,
+ggsave(here("figures_rev2", "timeseries_drivers.png"), fig,
        width = 16, height = 20, dpi = 300)
 ```
+
+```{r}
+#Doing a similar plot, but with nutrient ratios. 
+f1 <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = no2_dm, group = site_id, fill = site_id,
+             color = site_id)) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 20)) +
+  facet_wrap(~ year) +
+  labs(y = expression(NO[3]^{"-"} ~ "+" ~ NO[2]^{"-"})) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x =  element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 30))
+
+f2 <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = po4_dm, group = site_id, fill = site_id, 
+             color = site_id)) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1.6)) +
+  ylab(bquote(PO[4])) +
+  facet_wrap(~ year) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x =  element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 30))
+
+f3 <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = sio2_dm, group = site_id, fill = site_id,
+             color = site_id)) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 30)) +
+  ylab(bquote(SiO[4])) +
+  facet_wrap(~ year) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x =  element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 30))
+
+
+f4 <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = no2_dm/po4_dm, group = site_id, fill = site_id,
+             color = site_id)) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
+  # scale_y_continuous(expand = c(0, 0), limits = c(0, 20)) +
+  facet_wrap(~ year) +
+  labs(y = "N:P") +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x =  element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 30))
+
+f5 <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = sio2_dm/no2_dm, group = site_id, fill = site_id, 
+             color = site_id)) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
+  # scale_y_continuous(expand = c(0, 0), limits = c(0, 1.6)) +
+  ylab("Si:N") +
+  facet_wrap(~ year) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.text.x =  element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 30))
+
+
+
+fig <- f1/f2/f3/f4/f5
+
+ggsave(here("figures_rev2", "timeseries_nut_ratios.png"), fig,
+       width = 16, height = 14, dpi = 300)
+```
+
+
+
+
 
 ```{r}
 
