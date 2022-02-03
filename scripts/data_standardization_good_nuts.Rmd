@@ -434,7 +434,7 @@ nuts_dm <- nuts_5 %>%
 micro <- micro %>% 
   filter(date > "2018-01-01" & date < "2021-01-01")
 
-##Removing unknown classifications (Protozoa). Summing counts where I have multiple records of the same species for a day, but different qualifiers
+#Removing unknown classifications (Protozoa). Summing counts where I have multiple records of the same species for a day, but different qualifiers
 micro <- micro %>%
   filter(!scientificName == "Protozoa") %>%
   group_by(date, site_id, scientificName) %>%
@@ -443,7 +443,8 @@ micro <- micro %>%
   ungroup() 
 
 #Removing species that are clearly heterotrophs (some hetero/mixos remain in the photo class though)
-#Need to revamp this as nMDS now includes some heterotrophs...
+#Need to revamp this as nMDS now includes some
+heterotrophs...
 # micro_piv <- micro %>% 
 #   filter(trophicStatus == "auto")
 
@@ -451,7 +452,13 @@ micro <- micro %>%
 micro_piv <- micro %>%
   filter(!scientificName_accepted == "Cyanobacteria") %>% 
   filter(!group == "Metazoa") %>% 
-  filter(!group == "Protozoa")
+  filter(!group == "Protozoa") %>% 
+  filter(!group == "Kinetoplastidea") %>% 
+  filter(!group == "Choanoflagellata")
+
+#Looking at what species I am currently including in my output files - Using this, I am pretty much including everything but somewhat large or difficult to enumerate species. This inclusion has degraded the RDA analysis likely because some of the heterotrophs have different dynamics when compared to the phytoplankton. I will leave it for now. Groups to consider in particular are Kinetoplastidea, Choanoflagellata and some of the Ciliophora.
+species_list <- micro_piv %>% 
+  distinct(group, scientificName_accepted)
 
 
 #Selecting columns for easier tranformation to wide format.
@@ -476,7 +483,7 @@ dino_het_piv <- dino_het %>%
 # micro <- micro %>% 
 #   group_by(date, site_id) %>% 
 
-#pivoting longer so species are columns. 
+#pivoting wider so species are columns. 
 micro_piv <- micro_piv %>% 
   pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
   mutate_if(is.numeric, ~ replace_na(., 0)) %>% 
