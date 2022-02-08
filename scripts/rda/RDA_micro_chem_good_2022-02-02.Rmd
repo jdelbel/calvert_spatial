@@ -843,12 +843,41 @@ p_s1_chem2 <- ggplot() +
 ```
 
 ```{r}
-#Combined figure
-fig <- p_s1_micro + p_s1_chem2
+#Selecting the data I want to plot in the boxplots.
+data_plot <- data %>% 
+  select(date, site_id, date, temp_dm, sal_dm, delta_rho_dm, no2_dm:secchi_depth)
 
-ggsave(here("figures_rev2", "rda_micro_chem_combined.png"),
-       width = 16, height = 8, dpi = 300)
+#Joining the re-calculated chlorophyll (from above) with the rest of the data
+data_plot <- data_plot %>% 
+  left_join(chl_merge)
+
+#Adding nutrient ratios -  Not using right now.
+# clust_dend <- clust_dend %>% 
+#   mutate(n_p = no2_dm/po4_dm,
+#          si_n = sio2_dm/no2_dm)
+
+#For Si:N, there are some very high spikes. I am going to create an additional version with these spikes removed so you can see the trends from the other stations.
+# out_rem <- clust_dend %>% 
+#   select(site_id, date, si_n) %>% 
+#   filter(si_n < 10) %>% 
+#   rename(si_n_or = si_n)
+
+#Merging Si:N with spikes removed as a new column in the overarching datasheet
+# clust_dend <- clust_dend %>% 
+#   left_join(out_rem)
+
+
+
 ```
+```{r}
+#renaming variables
+
+```
+
+
+
+
+
 ```{r}
 #Trying a PCA -  already scaled
 pca <- rda(expl)
@@ -970,7 +999,7 @@ ggplot() +
   scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
   scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
   geom_point(data = sites_loc_pca, aes(x = axis1, y = axis2, fill = as.factor(month_surv),
-                                   shape = site_id), 
+                                   shape = site_id, stroke = 1.5), 
              size = 6, color = "black", alpha = 0.9) +
   scale_fill_brewer(palette = "RdYlBu") + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
@@ -992,10 +1021,11 @@ ggplot() +
                   # nudge_x = 0.1,
                   force = 0.1,
                   max.iter = 3e3,
-                  size = 8) +
+                  size = 8,
+                  color = "black") +
   labs(x = "PCA1",
        y = "PCA2") +
-  xlim(-1.0, 1.25) +
+  xlim(-1.0, 1.4) +
   # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
   #                                  digits = 3), "%)", sep = ""),
   #      y = paste("PCA 2 (", format(100 *pca$cont[[1]][2,2], 
@@ -1008,14 +1038,14 @@ ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = "none",
+        legend.position = c(0.9, 0.6),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
-        text = element_text(size = 22)) +
+        text = element_text(size = 24)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Season", shape = "Station")
 
-# ggsave(here("figures_rev2", "rda_chem_calvert_scaling1_test.png"),
-#        width = 6.2, height = 5.3, dpi = 300)
+ggsave(here("figures_rev2", "PCA_test1.png"),
+       width = 10, height = 7, dpi = 300)
 ```
 
 
