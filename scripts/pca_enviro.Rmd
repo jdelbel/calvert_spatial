@@ -4,6 +4,27 @@ output: html_notebook
 ---
 
 Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+
+#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
+
+#For plotting with ggplot2
+
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+```
+
 
 ```{r}
 #Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
@@ -14,7 +35,7 @@ chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv"))
 ```
 
 ```{r}
-#This just ensures that there are no exact duplicates introducted through joining. There aren't here, but it must have occured in earlier versions and I am keeping it in-case I make changes in the future.
+#This just ensures that there are no exact duplicates introduced through joining. There aren't here, but it must have occured in earlier versions and I am keeping it in-case I make changes in the future.
 data <- data %>% 
   distinct(date, site_id, .keep_all = TRUE)
 
@@ -55,22 +76,63 @@ chl_hplc <- chem_tidy %>%
 #Merging the 2018 calibrated chlorophyll to the 2019 and 2020 TChla from HPLC.
 chl_merge <- rbind(chl_bulk_fix, chl_hplc)
 ```
+```{r}
+#selecting data I am going to use with the PCA - I think a case could be made to only include sio@ as this is what comes out as a driver in RDA and also, they all point in the same direction and have the same strength in PCA biplot.
+data_pca <- data %>% 
+  select(date, month, month_surv, site_id, temp = temp_dm, sal = sal_dm, 
+         drho = delta_rho_dm, no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm,
+         secchi = secchi_depth)
+
+#Joining with filled in chlorophyll timeseries from above
+data_pca <- data_pca %>% 
+  left_join(chl_merge)
+
+#Removing NA's for analysis (currently only 1)
+data_pca <- data_pca %>% 
+  drop_na()
+
+#Pulling out explanatory variables
+expl <- data_pca[, 5:12]
+```
 
 ```{r}
-#Trying a PCA -  already scaled
+#Scaling data being used for PCA (Should look into whether I should also center as I did with the mantel tests)
+expl <- scale(expl)
+
+#Converting to a data frame for subsequent analysis.
+expl <- as.data.frame(expl)
+
+```
+
+
+```{r}
+#Running PCA using vegan - when RDA is run without reponse variables, then it is a PCA
 pca <- rda(expl)
 
+#Looking at results - for interpretation of following look at.
 head(summary(pca))
 
+#Looking at scores
 loadings <- scores (pca, display = 'species', scaling = 0)
 loadings
+```
 
+
+```{r}
+#Looking at the variables with highest correlation with axis 1
 sort (abs (loadings[,1]), decreasing = TRUE)
 ```
 ```{r}
+#Looking at the variables with highest correlation with axis 2
+sort (abs (loadings[,2]), decreasing = TRUE)
+```
+
+```{r}
 biplot (pca, display = 'species', scaling = 'species')
 ```
+
 ```{r}
+#Looking at different scalings
 source ('https://raw.githubusercontent.com/zdealveindy/anadat-r/master/scripts/NumEcolR2/cleanplot.pca.R')
 par (mfrow = c(1,2))
 cleanplot.pca (pca, scaling = 1)
@@ -88,6 +150,8 @@ ev <- pca$CA$eig
 
 evplot (ev)
 ```
+
+
 ```{r}
 library (BiodiversityR)
 sig <- PCAsignificance (pca, axes = 14)
@@ -97,9 +161,9 @@ barplot(sig[c('percentage of variance', 'broken-stick percentage'), ], beside = 
   xlab = 'PCA axis', ylab = 'explained variation [%]', col = c('grey', 'black'), 
   legend = TRUE)
 ```
+
+
 ```{r}
-
-
 #Trying the same thing, but bringing in arrows from previous plot - trying scaling 2
 #pdf(file = "rda_s2.pdf", width = 6.5, height = 5, pointsize = 2)
 
@@ -112,7 +176,7 @@ p_pca <- biplot(pca, scaling = 1, type = "none", xlab = c("PCA1"),
 
 points(scores(pca, display = 'sites', choices = c(1, 2), scaling = 1),
        pch = 21, cex = 2.0,
-       bg = c("blue", "springgreen4", "black", "magenta")[as.factor(mm_no_chl$site_id)])
+       bg = c("blue", "springgreen4", "black", "magenta")[as.factor(data_pca$site_id)])
 
 #So since distance doesn't matter, I can make arrows longer with scaling 2? 
 # arrows(0,0, scores(rda.signif, display = "species", choices = c(1),
@@ -131,7 +195,7 @@ points(scores(pca, display = 'sites', choices = c(1, 2), scaling = 1),
 # legend("topleft", legend = levels(eco), bty ="n", col="gray32", pch = 21,
 #        cex = 1.5, pt.bg = bg)
 
-legend("topright", legend = c(levels(as.factor(mm$site_id))),
+legend("topright", legend = c(levels(as.factor(data_pca$site_id))),
        pch = 21,
        pt.bg = c("blue", "springgreen4", "black", "magenta"),
        bty = "n", cex = 1.5)
@@ -140,6 +204,9 @@ legend("topright", legend = c(levels(as.factor(mm$site_id))),
 
 
 ```
+
+
+
 ```{r}
 #Setting up parameters for plotting PCA
 
@@ -148,7 +215,7 @@ legend("topright", legend = c(levels(as.factor(mm$site_id))),
 
 #Extracting site locations
 sites_loc_pca <- sites.long(p_pca, env.data = expl)
-meta_pca <- mm_no_chl[,1:4]
+meta_pca <- data_pca[,1:4]
 sites_loc_pca <- cbind(meta_pca, sites_loc_pca)
 head(sites_loc_pca)
 
@@ -201,9 +268,9 @@ ggplot() +
                   max.iter = 3e3,
                   size = 8,
                   color = "black") +
-  labs(x = "PCA1",
-       y = "PCA2") +
-  xlim(-1.0, 1.4) +
+  labs(x = "PCA1 (45%)",
+       y = "PCA2 (25%)") +
+  xlim(-1.0, 1.3) +
   # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
   #                                  digits = 3), "%)", sep = ""),
   #      y = paste("PCA 2 (", format(100 *pca$cont[[1]][2,2], 
@@ -222,6 +289,42 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Season", shape = "Station")
 
-ggsave(here("figures_rev2", "PCA_test1.png"),
+ggsave(here("figures_rev2", "PCA_test2.png"),
        width = 10, height = 7, dpi = 300)
 ```
+
+```{r}
+#Plotting chemtax clusters - this is still applicable.
+
+clust_dend_tidy %>% 
+  filter(!is.na(clust_chem)) %>% 
+  ggplot(aes(x = as.factor(clust_chem), y = value)) +
+  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+               color = "black", lwd = 0.7) +
+  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 1,
+               position = position_dodge(0.8)) +
+  facet_wrap(~order, scales = "free_y", 
+             labeller = labeller(order = supp.labs)) +
+  xlab("cluster") +
+  scale_fill_npg() +
+  theme_bw() +
+  theme(legend.position = c(0.16, 0.95),
+        legend.title = element_blank(),
+        legend.background=element_blank(),
+        # axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+ggsave(here("figures_rev2", "drivers_boxplot_chemtax_clusters.png"), 
+       width = 16, height = 14, dpi = 300)
+```
+
+```{r}
+#Trying hierarchical clustering on this data. Is this necessary?
+
+#I would just move on to The chemtax data and making the plot for this.
+```
+
