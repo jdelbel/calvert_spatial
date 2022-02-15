@@ -366,6 +366,7 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 # ggsave(here("figures_rev2", "nmds_micro_relative_CALVERT.png"),
 #        width = 6, height = 4.5, dpi = 300)
 ```
+
 ```{r}
 #Plotting nMDS - by cluster
 
@@ -458,6 +459,7 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 #        width = 10, height = 12, dpi = 300)
 
 ```
+
 ```{r}
 #Combining absolute and relative nmds - plots for both month and year
 
@@ -548,6 +550,8 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 #        width = 16, height = 12, dpi = 300)
 
 ```
+
+
 ```{r}
 #Combining station month and year plots with dendrogram - sort of cool, but now have to figure out why DFO2 different. This is where a heatmpa plot comes in?
 
