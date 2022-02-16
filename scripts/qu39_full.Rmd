@@ -1,0 +1,244 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Load packages.
+library(tidyverse) #Data wrangling
+library(readxl) #Import excel files
+library(here) #File structure management
+```
+
+```{r}
+#Importing datasets
+
+#Upload QU39 microscopy data
+micro <- read_csv(here("files", "qu39.csv"))
+
+#Add QU39 as site_id 
+micro <- micro %>% 
+  mutate(site_id = "QU39") %>% 
+  relocate(site_id, .after = date)
+```
+
+```{r}
+#Fixing some errors in the microscopy dataset
+#For some reason, Ebria was classed as a dinoflagellate in some instances. Fixing here and making a heterotroph.
+micro <- micro %>% 
+  mutate(group = case_when(scientificName == "Ebria tripartita" ~ "Ebriidea",
+         TRUE ~ as.character(as.character(group))),
+         trophicStatus = case_when(scientificName == "Ebria tripartita" ~ "hetero",
+         TRUE ~ as.character(as.character(trophicStatus))))
+
+#Pseudo-nitzschia - deli and multi cannot be discerned and need to be summed. Seriata is discernable and can be left.
+
+#Here, I filter out the P.deli and multi, sum their counts and rename them P.n.
+p_n <- micro %>% 
+  filter(scientificName == "Pseudo-nitzschia delicatissima" | 
+           scientificName == "Pseudo-nitzschia multiseries") %>% 
+  group_by(date, site_id) %>% 
+  mutate(count2 = sum(count)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, count2, .keep_all = TRUE) %>% 
+  mutate(scientificName = "Pseudo-nitzschia",
+         scientificName_accepted = "Pseudo-nitzschia",
+         orig_name = "Pseudo-nitzschia") %>% 
+  select(!count) %>% 
+  rename(count = count2)
+
+#Here, I remove P.deli and P.multi from the main sheet, so I can reintroduce the summed counts.
+micro <- micro %>% 
+  filter(!(scientificName == "Pseudo-nitzschia delicatissima" | 
+           scientificName == "Pseudo-nitzschia multiseries"))
+
+#Here, I reintroduce the summed counts as overarching Psuedo-nitzschia
+micro <- rbind(micro, p_n)
+
+#Arranging by date and station
+micro <- micro %>% 
+  arrange(date, site_id)
+
+#Test to see if it worked - looks like it did.
+p_n_check <- micro %>% 
+  filter(genus == "Pseudo-nitzschia") %>% 
+  distinct(scientificName)
+```
+
+```{r}
+#Working with data for plotting
+
+#Removing unknown classifications (Protozoa). Summing counts where I have multiple records of the same species for a day, but different qualifiers
+micro <- micro %>%
+  filter(!scientificName == "Protozoa") %>%
+  group_by(date, site_id, scientificName) %>%
+  mutate(species_sum = sum(count)) %>%
+  distinct(date, site_id, scientificName, species_sum, .keep_all = TRUE) %>% 
+  ungroup()
+```
+
+```{r}
+#Testing something
+micro_sum <- micro %>%
+  filter(trophicStatus == "auto" &
+          site_id == "QU39") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "QU39")
+```
+```{r}
+#Setting order for plotting
+micro_sum$group <- factor(micro_sum$group,
+                         levels = c("Bacillariophyta", #Y
+                                    "Chrysophyta", #Y
+                                    "Dictyochophyta", #Y
+                                    "Raphidiophyta", #Y
+                                    "Dinoflagellata", #Y
+                                    "Cryptophyta",#Y
+                                    "Chlorophyta-Prasinophyta", #Y 
+                                    "Euglenophyta", #Y
+                                    "Prymnesiophyta-Haptophyta", #Y 
+                                    "Cyanobacteria", #Y
+                                    "Unknown_Chlorophyta?", #Y
+                                    "Unknown_Dinophyceae?", #Y
+                                    "Unknown_flagellate" #Y
+                                    ))
+
+#Setting colour pallete for microscopy data - roughly comparable to chemtax data
+color_palette_micro <- c("#ff8000", #Diatoms 
+                   "#2642D5", #Chrysophytes
+                   "#ff99c7", #Dicto (same color as chryso as same pig. group)
+                   "#4d6600", #Raph
+                   "#ff0000", #Dino
+                   "#ffff00", #Crypto
+                   "#00ff00", #Chloro (chloro and eugleno same colour, same pig. group)
+                   "#93FFCA", #Eugleno
+                   "#7d4dcc", #Hapto
+                   "#000000"  #Cyano
+                   )
+
+#Set month labels for plot
+month_labels_5 <- rep(c('J','F','M','A','M','J','J','A','S','O','N','D'), 5)
+
+month_labels <- c('J','F','M','A','M','J','J','A','S','O','N','D')
+
+```
+
+```{r}
+#Microscopy full year with all data
+micro_sum %>% 
+  group_by(date) %>% 
+  mutate(sum_all = sum(sum, na.rm = TRUE)) %>%
+  ungroup() %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = sum, group = group, fill = group)) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = sum_all), size = 2) +
+  scale_fill_manual(values = color_palette_micro) +
+  facet_grid(year ~ .) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11)) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day",
+           y = bquote("Abundance (cells" ~ L^-1*")")) +
+  theme(text = element_text(size = 30))
+
+
+ggsave(here("figures_rev2", "timeseries_qu39_full.png"),
+       width = 18, height = 16, dpi = 300)
+```
+```{r}
+#Want to make a heatmap of harmful and year/date.
+
+#Looking at distinct species
+micro_distinct <- micro %>% 
+  distinct(scientificName_accepted)
+
+harm_list <- c("Alexandrium catenella", 
+               "Dictyocha", 
+               "Dictyocha fibula",
+               "Dinophysis",
+               "Dinophysis acuminata",
+               "Dinophysis acuta",
+               "Dinophysis fortii",
+               "Heterosigma akashiwo",
+               "Chaetoceros concavicornis",
+               "Chaetoceros convolutus",
+               "Chrysochromulina",
+               "Noctiluca scintillans",
+               "Pseudo-nitzschia",
+               "Pseudo-nitzschia seriata")
+
+
+#Subsetting harmful species
+harm <- micro %>% 
+  filter(scientificName_accepted %in% harm_list)
+
+```
+
+```{r}
+#Trying heat map of toxic species
+harm %>% 
+  mutate(yday = lubridate::yday(date),
+         year = lubridate::year(date)) %>% 
+  ggplot(aes(x = yday, y = scientificName_accepted, fill = species_sum)) +
+  geom_tile(color = "black", size = 1) +
+  facet_grid(year ~ ., scales = "free", space = "free") +
+  scale_fill_gradient(name = "",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  # scale_fill_gradient2(name = "",
+  #                      midpoint = 3,
+  #                      low = "white",
+  #                      mid = "blue",
+  #                      high = "#FF0000") +
+  # scale_x_discrete(labels = c("Biddulphiales" = "Bid.",
+  #                             "Corethron criophilum" = "C.c.", #Y
+  #                             "Leptocylindrus danicus" = "L.d.",
+  #                             "Pseudo-nitzschia seriata" = "P.n.s",
+  #                             "Skeletonema marinoi" = "S.m.",
+  #                             "Thalassiosira nordenskioeldii" = "T.n.",
+  #                             "Dinobryon" = "Db.",
+  #                             "Teleaulax acuta" = "T.a.", #Y
+  #                             "Ceratium horridum" = "C.h.", #Y
+  #                             "Corythodinium" = "C.",
+  #                             "Dinophyceae" = "D.",
+  #                             "Gonyaulax" = "G.",
+  #                             "Gyrodinium" = "Gy.",
+  #                             "Katodinium" = "K.",
+  #                             "Prorocentrum" = "Prc.",
+  #                             "Telonema subtilis" = "T.s.",
+  #                             "Phaeocystis pouchetii" = "P.p.")) +
+  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 35),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.1, 0.03),
+        legend.position = "none",
+        # legend.direction = "horizontal",
+        axis.line = element_line(colour = "black"))
+
+ggsave(here("figures_rev2", "test.png"),
+       width = 18, height = 12, dpi = 300)
+
+```
+
