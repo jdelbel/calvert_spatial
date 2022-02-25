@@ -23,6 +23,11 @@ library(ggsci)
 library(ggrepel)
 library(ggforce)
 library(patchwork)
+
+library(cluster)
+library(ggdendro)
+
+library(RColorBrewer)
 ```
 
 
@@ -95,6 +100,7 @@ data_pca <- data_pca %>%
 expl <- data_pca[, 5:12]
 ```
 
+
 ```{r}
 #Scaling data being used for PCA (Should look into whether I should also center as I did with the mantel tests)
 expl <- scale(expl)
@@ -106,7 +112,7 @@ expl <- as.data.frame(expl)
 
 
 ```{r}
-#Running PCA using vegan - when RDA is run without reponse variables, then it is a PCA
+#Running PCA using vegan - when RDA is run without response variables, then it is a PCA
 pca <- rda(expl)
 
 #Looking at results - for interpretation of following look at.
@@ -289,7 +295,7 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Season", shape = "Station")
 
-ggsave(here("figures_rev2", "PCA_test2.png"),
+ggsave(here("figures_rev2", "PCA_calvert.png"),
        width = 10, height = 7, dpi = 300)
 ```
 
@@ -323,8 +329,140 @@ ggsave(here("figures_rev2", "drivers_boxplot_chemtax_clusters.png"),
 ```
 
 ```{r}
-#Trying hierarchical clustering on this data. Is this necessary?
+hc <- data_pca[, 5:12]
 
-#I would just move on to The chemtax data and making the plot for this.
+# hc <- scale(hc)
+
+metadata <- data_pca %>%
+  select(site_id, date) %>% 
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE) %>% 
+  relocate(sample_name, .before = date)
+
+#Creating a list of rownames
+# labs_list <- labs$sample_name
+labs_list <- metadata$sample_name
+
+
+#Making the rownames of the clustering matrix the ones specified in the above list.
+rownames(hc) <- labs_list
 ```
 
+
+```{r}
+
+#Performing hierarchical clustering
+
+#Calculating Bray-Curtis Distances
+dis <- vegdist(hc, method = "bray")
+
+#Applying average linkage hierarchical clustering
+cluster.average <- hclust(dis, "average")
+
+
+```
+```{r}
+#This step sets clusters. Currently, I am not using.
+
+# k <- 6
+# clust <- cutree(cluster.average, k = k)
+# 
+# clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
+#                                    cluster = factor(clust))
+
+# write_csv(clust.df, here("outputs", "clusters_micro_6.csv"))
+```
+
+```{r}
+# extract dendrogram segment data for plotting
+
+dend <- as.dendrogram(cluster.average)
+dendrogram_data <- dendro_data(dend)
+dendrogram_segments <- dendrogram_data$segments 
+```
+
+```{r}
+#Creating metadata sheet with 
+# metadata <- micro_piv %>% 
+#   select(site_id, date)
+
+# metadata <- micro_piv %>% 
+#    select(sample_name, site_id, date)
+
+#Making unique labels by combining site and date into single string
+# metadata <- metadata %>% 
+#   unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+# get terminal dendrogram segments and join with names.
+dendrogram_ends <- dendrogram_segments %>%
+ filter(yend == 0) %>% 
+ left_join(dendrogram_data$labels, by = "x") %>% 
+ rename(sample_name = label) %>% 
+ left_join(metadata, by = "sample_name") 
+
+```
+
+```{r}
+#This is used to draw cluster boxes around the dendrogram clusters in the plot. Not currently using clusters so have turned off, but necessary if using clusters.
+
+# dendrogram_data[["labels"]] <- merge(dendrogram_data[["labels"]], clust.df, by = "label")
+# rect <- aggregate(x~cluster, label(dendrogram_data), range)
+# rect <- data.frame(rect$cluster, rect$x)
+# ymax <- mean(cluster.average$height[length(cluster.average$height) - ((k-2):(k-1))])
+```
+
+
+```{r}
+#I'm not 100% sure how this all works, but it does - sets up colors for the sites for plotting with dendrogram.
+
+# Generate custom color palette for dendrogram ends based on metadata variable - Site
+unique_vars <- levels(factor(dendrogram_ends$site_id)) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("row_id")
+
+# count number of unique variables
+color_count <- length(unique(unique_vars$.))
+
+# get RColorBrewer palette
+get_palette <- colorRampPalette(brewer.pal(n = 3, name = "Set1"))
+
+# produce RColorBrewer palette based on number of unique variables in metadata:
+palette <- get_palette(color_count) %>% 
+ as.data.frame() %>%
+ rename("color" = ".") %>%
+ rownames_to_column(var = "row_id")
+
+color_list <- left_join(unique_vars, palette, by = "row_id") %>%
+ select(-row_id)
+
+site_color <- as.character(color_list$color)
+names(site_color) <- color_list$.
+```
+
+```{r}
+#Plotting dendrogram - saving for incorporation later.
+ggplot() +
+ geom_segment(data = dendrogram_segments, 
+              aes(x = x, y = y, xend = xend, yend = yend)) +
+ geom_segment(data = dendrogram_ends, aes(x = x, y = y.x, xend = xend,
+                                          yend = yend, color = site_id),
+              size = 2) +
+ geom_text(data = dendrogram_ends, aes(x = x, y = y.y, label = sample_name,
+                                       color = site_id),
+           hjust = 0, angle = 0, size = 6) +
+ # geom_rect(data = rect, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0, ymax = ymax),
+ #            color = "black", fill = NA, size = 0.8) +
+ scale_color_manual(values = site_color) +
+ scale_y_reverse(limits = c(0.3, -0.2)) +
+ coord_flip() +
+ theme_bw() +
+ theme(legend.position = "none",
+       axis.title.x = element_blank(),
+       axis.title.y = element_blank(),
+       axis.text.y = element_blank(),
+       text = element_text(size = 30)) +
+ ylab("Distance") # flipped x and y coordinates for aesthetic reasons
+
+ 
+ggsave(here("figures_rev2", "physical_dendro.png"),
+       width = 6, height = 12, dpi = 300)
+```

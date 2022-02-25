@@ -85,7 +85,7 @@ micro_sum_qu39 <- micro %>%
 micro_sum <- rbind(micro_sum_dfo2, micro_sum_kc10, micro_sum_qcs01, micro_sum_qu39)
 ```
 ```{r}
-#Summing species for the KC10-QU39 Timeseries
+#Summing species for the KC10-QU39 Time-series
 micro_kc10_sum <- micro_kc10 %>%
   filter(trophicStatus == "auto" &
           site_id == "KC10") %>% 
@@ -615,6 +615,41 @@ ggsave(here("figures_rev2", "timeseries_calvert.png"),
        width = 17, height = 10, dpi = 300)
 
 ```
+```{r}
+
+#Microscopy May - October 2018-2020 time-series - Calvert
+
+micro_sum %>% 
+  filter(date > "2018-04-01" & date < "2020-11-01" & !site_id == "QU39") %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(sum, na.rm = TRUE)) %>%
+  ungroup() %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = sum/1000, group = group, fill = group)) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = sum_all/1000), size = 2) +
+  scale_fill_manual(values = color_palette_micro) +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11)) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day",
+           y = bquote("Abundance (cells" ~ L^-1*")")) +
+  theme(text = element_text(size = 25)) 
+
+ggsave(here("figures_rev2", "timeseries_calvert_ml.png"),
+       width = 17, height = 10, dpi = 300)
+
+```
+
+
+
 
 ```{r}
 
@@ -646,6 +681,53 @@ ggsave(here("figures_rev2", "timeseries_kc10_qu39.png"),
        width = 17, height = 10, dpi = 300)
 
 ```
+```{r}
+
+#Microscopy full year comparison of KC10 to QU39
+micro_sum_2 %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(sum, na.rm = TRUE)) %>%
+  ungroup() %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = sum/1000, group = group, fill = group)) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = sum_all/1000), size = 2) +
+  scale_fill_manual(values = color_palette_micro, 
+                    labels = c("Bacillariophyta", #Y
+                                    "Chrysophyta", #Y
+                                    "Dictyochophyta", #Y
+                                    "Raphidiophyta", #Y
+                                    "Dinoflagellata", #Y
+                                    "Cryptophyta",#Y
+                                    "Chloro.-Prasinophyta", #Y 
+                                    "Euglenophyta", #Y
+                                    "Prym-Haptophyta", #Y 
+                                    "Cyanobacteria" #Y
+                                     #Y
+                                    )) +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day",
+           y = bquote("Abundance (cells" ~ mL^-1*")")) +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = "black"))
+
+ggsave(here("figures_rev2", "timeseries_kc10_qu39_ml.png"),
+       width = 17, height = 10, dpi = 300)
+
+```
+
+
+
+
+
 ```{r}
 
 #Microscopy full year comparison of KC10 to QU39 with QU39 timeseries downscaled to similar temporal resolution as KC10 (monthly)

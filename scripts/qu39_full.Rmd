@@ -8,6 +8,7 @@ output: html_notebook
 library(tidyverse) #Data wrangling
 library(readxl) #Import excel files
 library(here) #File structure management
+library(patchwork)
 ```
 
 ```{r}
@@ -63,12 +64,14 @@ micro <- micro %>%
 p_n_check <- micro %>% 
   filter(genus == "Pseudo-nitzschia") %>% 
   distinct(scientificName)
+
+#Psuedo-nitzschia delicatissima and multiseries now summed. Seriata are kept separate.
 ```
 
 ```{r}
 #Working with data for plotting
 
-#Removing unknown classifications (Protozoa). Summing counts where I have multiple records of the same species for a day, but different qualifiers
+#Removing unknown classifications (Protozoa). Summing counts where I have multiple records of the same species for a day, but different qualifiers.
 micro <- micro %>%
   filter(!scientificName == "Protozoa") %>%
   group_by(date, site_id, scientificName) %>%
@@ -78,7 +81,9 @@ micro <- micro %>%
 ```
 
 ```{r}
-#Testing something
+#Setting up workbook for plotting. 
+
+#Filtering autotrophic groups - currently only removed ciliates, metozoans and obvious heterotrophs etc.
 micro_sum <- micro %>%
   filter(trophicStatus == "auto" &
           site_id == "QU39") %>% 
@@ -91,7 +96,7 @@ micro_sum <- micro %>%
          site_id = "QU39")
 ```
 ```{r}
-#Setting order for plotting
+#Setting order of microscopy groups for plotting
 micro_sum$group <- factor(micro_sum$group,
                          levels = c("Bacillariophyta", #Y
                                     "Chrysophyta", #Y
@@ -129,7 +134,7 @@ month_labels <- c('J','F','M','A','M','J','J','A','S','O','N','D')
 ```
 
 ```{r}
-#Microscopy full year with all data
+#Plotting QU39 microscopy timeseries and faceting by year
 micro_sum %>% 
   group_by(date) %>% 
   mutate(sum_all = sum(sum, na.rm = TRUE)) %>%
@@ -158,12 +163,13 @@ ggsave(here("figures_rev2", "timeseries_qu39_full.png"),
        width = 18, height = 16, dpi = 300)
 ```
 ```{r}
-#Want to make a heatmap of harmful and year/date.
+#Separating harmful species
 
-#Looking at distinct species
+#Looking at distinct species names to draw list from
 micro_distinct <- micro %>% 
   distinct(scientificName_accepted)
 
+#Creating harmful species list.
 harm_list <- c("Alexandrium catenella", 
                "Dictyocha", 
                "Dictyocha fibula",
@@ -179,66 +185,240 @@ harm_list <- c("Alexandrium catenella",
                "Pseudo-nitzschia",
                "Pseudo-nitzschia seriata")
 
-
-#Subsetting harmful species
+#Subsetting harmful species using list
 harm <- micro %>% 
   filter(scientificName_accepted %in% harm_list)
 
+#Looking at Alexandrium catenella - ASP species.
+alex <- harm %>% 
+  filter(scientificName_accepted == "Alexandrium catenella")
 ```
 
 ```{r}
-#Trying heat map of toxic species
-harm %>% 
-  mutate(yday = lubridate::yday(date),
+#Trying heat map of toxic species - Didn't really work because squares are so small due to 365 days of year.
+#How can I show this?
+
+#Grouping harmful species by genus.
+harm_gen <- harm %>% 
+  group_by(date, genus) %>% 
+  summarise(count_gen = sum(species_sum)) %>% 
+  ungroup()
+```
+```{r}
+#Grouping harmful species by genus and summarizing times observed over the time-series
+harm_gen_cnt <- harm_gen %>% 
+  group_by(genus) %>% 
+  summarise(n = n()) %>% 
+  ungroup()
+
+#Doiung a similar summary, but with down to family/species level.
+harm_cnt <- harm %>% 
+  group_by(scientificName_accepted) %>% 
+  summarise(n = n()) %>% 
+  ungroup()
+```
+
+
+```{r}
+#Creating bar plot of times observed at genus level.
+
+harm_gen_cnt %>% 
+  ggplot(aes(x = reorder(genus, n), y = n)) +
+  geom_bar(stat = "identity", fill = "blue", color = "black", alpha = 0.7) +
+  geom_text(aes(label = n), position = position_dodge(width = 0.9),
+            vjust = -0.25, size = 10) +
+  scale_x_discrete(labels = c("Chrysochromulina" = "Chry.",
+                              "Alexandrium" = "Alex.",
+                              "Noctiluca" = "Noct.",
+                              "Heterosigma" = "H.ak.",
+                              "Dinophysis" = "Dino.",
+                              "Chaetoceros" = "C+C.",
+                              "Dictyocha" = "Dicty.",
+                              "Pseudo-nitzschia" = "P.n.")) +
+  theme_bw() +
+  labs(y = "# of times observed") +
+  theme(axis.title.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        text = element_text(size = 45))
+
+ggsave(here("figures_rev2", "qu39_harmful_count.png"),
+       width = 16, height = 10, dpi = 300)
+```
+
+```{r}
+#Look into dinophysis, mesodinium, cryptophytes.
+harm_gen %>% 
+  filter(genus == "Dinophysis") %>% 
+  ggplot(aes(x = date, log10(count_gen))) +
+  geom_point()
+```
+
+
+```{r}
+#Plotting box plot of 
+
+#Making cells per mL column
+harm_gen <- harm_gen %>% 
+  mutate(cell_ml = count_gen/1000)
+
+row_add <- data.frame(date = as.Date("2018-02-01"), genus = "Dinophysis",
+                      count_gen = NA, cell_ml = NA)
+
+harm_gen <- rbind(harm_gen, row_add)
+```
+
+
+```{r}
+f1 <- harm_gen %>% 
+  mutate(month = lubridate::month(date),
          year = lubridate::year(date)) %>% 
-  ggplot(aes(x = yday, y = scientificName_accepted, fill = species_sum)) +
+  filter(genus == "Dinophysis") %>% 
+  ggplot(aes(x = as.factor(month), y = log10(cell_ml))) +
+  geom_boxplot(fill = "lightgray") +
+  geom_dotplot(aes(fill = as.factor(year)), trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 0.8,
+               position = position_dodge(0.5), alpha = 0.8, color = "black",
+               stroke = 2) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  labs(x = "Month",
+       y = bquote("Log"^10 ~ "(cells" ~ mL^-1*")")) +
+  theme_bw() +
+  theme(legend.position = c(0.9, 0.8),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+f2 <- harm_gen %>% 
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>% 
+  filter(genus == "Dinophysis") %>% 
+  ggplot(aes(x = as.factor(month), y = year, fill = count_gen/1000)) +
   geom_tile(color = "black", size = 1) +
-  facet_grid(year ~ ., scales = "free", space = "free") +
-  scale_fill_gradient(name = "",
+  scale_fill_gradient("",
                       low = "#FFFFFF",
-                      high = "#012345") +
-  # scale_fill_gradient2(name = "",
-  #                      midpoint = 3,
-  #                      low = "white",
-  #                      mid = "blue",
-  #                      high = "#FF0000") +
-  # scale_x_discrete(labels = c("Biddulphiales" = "Bid.",
-  #                             "Corethron criophilum" = "C.c.", #Y
-  #                             "Leptocylindrus danicus" = "L.d.",
-  #                             "Pseudo-nitzschia seriata" = "P.n.s",
-  #                             "Skeletonema marinoi" = "S.m.",
-  #                             "Thalassiosira nordenskioeldii" = "T.n.",
-  #                             "Dinobryon" = "Db.",
-  #                             "Teleaulax acuta" = "T.a.", #Y
-  #                             "Ceratium horridum" = "C.h.", #Y
-  #                             "Corythodinium" = "C.",
-  #                             "Dinophyceae" = "D.",
-  #                             "Gonyaulax" = "G.",
-  #                             "Gyrodinium" = "Gy.",
-  #                             "Katodinium" = "K.",
-  #                             "Prorocentrum" = "Prc.",
-  #                             "Telonema subtilis" = "T.s.",
-  #                             "Phaeocystis pouchetii" = "P.p.")) +
-  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+                      high = "red",
+                      na.value = NA
+                      ) +
+  labs(y = "Year") +
   theme_bw() +
   theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        # legend.position = "bottomright",
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        text = element_text(size = 35),
-        axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        # legend.position = c(0.1, 0.03),
-        legend.position = "none",
-        # legend.direction = "horizontal",
-        axis.line = element_line(colour = "black"))
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
 
-ggsave(here("figures_rev2", "test.png"),
-       width = 18, height = 12, dpi = 300)
+fig <- f1/f2 + plot_layout(heights = c(1, 0.5))
+
+ggsave(here("figures_rev2", "dinophysis.png"), fig,
+       width = 10, height = 8, dpi = 300)
+```
+
+```{r}
+#Looks at statistics of dinophysis species - min and max counts.
+
+#dinophysis numbers
+dino_sps_cnt <- micro %>% 
+  filter(genus == "Dinophysis") %>% 
+  group_by(scientificName_accepted) %>% 
+  summarise(min = min(species_sum),
+            max = max(species_sum)) %>% 
+  ungroup()
+
+dino_gen_cnt <- harm_gen %>% 
+  filter(genus == "Dinophysis") %>% 
+  group_by(genus) %>% 
+  summarise(min = min(count_gen),
+            max = max(count_gen)) %>% 
+  ungroup()
+```
+
+```{r}
+#Plotting of pseudo-nitzschia
+f1 <- harm_gen %>% 
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>% 
+  filter(genus == "Pseudo-nitzschia") %>% 
+  ggplot(aes(x = as.factor(month), y = log10(cell_ml))) +
+  geom_boxplot(fill = "lightgray") +
+  geom_dotplot(aes(fill = as.factor(year)), trim = FALSE, binaxis = 'y', 
+               stackdir = 'center', dotsize = 0.8,
+               position = position_dodge(0.5), alpha = 0.8, color = "black",
+               stroke = 2) +
+  geom_hline(yintercept = log10(50)) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  annotate("text", x = 12, y = log10(70),
+           label = ">50",
+           size = 6) +
+  labs(x = "Month",
+       y = bquote("Log"^10 ~ "(cells" ~ mL^-1*")")) +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.85),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+f2 <- harm_gen %>% 
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>% 
+  filter(genus == "Pseudo-nitzschia") %>% 
+  ggplot(aes(x = as.factor(month), y = year, fill = cell_ml)) +
+  geom_tile(color = "black", size = 1) +
+  scale_fill_gradient("",
+                      low = "#FFFFFF",
+                      high = "red",
+                      limits = c(50, 550),
+                      na.value = "lightgray") +
+  labs(y = "Year") +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"))
+
+fig <- f1/f2 + plot_layout(heights = c(1, 0.5))
+
+ggsave(here("figures_rev2", "pseudo_nitzschia.png"), fig,
+       width = 10, height = 8, dpi = 300)
+```
+
+
+```{r}
+#This looks at pearson's correlations between dinophysis species and summed abundance and cryptophytes. Doesn't really show anything of value.
+
+#Trying to look at cryptopphyte correlations with dinophysis - Didn't really show anything.
+cryp_wide <- micro %>% 
+  filter(!scientificName_accepted == "Phalacroma rotundatum" & 
+           (class == "Cryptophyceae" | 
+           scientificName_accepted == "Mesodinium rubrum" |
+           genus == "Dinophysis")) %>% 
+  select(date, name = scientificName_accepted, count = species_sum) %>% 
+  pivot_wider(names_from = "name", values_from = "count")
+
+cryp_tel_sum <- cryp %>% 
+  filter(order == "Pyrenomonadales") %>% 
+  group_by(date, genus) %>%
+  summarize(tel_sum = sum(species_sum)) %>% 
+  ungroup() %>% 
+  select(date, tel_sum)
+
+cryp_wide <- cryp_wide %>% 
+  left_join(cryp_tel_sum)
+
+cryp_wide_cor <- cryp_wide %>% 
+  select(!date) %>% 
+  mutate_all(~ replace(., is.na(.), 0))
+
+cor_p <- cor(cryp_wide_cor, method = "pearson")
+
+cor_p
+```
+
+```{r}
 
 ```
 
