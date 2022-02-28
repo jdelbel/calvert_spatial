@@ -750,20 +750,29 @@ ano_year
 
 ```{r}
 #Indicator species analysis
+# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by station
 inv_site = multipatt(transform, site_id, func = "r.g",
                        control = how(nperm = 9999))
 
+#Looking at results of analysis
 summary(inv_site)
 ```
 
-```{r}
-#by month
-inv_month = multipatt(transform, month, func = "r.g",
-                       control = how(nperm = 9999))
 
-summary(inv_month)
+
+```{r}
+#Pulling out list of species from indicator analysis on station - Not currently used to make plot, but cool that I can do this - makes further analysis much easier and replicatable.
+inv_site_sp <- data.table::as.data.table(inv_site$sign, keep.rownames = TRUE)
+```
+
+```{r}
+#by month - Noth currently using.
+# inv_month = multipatt(transform, month, func = "r.g",
+#                        control = how(nperm = 9999))
+# 
+# summary(inv_month)
 ```
 
 ```{r}
@@ -774,12 +783,21 @@ inv_year = multipatt(transform, year, func = "r.g",
 summary(inv_year)
 ```
 
-```{r}
-#by cluster
-inv_cluster = multipatt(transform, cluster, func = "r.g",
-                       control = how(nperm = 9999))
 
-summary(inv_cluster)
+```{r}
+#Looking at p-value correction for indicator species analysis.
+# https://stats.stackexchange.com/questions/370724/indiscpecies-multipatt-and-overcoming-multi-comparrisons
+
+inv_year_sp <- data.table::as.data.table(inv_year$sign, keep.rownames = TRUE)
+
+```
+
+```{r}
+#by cluster - Not currently using.
+# inv_cluster = multipatt(transform, cluster, func = "r.g",
+#                        control = how(nperm = 9999))
+# 
+# summary(inv_cluster)
 ```
 
 ```{r}
@@ -790,7 +808,7 @@ summary(inv_cluster)
 
 
 ```{r}
-#This is a dendrogram in the order of the clustering including all species. Way to busy, but good to inspect.
+#Ordering the data in the order of the dendrogram from hierarchical clustering.
 
 #Creating a list with the order of the samples in the dendrogram.
 hc_order <- dendrogram_ends$sample_name
@@ -835,70 +853,70 @@ micro_heat %>%
         legend.position = "top",
         axis.line = element_line(colour = "black"))
 
-ggsave(here("figures_rev2", "heat_all_species_dendro_order.png"),
-       width = 16, height = 25, dpi = 300)
+# ggsave(here("figures_rev2", "heat_all_species_dendro_order.png"),
+#        width = 16, height = 25, dpi = 300)
 ```
 
 ```{r}
-#Plotting the same as above (dendrogram order), but trying with only the indicator species (p <0.01)
+#Plotting the same as above (dendrogram order), but trying with only the indicator species (p < 0.01) Combining this later with the nMDS and dendrogram plots.
 
-h1 <- micro_heat %>%   
-   filter(scientificName == "Chaetoceros decipiens" |
-           scientificName == "Dactyliosolen phuketensis" |
-           scientificName == "Detonula pumila" |
-           scientificName == "Thalassiosira rotula" |
-           scientificName == "Ceratium lineatum" |
-           scientificName == "Dactyliosolen fragilissimus" |
-           scientificName == "Chaetoceros debilis" |
-           scientificName == "Guinardia delicatula" |
-           scientificName == "Rhizosolenia setigera" |
-           scientificName == "Chaetoceros seiracanthus" |
-           scientificName == "Skeletonema marinoi") %>%
-  ggplot(aes(x = species_order, y = sample_name, fill = log10(count+1))) +
-  geom_tile(color = "black", size = 1) +
-  facet_grid(. ~ group, scales = "free_x", space = "free") +
-  scale_fill_gradient(name = "",
-                      low = "#FFFFFF",
-                      high = "#012345") +
-  # scale_fill_gradient2(name = "",
-  #                      midpoint = 3,
-  #                      low = "white",
-  #                      mid = "blue",
-  #                      high = "#FF0000") +
-  scale_x_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
-                              "Chaetoceros decipiens" = "C.dec.",
-                              "Chaetoceros seiracanthus" = "C.s.",
-                              "Dactyliosolen fragilissimus" = "D.f.",
-                              "Dactyliosolen phuketensis" = "D.ph.",
-                              "Detonula pumila" = "D.p.",
-                              "Guinardia delicatula" = "G.d.",
-                              "Rhizosolenia setigera" = "R.s.",
-                              "Skeletonema marinoi" = "S.m.",
-                              "Thalassiosira rotula" = "T.r.",
-                              "Ceratium lineatum" = "C.l.")) +
-  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
-  theme_bw() +
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        # legend.position = "bottomright",
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        text = element_text(size = 35),
-        axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        legend.position = c(0.1, 0.03),
-        legend.direction = "horizontal",
-        axis.line = element_line(colour = "black"))
+# h1 <- micro_heat %>%   
+#    filter(scientificName == "Chaetoceros decipiens" |
+#            scientificName == "Dactyliosolen phuketensis" |
+#            scientificName == "Detonula pumila" |
+#            scientificName == "Thalassiosira rotula" |
+#            scientificName == "Ceratium lineatum" |
+#            scientificName == "Dactyliosolen fragilissimus" |
+#            scientificName == "Chaetoceros debilis" |
+#            scientificName == "Guinardia delicatula" |
+#            scientificName == "Rhizosolenia setigera" |
+#            scientificName == "Chaetoceros seiracanthus" |
+#            scientificName == "Skeletonema marinoi") %>%
+#   ggplot(aes(x = species_order, y = sample_name, fill = log10(count+1))) +
+#   geom_tile(color = "black", size = 1) +
+#   facet_grid(. ~ group, scales = "free_x", space = "free") +
+#   scale_fill_gradient(name = "",
+#                       low = "#FFFFFF",
+#                       high = "#012345") +
+#   # scale_fill_gradient2(name = "",
+#   #                      midpoint = 3,
+#   #                      low = "white",
+#   #                      mid = "blue",
+#   #                      high = "#FF0000") +
+#   scale_x_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
+#                               "Chaetoceros decipiens" = "C.dec.",
+#                               "Chaetoceros seiracanthus" = "C.s.",
+#                               "Dactyliosolen fragilissimus" = "D.f.",
+#                               "Dactyliosolen phuketensis" = "D.ph.",
+#                               "Detonula pumila" = "D.p.",
+#                               "Guinardia delicatula" = "G.d.",
+#                               "Rhizosolenia setigera" = "R.s.",
+#                               "Skeletonema marinoi" = "S.m.",
+#                               "Thalassiosira rotula" = "T.r.",
+#                               "Ceratium lineatum" = "C.l.")) +
+#   # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+#   theme_bw() +
+#   theme(axis.title.x = element_blank(),
+#         axis.title.y = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.x = element_blank(),
+#         # legend.position = "bottomright",
+#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+#         text = element_text(size = 35),
+#         axis.text = element_text(colour = "black"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         panel.background = element_blank(),
+#         legend.position = c(0.1, 0.03),
+#         legend.direction = "horizontal",
+#         axis.line = element_line(colour = "black"))
 
-ggsave(here("figures_rev2", "heat_dendro_order_station_indicator.png"),
-       width = 13, height = 18, dpi = 300)
+# ggsave(here("figures_rev2", "heat_dendro_order_station_indicator.png"),
+#        width = 13, height = 18, dpi = 300)
 ```
 
 ```{r}
-#Plotting the same as above (dendrogram order), but trying with only the indicator species (p <0.01). Trying again with no labels
+#Plotting the same as above (dendrogram order), but trying with only the indicator species (p <0.01). Trying again with no labels. Not sure what is difference from above here, but this is what I am using to construct the panel.
 
 #Setting the order to the same as the clustering using the specified list
 micro_heat$sample_name <- factor(micro_heat$sample_name, levels = unique(hc_order))
@@ -962,7 +980,7 @@ h1_1 <- micro_heat %>%
 ```
 
 ```{r}
-#Second approach to try to lineup dendrogram with heatmap.
+#Second approach to try to lineup dendrogram with heatmap so that they can be combined in a panel.
 p_dend2 <- ggplot() +
  geom_segment(data = dendrogram_segments, 
               aes(x = x, y = y, xend = xend, yend = yend)) +
@@ -991,12 +1009,12 @@ p_dend2 <- ggplot() +
 
 
 ```{r}
-#Testing if I can merge the above with the dendrogram.
+#Merging the nMDS with the dendrogram and heatmap.
 fig <- p_dend2 / h1_1 + plot_layout(heights = c(1, 3))
 
 fig2 <- fig_nmds_horiz / fig
 
-ggsave(here("figures_rev2", "heat_test_2.png"), fig2,
+ggsave(here("figures_rev2", "nmds_dendro_heat.png"), fig2,
        width = 16, height = 14, dpi = 300)
 ```
 
@@ -1405,11 +1423,13 @@ n_station <- micro %>%
   summarise(n_samp = n()) %>% 
   ungroup()
 
+#Joining total number of times each station was sampled with stats on how many times each species was observed at each station.
 micro_ind_stat <- micro_ind_stat %>% 
   left_join(n_station) %>% 
   mutate(perc_obs = n_obs/n_samp)
 ```
 ```{r}
+#Creating a placeholder for Ceratium lineatum for DFO2 - makes plot save a space so the groupings stay consistent.
 dfo_cl <- data.frame(site_id = "DFO2",
                      scientificName = "Ceratium lineatum",
                      n_obs = 0,
@@ -1423,6 +1443,8 @@ micro_ind_stat <- rbind(dfo_cl, micro_ind_stat)
 
 
 ```{r}
+#Creating a plot showing number and percent observed for each indicator species by station. Then a second plot with the average abundance of each species for each station.
+
 p1 <- micro_ind_stat %>% 
   filter(!scientificName == "Skeletonema marinoi") %>% 
   ggplot(aes(x = perc_obs, y = scientificName, fill = site_id)) +
@@ -1483,8 +1505,124 @@ fig <- p1 + p2
 ggsave(here("figures_rev2", "indicator_species_station_bar.png"), fig,
        width = 12, height = 7, dpi = 300)
 ```
+```{r}
+#Trying to do the same for annual indicator analysis. Creating a list of species determined via indicator species analysis on stations.
 
+#subsetting species from annual indicator species analysis that had p values <= 0.01.
+inv_year_sp <- inv_year_sp %>% 
+  filter(p.value <= 0.01)
 
+#Creating a list of the significant species from indicator species analysis.
+inv_year_lis <- inv_year_sp$rn
+
+```
+
+```{r}
+#Sub-setting the species determined via indicator species analysis on station
+micro_year_stat <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName %in% inv_year_lis) %>% 
+  mutate(year = lubridate::year(date))
+
+#Determining number of times each indicator species observed at each station
+micro_year_stat <- micro_year_stat %>% 
+  group_by(year, scientificName) %>% 
+  summarise(n_obs = n(),
+            max_count = max(species_sum),
+            mean_count = mean(species_sum)) %>% 
+  ungroup() 
+
+#Maybe Friday brain, but this is the best way I could find to count how many times each station was sampled - Want this so I can determine percentage of times each indicator species was observed by station
+n_station_year <- micro %>% 
+  filter(!site_id == "QU39") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  group_by(date, year) %>% 
+  distinct(date, year) %>% 
+  ungroup() %>% 
+  group_by(year) %>% 
+  summarise(n_samp = n()) %>% 
+  ungroup()
+
+#Joining total number of times each station was sampled with stats on how many times each species was observed at each station.
+micro_year_stat <- micro_year_stat %>% 
+  left_join(n_station_year) %>% 
+  mutate(perc_obs = n_obs/n_samp)
+```
+```{r}
+#Creating a plot showing number and percent observed for each indicator species by station. Then a second plot with the average abundance of each species for each station.
+
+p1 <- micro_year_stat %>% 
+  ggplot(aes(x = perc_obs, y = scientificName, fill = as.factor(year))) +
+  geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  scale_x_continuous(expand = c(0.01, 0), limits = c(0, 1.03)) +
+  scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
+                              "Corythodinium" = "C.",
+                              "Ceratium horridum" = "C.h.", #Y
+                              "Corethron criophilum" = "C.c.", #Y
+                              "Dinobryon" = "Db.",
+                              "Dinophyceae" = "D.",
+                              "Gonyaulax" = "G.",
+                              "Gyrodinium" = "Gy.",
+                              "Katodinium" = "K.",
+                              "Leptocylindrus danicus" = "L.d.",
+                              "Phaeocystis pouchetii" = "P.p.",
+                              "Prorocentrum" = "Prc.",
+                              "Protoperidinium" = "Ptp.",
+                              "Pseudo-nitzschia seriata" = "P.n.s",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Teleaulax acuta" = "T.a.",
+                              "Telonema subtilis" = "T.s.",
+                              "Thalassiosira nordenskioeldii" = "T.n.")) +
+  theme_bw() +
+  labs(x = "% Observed") +
+  theme(text = element_text(size = 25),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none")
+  
+
+p2 <- micro_year_stat %>% 
+  ggplot(aes(x = mean_count, y = scientificName, fill = as.factor(year))) +
+  geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  # scale_x_continuous(expand = c(0, 1000)) +
+  # ggbreak::scale_x_break(c(55000, 240000)) +
+  labs(x = "Mean Abundance (cells l)") +
+  # scale_x_continuous(expand = c(0.01, 0), limits = c(0, 26000)) +
+  scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
+                              "Corythodinium" = "C.",
+                              "Ceratium horridum" = "C.h.", #Y
+                              "Corethron criophilum" = "C.c.", #Y
+                              "Dinobryon" = "Db.",
+                              "Dinophyceae" = "D.",
+                              "Gonyaulax" = "G.",
+                              "Gyrodinium" = "Gy.",
+                              "Katodinium" = "K.",
+                              "Leptocylindrus danicus" = "L.d.",
+                              "Phaeocystis pouchetii" = "P.p.",
+                              "Prorocentrum" = "Prc.",
+                              "Protoperidinium" = "Ptp.",
+                              "Pseudo-nitzschia seriata" = "P.n.s",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Teleaulax acuta" = "T.a.",
+                              "Telonema subtilis" = "T.s.",
+                              "Thalassiosira nordenskioeldii" = "T.n.")) +
+  theme_bw() +
+    theme(text = element_text(size = 25),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.text = element_text(colour = "black"),
+          legend.position = c(0.85, 0.1),
+          legend.title = element_blank())
+
+fig <- p1 + p2
+
+ggsave(here("figures_rev2", "indicator_species_year_bar.png"), fig,
+       width = 12, height = 7, dpi = 300)
+```
 
 
 
