@@ -1,0 +1,475 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+
+#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
+
+#For plotting with ggplot2
+
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+
+library(cluster)
+library(ggdendro)
+
+library(RColorBrewer)
+```
+
+
+```{r}
+#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
+
+#Importing chemtax data separately. I just use this to calibrate a new chlorophyll dataset that fixes some data quality gaps.
+chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv")) 
+```
+
+```{r}
+#This just ensures that there are no exact duplicates introduced through joining. There aren't here, but it must have occured in earlier versions and I am keeping it in-case I make changes in the future.
+data <- data %>% 
+  distinct(date, site_id, .keep_all = TRUE)
+
+#Removing QU39 for this worksheet
+data <- data %>% 
+  filter(!site_id == "QU39")
+```
+
+```{r}
+#For Chl, I want to use Chl for 2018 and HPLC for 2019 and 2020 as there is greater data availability. I need to merge the 2018 chl with the 2019-2020 HPLC, but first calibrate the 2018 chlorophyll so that is comparable to the HPLC in 2019 and 2020.
+
+#Separate chlorophyll data from before 2018
+chl_bulk <- data %>%
+  select(date, site_id, bulk_chl) %>% 
+  filter(date < "2019-01-01") %>% 
+  rename(chl = bulk_chl)
+
+#For the pre-2018 data, make comparable through using the relationship between HPLC and chlorophyll from 2019 and 2020 (determined these in a separate workbook)
+chl_bulk_fix <- chl_bulk %>% 
+  mutate(chl = (0.65*chl) + 0.59 )
+
+#Make the chemtax data long format and then calculate TChla from HPLC via addition of chlorophyll from each chemtax group. Was just easier than uploading another sheet with just the HPLC Tchla concentrations
+chem_tidy <- chem %>% 
+  pivot_longer(c(cyan, hapto, green, cryp, dino, dict, raph, diat),
+                 names_to = "phyto_group", values_to = "TChla") %>% 
+  group_by(date, site_id, phyto_group) %>% 
+  summarize(TChla_mean = mean(TChla)) %>% 
+  ungroup() %>% 
+  group_by(date, site_id) %>% 
+  mutate(TChla_sum = sum(TChla_mean)) %>% 
+  ungroup()
+
+#Separating out the calculated TChla concentrations from above.
+chl_hplc <- chem_tidy %>% 
+  select(date, site_id, chl = TChla_sum) %>% 
+  distinct(date, site_id, chl, .keep_all = TRUE)
+
+#Merging the 2018 calibrated chlorophyll to the 2019 and 2020 TChla from HPLC.
+chl_merge <- rbind(chl_bulk_fix, chl_hplc)
+```
+```{r}
+#selecting data I am going to use with the PCA - I think a case could be made to only include sio@ as this is what comes out as a driver in RDA and also, they all point in the same direction and have the same strength in PCA biplot.
+data_pca <- data %>% 
+  mutate(no2_po4 = no2_dm/po4_dm) %>% 
+  select(date, month, month_surv, site_id, temp = temp_dm, sal = sal_dm, 
+         drho = delta_rho_dm, no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm, 
+         no2_po4, secchi = secchi_depth)
+
+#Joining with filled in chlorophyll timeseries from above
+data_pca <- data_pca %>% 
+  left_join(chl_merge)
+
+#Converting infinite cell (from dividing a N concentration by a zero P) to NA
+data_pca <- do.call(data.frame,                      
+                   lapply(data_pca,
+                          function(x) replace(x, is.infinite(x), NA)))
+                                             
+#Removing NA's for analysis (currently only 1)
+data_pca <- data_pca %>% 
+  drop_na()
+
+#Pulling out explanatory variables
+expl <- data_pca[, 5:13]
+```
+
+
+```{r}
+#Scaling data being used for PCA (Should look into whether I should also center as I did with the mantel tests)
+expl <- scale(expl)
+
+#Converting to a data frame for subsequent analysis.
+expl <- as.data.frame(expl)
+
+```
+
+
+```{r}
+#Running PCA using vegan - when RDA is run without response variables, then it is a PCA
+pca <- rda(expl)
+
+#Looking at results - for interpretation of following look at.
+head(summary(pca))
+
+#Looking at scores
+loadings <- scores (pca, display = 'species', scaling = 0)
+loadings
+```
+
+
+```{r}
+#Looking at the variables with highest correlation with axis 1
+sort (abs (loadings[,1]), decreasing = TRUE)
+```
+```{r}
+#Looking at the variables with highest correlation with axis 2
+sort (abs (loadings[,2]), decreasing = TRUE)
+```
+
+```{r}
+biplot (pca, display = 'species', scaling = 'species')
+```
+
+```{r}
+#Looking at different scalings
+source ('https://raw.githubusercontent.com/zdealveindy/anadat-r/master/scripts/NumEcolR2/cleanplot.pca.R')
+par (mfrow = c(1,2))
+cleanplot.pca (pca, scaling = 1)
+cleanplot.pca (pca, scaling = 2)
+```
+
+```{r}
+#Looking into importance of each axis
+
+# define "evplot" function first:
+source ('https://raw.githubusercontent.com/zdealveindy/anadat-r/master/scripts/NumEcolR1/evplot.R')
+
+# Finally, in the PCA object select the component $eig with the vector of eigenvalues:
+ev <- pca$CA$eig
+
+evplot (ev)
+```
+
+
+```{r}
+library (BiodiversityR)
+sig <- PCAsignificance (pca, axes = 14)
+sig
+
+barplot(sig[c('percentage of variance', 'broken-stick percentage'), ], beside = T, 
+  xlab = 'PCA axis', ylab = 'explained variation [%]', col = c('grey', 'black'), 
+  legend = TRUE)
+```
+
+
+```{r}
+#Trying the same thing, but bringing in arrows from previous plot - trying scaling 2
+#pdf(file = "rda_s2.pdf", width = 6.5, height = 5, pointsize = 2)
+
+p_pca <- biplot(pca, scaling = 1, type = "none", xlab = c("PCA1"),
+               ylab = c("PCA2"), xlim = c(-0.01, 0.1), ylim = c(-1.1, 1.1))
+
+# points(rda.signif, display = 'sites', pch = 21, cex = 2.2,
+#        col = rgb(red = 1, green = 1, blue = 1, alpha = 0.5), scaling = 2,
+#        bg = bg[eco])
+
+points(scores(pca, display = 'sites', choices = c(1, 2), scaling = 1),
+       pch = 21, cex = 2.0,
+       bg = c("blue", "springgreen4", "black", "magenta")[as.factor(data_pca$site_id)])
+
+#So since distance doesn't matter, I can make arrows longer with scaling 2? 
+# arrows(0,0, scores(rda.signif, display = "species", choices = c(1),
+#                    scaling = 1), scores(rda.signif, display = "species",
+#                                             choices = c(2), scaling = 1),
+#        col = "black", length = 0)
+
+# text(pca, scaling = 1, display = "bp", col = "blue",cex = 0.8, font = 2)
+
+# text(scores(rda.signif, display = "species", choices = c(1), scaling = 1),
+#      scores(rda.signif, display = "species", choices = c(2), scaling = 1),
+#      labels = rownames(scores(rda.signif, display = "species", scaling = 1)),
+#      col = "black", cex = 0.8, font = 2)
+
+
+# legend("topleft", legend = levels(eco), bty ="n", col="gray32", pch = 21,
+#        cex = 1.5, pt.bg = bg)
+
+legend("topright", legend = c(levels(as.factor(data_pca$site_id))),
+       pch = 21,
+       pt.bg = c("blue", "springgreen4", "black", "magenta"),
+       bty = "n", cex = 1.5)
+
+#dev.off()
+
+
+```
+
+
+
+```{r}
+#Setting up parameters for plotting PCA
+
+# https://programmer.ink/think/r-redundancy-analysis-rda-ggplot2.html
+# https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html
+
+#Extracting site locations
+sites_loc_pca <- sites.long(p_pca, env.data = expl)
+meta_pca <- data_pca[,1:4]
+sites_loc_pca <- cbind(meta_pca, sites_loc_pca)
+head(sites_loc_pca)
+
+#Species location in ordination
+species_loc_pca <- species.long(p_pca)
+species_loc_pca
+
+axis.long_pca <- axis.long(pca, choices = c(1, 2))
+axis.long_pca
+
+#these are both throwing zeros - One I won't need because I'm not plotting species vectors.
+#trying something from here. https://tem11010.github.io/Plotting-PCAs/
+# env_loc_pca <- as.data.frame(pca$biplot[,1:2])
+vscores <- as.data.frame(pca$CA$v)
+```
+
+
+```{r}
+#Plotting PCA.
+
+# sp_loc_pca <-  as.data.frame(pca$species[,1:2])
+
+ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_pca, aes(x = axis1, y = axis2, fill = as.factor(month_surv),
+                                   shape = site_id, stroke = 1.5), 
+             size = 6, color = "black", alpha = 0.9) +
+  scale_fill_brewer(palette = "RdYlBu") + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_text(data = vscores, aes(x = PC1, y = PC2, label = rownames(vscores)),
+  #           col = 'red') +
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
+               arrow = arrow(length = unit(0.2,"cm")),
+               alpha = 1, color = 'darkgray', size = 1) +
+  geom_text_repel(data = vscores, aes(PC1, PC2,
+                                           label = row.names(vscores)),
+                  box.padding = unit(0.3, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'blue',
+                  # segment.size = 0.5,
+                  # segment.alpha = 0.4,
+                  # arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = -0.02,
+                  # nudge_x = 0.1,
+                  force = 0.1,
+                  max.iter = 3e3,
+                  size = 8,
+                  color = "black") +
+  labs(x = "PCA1 (45%)",
+       y = "PCA2 (25%)") +
+  xlim(-1.0, 1.3) +
+  # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
+  #                                  digits = 3), "%)", sep = ""),
+  #      y = paste("PCA 2 (", format(100 *pca$cont[[1]][2,2], 
+  #                                  digits = 2), "%)", sep = "")) +
+ 
+  # coord_fixed(ratio = 1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.position = c(0.9, 0.6),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24)) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  labs(fill = "Season", shape = "Station")
+
+ggsave(here("figures_rev2", "PCA_calvert_nut_rat.png"),
+       width = 10, height = 7, dpi = 300)
+```
+
+```{r}
+#Plotting chemtax clusters - this is still applicable.
+
+# clust_dend_tidy %>% 
+#   filter(!is.na(clust_chem)) %>% 
+#   ggplot(aes(x = as.factor(clust_chem), y = value)) +
+#   geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
+#                color = "black", lwd = 0.7) +
+#   geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
+#                stackdir = 'center', dotsize = 1,
+#                position = position_dodge(0.8)) +
+#   facet_wrap(~order, scales = "free_y", 
+#              labeller = labeller(order = supp.labs)) +
+#   xlab("cluster") +
+#   scale_fill_npg() +
+#   theme_bw() +
+#   theme(legend.position = c(0.16, 0.95),
+#         legend.title = element_blank(),
+#         legend.background=element_blank(),
+#         # axis.title.x = element_blank(),
+#         axis.title.y = element_blank(),
+#         # axis.text.x = element_blank(),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"))
+
+# ggsave(here("figures_rev2", "drivers_boxplot_chemtax_clusters.png"), 
+#        width = 16, height = 14, dpi = 300)
+```
+
+```{r}
+hc <- data_pca[, 5:13]
+
+# hc <- scale(hc)
+
+metadata <- data_pca %>%
+  select(site_id, date) %>% 
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE) %>% 
+  relocate(sample_name, .before = date)
+
+#Creating a list of rownames
+# labs_list <- labs$sample_name
+labs_list <- metadata$sample_name
+
+
+#Making the rownames of the clustering matrix the ones specified in the above list.
+rownames(hc) <- labs_list
+```
+
+
+```{r}
+
+#Performing hierarchical clustering
+
+#Calculating Bray-Curtis Distances
+dis <- vegdist(hc, method = "bray")
+
+#Applying average linkage hierarchical clustering
+cluster.average <- hclust(dis, "average")
+
+
+```
+
+```{r}
+#This step sets clusters. Currently, I am not using.
+
+# k <- 6
+# clust <- cutree(cluster.average, k = k)
+# 
+# clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
+#                                    cluster = factor(clust))
+
+# write_csv(clust.df, here("outputs", "clusters_micro_6.csv"))
+```
+
+```{r}
+# extract dendrogram segment data for plotting
+
+dend <- as.dendrogram(cluster.average)
+dendrogram_data <- dendro_data(dend)
+dendrogram_segments <- dendrogram_data$segments 
+```
+
+```{r}
+#Creating metadata sheet with 
+# metadata <- micro_piv %>% 
+#   select(site_id, date)
+
+# metadata <- micro_piv %>% 
+#    select(sample_name, site_id, date)
+
+#Making unique labels by combining site and date into single string
+# metadata <- metadata %>% 
+#   unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+# get terminal dendrogram segments and join with names.
+dendrogram_ends <- dendrogram_segments %>%
+ filter(yend == 0) %>% 
+ left_join(dendrogram_data$labels, by = "x") %>% 
+ rename(sample_name = label) %>% 
+ left_join(metadata, by = "sample_name") 
+
+```
+
+```{r}
+#This is used to draw cluster boxes around the dendrogram clusters in the plot. Not currently using clusters so have turned off, but necessary if using clusters.
+
+# dendrogram_data[["labels"]] <- merge(dendrogram_data[["labels"]], clust.df, by = "label")
+# rect <- aggregate(x~cluster, label(dendrogram_data), range)
+# rect <- data.frame(rect$cluster, rect$x)
+# ymax <- mean(cluster.average$height[length(cluster.average$height) - ((k-2):(k-1))])
+```
+
+
+```{r}
+#I'm not 100% sure how this all works, but it does - sets up colors for the sites for plotting with dendrogram.
+
+# Generate custom color palette for dendrogram ends based on metadata variable - Site
+unique_vars <- levels(factor(dendrogram_ends$site_id)) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("row_id")
+
+# count number of unique variables
+color_count <- length(unique(unique_vars$.))
+
+# get RColorBrewer palette
+get_palette <- colorRampPalette(brewer.pal(n = 3, name = "Set1"))
+
+# produce RColorBrewer palette based on number of unique variables in metadata:
+palette <- get_palette(color_count) %>% 
+ as.data.frame() %>%
+ rename("color" = ".") %>%
+ rownames_to_column(var = "row_id")
+
+color_list <- left_join(unique_vars, palette, by = "row_id") %>%
+ select(-row_id)
+
+site_color <- as.character(color_list$color)
+names(site_color) <- color_list$.
+```
+
+```{r}
+#Plotting dendrogram - saving for incorporation later.
+ggplot() +
+ geom_segment(data = dendrogram_segments, 
+              aes(x = x, y = y, xend = xend, yend = yend)) +
+ geom_segment(data = dendrogram_ends, aes(x = x, y = y.x, xend = xend,
+                                          yend = yend, color = site_id),
+              size = 2) +
+ geom_text(data = dendrogram_ends, aes(x = x, y = y.y, label = sample_name,
+                                       color = site_id),
+           hjust = 0, angle = 0, size = 6) +
+ # geom_rect(data = rect, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0, ymax = ymax),
+ #            color = "black", fill = NA, size = 0.8) +
+ scale_color_manual(values = site_color) +
+ scale_y_reverse(limits = c(0.3, -0.2)) +
+ coord_flip() +
+ theme_bw() +
+ theme(legend.position = "none",
+       axis.title.x = element_blank(),
+       axis.title.y = element_blank(),
+       axis.text.y = element_blank(),
+       text = element_text(size = 30)) +
+ ylab("Distance") # flipped x and y coordinates for aesthetic reasons
+
+ 
+ggsave(here("figures_rev2", "physical_dendro_nut_rat.png"),
+       width = 6, height = 12, dpi = 300)
+```

@@ -77,7 +77,7 @@ rownames(transform_hc) <- labs_list
 dis <- vegdist(transform_hc, method = "bray")
 
 #Applying average linkage hierarchical clustering
-cluster.average <- hclust(dis, "average")
+cluster.average <- hclust(dis, "ward.D2")
 
 ```
 
@@ -90,6 +90,59 @@ clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
 
 # write_csv(clust.df, here("outputs", "clusters_chem.csv"))
 ```
+
+```{r}
+#This shows what the best clustering algorithm is for deriving clusters.
+# https://uc-r.github.io/hc_clustering
+
+# Different measures to assess
+m <- c( "average", "single", "complete", "ward")
+names(m) <- c( "average", "single", "complete", "ward")
+
+#Function that computes comparison between methods
+ac <- function(x) {
+  agnes(bc, method = x)$ac
+}
+
+#This says that ward is the best by far.
+map_dbl(m, ac)
+```
+
+```{r}
+# Compute 2 hierarchical clusterings
+hc1 <- hclust(bc, method = "average")
+hc2 <- hclust(bc, method = "ward.D2")
+
+# Create two dendrograms
+dend1 <- as.dendrogram (hc1)
+dend2 <- as.dendrogram (hc2)
+
+tanglegram(dend1, dend2)
+```
+
+```{r}
+dend_list <- dendlist(dend1, dend2)
+
+tanglegram(dend1, dend2,
+  highlight_distinct_edges = FALSE, # Turn-off dashed lines
+  common_subtrees_color_lines = FALSE, # Turn-off line colors
+  common_subtrees_color_branches = TRUE, # Color common branches 
+  main = paste("entanglement =", round(entanglement(dend_list), 2))
+  )
+```
+
+```{r}
+fviz_nbclust(transform_hc, FUN = hcut, method = "wss")
+fviz_nbclust(transform_hc, FUN = hcut, method = "silhouette")
+```
+
+
+```{r}
+gap_stat <- clusGap(transform_hc, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
+```
+
+
 
 ```{r}
 # extract dendrogram segment data
@@ -168,7 +221,7 @@ p_dend <- ggplot() +
  geom_rect(data = rect, aes(xmin = X1-.3, xmax = X2+.3, ymin = 0, ymax = ymax), 
             color = "red", fill = NA) +
  scale_color_manual(values = site_color) +
- scale_y_reverse(limits = c(0.6, -0.3)) +
+ scale_y_reverse(limits = c(1.8, -0.6)) +
  coord_flip() + 
  theme_bw() + 
  theme(legend.position = "none",
@@ -179,7 +232,7 @@ p_dend <- ggplot() +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
  
-ggsave(here("figures_rev2", "hc_average_chemtax.png"), p_dend,
+ggsave(here("figures_rev2", "hc_average_chemtax_ward.png"), p_dend,
        width = 6, height = 12, dpi = 300)
 ```
 
@@ -190,8 +243,8 @@ nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
 
 #Decent stress score - 0.13
 
-nmds_rel <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
-                         k = 2, trymax = 100) 
+# nmds_rel <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
+#                          k = 2, trymax = 100) 
 
 # 0.11
 
@@ -199,7 +252,7 @@ nmds_rel <-  metaMDS(transform_rel, distance = "bray", autotransform = FALSE,
 #Checking stressplot for fit
 stressplot(nmds)
 
-stressplot(nmds_rel)
+# stressplot(nmds_rel)
 
 ```
 
@@ -217,9 +270,9 @@ data.scores$month_surv = c$month_surv
 data.scores$site = c$site_id
 data.scores$year = c$year
 
-data.scores.rel = as.data.frame(scores(nmds_rel))
-data.scores.rel$month_surv = c$month_surv
-data.scores.rel$site = c$site_id
+# data.scores.rel = as.data.frame(scores(nmds_rel))
+# data.scores.rel$month_surv = c$month_surv
+# data.scores.rel$site = c$site_id
 
 ```
 
@@ -278,7 +331,7 @@ p2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 
 fig <- (p1/p2) | p_dend
 
-ggsave(here("figures_rev2", "nmds_dendro_chem.png"), fig,
+ggsave(here("figures_rev2", "nmds_dendro_chem_ward.png"), fig,
        width = 16, height = 12, dpi = 300)
 
 ```
@@ -303,7 +356,7 @@ data.scores$clust = c$cluster
 #Trying to attach clusters to metadata so I can plot by cluster
 ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores, aes(fill = as.factor(clust), shape = site),
-             size = 6, stroke = 1) + 
+             size = 6) + 
   scale_fill_brewer(palette = "RdYlBu") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
@@ -317,18 +370,18 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
         panel.border = element_rect(fill = NA, colour = "black"), 
         axis.ticks = element_blank(),
         axis.text = element_blank(),
-        # axis.title.x = element_blank(),
+        axis.title.x = element_blank(),
         legend.key = element_blank(), 
         legend.title = element_text(size = 20, face = "bold", colour = "black"), 
         legend.text = element_text(size = 18, colour = "black"),
         legend.position = c(0.90, 0.70),
         legend.margin = margin(-0.3,0,0,0, unit = "cm"),
         text = element_text(size = 30)) +
-  labs(fill = "Cluster", shape = "Station") +
+  labs(fill = "Month", shape = "Station") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
 
-ggsave(here("figures_rev2", "nmds_average_cluster.png"),
+ggsave(here("figures_rev2", "nmds_chem_cluster_ward_4.png"),
        width = 10, height = 6, dpi = 300)
 ```
 
@@ -433,44 +486,44 @@ c_long_clust %>%
         axis.line = element_line(colour = "black")) +
   guides(fill = guide_legend(nrow = 1)) 
 
-ggsave(here("figures_rev2", "bar_chemtax_cluster_2.png"),
+ggsave(here("figures_rev2", "bar_chemtax_cluster_ward.png"),
        width = 16, height = 18, dpi = 300)
 
 ```
 
 ```{r}
-c_long_bar %>%   
-  ggplot(aes(x = TChla_mean, y = sample_name, fill = fct_rev(phyto_group))) +
-  geom_bar(stat = "identity") +
-  geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 0.5, ymax = 10.5), fill = NA, 
-            color = "black", size = 1) +
-  geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 10.5, ymax = 29.5), fill = NA, 
-            color = "black", size = 1) +
-  geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 29.5, ymax = 31.5), fill = NA, 
-            color = "black", size = 1) +
-  geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 31.5, ymax = 35.5), fill = NA, 
-            color = "black", size = 1) +
-  scale_fill_manual(values = palette_chem) +
-  theme_bw() +
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        # legend.position = "bottomright",
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        axis.line = element_line(colour = "black")) +
-  guides(fill = guide_legend(nrow = 1)) 
-
-ggsave(here("figures_rev2", "bar_chemtax.png"),
-       width = 16, height = 18, dpi = 300)
+# c_long_bar %>%   
+#   ggplot(aes(x = TChla_mean, y = sample_name, fill = fct_rev(phyto_group))) +
+#   geom_bar(stat = "identity") +
+#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 0.5, ymax = 10.5), fill = NA, 
+#             color = "black", size = 1) +
+#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 10.5, ymax = 29.5), fill = NA, 
+#             color = "black", size = 1) +
+#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 29.5, ymax = 31.5), fill = NA, 
+#             color = "black", size = 1) +
+#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 31.5, ymax = 35.5), fill = NA, 
+#             color = "black", size = 1) +
+#   scale_fill_manual(values = palette_chem) +
+#   theme_bw() +
+#   theme(axis.title.x = element_blank(),
+#         axis.title.y = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.x = element_blank(),
+#         # legend.position = "bottomright",
+#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         panel.background = element_blank(),
+#         legend.position = "top",
+#         legend.direction = "horizontal",
+#         legend.title = element_blank(),
+#         axis.line = element_line(colour = "black")) +
+#   guides(fill = guide_legend(nrow = 1)) 
+# 
+# ggsave(here("figures_rev2", "bar_chemtax_ward.png"),
+#        width = 16, height = 18, dpi = 300)
 
 ```
 

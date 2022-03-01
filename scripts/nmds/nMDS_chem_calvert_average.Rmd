@@ -278,7 +278,7 @@ p2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 
 fig <- (p1/p2) | p_dend
 
-ggsave(here("figures_rev2", "nmds_dendro_chem.png"), fig,
+ggsave(here("figures_rev2", "nmds_dendro_chem_average.png"), fig,
        width = 16, height = 12, dpi = 300)
 
 ```
@@ -328,7 +328,7 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
 
-ggsave(here("figures_rev2", "nmds_average_cluster.png"),
+ggsave(here("figures_rev2", "nmds_chem_cluster_average_4.png"),
        width = 10, height = 6, dpi = 300)
 ```
 
@@ -433,44 +433,44 @@ c_long_clust %>%
         axis.line = element_line(colour = "black")) +
   guides(fill = guide_legend(nrow = 1)) 
 
-ggsave(here("figures_rev2", "bar_chemtax_cluster_2.png"),
+ggsave(here("figures_rev2", "bar_chemtax_cluster_average_4.png"),
        width = 16, height = 18, dpi = 300)
 
 ```
 
 ```{r}
-c_long_bar %>%   
-  ggplot(aes(x = TChla_mean, y = sample_name, fill = fct_rev(phyto_group))) +
-  geom_bar(stat = "identity") +
-  geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 0.5, ymax = 10.5), fill = NA, 
-            color = "black", size = 1) +
-  geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 10.5, ymax = 29.5), fill = NA, 
-            color = "black", size = 1) +
-  geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 29.5, ymax = 31.5), fill = NA, 
-            color = "black", size = 1) +
-  geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 31.5, ymax = 35.5), fill = NA, 
-            color = "black", size = 1) +
-  scale_fill_manual(values = palette_chem) +
-  theme_bw() +
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        # legend.position = "bottomright",
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        text = element_text(size = 30),
-        axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        axis.line = element_line(colour = "black")) +
-  guides(fill = guide_legend(nrow = 1)) 
-
-ggsave(here("figures_rev2", "bar_chemtax.png"),
-       width = 16, height = 18, dpi = 300)
+# c_long_bar %>%   
+#   ggplot(aes(x = TChla_mean, y = sample_name, fill = fct_rev(phyto_group))) +
+#   geom_bar(stat = "identity") +
+#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 0.5, ymax = 10.5), fill = NA, 
+#             color = "black", size = 1) +
+#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 10.5, ymax = 29.5), fill = NA, 
+#             color = "black", size = 1) +
+#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 29.5, ymax = 31.5), fill = NA, 
+#             color = "black", size = 1) +
+#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 31.5, ymax = 35.5), fill = NA, 
+#             color = "black", size = 1) +
+#   scale_fill_manual(values = palette_chem) +
+#   theme_bw() +
+#   theme(axis.title.x = element_blank(),
+#         axis.title.y = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.x = element_blank(),
+#         # legend.position = "bottomright",
+#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+#         text = element_text(size = 30),
+#         axis.text = element_text(colour = "black"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         panel.background = element_blank(),
+#         legend.position = "top",
+#         legend.direction = "horizontal",
+#         legend.title = element_blank(),
+#         axis.line = element_line(colour = "black")) +
+#   guides(fill = guide_legend(nrow = 1)) 
+# 
+# ggsave(here("figures_rev2", "bar_chemtax.png"),
+#        width = 16, height = 18, dpi = 300)
 
 ```
 
@@ -573,56 +573,10 @@ inv_clust = multipatt(transform, cluster, func = "r.g",
 summary(inv_clust)
 ```
 
-```{r}
-#Calculating Shannon diversity and putting in dataframe
-div <- diversity(species)
-
-div <- as.tibble(div)
-
-div$site_id <- c$site_id
-
-div$date <- c$date
-
-div$month_surv <- c$month_surv
-
-div <- div %>% 
-  rename(shannon = value)
-```
-
-
-```{r}
-
-  
-div %>% 
-  mutate(month = lubridate::month(date),
-         year = lubridate::year(date)) %>%  
-  ggplot(aes(x = site_id, y = shannon, fill = site_id)) +
-  geom_boxplot(position = position_dodge(preserve = "single"), alpha = 0.6,
-               color = "black", lwd = 0.7) +
-  geom_dotplot(aes(fill = site_id), color = "black", trim = FALSE, binaxis = 'y', 
-               stackdir = 'center', dotsize = 1,
-               position = position_dodge(0.8)) +
-  facet_wrap(~ month_surv, nrow = 1) +
-  scale_x_discrete(labels = c("DFO2" = "F", "KC10" = "C", "QCS01" = "S",
-                              "QU39" = "E")) +
-  ggsci::scale_fill_npg() +
-  labs(y = "Shannon H") +
-  theme_bw() +
-  theme(strip.background = element_blank(),
-        strip.text.x = element_blank(),
-        legend.position = "none",
-        axis.title.x = element_blank(),
-        text = element_text(size = 24),
-        axis.text = element_text(colour = "black"))
-
-
-ggsave(here("figures_new", "richness_shannon_box_chemtax.png"),
-       width = 16, height = 4, dpi = 300)
 
 
 
 
-```
 
 
 
