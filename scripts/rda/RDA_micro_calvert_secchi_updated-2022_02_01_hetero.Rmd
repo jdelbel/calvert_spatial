@@ -611,3 +611,46 @@ expl_chem <- expl_chem %>%
   select(!N2_dm) %>% 
   select(!dep_26_dm)
 ```
+
+```{r}
+test <- mm_no_chl %>% 
+  select(temp_dm:secchi_depth, dp = `Detonula pumila`)
+
+test %>% 
+  ggplot(aes(x = temp_dm, y = dp)) +
+  geom_point()
+
+t_cl <- cor.test(test$secchi_depth, test$dp,  method = "spearman")
+
+t_cl
+
+#Ceratium lineatum
+#temp = 0.56***
+#sal = 0.32*
+#drho = -0.43**
+#no2 = -0.36*
+#secchi = 0.39**
+
+#Chaetoceros decipiens
+#temp = 0.29*
+#sal = 0.28 ns
+#drho = -0.44**
+#no2 = -0.23 ns
+#secchi = 0.21 ns
+
+
+#Detonula pumila
+#temp = 0.22 ns
+#sal = 0.34*
+#drho = -0.37**
+#no2 = -0.23*
+#secchi = 0.21 ns
+
+```
+
+
+
+
+
+
+
