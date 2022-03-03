@@ -11,6 +11,8 @@ library(here)
 library(vegan)
 library(factoextra)
 library(ggdendro)
+library(ggforce)
+library(concaveman)
 library(dendextend)
 library(colormap)
 library(indicspecies)
@@ -217,18 +219,42 @@ data.scores$month_surv = c$month_surv
 data.scores$site = c$site_id
 data.scores$year = c$year
 
-data.scores.rel = as.data.frame(scores(nmds_rel))
-data.scores.rel$month_surv = c$month_surv
-data.scores.rel$site = c$site_id
+#Want to try to merge in clusters
 
+
+
+# data.scores.rel = as.data.frame(scores(nmds_rel))
+# data.scores.rel$month_surv = c$month_surv
+# data.scores.rel$site = c$site_id
+
+```
+
+```{r}
+# For clusters, need to merge on station/date code.
+c <- c %>%
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+clust_df <- clust.df %>%
+  rename(sample_name = label)
+
+c <- c %>%
+  left_join(clust_df) %>%
+  relocate(cluster, .after = month_surv)
+
+data.scores$clust = c$cluster
 ```
 
 ```{r}
 #Combining station month and year plots with dendrogram - sort of cool, but now have to figure out why DFO2 different. This is where a heatmap plot comes in?
 
-p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+#Adding hulls came from here.
+# https://www.r-bloggers.com/2021/07/ggforce-make-a-hull-plot-to-visualize-clusters-in-ggplot2/
+
+nmds_month <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
-             size = 6) + 
+             size = 7, stroke = 1.5) + 
+  geom_mark_hull(data = data.scores, aes(color = clust, label = clust),
+                 concavity = 2.8, label.fontsize = 30) +
   scale_fill_brewer(palette = "RdYlBu") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
@@ -243,18 +269,22 @@ p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
         axis.ticks = element_blank(),
         axis.text = element_blank(),
         axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
         legend.key = element_blank(), 
         legend.title = element_text(size = 20, face = "bold", colour = "black"), 
         legend.text = element_text(size = 18, colour = "black"),
-        legend.position = c(0.90, 0.70),
+        legend.position = c(0.1, 0.67),
         legend.margin = margin(-0.3,0,0,0, unit = "cm"),
         text = element_text(size = 30)) +
   labs(fill = "Month", shape = "Station") +
-  guides(fill = guide_legend(override.aes = list(shape = 21)))
+   guides(fill = guide_legend(override.aes = list(shape = 21)),
+         color = "none")
 
-p2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+nmds_year <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores, aes(fill = as.factor(year), shape = site),
-             size = 6) + 
+             size = 7, stroke = 1.5) + 
+  geom_mark_hull(data = data.scores, aes(color = clust, label = clust),
+                 concavity = 2.8, label.fontsize = 30) +
   scale_fill_brewer(palette = "Dark2") +
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
   # xlim(-0.4, 0.7) +
@@ -263,22 +293,24 @@ p2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
         panel.border = element_rect(fill = NA, colour = "black"), 
         axis.ticks = element_blank(),
         axis.text = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
         # axis.title.x = element_blank(),
         # axis.title.y = element_blank(),
         legend.key = element_blank(), 
         legend.title = element_text(size = 20, face = "bold", colour = "black"), 
         legend.text = element_text(size = 18, colour = "black"),
-        legend.position = c(0.90, 0.75),
-        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
+        legend.position = c(0.08, 0.90),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         text = element_text(size = 30)) +
   labs(shape = "Station", fill = "Year") +
-  guides(fill = guide_legend(override.aes = list(shape = 21)))
+  guides(fill = guide_legend(override.aes = list(shape = 21)),
+         color = "none",
+         shape = "none")
 
+fig <- (nmds_month/nmds_year) | p_dend
 
-
-fig <- (p1/p2) | p_dend
-
-ggsave(here("figures_rev2", "nmds_dendro_chem_average.png"), fig,
+ggsave(here("figures_rev2", "nmds_dendro_chem_average_test.png"), fig,
        width = 16, height = 12, dpi = 300)
 
 ```
@@ -400,8 +432,11 @@ palette_chem <- c("#ff8000", #1 - Diatoms (orange)
 
 c_long_clust <- c_long_bar %>% 
   left_join(clust.df_join)
+```
 
-c_long_clust %>%   
+
+```{r}
+chem_clust_v <- c_long_clust %>%   
   ggplot(aes(x = TChla_mean, y = sample_name, fill = fct_rev(phyto_group))) +
   geom_bar(stat = "identity", color = "black", size = 0.75) +
   # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 0.5, ymax = 10.5), fill = NA, 
@@ -433,10 +468,81 @@ c_long_clust %>%
         axis.line = element_line(colour = "black")) +
   guides(fill = guide_legend(nrow = 1)) 
 
-ggsave(here("figures_rev2", "bar_chemtax_cluster_average_4.png"),
-       width = 16, height = 18, dpi = 300)
+ggsave(here("figures_rev2", "bar_chemtax_cluster_average_4_vert.png"), 
+       chem_clust_v, width = 16, height = 18, dpi = 300)
+```
+
+```{r}
+dat_text <- data.frame(
+  label = c("1", "2", "3", "4"),
+  clust   = c(1, 2, 3, 4))
+```
+
+```{r}
+chem_clust_h <- c_long_clust %>%   
+  ggplot(aes(x = sample_name, y = TChla_mean, fill = fct_rev(phyto_group))) +
+  geom_bar(stat = "identity", color = "black", size = 0.75) +
+  # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 0.5, ymax = 10.5), fill = NA, 
+  #           color = "black", size = 1) +
+  # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 10.5, ymax = 29.5), fill = NA, 
+  #           color = "black", size = 1) +
+  # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 29.5, ymax = 31.5), fill = NA, 
+  #           color = "black", size = 1) +
+  # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 31.5, ymax = 35.5), fill = NA, 
+  #           color = "black", size = 1) +
+  scale_fill_manual(values = palette_chem) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 12.5)) +
+  theme_bw() +
+  facet_grid(. ~ cluster , scales = "free", space = "free") +
+  geom_text(aes(x = -Inf, y = Inf, label = cluster, group = cluster),
+            size = 10,
+            hjust = -0.3,
+            vjust = 1.4,
+            inherit.aes = FALSE) +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        # legend.position = "bottomright",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 30),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        axis.line = element_line(colour = "black")) +
+  guides(fill = guide_legend(nrow = 1)) 
+
+ggsave(here("figures_rev2", "bar_chemtax_cluster_average_4_horiz.png"), 
+       chem_clust_h, width = 16, height = 10, dpi = 300)
+
+#Trying to figure out annotations
+# https://stackoverflow.com/questions/56296428/adding-labels-to-each-individual-plot-with-facet-grid
+# p + facet_grid(drv ~ cyl)+ annotate('text', label = LETTERS[1:12], x=min(mpg$displ), y=max(mpg$cty))
+
+#this worked, but need to figure out how to add figure label.
+# https://stackoverflow.com/questions/46499396/how-to-add-annotation-on-each-facet
 
 ```
+
+
+```{r}
+#Trying to bring together nmds and chemtax.
+
+nmds_chem_panel <- (nmds_month + nmds_year) / chem_clust_h 
+
+ggsave(here("figures_rev2", "nmds_cluster.png"), nmds_chem_panel, 
+       width = 16, height = 15, dpi = 300)
+
+```
+
+
+
+
+
 
 ```{r}
 # c_long_bar %>%   
