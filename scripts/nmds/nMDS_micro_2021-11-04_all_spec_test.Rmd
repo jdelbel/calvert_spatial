@@ -31,6 +31,9 @@ micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 
 ```
 
+
+
+
 ```{r}
 #Selecting the species groups I will work with and limiting species that rarely observed.
 

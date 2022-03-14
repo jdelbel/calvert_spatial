@@ -1,0 +1,68 @@
+---
+title: "Chemtax run comparisons"
+output: html_notebook
+---
+
+
+```{r}
+#Load packages
+library(tidyverse)
+library(patchwork)
+library(here)
+library(readr)
+library(readxl)
+```
+
+
+```{r}
+#Uploading chemtax data
+chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv")) 
+```
+
+
+
+```{r}
+
+#Set Color palette for plotting. Currently based on QU39 manuscript. Brewer has some good ones for R style.
+palette_chem <- c("#ff8000", #1 - Diatoms (orange)
+                  "#ff99c7", #2 - Dictyochophytes (pink)
+                  "#4d6600", #3 - Raphidophytes (dark green)
+                  "#ff0000", #4 - Dinoflagellates (Red)
+                  "#ffff00", #5 - Cryptophytes (yellow)
+                  "#00ff00", #6 - Chlorophyta (light green)
+                  "#7d4dcc", #7 - Haptophytes (purple)
+                  "#000000") #8 - Cyanobacteria (black)
+
+#Set month labels for plot
+month_labels <- c('J','F','M','A','M','J','J','A','S','O','N','D')
+```
+
+```{r}
+#Creating plot of Calvert timeseries (May-October) Chemtax trends.
+
+chem_tidy %>% 
+  filter(date > "2018-04-01" & date < "2020-11-01" & !site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = TChla_mean, fill = fct_rev(phyto_group))) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = TChla_sum), size = 2) +
+  scale_fill_manual(values = palette_chem) +
+  facet_grid(site_id ~ year) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11)) +
+  guides(fill = guide_legend(nrow = 1)) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day",
+           y = bquote("TChl (mg" ~ m^-3*")")) +
+  theme(text = element_text(size = 25)) 
+
+ggsave(here("figures_rev2", "timeseries_calvert_chem.png"),
+       width = 16, height = 10, dpi = 300)
+
+```
