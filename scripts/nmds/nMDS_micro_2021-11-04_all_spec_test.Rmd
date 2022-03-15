@@ -30,6 +30,16 @@ library(RColorBrewer)
 micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
 
 ```
+```{r}
+test <- micro %>% 
+  filter(class == "Raphidophyceae")
+
+test2 <- micro %>% 
+  filter(phylum == "Haptophyta")
+
+test3 <- micro %>% 
+  filter(class == "Dictyochophyceae")
+```
 
 
 
