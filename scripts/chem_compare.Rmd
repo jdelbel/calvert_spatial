@@ -17,10 +17,15 @@ library(readxl)
 ```{r}
 #Uploading chemtax data
 chem <- read_csv(here("files", "chem_compare2.csv")) 
+
+chem_pelago <- read_csv(here("files", "chem_compare_pelago.csv")) 
 ```
 ```{r}
 #Convert date string to date
 chem <- chem %>% 
+  mutate(Date = lubridate::mdy(Date))
+
+chem_pelago <- chem_pelago %>% 
   mutate(Date = lubridate::mdy(Date))
 ```
 
@@ -32,6 +37,13 @@ chem <- chem %>%
          cyan = Cyanobacteria, hapt = Hapto, pras2 = `Prasinophytes-2`,
          pras3 = `Prasinophytes-3`, cryp = Cryptophytes, 
          dino = `Dinoflagellates-1`, raph = Raphido, dict = Dictyo,
+         diat = `Diatoms-1`)
+
+chem_pelago <- chem_pelago %>%  
+  rename(date = Date, site_id = Station,
+         cyan = Cyanobacteria, pela = Pelago, hapt = Hapto, 
+         pras2 = `Prasinophytes-2`, pras3 = `Prasinophytes-3`, 
+         cryp = Cryptophytes, dino = `Dinoflagellates-1`, raph = Raphido, 
          diat = `Diatoms-1`)
 ```
 
@@ -46,6 +58,17 @@ chem_tidy <- chem %>%
   group_by(date, site_id, run) %>% 
   mutate(TChla_sum = sum(TChla)) %>% 
   ungroup()
+
+chem_tidy_pel <- chem_pelago %>% 
+  pivot_longer(c(cyan, pela, hapt, pras2, pras3, cryp, dino, raph, diat),
+                 names_to = "phyto_group", values_to = "TChla") %>% 
+  group_by(date, site_id, run, phyto_group) %>% 
+  # summarize(TChla_mean = mean(TChla)) %>% 
+  # ungroup() %>% 
+  group_by(date, site_id, run) %>% 
+  mutate(TChla_sum = sum(TChla)) %>% 
+  ungroup()
+
 ```
 
 ```{r}
@@ -54,12 +77,23 @@ chem_tidy <- chem %>%
 order_chem <- c("cyan", "hapt", "pras2", "pras3", "cryp",
                 "dino", "raph", "dict", "diat")
 
+order_chem_pel <- c("cyan", "pela", "hapt", "pras2", "pras3", "cryp",
+                "dino", "raph", "diat")
+
 #Chemtax - Specify order of phyto groups for figures
 chem_tidy <- arrange(mutate(chem_tidy,
                                 phyto_group = factor(phyto_group,
                                 levels = order_chem)))
 
+#Chemtax - Specify order of phyto groups for figures
+chem_tidy_pel <- arrange(mutate(chem_tidy_pel,
+                                phyto_group = factor(phyto_group,
+                                levels = order_chem_pel)))
+
 chem_tidy <- chem_tidy %>% 
+  arrange(date, phyto_group)
+
+chem_tidy_pel <- chem_tidy_pel %>% 
   arrange(date, phyto_group)
 
 ```
@@ -76,6 +110,16 @@ palette_chem <- c("#ff8000", #1 - Diatoms (orange)
                   "#6EFF7C", #6 - prasinophytes-2 (lighter green)
                   "#00ff00", #6 - prasinophytes-3 (light green)
                   "#7d4dcc", #7 - Haptophytes (purple)
+                  "#000000") #8 - Cyanobacteria (black)
+
+palette_chem_pel <- c("#ff8000", #1 - Diatoms (orange)
+                  "#4d6600", #3 - Raphidophytes (dark green)
+                  "#ff0000", #4 - Dinoflagellates (Red)
+                  "#ffff00", #5 - Cryptophytes (yellow)
+                  "#6EFF7C", #6 - prasinophytes-2 (lighter green)
+                  "#00ff00", #6 - prasinophytes-3 (light green)
+                  "#7d4dcc", #7 - Haptophytes (purple)
+                  "#ff99c7", #2 - Pelagophytes (pink)
                   "#000000") #8 - Cyanobacteria (black)
 
 #Set month labels for plot
@@ -169,5 +213,95 @@ chem_tidy %>%
 
 ggsave(here("figures_rev2", "chem_compare_QCS01.png"),
        width = 16, height = 10, dpi = 300)
+
+```
+
+```{r}
+#Creating site comparisons of different chemtax runs. QCS01
+
+chem_tidy_pel %>% 
+  filter(site_id == "QCS01") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = TChla, fill = fct_rev(phyto_group))) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = TChla_sum), size = 2) +
+  scale_fill_manual(values = palette_chem_pel) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11)) +
+  guides(fill = guide_legend(nrow = 1)) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day",
+           y = bquote("TChl (mg" ~ m^-3*")")) +
+  theme(text = element_text(size = 25)) 
+
+ggsave(here("figures_rev2", "chem_compare_QCS01_pel.png"),
+       width = 16, height = 6, dpi = 300)
+
+```
+
+```{r}
+#Creating site comparisons of different chemtax runs. KC10
+
+chem_tidy_pel %>% 
+  filter(site_id == "KC10") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = TChla, fill = fct_rev(phyto_group))) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = TChla_sum), size = 2) +
+  scale_fill_manual(values = palette_chem_pel) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11)) +
+  guides(fill = guide_legend(nrow = 1)) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day",
+           y = bquote("TChl (mg" ~ m^-3*")")) +
+  theme(text = element_text(size = 25)) 
+
+ggsave(here("figures_rev2", "chem_compare_KC10_pel.png"),
+       width = 16, height = 6, dpi = 300)
+
+```
+
+```{r}
+#Creating site comparisons of different chemtax runs. DFO2
+
+chem_tidy_pel %>% 
+  filter(site_id == "DFO2") %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = TChla, fill = fct_rev(phyto_group))) +
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = yday, y = TChla_sum), size = 2) +
+  scale_fill_manual(values = palette_chem_pel) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11)) +
+  guides(fill = guide_legend(nrow = 1)) +
+        # strip.background = element_blank(),
+        # strip.text = element_blank()) + 
+  labs(x = "Year Day",
+           y = bquote("TChl (mg" ~ m^-3*")")) +
+  theme(text = element_text(size = 25)) 
+
+ggsave(here("figures_rev2", "chem_compare_DFO2_pel.png"),
+       width = 16, height = 6, dpi = 300)
 
 ```
