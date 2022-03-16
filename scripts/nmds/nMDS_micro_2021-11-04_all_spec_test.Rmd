@@ -39,6 +39,9 @@ test2 <- micro %>%
 
 test3 <- micro %>% 
   filter(class == "Dictyochophyceae")
+
+test4 <- micro %>% 
+  filter(site_id == "DFO2" & phylum == "Chlorophyta")
 ```
 
 

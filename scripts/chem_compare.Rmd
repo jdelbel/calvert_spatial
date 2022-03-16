@@ -217,7 +217,7 @@ ggsave(here("figures_rev2", "chem_compare_QCS01.png"),
 ```
 
 ```{r}
-#Creating site comparisons of different chemtax runs. QCS01
+#Creating site comparisons of pelagophyte runs. QCS01
 
 chem_tidy_pel %>% 
   filter(site_id == "QCS01") %>% 
@@ -228,7 +228,7 @@ chem_tidy_pel %>%
   geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
   geom_point(aes(x = yday, y = TChla_sum), size = 2) +
   scale_fill_manual(values = palette_chem_pel) +
-  facet_grid(. ~ year) +
+  facet_grid(run ~ year) +
   theme_bw() +
   theme(legend.position = "top",
         legend.direction = "horizontal",
@@ -242,12 +242,12 @@ chem_tidy_pel %>%
   theme(text = element_text(size = 25)) 
 
 ggsave(here("figures_rev2", "chem_compare_QCS01_pel.png"),
-       width = 16, height = 6, dpi = 300)
+       width = 16, height = 8, dpi = 300)
 
 ```
 
 ```{r}
-#Creating site comparisons of different chemtax runs. KC10
+#Creating site comparisons of pelagophyte runs. KC10
 
 chem_tidy_pel %>% 
   filter(site_id == "KC10") %>% 
@@ -258,7 +258,7 @@ chem_tidy_pel %>%
   geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
   geom_point(aes(x = yday, y = TChla_sum), size = 2) +
   scale_fill_manual(values = palette_chem_pel) +
-  facet_grid(. ~ year) +
+  facet_grid(run ~ year) +
   theme_bw() +
   theme(legend.position = "top",
         legend.direction = "horizontal",
@@ -272,12 +272,12 @@ chem_tidy_pel %>%
   theme(text = element_text(size = 25)) 
 
 ggsave(here("figures_rev2", "chem_compare_KC10_pel.png"),
-       width = 16, height = 6, dpi = 300)
+       width = 16, height = 8, dpi = 300)
 
 ```
 
 ```{r}
-#Creating site comparisons of different chemtax runs. DFO2
+#Creating site comparisons of pelagophyte runs. DFO2
 
 chem_tidy_pel %>% 
   filter(site_id == "DFO2") %>% 
@@ -288,7 +288,7 @@ chem_tidy_pel %>%
   geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
   geom_point(aes(x = yday, y = TChla_sum), size = 2) +
   scale_fill_manual(values = palette_chem_pel) +
-  facet_grid(. ~ year) +
+  facet_grid(run ~ year) +
   theme_bw() +
   theme(legend.position = "top",
         legend.direction = "horizontal",
@@ -302,6 +302,6 @@ chem_tidy_pel %>%
   theme(text = element_text(size = 25)) 
 
 ggsave(here("figures_rev2", "chem_compare_DFO2_pel.png"),
-       width = 16, height = 6, dpi = 300)
+       width = 16, height = 8, dpi = 300)
 
 ```
