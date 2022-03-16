@@ -65,6 +65,13 @@ chem_c <- read_xls(here("files", "calvert_chemtax.xls"),
 #Binding the Calvert and Quadra Microscopy datasets into a single dataframe.
 chem <- rbind(chem_c, chem_q)
 
+#bringing in new chemtax run with no dictychophytes and added pelagophytes. This will become my official sheet after some review, but keeping two options available here.
+chem_2 <- read_csv(here("files", "chem_compare_pelago.csv"))
+
+#Selecting my good run from the sheet that has multiple different chemtax options
+chem_2 <- chem_2 %>% 
+  filter(run == 2)
+
 #Bringing in Chlorophyll
 chl <- read_csv(here("files", "chl.csv"))
 
@@ -195,6 +202,13 @@ chem <- select(chem,
                dino = `Dinoflagellates-1`, dict = Dictyo, raph = Raphido,
                diat = `Diatoms-1`)
 
+chem_2 <- select(chem_2,
+               date = Date, site_id = Station, cyan = Cyanobacteria, 
+               pela = Pelago, hapt = Hapto, pras2 = `Prasinophytes-2`,
+               pras3 = `Prasinophytes-3`, cryp = Cryptophytes,
+               dino = `Dinoflagellates-1`, raph = Raphido,
+               diat = `Diatoms-1`)
+
 #Setting number of decimal places for chemtax data
 chem <- chem %>% 
   mutate_at(vars(cyan:diat), funs(round(., 2)))
@@ -211,6 +225,8 @@ turb_corr <- turb_corr %>%
 #Setting data format for Chemtax data. They usually import in a strange format and need to be fixed.
 chem$date <- as.Date(chem$date, "%Y-%m-%d")
 
+chem_2 <- chem_2 %>% 
+  mutate(date = lubridate::mdy(date))
 
 #Looking at coordinates for the CTD dataset - creating a list of unique coordinates
 ctd_coord <- ctd %>% 
@@ -235,6 +251,15 @@ ctd <- ctd %>%
 #Making a Tidy/long format for the Chemtax data. This needs to be done for plotting. The other datasets are already in this format
 chem_tidy <- chem %>% 
   pivot_longer(c(cyan, hapto, green, cryp, dino, dict, raph, diat),
+                 names_to = "phyto_group", values_to = "TChla") %>% 
+  group_by(date, site_id) %>% 
+  mutate(TChla_sum = sum(TChla)) %>% 
+  ungroup() %>% 
+  mutate(rel_abun = TChla/TChla_sum) %>% 
+  mutate_at(vars(TChla:rel_abun), funs(round(., 2)))
+
+chem_tidy2 <- chem_2 %>% 
+  pivot_longer(c(cyan, hapt, pela, pras2, pras3, cryp, dino, raph, diat),
                  names_to = "phyto_group", values_to = "TChla") %>% 
   group_by(date, site_id) %>% 
   mutate(TChla_sum = sum(TChla)) %>% 
@@ -444,7 +469,7 @@ micro <- micro %>%
 
 #Removing species that are clearly heterotrophs (some hetero/mixos remain in the photo class though)
 #Need to revamp this as nMDS now includes some
-heterotrophs...
+# heterotrophs...
 # micro_piv <- micro %>% 
 #   filter(trophicStatus == "auto")
 
@@ -610,7 +635,7 @@ ctd_merge <- ctd_dm %>%
   left_join(zeu) %>% 
   left_join(chl_merge) %>% 
   left_join(micro_merge) %>% 
-  left_join(chem)
+  left_join(chem_2)
 
 #I thintk this is where I would bring in the zeu depth.
 
@@ -866,8 +891,20 @@ chem_ds <- chem_ds %>%
                            date == "2020-04-30" ~ 5,
                              TRUE ~ as.numeric (month_surv)))
 
+chem_2 <- chem_2 %>%  
+  mutate(month_surv = lubridate::month(date),
+         month_surv = case_when(date == "2019-08-29" ~ 9,
+                           date == "2019-08-31" ~ 9,
+                           date == "2020-04-29" ~ 5,
+                           date == "2020-04-30" ~ 5,
+                             TRUE ~ as.numeric (month_surv)))
+
+
 #Now adding the true month when data was collected back into datasheet.
 chem_ds <- chem_ds %>% 
+  mutate(month = lubridate::month(date))
+
+chem_2 <- chem_2 %>% 
   mutate(month = lubridate::month(date))
 
 #Pulling out the data I want for analysis (May to October 2018-2021)
@@ -876,6 +913,10 @@ chem_ds <- chem_ds %>%
 
 #Relocating month to be after date for visual ease
 chem_ds <- chem_ds %>% 
+  relocate(month, .after = date) %>% 
+  relocate(month_surv, .after = month)
+
+chem_2 <- chem_2 %>% 
   relocate(month, .after = date) %>% 
   relocate(month_surv, .after = month)
 
@@ -953,28 +994,28 @@ fec_ds <- fec_ds %>%
 #It's actually less - 59 - Why? One reason could be chlorophyll data, which I incorporated and may have had missing data. Incorporate here and see. 8 Chlorophyll samples missing - this explains the disparity. Should be good to go.
 
 #Exporting as a csv to pull into other analysis.
-write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2022-02-01_het.csv"))
+write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2022-03-16_het.csv"))
 
 #Exporting as a csv to pull into other analysis.
-write_csv(micro_ds, here("outputs", "micro_master_2022-02-01_het.csv"))
+write_csv(micro_ds, here("outputs", "micro_master_2022-03-16_het.csv"))
 
 #Exporting non-downscaled kc10 and QU39 dataset.
-write_csv(micro_kc10, here("outputs", "micro_kc10_2022-02-01_het.csv"))
+write_csv(micro_kc10, here("outputs", "micro_kc10_2022-03-16_het.csv"))
 
 #Exporting downscaled kc10 and QU39 dataset.
-write_csv(micro_kc10_ds, here("outputs", "micro_kc10_ds_2022-02-01_het.csv"))
+write_csv(micro_kc10_ds, here("outputs", "micro_kc10_ds_2022-03-16_het.csv"))
 
 #Exporting as a csv to pull into other analysis.
-write_csv(cil_ds, here("outputs", "ciliate_master_2022-02-01_het.csv"))
+write_csv(cil_ds, here("outputs", "ciliate_master_2022-03-16_het.csv"))
 
 #Exporting as a csv to pull into other analysis.
-write_csv(dino_het_ds, here("outputs", "dino-het_master_2022-02-01_het.csv"))
+write_csv(dino_het_ds, here("outputs", "dino-het_master_2022-03-16_het.csv"))
 
 #Exporting as a csv to pull into other analysis.
-write_csv(fec_ds, here("outputs", "fecal_master_2022-02-01_het.csv"))
+write_csv(fec_ds, here("outputs", "fecal_master_2022-03-16_het.csv"))
 
 #Exporting as a csv to pull into other analysis.
-write_csv(chem_ds, here("outputs", "chemtax_master_2022-02-01_het.csv"))
+write_csv(chem_2, here("outputs", "chemtax_master_2022-03-16_het.csv"))
 ```
 
 ```{r}
