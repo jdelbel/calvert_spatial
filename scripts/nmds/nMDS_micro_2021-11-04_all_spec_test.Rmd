@@ -38,10 +38,13 @@ test2 <- micro %>%
   filter(phylum == "Haptophyta")
 
 test3 <- micro %>% 
-  filter(class == "Dictyochophyceae")
+  filter(class == "Dictyochophyceae" & site_id == "DFO2")
 
 test4 <- micro %>% 
   filter(site_id == "DFO2" & phylum == "Chlorophyta")
+
+test5 <- micro %>% 
+  filter(site_id == "QCS01" & date == "2019-08-31")
 ```
 
 
