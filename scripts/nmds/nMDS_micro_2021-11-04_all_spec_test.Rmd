@@ -37,6 +37,8 @@ test <- micro %>%
 test2 <- micro %>% 
   filter(phylum == "Haptophyta")
 
+
+
 test3 <- micro %>% 
   filter(class == "Dictyochophyceae" & site_id == "DFO2")
 
@@ -44,6 +46,18 @@ test4 <- micro %>%
   filter(site_id == "DFO2" & phylum == "Chlorophyta")
 
 test5 <- micro %>% 
+  filter(site_id == "QCS01" & date == "2019-08-31")
+
+dfo2_2019 <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(year == 2019 & (month == 8 & site_id == "DFO2"))
+
+kc10_2019 <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(year == 2019 & (month == 9 & site_id == "KC10"))
+
+qcs01_2019 <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
   filter(site_id == "QCS01" & date == "2019-08-31")
 ```
 
