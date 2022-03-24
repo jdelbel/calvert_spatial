@@ -106,7 +106,7 @@ data_pca <- data_pca %>%
 data_pca[data_pca == Inf] <- 0
 
 #Pulling out explanatory variables
-expl <- data_pca[, 5:12]
+expl <- data_pca[, 5:13]
 ```
 
 
@@ -306,7 +306,7 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Season", shape = "Station")
 
-ggsave(here("figures_rev2", "PCA_calvert.png"),
+ggsave(here("figures_rev2", "PCA_calvert_np.png"),
        width = 10, height = 7, dpi = 300)
 ```
 ```{r}
@@ -424,15 +424,15 @@ p2 <- ggplot() +
 
 fig <- p1/p2
 
-ggsave(here("figures_rev2", "PCA_calvert_with_year.png"),
+ggsave(here("figures_rev2", "PCA_calvert_with_year_np.png"),
        width = 10, height = 14, dpi = 300)
 ```
 
 
 ```{r}
-hc <- data_pca[, 5:12]
+hc <- data_pca[, 5:13]
 
-# hc <- scale(hc)
+# hc <- log10(hc + 1)
 
 
 
@@ -578,7 +578,7 @@ ggplot() +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
  
-ggsave(here("figures_rev2", "physical_dendro.png"),
+ggsave(here("figures_rev2", "physical_dendro_np.png"),
        width = 6, height = 12, dpi = 300)
 ```
 ```{r}
@@ -593,8 +593,6 @@ sites_loc_pca_clust <- sites_loc_pca_clust %>%
   relocate(cluster, .after = month_surv)
 
 
-#Export cluster data from inclusion in nMDS.
-write_csv(clust_df, here("outputs", "clusters_phys.csv"))
 
 ```
 
@@ -709,7 +707,7 @@ p2 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
 
 fig <- p1 + p2
  
-ggsave(here("figures_rev2", "PCA_calvert_clust_panel.png"), fig,
+ggsave(here("figures_rev2", "PCA_calvert_clust_panel_np.png"), fig,
        width = 16, height = 8, dpi = 300)
 ```
 ```{r}
@@ -738,11 +736,7 @@ data_clust_long %>%
 ```
 ```{r}
 #Stats
-data_summ <- data_clust_long
-
-data_summ[data_summ == Inf] <- 0
-
-data_summ <- data_summ %>% 
+data_summ <- data_clust_long %>% 
   group_by(cluster, parameters) %>% 
   summarise(mean = mean(values),
             sdev = sd(values)) %>% 

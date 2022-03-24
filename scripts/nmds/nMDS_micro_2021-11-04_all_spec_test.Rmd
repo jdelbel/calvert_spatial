@@ -29,7 +29,10 @@ library(RColorBrewer)
 #Upload data from my master data standardization sheet
 micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
 
+clust_phy <- read_csv(here("outputs", "clusters_phys.csv"))
+
 ```
+
 ```{r}
 test <- micro %>% 
   filter(class == "Raphidophyceae")
@@ -317,6 +320,12 @@ stressplot(nmds)
 micro_piv <- micro_piv %>%
   unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
 
+micro_piv <- micro_piv %>%
+  left_join(clust_phy) %>%
+  relocate(cluster, .after = month_surv) %>% 
+  rename(clust_phy = cluster)
+
+#Didn't use clusters from HC on microscopy data because no clear clusters showed up.
 # clust_df <- clust.df %>%
 #   rename(sample_name = label)
 
@@ -340,6 +349,7 @@ data.scores = as.data.frame(scores(nmds))
 data.scores$month_surv = micro_piv$month_surv
 data.scores$site = micro_piv$site_id
 data.scores$year = micro_piv$year
+data.scores$clust_phy = micro_piv$clust_phy
 
 # data.scores.rel = as.data.frame(scores(nmds_rel))
 # data.scores.rel$month_surv = micro_piv$month_surv
@@ -440,9 +450,9 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 #Plotting nMDS - by cluster
 
 ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
-  geom_point(data = data.scores, aes(fill = as.factor(clust), shape = site),
+  geom_point(data = data.scores, aes(fill = as.factor(clust_phy), shape = site),
              size = 4) +
-  scale_fill_brewer(palette = "RdYlBu") +
+  scale_fill_brewer(palette = "Set1") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) +
   scale_shape_manual(values = c(21, 22, 23 ,24)) +
   # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2),
@@ -464,8 +474,8 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
   labs(fill = "Cluster", shape = "Station") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-# ggsave(here("figures_rev2", "nmds_micro_absolute_CALVERT.png"),
-#        width = 6, height = 4.5, dpi = 300)
+ggsave(here("figures_rev2", "nmds_micro_physical_clusters.png"),
+       width = 6, height = 4.5, dpi = 300)
 ```
 
 ```{r}
