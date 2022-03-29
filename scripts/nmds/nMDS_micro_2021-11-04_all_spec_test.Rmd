@@ -51,9 +51,13 @@ test4 <- micro %>%
 test5 <- micro %>% 
   filter(site_id == "QCS01" & date == "2019-08-31")
 
-dfo2_2019 <- micro %>% 
+dfo2_8_2019 <- micro %>% 
   mutate(year = lubridate::year(date)) %>% 
   filter(year == 2019 & (month == 8 & site_id == "DFO2"))
+
+dfo2_5_2019 <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(year == 2019 & (month == 5 & site_id == "DFO2"))
 
 kc10_2019 <- micro %>% 
   mutate(year = lubridate::year(date)) %>% 
@@ -62,6 +66,61 @@ kc10_2019 <- micro %>%
 qcs01_2019 <- micro %>% 
   mutate(year = lubridate::year(date)) %>% 
   filter(site_id == "QCS01" & date == "2019-08-31")
+
+q19_7_7 <- micro %>% 
+  filter(site_id == "QCS01" & date == "2019-07-07")
+
+q19_8_6 <- micro %>% 
+  filter(site_id == "QCS01" & date == "2019-08-06")
+
+q19_8_31 <- micro %>% 
+  filter(site_id == "QCS01" & date == "2019-08-31")
+
+q19_10_5 <- micro %>% 
+  filter(site_id == "QCS01" & date == "2019-10-05")
+
+c_horr <- micro %>% 
+  filter(scientificName == "Ceratium horridum")
+
+c_crio <- micro %>% 
+  filter(scientificName == "Corethron criophilum")
+
+p_pouc19 <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(!site_id == "QU39" & year == 2019) %>% 
+  filter(scientificName == "Phaeocystis pouchetii")
+
+p_pouc <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName == "Phaeocystis pouchetii")
+
+proro <- micro %>% 
+  filter(scientificName == "Prorocentrum")
+
+proro_g <- micro %>% 
+  filter(scientificName == "Prorocentrum gracile")
+
+cory <- micro %>% 
+  filter(scientificName == "Corythodinium")
+
+thal <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName == "Thalassiosira nordenskioeldii")
+
+thal_p <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName == "Thalassiosira pacifica")
+
+cha_soc <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName == "Chaetoceros socialis")
+
+pn_s <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName == "Pseudo-nitzschia seriata")
+
+dfo2_
 ```
 
 
@@ -810,7 +869,7 @@ fig_nmds_vert <- (p1 / p2)
 site_id <- micro_piv$site_id
 month <- micro_piv$month_surv
 year <- micro_piv$year
-cluster <- micro_piv$cluster
+cluster <- micro_piv$clust_phy
 ```
 
 
@@ -880,10 +939,10 @@ inv_year_sp <- data.table::as.data.table(inv_year$sign, keep.rownames = TRUE)
 
 ```{r}
 #by cluster - Not currently using.
-# inv_cluster = multipatt(transform, cluster, func = "r.g",
-#                        control = how(nperm = 9999))
-# 
-# summary(inv_cluster)
+inv_cluster = multipatt(transform, cluster, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_cluster)
 ```
 
 ```{r}
