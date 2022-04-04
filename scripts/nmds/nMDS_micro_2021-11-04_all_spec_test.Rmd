@@ -120,7 +120,7 @@ pn_s <- micro %>%
   filter(!site_id == "QU39") %>% 
   filter(scientificName == "Pseudo-nitzschia seriata")
 
-dfo2_
+
 ```
 
 
@@ -939,10 +939,10 @@ inv_year_sp <- data.table::as.data.table(inv_year$sign, keep.rownames = TRUE)
 
 ```{r}
 #by cluster - Not currently using.
-inv_cluster = multipatt(transform, cluster, func = "r.g",
-                       control = how(nperm = 9999))
-
-summary(inv_cluster)
+# inv_cluster = multipatt(transform, cluster, func = "r.g",
+#                        control = how(nperm = 9999))
+# 
+# summary(inv_cluster)
 ```
 
 ```{r}
@@ -1165,7 +1165,95 @@ ggsave(here("figures_rev2", "nmds_dendro_heat.png"), fig2,
        width = 16, height = 14, dpi = 300)
 ```
 
+```{r}
+#Plotting the same as above (dendrogram order), but trying with only the indicator species (p <0.01). Trying again with no labels. Not sure what is difference from above here, but this is what I am using to construct the panel.
 
+#Trying with indicator species from physical clustering
+#Setting the order to the same as the clustering using the specified list
+micro_heat$sample_name <- factor(micro_heat$sample_name, levels = unique(hc_order))
+
+# micro_heat$date_fact <- as.factor(micro_heat$date)
+# 
+# micro_heat$test <- reorder(micro_heat$date_fact, micro_heat$sample_name)
+
+
+h1_2 <- micro_heat %>%   
+   filter(scientificName == "Cerataulina bicornis" |
+            scientificName == "Chaetoceros debilis" |
+            scientificName == "Chaetoceros decipiens" |
+            scientificName == "Chaetoceros laciniosus" |
+            scientificName == "Chaetoceros seiracanthus" |
+            scientificName == "Chaetoceros socialis" |
+            scientificName == "Dactyliosolen fragilissimus" |
+            scientificName == "Dactyliosolen phuketensis" |
+            scientificName == "Detonula pumila" |
+            scientificName == "Guinardia delicatula" |
+            scientificName == "Leptocylindrus danicus" |
+            scientificName == "Pseudo-nitzschia seriata" |
+            scientificName == "Rhizosolenia setigera" |
+            scientificName == "Skeletonema marinoi" |
+            scientificName == "Thalassiosira rotula" |
+            scientificName == "Dictyocha fibula" |
+            scientificName == "Ceratium lineatum" |
+            scientificName == "Scrippsiella precaria") %>%
+  ggplot(aes(x = sample_name, y = species_order, fill = log10(count + 1))) +
+  geom_tile(color = "black", size = 1) +
+  facet_grid(group ~ ., scales = "free_y", space = "free") +
+  scale_fill_gradient(name = "",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  # scale_fill_gradient2(name = "",
+  #                      midpoint = 3,
+  #                      low = "white",
+  #                      mid = "blue",
+  #                      high = "#FF0000") +
+  scale_y_discrete(labels = c("Cerataulina bicornis" = "C.b",
+                              "Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros decipiens" = "C.dec.",
+                              "Chaetoceros laciniosus" = "C.lac.",
+                              "Chaetoceros seiracanthus" = "C.sei.",
+                              "Chaetoceros socialis" = "C.soc.",
+                              "Dactyliosolen fragilissimus" = "D.f.",
+                              "Dactyliosolen phuketensis" = "D.ph.",
+                              "Detonula pumila" = "D.p.",
+                              "Guinardia delicatula" = "G.d.",
+                              "Leptocylindrus danicus" = "L.d.",
+                              "Pseudo-nitzschia seriata" = "Pn.s",
+                              "Rhizosolenia setigera" = "R.s.",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Thalassiosira rotula" = "T.r.",
+                              "Dictyocha fibula" = "D.f.",
+                              "Ceratium lineatum" = "C.l.",
+                              "Scrippsiella precaria" = "S.p")) +
+  # scale_y_discrete(limits = rev(levels(as.factor(micro_ds$species_order)))) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # axis.text.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        # legend.position = "bottomright",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        axis.line = element_line(colour = "black"))
+
+```
+
+```{r}
+#Add indicator species from the physical clusters didn't help. 
+fig <- p_dend2 / h1_2 + plot_layout(heights = c(1, 3))
+
+fig2 <- fig_nmds_horiz / fig
+
+ggsave(here("figures_rev2", "nmds_dendro_heat_2test.png"), fig2,
+       width = 16, height = 15, dpi = 300)
+```
 
 
 ```{r}
