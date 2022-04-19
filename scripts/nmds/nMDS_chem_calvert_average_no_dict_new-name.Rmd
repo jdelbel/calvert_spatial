@@ -29,6 +29,7 @@ library(RColorBrewer)
 #Upload data from my master data standardization sheet
 c <- read_csv(here("outputs", "chemtax_master_2022-03-16_het.csv")) 
 
+clust_phy <- read_csv(here("outputs", "clusters_phys.csv"))
 ```
 
 
@@ -53,7 +54,7 @@ transform_rel <- decostand(species, method = "total")
 #Log10 transformation +1 (as per Mahara)
 transform <- log10(species + 1)
 
-transform_rel <- sqrt(transform_rel)
+# transform_rel <- sqrt(transform_rel)
 ```
 
 ```{r}
@@ -64,12 +65,10 @@ c <- c %>%
                               site_id == "QCS01" ~ "S",
                               TRUE ~ as.character(site_id)))
 
-
-
 #Create rownames for dendrogram
 labs <- c %>%
-  select(site_id, date) %>% 
-  unite(sample_name, c(site_id, date), sep = "_")
+  select(location, site_id, date) %>%  
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
 
 labs_list <- labs$sample_name
 
@@ -77,32 +76,7 @@ transform_hc <- transform
 
 rownames(transform_hc) <- labs_list
 
-
-
-#Changing site_id to location 
-micro_piv <- micro_piv %>% 
-    mutate(location = case_when(site_id == "DFO2" ~ "F",
-                              site_id == "KC10" ~ "C",
-                              site_id == "QCS01" ~ "S",
-                              TRUE ~ as.character(site_id))) 
-
-
-metadata <- micro_piv %>%
-  select(location, site_id, date) %>%  
-  unite(sample_name, c(location, date), sep = "", remove = FALSE)
-
-#Creating a list of rownames
-# labs_list <- labs$sample_name
-labs_list <- metadata$sample_name
-
-#creating a hierarchical clustering matrix
-transform_hc <- transform
-
-#Making the rownames of the clustering matrix the ones specified in the above list.
-rownames(transform_hc) <- labs_list
-
-
-
+rownames(transform_rel) <- labs_list
 ```
 
 
@@ -119,18 +93,19 @@ cluster.average <- hclust(dis, "average")
 
 ```{r}
 #Looking at optimal number of clusters with the wss and silhouette methods
-fviz_nbclust(transform_hc, FUN = hcut, method = "wss")
-fviz_nbclust(transform_hc, FUN = hcut, method = "silhouette")
-```
+# fviz_nbclust(transform_hc, FUN = hcut, method = "wss")
+# fviz_nbclust(transform_hc, FUN = hcut, method = "silhouette")
 
-```{r}
 #Looking at optimal number of clusters with the gap statistic method
-gap_stat <- clusGap(transform_hc, FUN = hcut, nstart = 25, K.max = 10, B = 50)
-fviz_gap_stat(gap_stat)
+# gap_stat <- clusGap(transform_hc, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+# fviz_gap_stat(gap_stat)
+
+#Turning off for now because takes time.
 ```
 
-
 ```{r}
+#Setting number of clusters used - determined 5 based on silhouette plot and scrutiny of data with different clusters
+
 k <- 5
 clust <- cutree(cluster.average, k = k)
 
@@ -150,11 +125,11 @@ dendrogram_segments <- dendrogram_data$segments
 ```{r}
 #Creating metadata sheet with 
 metadata <- c %>% 
-  select(site_id, date)
+  select(location, site_id, date)
 
 #Making unique labels by combining site and date into single string
 metadata <- metadata %>% 
-  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
 
 # get terminal dendrogram segments
 dendrogram_ends <- dendrogram_segments %>%
@@ -228,7 +203,7 @@ p_dend <- ggplot() +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
  
-ggsave(here("figures_rev2", "hc_average_chemtax_pelago.png"), p_dend,
+ggsave(here("figures_rev2", "hc_average_chemtax_pelago_test.png"), p_dend,
        width = 6, height = 12, dpi = 300)
 ```
 
@@ -279,7 +254,7 @@ data.scores$year = c$year
 ```{r}
 # For clusters, need to merge on station/date code.
 c <- c %>%
-  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
 
 clust_df <- clust.df %>%
   rename(sample_name = label)
@@ -289,7 +264,37 @@ c <- c %>%
   relocate(cluster, .after = month_surv)
 
 data.scores$clust = c$cluster
+data.scores$loc = c$location
 ```
+
+```{r}
+#Would like to include the environmental clusters.
+
+#Since the physical clusters are currently in the old naming convention, need to make a column with this so can do a join. I should be able to do this. 
+c <- c %>%
+  unite(sample_name2, c(site_id, date), sep = "-", remove = FALSE)
+
+clust_phy <- clust_phy %>% 
+  rename(sample_name2 = sample_name, clust_phy = cluster)
+
+c_test <- c %>% 
+  left_join(clust_phy)
+
+
+
+```
+
+```{r}
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+data.scores <- arrange(mutate(data.scores,
+                         loc = factor(loc, levels = order_loc)))
+```
+
+
+
 
 ```{r}
 #Combining station month and year plots with dendrogram - sort of cool, but now have to figure out why DFO2 different. This is where a heatmap plot comes in?
@@ -298,7 +303,8 @@ data.scores$clust = c$cluster
 # https://www.r-bloggers.com/2021/07/ggforce-make-a-hull-plot-to-visualize-clusters-in-ggplot2/
 
 nmds_month <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
+  geom_point(data = data.scores, aes(fill = as.factor(month_surv), 
+                                     shape = loc),
              size = 7, stroke = 1.5) + 
   geom_mark_hull(data = data.scores, aes(color = clust, label = clust),
                  concavity = 2.8, label.fontsize = 30, expand = unit(4.1, "mm"),
@@ -332,7 +338,7 @@ nmds_month <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
          color = "none")
 
 nmds_year <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores, aes(fill = as.factor(year), shape = site),
+  geom_point(data = data.scores, aes(fill = as.factor(year), shape = loc),
              size = 7, stroke = 1.5) + 
   geom_mark_hull(data = data.scores, aes(color = clust, label = clust),
                  concavity = 2.8, label.fontsize = 30, expand = unit(4.1, "mm"),
@@ -362,66 +368,10 @@ nmds_year <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 
 fig <- (nmds_month/nmds_year) | p_dend
 
-ggsave(here("figures_rev2", "nmds_dendro_chem_average_pelago.png"), fig,
+ggsave(here("figures_rev2", "nmds_dendro_chem_average_pelago_test.png"), fig,
        width = 16, height = 12, dpi = 300)
 
 ```
-
-```{r}
-# For clusters, need to merge on station/date code.
-c <- c %>%
-  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
-
-clust_df <- clust.df %>%
-  rename(sample_name = label)
-
-c <- c %>%
-  left_join(clust_df) %>%
-  relocate(cluster, .after = month_surv)
-
-data.scores$clust = c$cluster
-```
-
-
-```{r}
-#Trying to attach clusters to metadata so I can plot by cluster
-ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores, aes(fill = as.factor(clust), shape = site),
-             size = 6, stroke = 1) + 
-  scale_fill_brewer(palette = "RdYlBu") +
-  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
-  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
-  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
-  #              data = en_coord_cont, size = 1, alpha = 0.5, colour = "grey30") +
-  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
-  #           fontface = "bold", label = row.names(en_coord_cont)) + 
-  # xlim(-0.4, 0.7) +
-  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
-        panel.background = element_blank(),
-        panel.border = element_rect(fill = NA, colour = "black"), 
-        axis.ticks = element_blank(),
-        axis.text = element_blank(),
-        # axis.title.x = element_blank(),
-        legend.key = element_blank(), 
-        legend.title = element_text(size = 20, face = "bold", colour = "black"), 
-        legend.text = element_text(size = 18, colour = "black"),
-        legend.position = c(0.90, 0.70),
-        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
-        text = element_text(size = 30)) +
-  labs(fill = "Cluster", shape = "Station") +
-  guides(fill = guide_legend(override.aes = list(shape = 21)))
-
-
-ggsave(here("figures_rev2", "nmds_chem_cluster_average_pelago.png"),
-       width = 10, height = 6, dpi = 300)
-```
-
-
-
-
-
-
-
 
 ```{r}
 #Pivot chemtax sheet longer for plotting. 

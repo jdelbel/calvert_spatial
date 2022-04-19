@@ -383,6 +383,20 @@ data.scores$clust_phy = micro_piv$clust_phy
 
 ```
 
+```{r}
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+data.scores <- arrange(mutate(data.scores,
+                         loc = factor(loc, levels = order_loc)))
+```
+
+
+
+
+
 
 ```{r}
 #Plotting nMDS - commented sections are for if I want to add environmental fits. This is for the absolute data
