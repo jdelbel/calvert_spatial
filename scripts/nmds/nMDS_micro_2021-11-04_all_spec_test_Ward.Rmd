@@ -158,6 +158,8 @@ ac <- function(x) {
 #This says that ward is the best by far.
 map_dbl(m, ac)
 ```
+
+
 ```{r}
 # Compute 2 hierarchical clusterings
 hc1 <- hclust(dis, method = "average")
@@ -179,6 +181,7 @@ tanglegram(dend1, dend2,
   main = paste("entanglement =", round(entanglement(dend_list), 2))
   )
 ```
+
 ```{r}
 
 fviz_nbclust(transform_hc, FUN = hcut, method = "wss")
