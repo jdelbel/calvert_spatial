@@ -290,6 +290,7 @@ data.scores <- arrange(mutate(data.scores,
                          loc = factor(loc, levels = order_loc)))
 ```
 
+
 ```{r}
 #Combining station month and year plots with dendrogram - sort of cool, but now have to figure out why DFO2 different. This is where a heatmap plot comes in?
 

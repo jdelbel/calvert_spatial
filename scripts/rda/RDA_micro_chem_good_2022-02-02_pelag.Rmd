@@ -97,6 +97,9 @@ expl <- mm_no_chl[, 7:15]
 
 ```
 
+
+
+
 ```{r}
 #Hellinger transformation on species data - particularly suited to species abundance data with large range and lots of zeros. Gives low weights to variables with low counts and many zeroes.
 resp.hell <- decostand(resp, 'hell')
@@ -417,6 +420,25 @@ ggsave(here("figures_rev2", "rda_calvert_scaling2_2_het_2_pelag.png"),
 
 
 
+```{r}
+#Changing site_id to location 
+meta <- mm_no_chl %>% 
+  select(date:site_id) %>% 
+  mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+meta <- arrange(mutate(meta,
+                         location = factor(location, levels = order_loc)))
+```
+
+
 
 
 ```{r}
@@ -427,7 +449,7 @@ ggsave(here("figures_rev2", "rda_calvert_scaling2_2_het_2_pelag.png"),
 
 #Extracting site locations
 sites_loc <- sites.long(p_s1, env.data = env.signif)
-meta <- mm_no_chl[,1:4]
+# meta <- mm_no_chl[,1:4]
 sites_loc <- cbind(meta, sites_loc)
 head(sites_loc)
 
@@ -467,7 +489,7 @@ p_s1_micro <- ggplot() +
   scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
   scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
   geom_point(data = sites_loc, aes(x = axis1, y = axis2, fill = as.factor(month_surv),
-                                   shape = site_id), 
+                                   shape = location), 
              size = 6, color = "black", alpha = 0.9) +
   scale_fill_brewer(palette = "RdYlBu") + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
@@ -524,7 +546,7 @@ p_s1_micro <- ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Month", shape = "Station")
 
-# ggsave(here("figures_rev2", "rda_calvert_scaling1_2_hetero_2.png.png"),
+# ggsave(here("figures_rev2", "x-test.png.png"),
 #        width = 6.2, height = 5, dpi = 300)
 ```
 ```{r}
@@ -847,7 +869,7 @@ p_s1_chem2 <- ggplot() +
 
 micro_chem_panel <-  p_s1_micro + p_s1_chem2
 
-ggsave(here("figures_rev2", "rda_micro_chem_s1.png"), micro_chem_panel, 
+ggsave(here("figures_rev2", "rda_micro_chem_s1_test.png"), micro_chem_panel, 
        width = 16, height = 8, dpi = 300)
 ```
 

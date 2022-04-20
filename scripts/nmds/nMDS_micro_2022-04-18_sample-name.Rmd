@@ -121,10 +121,10 @@ test <- micro %>%
 #   filter(scientificName == "Pseudo-nitzschia seriata")
 
 hapt_micro <- micro %>% 
-  filter(phylum == "Haptophyta")
+  filter(phylum == "Haptophyta" & month > 6 & month < 11)
 
 dict <- micro %>% 
-  filter(class == "Dictyochophyceae")
+  filter(site_id == "QCS01" & class == "Dictyochophyceae" & month > 6 & month < 11)
 ```
 
 

@@ -139,6 +139,26 @@ micro_sum_3 <- rbind(micro_kc10_ds_sum, micro_sum_ds_qu39)
 
 
 ```{r}
+#Making a location column.
+data <- data %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+data <- arrange(mutate(data,
+                       location = factor(location, levels = order_loc)))
+```
+
+
+
+
+
+```{r}
 #Set order or groups for plotting
 
 micro_sum$group <- factor(micro_sum$group,
@@ -268,7 +288,18 @@ chl_hplc <- chem_tidy %>%
 #Bringing corrected 2018 chl concentrations into 2019-2020 HPLC Tchla so they are together in a column for plotting.
 chl_merge <- rbind(chl_bulk_fix, chl_hplc)
 ```
+```{r}
+#Making a location column.
+chl_merge <- chl_merge %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
 
+
+chl_merge <- arrange(mutate(chl_merge,
+                       location = factor(location, levels = order_loc)))
+```
 
 ```{r}
 #Looking at relationship between Chl and TCHLA when both data are available in 2019 and 2020
@@ -326,8 +357,8 @@ f1 <- chl_merge %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = chl, group = site_id, fill = site_id, 
-             color = site_id)) +
+  ggplot(aes(x = yday, y = chl, group = location, fill = location, 
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   geom_hline(yintercept = 5, linetype = "dashed", color = "black") +
@@ -349,8 +380,8 @@ f2 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = temp_dm, group = site_id, fill = site_id, 
-             color = site_id)) +
+  ggplot(aes(x = yday, y = temp_dm, group = location, fill = location, 
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   scale_y_continuous(expand = c(0, 0), limits = c(8, 16)) +
@@ -369,8 +400,8 @@ f3 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = sal_dm, group = site_id, fill = site_id,
-             color = site_id)) +
+  ggplot(aes(x = yday, y = sal_dm, group = location, fill = location,
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   scale_y_continuous(expand = c(0, 0), limits = c(27, 33), 
@@ -390,8 +421,8 @@ f4 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = delta_rho_dm, group = site_id, fill = site_id,
-             color = site_id)) +
+  ggplot(aes(x = yday, y = delta_rho_dm, group = location, fill = location,
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 16)) +
@@ -411,8 +442,8 @@ f5 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = no2_dm, group = site_id, fill = site_id,
-             color = site_id)) +
+  ggplot(aes(x = yday, y = no2_dm, group = location, fill = location,
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 20)) +
@@ -431,8 +462,8 @@ f6 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = po4_dm, group = site_id, fill = site_id, 
-             color = site_id)) +
+  ggplot(aes(x = yday, y = po4_dm, group = location, fill = location, 
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 1.6)) +
@@ -451,8 +482,8 @@ f7 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = sio2_dm, group = site_id, fill = site_id,
-             color = site_id)) +
+  ggplot(aes(x = yday, y = sio2_dm, group = location, fill = location,
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 30)) +
@@ -471,8 +502,8 @@ f8 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = secchi_depth, group = site_id, fill = site_id,
-             color = site_id)) +
+  ggplot(aes(x = yday, y = secchi_depth, group = location, fill = location,
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 15)) +
@@ -499,8 +530,8 @@ f1 <- chl_merge %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = chl, group = site_id, fill = site_id, 
-             color = site_id)) +
+  ggplot(aes(x = yday, y = chl, group = location, fill = location, 
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   geom_hline(yintercept = 5, linetype = "dashed", color = "black") +
@@ -513,7 +544,7 @@ f1 <- chl_merge %>%
         strip.background = element_blank(),
         # strip.text.x = element_blank(),
         legend.title = element_blank(),
-        legend.position = c(0.92, 0.7),
+        legend.position = c(0.95, 0.7),
         legend.background = element_blank(),
         text = element_text(size = 30))
 
@@ -522,8 +553,8 @@ f2 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = temp_dm, group = site_id, fill = site_id, 
-             color = site_id)) +
+  ggplot(aes(x = yday, y = temp_dm, group = location, fill = location, 
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   # scale_y_continuous(expand = c(0, 0), limits = c(8, 16)) +
@@ -542,8 +573,8 @@ f3 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = sal_dm, group = site_id, fill = site_id,
-             color = site_id)) +
+  ggplot(aes(x = yday, y = sal_dm, group = location, fill = location,
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   # scale_y_continuous(expand = c(0, 0), limits = c(27, 33), 
@@ -563,8 +594,8 @@ f4 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = delta_rho_dm, group = site_id, fill = site_id,
-             color = site_id)) +
+  ggplot(aes(x = yday, y = delta_rho_dm, group = location, fill = location,
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   # scale_y_continuous(expand = c(0, 0), limits = c(0, 16)) +
@@ -584,8 +615,8 @@ f5 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = no2_dm, group = site_id, fill = site_id,
-             color = site_id)) +
+  ggplot(aes(x = yday, y = no2_dm, group = location, fill = location,
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   scale_y_continuous(expand = c(0, 0), limits = c(0, 20)) +
@@ -604,8 +635,8 @@ f6 <- data %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = secchi_depth, group = site_id, fill = site_id,
-             color = site_id)) +
+  ggplot(aes(x = yday, y = secchi_depth, group = location, fill = location,
+             color = location)) +
   geom_line(size = 2) +
   geom_point(pch = 21, size = 3, color = "black", stroke = 2) +
   # scale_y_continuous(expand = c(0, 0), limits = c(0, 15)) +
