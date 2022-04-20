@@ -29,7 +29,7 @@ library(RColorBrewer)
 #Upload data from my master data standardization sheet
 c <- read_csv(here("outputs", "chemtax_master_2022-03-16_het.csv")) 
 
-clust_phy <- read_csv(here("outputs", "clusters_phys.csv"))
+clust_phy <- read_csv(here("outputs", "clusters_phys_chem.csv"))
 ```
 
 
@@ -271,17 +271,14 @@ data.scores$loc = c$location
 #Would like to include the environmental clusters.
 
 #Since the physical clusters are currently in the old naming convention, need to make a column with this so can do a join. I should be able to do this. 
-c <- c %>%
-  unite(sample_name2, c(site_id, date), sep = "-", remove = FALSE)
 
 clust_phy <- clust_phy %>% 
-  rename(sample_name2 = sample_name, clust_phy = cluster)
+  select(sample_name, phys_clust)
 
-c_test <- c %>% 
+c <- c %>% 
   left_join(clust_phy)
 
-
-
+data.scores$phys_clust = c$phys_clust
 ```
 
 ```{r}
@@ -292,9 +289,6 @@ order_loc <- c("F", "C", "S")
 data.scores <- arrange(mutate(data.scores,
                          loc = factor(loc, levels = order_loc)))
 ```
-
-
-
 
 ```{r}
 #Combining station month and year plots with dendrogram - sort of cool, but now have to figure out why DFO2 different. This is where a heatmap plot comes in?
@@ -368,8 +362,79 @@ nmds_year <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 
 fig <- (nmds_month/nmds_year) | p_dend
 
-ggsave(here("figures_rev2", "nmds_dendro_chem_average_pelago_test.png"), fig,
-       width = 16, height = 12, dpi = 300)
+# ggsave(here("figures_rev2", "nmds_dendro_chem_average_pelago_test.png"), fig,
+#        width = 16, height = 12, dpi = 300)
+
+```
+
+```{r}
+#Combining station month and physical clusters
+
+#Adding hulls came from here.
+# https://www.r-bloggers.com/2021/07/ggforce-make-a-hull-plot-to-visualize-clusters-in-ggplot2/
+
+nmds_month <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores, aes(fill = as.factor(month_surv), 
+                                     shape = loc),
+             size = 7, stroke = 1.5) + 
+  geom_mark_hull(data = data.scores, aes(color = clust, label = clust),
+                 concavity = 2.8, label.fontsize = 30, expand = unit(4.1, "mm"),
+                 radius = unit(4, "mm")) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  xlim(-1.1, 1.1) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 20, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 18, colour = "black"),
+        legend.position = c(0.1, 0.31),
+        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
+        legend.background = element_rect(fill = 'transparent', color = 'transparent'),
+        legend.box.background = element_rect(fill='transparent', color = 'transparent'),  
+        text = element_text(size = 30)) +
+  labs(fill = "Month", shape = "Station") +
+   guides(fill = guide_legend(override.aes = list(shape = 21)),
+         color = "none")
+
+nmds_pclust <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores, aes(fill = as.factor(phys_clust), shape = loc),
+             size = 7, stroke = 1.5) + 
+  geom_mark_hull(data = data.scores, aes(color = clust, label = clust),
+                 concavity = 2.8, label.fontsize = 30, expand = unit(4.1, "mm"),
+                 radius = unit(4, "mm")) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  xlim(-1.1, 1.1) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        # axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 20, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 18, colour = "black"),
+        legend.position = c(0.13, 0.85),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 30)) +
+  labs(shape = "Station", fill = "Env. Clust.") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)),
+         color = "none",
+         shape = "none")
+
+fig <- (nmds_month/nmds_year) | p_dend
+
+# ggsave(here("figures_rev2", "nmds_dendro_chem_average_pelago_test.png"), fig,
+#        width = 16, height = 12, dpi = 300)
 
 ```
 
@@ -378,42 +443,43 @@ ggsave(here("figures_rev2", "nmds_dendro_chem_average_pelago_test.png"), fig,
 c_long <- c %>% 
   pivot_longer(c(cyan, pela, hapt, pras2, pras3, cryp, dino, raph, diat),
                  names_to = "phyto_group", values_to = "TChla") %>% 
-  group_by(date, site_id, phyto_group) %>% 
+  group_by(sample_name, date, site_id, location, phyto_group) %>% 
   summarize(TChla_mean = mean(TChla)) %>% 
   ungroup() %>% 
-  group_by(date, site_id) %>% 
+  group_by(sample_name, date, site_id, location) %>% 
   mutate(TChla_sum = sum(TChla_mean)) %>% 
   ungroup()
 
+clust_join <- clust.df %>% 
+  select(sample_name = label, cluster)
+
+#Plotting according to clusters.
+c_long_clust <- c_long %>% 
+  left_join(clust_join)
+
+```
+
+```{r}
 #Order phytoplankton groups roughly from smallest to largest - create order list
 order_chem <- c("cyan", "pela", "hapt", "pras2", "pras3", "cryp",
                 "dino", "raph", "diat")
 
 #Chemtax - Specify order of phyto groups for figures
-c_long <- arrange(mutate(c_long,
+c_long_clust <- arrange(mutate(c_long_clust,
                          phyto_group = factor(phyto_group,
                                               levels = order_chem)))
 
-c_long <- c_long %>% 
-  arrange(date, phyto_group)
-
-#Can I get the order the same as the 
-hc_order <- dendrogram_ends$sample_name
-
-#Want to try a heatmap in the order of the one in the dendrogram.
-c_long_bar <- c_long %>%
-  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE) 
+# hc_order <- dendrogram_ends$sample_name
+# 
+# c_long_clust$sample_name <- factor(c_long_clust$sample_name,
+#                                  levels = unique(hc_order))
 
 
-# micro_heat %>% arrange(factor(sample_name, levels = hc_order)) 
-c_long_bar$sample_name <- factor(c_long_bar$sample_name, 
-                                 levels = unique(hc_order))
+c_long_clust <- arrange(mutate(c_long_clust,
+                         location = factor(location, levels = order_loc)))
 
-clust.df_join <- clust.df %>% 
-  select(sample_name = label, cluster)
-
-# c_long_bar <- c_long_bar %>% 
-#   left_join(clust.df_join)
+# c_long_clust <- c_long_clust %>% 
+#   arrange(date, site_id)
 
 ```
 
@@ -431,16 +497,9 @@ palette_chem <- c("#ff8000", #1 - Diatoms (orange)
 ```
 
 ```{r}
-#Plotting according to clusters.
-
-c_long_clust <- c_long_bar %>% 
-  left_join(clust.df_join)
-```
-
-
-```{r}
 chem_clust_v <- c_long_clust %>%   
-  ggplot(aes(x = TChla_mean, y = sample_name, fill = fct_rev(phyto_group))) +
+  ggplot(aes(x = TChla_mean, y = fct_reorder2(sample_name, desc(date), location),
+             fill = fct_rev(phyto_group))) +
   geom_bar(stat = "identity", color = "black", size = 0.75) +
   # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 0.5, ymax = 10.5), fill = NA, 
   #           color = "black", size = 1) +
@@ -471,9 +530,12 @@ chem_clust_v <- c_long_clust %>%
         axis.line = element_line(colour = "black")) +
   guides(fill = guide_legend(nrow = 1)) 
 
-ggsave(here("figures_rev2", "bar_chemtax_cluster_average_4_vert_pelag.png"), 
-       chem_clust_v, width = 16, height = 18, dpi = 300)
+# ggsave(here("figures_rev2", "bar_chemtax_cluster_average_4_vert_pelag_test.png"), 
+#        chem_clust_v, width = 16, height = 18, dpi = 300)
 ```
+
+
+
 
 ```{r}
 dat_text <- data.frame(
@@ -483,7 +545,8 @@ dat_text <- data.frame(
 
 ```{r}
 chem_clust_h <- c_long_clust %>%   
-  ggplot(aes(x = sample_name, y = TChla_mean, fill = fct_rev(phyto_group))) +
+  ggplot(aes(x = fct_reorder2(sample_name, desc(date), location), 
+             y = TChla_mean, fill = fct_rev(phyto_group))) +
   geom_bar(stat = "identity", color = "black", size = 0.75) +
   # geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 0.5, ymax = 10.5), fill = NA, 
   #           color = "black", size = 1) +
@@ -519,7 +582,7 @@ chem_clust_h <- c_long_clust %>%
         axis.line = element_line(colour = "black")) +
   guides(fill = guide_legend(nrow = 1)) 
 
-ggsave(here("figures_rev2", "bar_chemtax_cluster_average_4_horiz_pelag.png"), 
+ggsave(here("figures_rev2", "bar_chemtax_cluster_average_4_horiz_pelag_test.png"), 
        chem_clust_h, width = 16, height = 10, dpi = 300)
 
 #Trying to figure out annotations
@@ -535,53 +598,45 @@ ggsave(here("figures_rev2", "bar_chemtax_cluster_average_4_horiz_pelag.png"),
 ```{r}
 #Trying to bring together nmds and chemtax.
 
-nmds_chem_panel <- (nmds_month + nmds_year) / chem_clust_h 
+nmds_chem_panel <- (nmds_month + nmds_pclust) / chem_clust_h 
 
-ggsave(here("figures_rev2", "nmds_cluster_pelag.png"), nmds_chem_panel, 
+ggsave(here("figures_good", "nmds_chemtax_cluster.png"), nmds_chem_panel, 
        width = 16, height = 15, dpi = 300)
 
 ```
 
-
-
-
-
-
 ```{r}
-# c_long_bar %>%   
-#   ggplot(aes(x = TChla_mean, y = sample_name, fill = fct_rev(phyto_group))) +
-#   geom_bar(stat = "identity") +
-#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 0.5, ymax = 10.5), fill = NA, 
-#             color = "black", size = 1) +
-#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 10.5, ymax = 29.5), fill = NA, 
-#             color = "black", size = 1) +
-#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 29.5, ymax = 31.5), fill = NA, 
-#             color = "black", size = 1) +
-#   geom_rect(aes(xmin = 0, xmax = 12.3, ymin = 31.5, ymax = 35.5), fill = NA, 
-#             color = "black", size = 1) +
-#   scale_fill_manual(values = palette_chem) +
-#   theme_bw() +
-#   theme(axis.title.x = element_blank(),
-#         axis.title.y = element_blank(),
-#         strip.background = element_blank(),
-#         strip.text.x = element_blank(),
-#         # legend.position = "bottomright",
-#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-#         text = element_text(size = 30),
-#         axis.text = element_text(colour = "black"),
-#         panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),
-#         panel.background = element_blank(),
-#         legend.position = "top",
-#         legend.direction = "horizontal",
-#         legend.title = element_blank(),
-#         axis.line = element_line(colour = "black")) +
-#   guides(fill = guide_legend(nrow = 1)) 
-# 
-# ggsave(here("figures_rev2", "bar_chemtax.png"),
-#        width = 16, height = 18, dpi = 300)
+#Looking at differences in chemtax clusters for each phytoplankton group - used in writing results of this section.
 
+cluster_stats <- c_long_clust %>% 
+  mutate(perc = TChla_mean/TChla_sum) %>% 
+  group_by(cluster, phyto_group) %>% 
+  summarize(min_conc = min(TChla_mean),
+            max_conc = max(TChla_mean),
+            min_perc = min(perc),
+            max_perc = max(perc)) %>% 
+  ungroup() 
+
+station_stats <- c_long_clust %>% 
+  mutate(perc = TChla_mean/TChla_sum) %>% 
+  group_by(site_id, phyto_group) %>% 
+  summarize(min_conc = min(TChla_mean),
+            max_conc = max(TChla_mean),
+            min_perc = min(perc),
+            max_perc = max(perc)) %>% 
+  ungroup() 
+
+hapt <- c_long_clust %>% 
+  filter(phyto_group == "hapt") %>% 
+  mutate(perc = TChla_mean/TChla_sum)
+
+pela <- c_long_clust %>% 
+  filter(phyto_group == "pela") %>% 
+  mutate(perc = TChla_mean/TChla_sum)
 ```
+
+
+
 
 ```{r}
 #separating treatments for following tests
@@ -590,18 +645,6 @@ month <- c$month
 year <- c$year
 
 #Need to do one for cluster.
-
-
-#This is for QU39
-#Adding region - should so this earlier - potentially in data standardization
-# c <- c %>% 
-#   mutate(region = case_when(site_id == "QU39" ~ "NSoG",
-#                             !site_id == "QU39" ~ "Calvert")) %>% 
-#   relocate(region, .after = "site_id")
-# 
-# region <- c$region
-
-
 
 ```
 

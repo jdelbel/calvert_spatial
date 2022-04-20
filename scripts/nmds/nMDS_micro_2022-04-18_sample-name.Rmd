@@ -34,8 +34,8 @@ clust_phy <- read_csv(here("outputs", "clusters_phys.csv"))
 ```
 
 ```{r}
-# test <- micro %>% 
-#   filter(class == "Raphidophyceae")
+test <- micro %>%
+  filter(class == "Raphidophyceae")
 # 
 # test2 <- micro %>% 
 #   filter(phylum == "Haptophyta")
@@ -120,7 +120,11 @@ clust_phy <- read_csv(here("outputs", "clusters_phys.csv"))
 #   filter(!site_id == "QU39") %>% 
 #   filter(scientificName == "Pseudo-nitzschia seriata")
 
+hapt_micro <- micro %>% 
+  filter(phylum == "Haptophyta")
 
+dict <- micro %>% 
+  filter(class == "Dictyochophyceae")
 ```
 
 
