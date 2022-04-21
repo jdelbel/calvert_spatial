@@ -775,8 +775,12 @@ ggsave(here("figures_rev2", "timeseries_nut_ratios.png"), fig,
 
 
 ```{r}
-
 #Microscopy May - October 2018-2020 time-series - Calvert
+
+#Creating new labels for the facets
+site_labs <- c("F", "C", "S")
+names(site_labs) <- c("DFO2", "KC10", "QCS01")
+
 
 micro_sum %>% 
   filter(date > "2018-04-01" & date < "2020-11-01" & !site_id == "QU39") %>% 
@@ -790,7 +794,8 @@ micro_sum %>%
   geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
   geom_point(aes(x = yday, y = sum_all), size = 2) +
   scale_fill_manual(values = color_palette_micro) +
-  facet_grid(site_id ~ year) +
+  facet_grid(site_id ~ year, 
+             labeller = labeller(site_id = site_labs)) +
   theme_bw() +
   theme(legend.position = "top",
         legend.direction = "horizontal",
@@ -802,7 +807,7 @@ micro_sum %>%
            y = bquote("Abundance (cells" ~ L^-1*")")) +
   theme(text = element_text(size = 25)) 
 
-ggsave(here("figures_rev2", "timeseries_calvert.png"),
+ggsave(here("figures_good", "timeseries_microscopy_calvert.png"),
        width = 17, height = 10, dpi = 300)
 
 ```
