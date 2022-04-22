@@ -31,6 +31,7 @@ micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 
 clust_phy <- read_csv(here("outputs", "clusters_phys.csv"))
 
+clust_chem <- read_csv(here("outputs", "chemtax_clusters.csv"))
 ```
 
 ```{r}
@@ -215,7 +216,6 @@ micro_piv <- micro_piv %>%
                               site_id == "QCS01" ~ "S",
                               TRUE ~ as.character(site_id))) 
 
-
 metadata <- micro_piv %>%
   select(location, site_id, date) %>%  
   unite(sample_name, c(location, date), sep = "", remove = FALSE)
@@ -394,7 +394,7 @@ order_loc <- c("F", "C", "S")
 
 #Chemtax - Specify order of phyto groups for figures
 data.scores <- arrange(mutate(data.scores,
-                         loc = factor(loc, levels = order_loc)))
+                         site = factor(site, levels = order_loc)))
 ```
 
 
@@ -639,6 +639,41 @@ year <- micro_piv$year
 cluster <- micro_piv$clust_phy
 ```
 
+```{r}
+#Tried looking at indicator species of the chemtax clusters - didn't really show anything
+
+# chem_test <- micro_piv %>% 
+#     filter(!site_id == "QU39" & date > "2019-01-01") %>% 
+#     mutate(location = case_when(site_id == "DFO2" ~ "F",
+#                               site_id == "KC10" ~ "C",
+#                               site_id == "QCS01" ~ "S",
+#                               TRUE ~ as.character(site_id))) %>% 
+#   unite(sample_name, c(location, date), sep = "", remove = FALSE) %>% 
+#   relocate(location, .after = sample_name)
+# 
+# chem_test <- chem_test %>% 
+#   left_join(clust_chem) %>% 
+#   relocate(cluster, .after = clust_phy) %>% 
+#   rename(chem_clust = cluster)
+# 
+# #Pulling out species counts for transform and input into clustering and NMDS
+# chem_transform <- chem_test[, 10:ncol(chem_test)]
+# 
+# 
+# #Log10 transformation + 1 (as per Mahara)
+# chem_transform <- log10(chem_transform + 1)
+# 
+# 
+# chem_clust <- chem_test$chem_clust
+```
+
+```{r}
+# inv_chem = multipatt(chem_transform, chem_clust, func = "r.g",
+#                        control = how(nperm = 9999))
+# 
+# #Looking at results of analysis
+# summary(inv_chem)
+```
 
 
 ```{r}
@@ -687,6 +722,10 @@ inv_month = multipatt(transform, month, func = "r.g",
 summary(inv_month)
 ```
 
+
+
+
+
 ```{r}
 #by year
 inv_year = multipatt(transform, year, func = "r.g",
@@ -724,6 +763,10 @@ inv_year_sp <- data.table::as.data.table(inv_year$sign, keep.rownames = TRUE)
 
 #Creating a list with the order of the samples in the dendrogram.
 hc_order <- dendrogram_ends$sample_name
+
+hc_order_exp <- as_tibble(hc_order)
+
+write_csv(hc_order, here("outputs", "hc_order.csv"))
 
 #Creating a separate workbook, in tidy format, with the combined site and date name. 
 micro_heat <- micro %>% 
@@ -912,12 +955,350 @@ ggsave(here("figures_good", "nmds_clust_richness.png"), fig2,
 
 ```{r}
 #Look at shannon diversity
-#Might need to plot this a bit differently - ALOT going on. Maybe nMDS + dendro + bars for richness and diversity.
+
+shannon <- diversity(species)
+
+shannon <- as_tibble(shannon)
+
+shannon$sample_name <- metadata$sample_name
+
+#Setting the order to the same as the clustering using the specified list
+shannon$sample_name <- factor(shannon$sample_name, levels = unique(hc_order))
+
+sh <- shannon %>%   
+  ggplot(aes(x = sample_name, y = value)) +
+  geom_bar(stat = "identity", color = "black") +
+  # geom_hline(yintercept = 40) +
+  # scale_fill_manual(values = c("black", "grey"),
+  #                   labels = c("Diat.", "Flag.")) +
+  ylab("H") +
+  # annotate("text", x = 49.5, y = 52, label = "d)", size = 10) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        # axis.title.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 25),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        legend.title = element_blank(),
+        legend.direction = "horizontal",
+        legend.position = c(0.075, 0.85),
+        legend.background = element_blank())
+
+# ggsave(here("figures_rev2", "shannon.png"),
+#        width = 16, height = 6, dpi = 300)
+```
+
+```{r}
+#Lets plot shannon diversity with richness.
+
+fig <- p_dend2 / bar / sh + plot_layout(heights = c(1, 3, 3))
+
+ggsave(here("figures_good", "dend_rich_div.png"), fig,
+       width = 16, height = 10, dpi = 300)
+
+#Richness is somewhat lower at DFO2, but not diversity
+```
+```{r}
+#When are some of these indicator species present at DFO2
+cdec <- micro %>% 
+  filter(scientificName == "Chaetoceros decipiens" & site_id == "DFO2")
+
+csei <- micro %>% 
+  filter(scientificName == "Chaetoceros seiracanthus" & site_id == "DFO2")
+
+dpum <- micro %>% 
+  filter(scientificName == "Detonula pumila" & site_id == "DFO2")
 ```
 
 
 
+```{r}
+#Creating a list of species determined via indicator species analysis on stations.
+ind_list <- c("Chaetoceros decipiens", "Dactyliosolen phuketensis", 
+              "Detonula pumila", "Thalassiosira rotula" , "Ceratium lineatum", 
+              "Dactyliosolen fragilissimus", "Chaetoceros debilis", 
+              "Guinardia delicatula", "Rhizosolenia setigera", 
+              "Chaetoceros seiracanthus", "Skeletonema marinoi")  
+```
 
+```{r}
+#Sub-setting the species determined via indicator species analysis on station
+micro_ind_stat <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName %in% ind_list)
+
+#Determining number of times each indicator species observed at each station
+micro_ind_stat <- micro_ind_stat %>% 
+  group_by(site_id, scientificName) %>% 
+  summarise(n_obs = n(),
+            max_count = max(species_sum),
+            mean_count = mean(species_sum)) %>% 
+  ungroup() 
+
+#Maybe Friday brain, but this is the best way I could find to count how many times each station was sampled - Want this so I can determine percentage of times each indicator species was observed by station
+n_station <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  group_by(date, site_id) %>% 
+  distinct(date, site_id) %>% 
+  ungroup() %>% 
+  group_by(site_id) %>% 
+  summarise(n_samp = n()) %>% 
+  ungroup()
+
+#Joining total number of times each station was sampled with stats on how many times each species was observed at each station.
+micro_ind_stat <- micro_ind_stat %>% 
+  left_join(n_station) %>% 
+  mutate(perc_obs = n_obs/n_samp)
+```
+```{r}
+#Creating a placeholder for Ceratium lineatum for DFO2 - makes plot save a space so the groupings stay consistent.
+dfo_cl <- data.frame(site_id = "DFO2",
+                     scientificName = "Ceratium lineatum",
+                     n_obs = 0,
+                     max_count = 0,
+                     mean_count = 0,
+                     n_samp = 0,
+                     perc_obs = 0)
+                 
+micro_ind_stat <- rbind(dfo_cl, micro_ind_stat)
+```
+
+
+```{r}
+#Creating a plot showing number and percent observed for each indicator species by station. Then a second plot with the average abundance of each species for each station.
+
+p1 <- micro_ind_stat %>% 
+  filter(!scientificName == "Skeletonema marinoi") %>% 
+  ggplot(aes(x = perc_obs, y = scientificName, fill = site_id)) +
+  geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  scale_x_continuous(expand = c(0.01, 0), limits = c(0, 1.03)) +
+  scale_y_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros decipiens" = "C.dec.",
+                              "Chaetoceros seiracanthus" = "C.s.",
+                              "Dactyliosolen fragilissimus" = "D.f.",
+                              "Dactyliosolen phuketensis" = "D.ph.",
+                              "Detonula pumila" = "D.p.",
+                              "Guinardia delicatula" = "G.d.",
+                              "Rhizosolenia setigera" = "R.s.",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Thalassiosira rotula" = "T.r.",
+                              "Ceratium lineatum" = "C.l.")) +
+  theme_bw() +
+  labs(x = "% Observed") +
+  theme(text = element_text(size = 25),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none")
+  
+
+p2 <- micro_ind_stat %>% 
+  filter(!scientificName == "Skeletonema marinoi") %>% 
+  ggplot(aes(x = mean_count, y = scientificName, fill = site_id)) +
+  geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  # scale_x_continuous(expand = c(0, 1000)) +
+  # ggbreak::scale_x_break(c(55000, 240000)) +
+  labs(x = "Mean Abundance (cells l)") +
+  scale_x_continuous(expand = c(0.01, 0), limits = c(0, 26000)) +
+  scale_y_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros decipiens" = "C.dec.",
+                              "Chaetoceros seiracanthus" = "C.s.",
+                              "Dactyliosolen fragilissimus" = "D.f.",
+                              "Dactyliosolen phuketensis" = "D.ph.",
+                              "Detonula pumila" = "D.p.",
+                              "Guinardia delicatula" = "G.d.",
+                              "Rhizosolenia setigera" = "R.s.",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Thalassiosira rotula" = "T.r.",
+                              "Ceratium lineatum" = "C.l.")) +
+  theme_bw() +
+    theme(text = element_text(size = 25),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.text = element_text(colour = "black"),
+          legend.position = c(0.85, 0.1),
+          legend.title = element_blank())
+
+fig <- p1 + p2
+
+ggsave(here("figures_rev2", "indicator_species_station_bar.png"), fig,
+       width = 12, height = 7, dpi = 300)
+```
+
+```{r}
+#Trying to do the same for annual indicator analysis. Creating a list of species determined via indicator species analysis on stations.
+
+#subsetting species from annual indicator species analysis that had p values <= 0.01.
+inv_year_sp <- inv_year_sp %>% 
+  filter(p.value <= 0.01)
+
+#Creating a list of the significant species from indicator species analysis.
+inv_year_lis <- inv_year_sp$rn
+
+```
+
+```{r}
+#Sub-setting the species determined via indicator species analysis on station
+micro_year_stat <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName %in% inv_year_lis) %>% 
+  mutate(year = lubridate::year(date))
+
+#Determining number of times each indicator species observed at each station
+micro_year_stat <- micro_year_stat %>% 
+  group_by(year, scientificName) %>% 
+  summarise(n_obs = n(),
+            max_count = max(species_sum),
+            mean_count = mean(species_sum)) %>% 
+  ungroup() 
+
+#Maybe Friday brain, but this is the best way I could find to count how many times each station was sampled - Want this so I can determine percentage of times each indicator species was observed by station
+n_station_year <- micro %>% 
+  filter(!site_id == "QU39") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  group_by(date, year) %>% 
+  distinct(date, year) %>% 
+  ungroup() %>% 
+  group_by(year) %>% 
+  summarise(n_samp = n()) %>% 
+  ungroup()
+
+#Joining total number of times each station was sampled with stats on how many times each species was observed at each station.
+micro_year_stat <- micro_year_stat %>% 
+  left_join(n_station_year) %>% 
+  mutate(perc_obs = n_obs/n_samp)
+```
+
+```{r}
+#Creating a plot showing number and percent observed for each indicator species by station. Then a second plot with the average abundance of each species for each station.
+
+p1 <- micro_year_stat %>% 
+  ggplot(aes(x = perc_obs, y = scientificName, fill = as.factor(year))) +
+  geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  scale_x_continuous(expand = c(0.01, 0), limits = c(0, 1.03)) +
+  scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
+                              "Corythodinium" = "C.",
+                              "Ceratium horridum" = "C.h.", #Y
+                              "Corethron criophilum" = "C.c.", #Y
+                              "Dinobryon" = "Db.",
+                              "Dinophyceae" = "D.",
+                              "Gonyaulax" = "G.",
+                              "Gyrodinium" = "Gy.",
+                              "Katodinium" = "K.",
+                              "Leptocylindrus danicus" = "L.d.",
+                              "Phaeocystis pouchetii" = "P.p.",
+                              "Prorocentrum" = "Prc.",
+                              "Protoperidinium" = "Ptp.",
+                              "Pseudo-nitzschia seriata" = "P.n.s",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Teleaulax acuta" = "T.a.",
+                              "Telonema subtilis" = "T.s.",
+                              "Thalassiosira nordenskioeldii" = "T.n.")) +
+  theme_bw() +
+  labs(x = "% Observed") +
+  theme(text = element_text(size = 25),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none")
+  
+
+p2 <- micro_year_stat %>% 
+  ggplot(aes(x = mean_count, y = scientificName, fill = as.factor(year))) +
+  geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  # scale_x_continuous(expand = c(0, 1000)) +
+  # ggbreak::scale_x_break(c(55000, 240000)) +
+  labs(x = "Mean Abundance (cells l)") +
+  # scale_x_continuous(expand = c(0.01, 0), limits = c(0, 26000)) +
+  scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
+                              "Corythodinium" = "C.",
+                              "Ceratium horridum" = "C.h.", #Y
+                              "Corethron criophilum" = "C.c.", #Y
+                              "Dinobryon" = "Db.",
+                              "Dinophyceae" = "D.",
+                              "Gonyaulax" = "G.",
+                              "Gyrodinium" = "Gy.",
+                              "Katodinium" = "K.",
+                              "Leptocylindrus danicus" = "L.d.",
+                              "Phaeocystis pouchetii" = "P.p.",
+                              "Prorocentrum" = "Prc.",
+                              "Protoperidinium" = "Ptp.",
+                              "Pseudo-nitzschia seriata" = "P.n.s",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Teleaulax acuta" = "T.a.",
+                              "Telonema subtilis" = "T.s.",
+                              "Thalassiosira nordenskioeldii" = "T.n.")) +
+  theme_bw() +
+    theme(text = element_text(size = 25),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.text = element_text(colour = "black"),
+          legend.position = c(0.85, 0.1),
+          legend.title = element_blank())
+
+fig <- p1 + p2
+
+ggsave(here("figures_rev2", "indicator_species_year_bar.png"), fig,
+       width = 12, height = 7, dpi = 300)
+```
+
+```{r}
+#Trying to look at distribution of indicator species for month.
+
+
+inv_month_sp <- data.table::as.data.table(inv_month$sign, keep.rownames = TRUE)
+
+
+
+#subsetting species from annual indicator species analysis that had p values <= 0.01.
+inv_month_sp <- inv_month_sp %>% 
+  filter(p.value <= 0.01)
+
+#Creating a list of the significant species from indicator species analysis.
+inv_month_lis <- inv_month_sp$rn
+
+
+#Sub-setting the species determined via indicator species analysis on station
+micro_month_stat <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName %in% inv_month_lis) %>% 
+  mutate(year = lubridate::year(date))
+
+#Determining number of times each indicator species observed at each station
+micro_month_stat <- micro_month_stat %>% 
+  group_by(month_surv, scientificName) %>% 
+  summarise(n_obs = n(),
+            min_count = min(species_sum),
+            max_count = max(species_sum),
+            mean_count = mean(species_sum)) %>% 
+  ungroup() 
+
+#Maybe Friday brain, but this is the best way I could find to count how many times each station was sampled - Want this so I can determine percentage of times each indicator species was observed by station
+n_month_year <- micro %>% 
+  group_by(date, month_surv) %>% 
+  distinct(date, month_surv) %>% 
+  ungroup() %>% 
+  group_by(month_surv) %>% 
+  summarise(n_samp = n()) %>% 
+  ungroup()
+
+#Joining total number of times each station was sampled with stats on how many times each species was observed at each station.
+micro_month_stat <- micro_month_stat %>% 
+  left_join(n_month_year) %>% 
+  mutate(perc_obs = n_obs/n_samp)
+```
+```{r}
+test <- micro %>% 
+  filter(scientificName == "Chaetoceros radicans")
+```
 
 
 

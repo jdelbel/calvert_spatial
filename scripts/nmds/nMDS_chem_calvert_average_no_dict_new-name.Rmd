@@ -263,6 +263,8 @@ c <- c %>%
   left_join(clust_df) %>%
   relocate(cluster, .after = month_surv)
 
+write_csv(clust_df, here("outputs", "chemtax_clusters.csv"))
+
 data.scores$clust = c$cluster
 data.scores$loc = c$location
 ```
@@ -658,8 +660,12 @@ clust_df <- clust.df %>%
   rename(sample_name = label)
 
 c <- c %>% 
-  left_join(clust_df) %>% 
-  relocate(cluster, .after = month_surv)
+  left_join(clust_df) %>%
+```
+
+
+```{r}
+relocate(cluster, .after = month_surv)
 
 cluster <- c$cluster
 
