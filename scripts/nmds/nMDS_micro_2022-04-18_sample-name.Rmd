@@ -91,10 +91,10 @@ test <- micro %>%
 #   filter(!site_id == "QU39" & year == 2019) %>% 
 #   filter(scientificName == "Phaeocystis pouchetii")
 # 
-# p_pouc <- micro %>% 
-#   mutate(year = lubridate::year(date)) %>% 
-#   filter(!site_id == "QU39") %>% 
-#   filter(scientificName == "Phaeocystis pouchetii")
+p_pouc <- micro %>%
+  mutate(year = lubridate::year(date)) %>%
+  filter(!site_id == "QU39") %>%
+  filter(scientificName == "Phaeocystis pouchetii")
 # 
 # proro <- micro %>% 
 #   filter(scientificName == "Prorocentrum")
@@ -766,7 +766,7 @@ hc_order <- dendrogram_ends$sample_name
 
 hc_order_exp <- as_tibble(hc_order)
 
-write_csv(hc_order, here("outputs", "hc_order.csv"))
+# write_csv(hc_order_exp, here("outputs", "hc_order.csv"))
 
 #Creating a separate workbook, in tidy format, with the combined site and date name. 
 micro_heat <- micro %>% 
@@ -1034,8 +1034,18 @@ micro_ind_stat <- micro_ind_stat %>%
   group_by(site_id, scientificName) %>% 
   summarise(n_obs = n(),
             max_count = max(species_sum),
-            mean_count = mean(species_sum)) %>% 
+            mean_count = mean(species_sum),
+            median_count = median(species_sum)) %>% 
   ungroup() 
+
+test <- micro %>% 
+  filter(!site_id == "QU39" & class  == "Bacillariophyceae") %>% 
+  group_by(site_id, scientificName) %>% 
+  summarise(n_obs = n(),
+            max_count = max(species_sum),
+            mean_count = mean(species_sum),
+            median_count = median(species_sum)) %>%
+  ungroup()
 
 #Maybe Friday brain, but this is the best way I could find to count how many times each station was sampled - Want this so I can determine percentage of times each indicator species was observed by station
 n_station <- micro %>% 
@@ -1050,7 +1060,8 @@ n_station <- micro %>%
 #Joining total number of times each station was sampled with stats on how many times each species was observed at each station.
 micro_ind_stat <- micro_ind_stat %>% 
   left_join(n_station) %>% 
-  mutate(perc_obs = n_obs/n_samp)
+  mutate(perc_obs = n_obs/n_samp,
+         label = scales::percent(perc_obs %>% round(2)))
 ```
 ```{r}
 #Creating a placeholder for Ceratium lineatum for DFO2 - makes plot save a space so the groupings stay consistent.
@@ -1059,8 +1070,10 @@ dfo_cl <- data.frame(site_id = "DFO2",
                      n_obs = 0,
                      max_count = 0,
                      mean_count = 0,
+                     median_count = 0,
                      n_samp = 0,
-                     perc_obs = 0)
+                     perc_obs = 0,
+                     label = "0%")
                  
 micro_ind_stat <- rbind(dfo_cl, micro_ind_stat)
 ```
@@ -1129,6 +1142,116 @@ fig <- p1 + p2
 ggsave(here("figures_rev2", "indicator_species_station_bar.png"), fig,
        width = 12, height = 7, dpi = 300)
 ```
+```{r}
+#Creating a plot showing number and percent observed for each indicator species by station. Then a second plot with the average abundance of each species for each station.
+
+p1 <- micro_ind_stat %>% 
+  filter(!scientificName == "Skeletonema marinoi") %>% 
+  ggplot(aes(x = scientificName, y = n_obs, fill = site_id)) +
+  geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
+           color = "black") +
+  geom_text(aes(label = label), position = position_dodge(width = 1), 
+            hjust = -0.1, angle = 90, size = 5) +
+  scale_fill_brewer(palette = "Set1") +
+  scale_y_continuous(expand = c(0.01, 0), limits = c(0, 20)) +
+  scale_x_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros decipiens" = "C.dec.",
+                              "Chaetoceros seiracanthus" = "C.s.",
+                              "Dactyliosolen fragilissimus" = "D.f.",
+                              "Dactyliosolen phuketensis" = "D.ph.",
+                              "Detonula pumila" = "D.p.",
+                              "Guinardia delicatula" = "G.d.",
+                              "Rhizosolenia setigera" = "R.s.",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Thalassiosira rotula" = "T.r.",
+                              "Ceratium lineatum" = "C.l.")) +
+  theme_bw() +
+  labs(y = "# Obs. + (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none")
+  
+
+p2 <- micro_ind_stat %>% 
+  filter(!scientificName == "Skeletonema marinoi") %>% 
+  ggplot(aes(x = scientificName, y = median_count,  fill = site_id)) +
+  geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
+           color = "black") +
+  scale_fill_brewer(palette = "Set1", labels = c("F", "C", "S")) +
+  # scale_x_continuous(expand = c(0, 1000)) +
+  # ggbreak::scale_x_break(c(55000, 240000)) +
+  labs(y = "Med. Abund (cells l)") +
+  scale_y_continuous(expand = c(0.01, 0), limits = c(0, 18000)) +
+  scale_x_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros decipiens" = "C.dec.",
+                              "Chaetoceros seiracanthus" = "C.s.",
+                              "Dactyliosolen fragilissimus" = "D.f.",
+                              "Dactyliosolen phuketensis" = "D.ph.",
+                              "Detonula pumila" = "D.p.",
+                              "Guinardia delicatula" = "G.d.",
+                              "Rhizosolenia setigera" = "R.s.",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Thalassiosira rotula" = "T.r.",
+                              "Ceratium lineatum" = "C.l.")) +
+  theme_bw() +
+    theme(text = element_text(size = 25),
+          # axis.title.y = element_blank(),
+          # axis.text.y = element_blank(),
+          axis.title.x = element_blank(),
+          axis.text = element_text(colour = "black"),
+          legend.position = c(0.95, 0.8),
+          legend.title = element_blank())
+
+fig <- p1 / p2
+
+ggsave(here("figures_rev2", "indicator_species_station_bar3.png"), fig,
+       width = 12, height = 7, dpi = 300)
+```
+```{r}
+micro_ind_ts <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName %in% ind_list)
+```
+
+```{r}
+micro_ind_ts %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = species_sum, color = site_id)) +
+  geom_line(size = 2) +
+  geom_point(size = 3) +
+  facet_grid(scientificName ~ year, scales = "free_y")
+
+ggsave(here("figures_rev2", "indicator_species_ts.png"),
+       width = 16, height = 20, dpi = 300)
+```
+```{r}
+micro_diat_site2 <- micro_heat %>% 
+  filter(class == "Bacillariophyceae") %>% 
+  group_by(date, site_id) %>% 
+  mutate(n_spec = n()) %>%
+  ungroup() %>% 
+  distinct(date, site_id, n_spec, .keep_all = TRUE) %>% 
+  group_by(site_id, month_surv) %>% 
+  summarise(mean = mean(n_spec),
+            median = median(n_spec),
+            sdev = sd(n_spec)) %>% 
+  ungroup()
+
+micro_diat_site2 %>% 
+  ggplot(aes(x = as.factor(month_surv), y = mean, fill = site_id)) +
+  geom_bar(stat = "identity", position = "dodge")
+
+micro_diat_site2 %>% 
+  ggplot(aes(x = as.factor(month_surv), y = median, fill = site_id)) +
+  geom_bar(stat = "identity", position = "dodge")
+
+```
+
+
+
 
 ```{r}
 #Trying to do the same for annual indicator analysis. Creating a list of species determined via indicator species analysis on stations.
@@ -1300,6 +1423,51 @@ test <- micro %>%
   filter(scientificName == "Chaetoceros radicans")
 ```
 
+```{r}
+#Looking at what species are most prevalent at each station
+micro_dom_spec <- micro_heat %>% 
+  group_by(site_id,scientificName) %>% 
+  summarise(n_ob = n(),
+            med = median(species_sum)) %>% 
+  ungroup()
+
+#Joining total number of times each station was sampled with stats on how many times each species was observed at each station.
+micro_dom_spec <- micro_dom_spec %>% 
+  left_join(n_station) %>% 
+  mutate(perc_obs = n_ob/n_samp)
+
+micro_dom_spec <- micro_dom_spec %>%
+  group_by(site_id) %>%
+    mutate(my_ranks = order(order(n_ob, decreasing=TRUE)))
+
+micro_dom_spec <- micro_dom_spec %>%
+  group_by(site_id) %>%
+    mutate(rank_obs = order(order(n_ob, decreasing = TRUE)),
+           rank_obs_abund = order(order(n_ob, med, decreasing = TRUE))) %>% 
+  ungroup()
+```
+
+
+```{r}
+micro_dom_diat <- micro_heat %>% 
+  filter(class == "Bacillariophyceae") %>% 
+  group_by(site_id,scientificName) %>% 
+  summarise(n_ob = n(),
+            med = median(species_sum)) %>% 
+  ungroup()
+
+micro_dom_diat <- micro_dom_diat %>% 
+  left_join(n_station) %>% 
+  mutate(perc_obs = n_ob/n_samp)
+
+
+
+micro_dom_diat <- micro_dom_diat %>%
+  group_by(site_id) %>%
+    mutate(rank_obs = order(order(n_ob, decreasing = TRUE)),
+           rank_obs_abund = order(order(n_ob, med, decreasing = TRUE))) %>% 
+  ungroup()
+```
 
 
 
