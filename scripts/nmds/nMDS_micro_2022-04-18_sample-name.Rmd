@@ -1460,8 +1460,6 @@ micro_dom_diat <- micro_dom_diat %>%
   left_join(n_station) %>% 
   mutate(perc_obs = n_ob/n_samp)
 
-
-
 micro_dom_diat <- micro_dom_diat %>%
   group_by(site_id) %>%
     mutate(rank_obs = order(order(n_ob, decreasing = TRUE)),
@@ -1471,7 +1469,115 @@ micro_dom_diat <- micro_dom_diat %>%
 
 
 
+```{r}
+#What about selecting only species that ever exceed 50000k. Doing a median of these and then plotting. 
+diat_gt100k <- micro %>% 
+  filter(!site_id == "QU39" & class == "Bacillariophyceae" 
+         & species_sum >= 100000) %>%
+  distinct(scientificName)
 
+diat_gt100k_list <- diat_gt100k$scientificName
+
+diat_test2 <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(!site_id == "QU39" 
+         & class == "Bacillariophyceae" 
+         & scientificName %in% diat_gt100k_list) %>%
+  group_by(site_id, year, month_surv, scientificName) %>% 
+  summarize(med_count = median(species_sum)) %>% 
+  mutate(rank_med = order(order(med_count, decreasing = TRUE))) %>% 
+  ungroup()
+
+diat_test2 <- diat_test2 %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) 
+
+diat_test2 <- arrange(mutate(diat_test2,
+                         location = factor(location, levels = order_loc)))
+```
+
+```{r}
+diat_test2 %>% 
+  ggplot(aes(x = as.factor(location), y = med_count, fill = scientificName)) + 
+  geom_bar(stat = "identity", position = "fill", color = "black") + 
+  facet_grid(year ~ month_surv) + 
+  scale_fill_brewer(palette = "Paired", 
+                    labels = c("Bi.",
+                               "C.c.",
+                               "C.t.",
+                               "P.",
+                               "P.n.",
+                               "P.n.s.",
+                               "R.s.",
+                               "S.m.",
+                               "T.p.")) +
+  theme_bw() +
+  ylab("%") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 1))
+
+ggsave(here("figures_rev2", "diat_test.png"), 
+       width = 12, height = 8, dpi = 300)
+```
+
+```{r}
+diat_test3 <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(!site_id == "QU39" 
+         & class == "Bacillariophyceae" 
+         & scientificName %in% diat_gt100k_list) %>%
+  group_by(site_id, month_surv, scientificName) %>% 
+  summarize(med_count = median(species_sum)) %>% 
+  mutate(rank_med = order(order(med_count, decreasing = TRUE))) %>% 
+  ungroup()
+
+diat_test3 <- diat_test3 %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) 
+
+diat_test3 <- arrange(mutate(diat_test3,
+                         location = factor(location, levels = order_loc)))
+```
+
+```{r}
+diat_test3 %>% 
+  ggplot(aes(x = as.factor(location), y = med_count, fill = scientificName)) + 
+  geom_bar(stat = "identity", position = "fill", color = "black") + 
+  facet_grid(. ~ month_surv) + 
+  scale_fill_brewer(palette = "Paired", 
+                    labels = c("Bi.",
+                               "C.c.",
+                               "C.t.",
+                               "P.",
+                               "P.n.",
+                               "P.n.s.",
+                               "R.s.",
+                               "S.m.",
+                               "T.p.")) +
+  theme_bw() +
+  ylab("%") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+        guides(fill = guide_legend(nrow = 1))
+
+ggsave(here("figures_rev2", "diat_test_month.png"), 
+       width = 12, height = 4, dpi = 300)
+```
 
 
 
