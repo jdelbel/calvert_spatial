@@ -34,15 +34,10 @@ clust_phy <- read_csv(here("outputs", "clusters_phys.csv"))
 clust_chem <- read_csv(here("outputs", "chemtax_clusters.csv"))
 ```
 ```{r}
+#Removing QU39
 micro <- micro %>% 
   filter(!site_id == "QU39")
 ```
-
-```{r}
-species_check <- micro %>% 
-  filter(order == "Prorocentrales")
-```
-
 
 ```{r}
 #Selecting the species groups I will work with and limiting species that rarely observed.
@@ -59,12 +54,15 @@ micro <- micro %>%
   ungroup()
 
 #removing species that have not been observed at least twice -  this is to minimize the influence of zeros. When I used this, it removes some species that are important, but not observed often. So trying with it turned off.
-# micro <- micro %>%
-#   filter(num_occurrence > 5)
+micro <- micro %>%
+  filter(num_occurrence > 5)
 
 #Removing cyanobacteria as thier counts are not reliable
 micro <- micro %>% 
   filter(!scientificName_accepted == "Cyanobacteria")
+
+micro <- micro %>% 
+  filter(class == "Dinophyceae")
 
 ```
 
@@ -102,6 +100,10 @@ micro_piv <- micro_piv %>%
 #Arranging according to site ID and date
 micro_piv <- micro_piv %>% 
   arrange(site_id, date)
+
+#Removing QU39 to focus analysis on QU39
+micro_piv <- micro_piv %>% 
+  filter(!site_id == "QU39")
 
 #Pulling out species counts for transform and input into clustering and NMDS
 species <- micro_piv[, 6:ncol(micro_piv)]
@@ -157,20 +159,20 @@ cluster.average <- hclust(dis, "average")
 
 
 #Looking at number of clusters
-# fviz_nbclust(transform, FUN = hcut, method = "wss")
-# fviz_nbclust(transform, FUN = hcut, method = "silhouette")
-# gap_stat <- clusGap(transform, FUN = hcut, nstart = 25, K.max = 10, B = 50)
-# fviz_gap_stat(gap_stat)
+fviz_nbclust(transform, FUN = hcut, method = "wss")
+fviz_nbclust(transform, FUN = hcut, method = "silhouette")
+gap_stat <- clusGap(transform, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
 ```
 
 ```{r}
 #This step sets clusters. Currently, I am not using.
 
-# k <- 6
-# clust <- cutree(cluster.average, k = k)
-# 
-# clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
-#                                    cluster = factor(clust))
+k <- 3
+clust <- cutree(cluster.average, k = k)
+
+clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
+                                   cluster = factor(clust))
 
 # write_csv(clust.df, here("outputs", "clusters_micro_6.csv"))
 ```
@@ -197,10 +199,10 @@ dendrogram_ends <- dendrogram_segments %>%
 ```{r}
 #This is used to draw cluster boxes around the dendrogram clusters in the plot. Not currently using clusters so have turned off, but necessary if using clusters.
 
-# dendrogram_data[["labels"]] <- merge(dendrogram_data[["labels"]], clust.df, by = "label")
-# rect <- aggregate(x~cluster, label(dendrogram_data), range)
-# rect <- data.frame(rect$cluster, rect$x)
-# ymax <- mean(cluster.average$height[length(cluster.average$height) - ((k-2):(k-1))])
+dendrogram_data[["labels"]] <- merge(dendrogram_data[["labels"]], clust.df, by = "label")
+rect <- aggregate(x~cluster, label(dendrogram_data), range)
+rect <- data.frame(rect$cluster, rect$x)
+ymax <- mean(cluster.average$height[length(cluster.average$height) - ((k-2):(k-1))])
 ```
 
 
@@ -242,10 +244,10 @@ p_dend <- ggplot() +
  geom_text(data = dendrogram_ends, aes(x = x, y = y.y, label = sample_name, 
                                        color = site_id),
            hjust = 0, angle = 0, size = 6) +
- # geom_rect(data = rect, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0, ymax = ymax),
- #            color = "black", fill = NA, size = 0.8) +
+ geom_rect(data = rect, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0, ymax = ymax),
+            color = "black", fill = NA, size = 0.8) +
  scale_color_manual(values = site_color) +
- scale_y_reverse(limits = c(0.6, -0.3)) +
+ scale_y_reverse(limits = c(0.8, -0.3)) +
  coord_flip() + 
  theme_bw() + 
  theme(legend.position = "none",
@@ -256,8 +258,8 @@ p_dend <- ggplot() +
  ylab("Dist.") # flipped x and y coordinates for aesthetic reasons
 
 #Turning off saving for now because not needed
-# ggsave(here("figures_rev2", "hc_average_names.png"), p_dend,
-#        width = 6, height = 12, dpi = 300)
+ggsave(here("figures_rev2", "hc_average_names_dino.png"), p_dend,
+       width = 6, height = 12, dpi = 300)
 ```
 
 ```{r}
@@ -323,9 +325,13 @@ spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
 spp.scrs2 <- cbind(spp.scrs, test)
 
 spp.scrs2 <- spp.scrs2 %>%
-  filter(r2 >= 0.40)
+  filter(r2 >= 0.30)
 
 ```
+
+
+
+
 
 ```{r}
 #Plotting nMDS - commented sections are for if I want to add environmental fits. This is for the absolute data

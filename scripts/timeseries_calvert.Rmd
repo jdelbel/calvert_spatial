@@ -505,6 +505,12 @@ ggsave(here("figures_rev2", "test5_chl_fixed.png"), fig,
        width = 16, height = 20, dpi = 300)
 ```
 
+
+
+
+
+
+
 ```{r}
 #Making a plot of river flow and DFO2 salinity and chl.
 

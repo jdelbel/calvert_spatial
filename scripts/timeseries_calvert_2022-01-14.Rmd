@@ -34,7 +34,8 @@ Working with microscopy data
 
 ```{r}
 #Selecting autotrophic groups from class level specifications above. Too coarse for dinos.
-
+micro <- micro %>% 
+  filter(!group == "Cyanobacteria")
 
 #Can't figure out how to make this work with multiple stations. Trying each separately and binding
 micro_sum_dfo2 <- micro %>%
@@ -171,7 +172,6 @@ micro_sum$group <- factor(micro_sum$group,
                                     "Chlorophyta-Prasinophyta", #Y 
                                     "Euglenophyta", #Y
                                     "Prymnesiophyta-Haptophyta", #Y 
-                                    "Cyanobacteria", #Y
                                     "Unknown_Chlorophyta?", #Y
                                     "Unknown_Dinophyceae?", #Y
                                     "Unknown_flagellate" #Y
@@ -187,7 +187,6 @@ micro_sum_2$group <- factor(micro_sum_2$group,
                                     "Chlorophyta-Prasinophyta", #Y 
                                     "Euglenophyta", #Y
                                     "Prymnesiophyta-Haptophyta", #Y 
-                                    "Cyanobacteria", #Y
                                     "Unknown_Chlorophyta?", #Y
                                     "Unknown_Dinophyceae?", #Y
                                     "Unknown_flagellate" #Y
@@ -203,7 +202,6 @@ micro_sum_3$group <- factor(micro_sum_3$group,
                                     "Chlorophyta-Prasinophyta", #Y 
                                     "Euglenophyta", #Y
                                     "Prymnesiophyta-Haptophyta", #Y 
-                                    "Cyanobacteria", #Y
                                     "Unknown_Chlorophyta?", #Y
                                     "Unknown_Dinophyceae?", #Y
                                     "Unknown_flagellate" #Y
@@ -221,8 +219,7 @@ color_palette_micro <- c("#ff8000", #Diatoms
                    "#ffff00", #Crypto
                    "#00ff00", #Chloro (chloro and eugleno same colour, same pig. group)
                    "#93FFCA", #Eugleno
-                   "#7d4dcc", #Hapto
-                   "#000000"  #Cyano
+                   "#7d4dcc" #Hapto
                    )
 
 #Set month labels for plot
@@ -657,6 +654,371 @@ ggsave(here("figures_rev2", "timeseries_drivers_short.png"), fig,
        width = 16, height = 14, dpi = 300)
 ```
 
+```{r}
+data_2 <- data %>% 
+  filter(!site_id == "QU39")
+
+
+#I want to look at annual averages of important variables
+
+data_global <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  select(location, temp_dm:bulk_chl) %>% 
+  mutate(n_p = no2_dm/po4_dm,
+         si_n = sio2_dm/no2_dm) %>% 
+  group_by(location) %>% 
+  summarise(across(temp_dm:si_n, .f = list(mean = mean, median = median,
+                                               min = min, max = max, sd = sd),
+                   na.rm = TRUE)) %>% 
+  ungroup()
+
+annual_dfo2_sio2 <- data %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(site_id == "DFO2") %>% 
+  select(year, sio2_dm) %>% 
+  group_by(year) %>% 
+  summarise(across(sio2_dm, .f = list(mean = mean, median = median,
+                                               min = min, max = max, sd = sd),
+                   na.rm = TRUE)) %>% 
+  ungroup()
+
+n_p <- data %>% 
+  filter(!site_id == "QU39") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(year, location, no2_dm, po4_dm) %>% 
+  filter(po4_dm > 0.0001) %>% 
+  mutate(n_p = no2_dm/po4_dm)
+  
+  
+n_p_stat <- n_p %>% 
+  group_by(location) %>% 
+  summarise(across(n_p, .f = list(mean = mean, median = median,
+                                               min = min, max = max, sd = sd),
+                   na.rm = TRUE)) %>% 
+  ungroup()
+
+
+s_n <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date)) %>%
+  select(year, location, sio2_dm, no2_dm) %>% 
+  filter(no2_dm > 0.0001) %>% 
+  mutate(s_n = sio2_dm/no2_dm) 
+
+
+s_n_stat <- s_n %>% 
+  group_by(location) %>% 
+  summarise(across(s_n, .f = list(mean = mean, median = median,
+                                               min = min, max = max, sd = sd),
+                   na.rm = TRUE)) %>% 
+  ungroup() 
+
+chl_stat <- chl_merge %>% 
+  filter(!site_id == "QU39") %>%
+  group_by(location) %>% 
+  summarise(across(chl, .f = list(mean = mean, median = median,
+                                               min = min, max = max, sd = sd),
+                   na.rm = TRUE)) %>% 
+  ungroup()
+
+annual_dfo2_chl <- chl_merge %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(site_id == "DFO2") %>% 
+  select(year, chl) %>% 
+  group_by(year) %>% 
+  summarise(across(chl, .f = list(mean = mean, median = median,
+                                               min = min, max = max, sd = sd),
+                   na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+```{r}
+#Trying Kruskal Wallis Test
+kw_temp <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  select(location, temp_dm) 
+
+kruskal.test(temp_dm ~ location, data = kw_temp)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(kw_temp$temp_dm, g = kw_temp$location,
+                     p.adjust.method = "bonferroni")
+
+#Dunn
+FSA::dunnTest(kw_temp$temp_dm ~ kw_temp$location,
+         data = data,
+         method = "bonferroni")
+
+```
+```{r}
+#Trying Kruskal Wallis Test
+kw_year <- data %>% 
+  filter(site_id == "DFO2") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(year, sio2_dm) 
+
+kruskal.test(sio2_dm ~ year, data = kw_year)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(kw_year$sio2_dm, g = kw_year$year,
+                     p.adjust.method = "bonferroni")
+
+kw_year_dfo <- kw_year %>% 
+  mutate(year_factor = as.factor(year))
+
+#Dunn
+FSA::dunnTest(kw_year_dfo$sio2_dm ~ kw_year_dfo$year_factor,
+         data = data,
+         method = "bonferroni")
+
+```
+
+
+
+
+
+```{r}
+#Trying Kruskal Wallis Test
+kw_sal <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  select(location, sal_dm) 
+
+kruskal.test(sal_dm ~ location, data = kw_sal)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(kw_sal$sal_dm, g = kw_sal$location,
+                     p.adjust.method = "bonferroni")
+
+#Dunn
+FSA::dunnTest(kw_sal$sal_dm ~ kw_sal$location,
+         data = data,
+         method = "bonferroni")
+
+```
+```{r}
+#Trying Kruskal Wallis Test
+kw_drho <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  select(location, delta_rho_dm) 
+
+kruskal.test(delta_rho_dm ~ location, data = kw_drho)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(kw_drho$delta_rho_dm, g = kw_drho$location,
+                     p.adjust.method = "bonferroni")
+
+#Dunn
+FSA::dunnTest(kw_drho$delta_rho_dm ~ kw_drho$location,
+         data = data,
+         method = "bonferroni")
+
+```
+```{r}
+#Trying Kruskal Wallis Test
+kw_no2 <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  select(location, no2_dm) 
+
+kruskal.test(no2_dm ~ location, data = kw_no2)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(kw_no2$no2_dm, g = kw_no2$location,
+                     p.adjust.method = "bonferroni")
+
+#Dunn
+FSA::dunnTest(kw_no2$no2_dm ~ kw_no2$location,
+         data = data,
+         method = "bonferroni")
+
+```
+```{r}
+#Trying Kruskal Wallis Test
+kw_po4 <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  select(location, po4_dm) 
+
+kruskal.test(po4_dm ~ location, data = kw_po4)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(kw_po4$po4_dm, g = kw_no2$location,
+                     p.adjust.method = "bonferroni")
+
+#Dunn
+FSA::dunnTest(kw_po4$po4_dm ~ kw_po4$location,
+         data = data,
+         method = "bonferroni")
+
+```
+```{r}
+#Trying Kruskal Wallis Test
+kruskal.test(n_p ~ location, data = n_p)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(n_p$n_p, g = n_p$location,
+                     p.adjust.method = "bonferroni")
+
+#Dunn
+FSA::dunnTest(n_p$n_p ~ n_p$location,
+         data = data,
+         method = "bonferroni")
+
+```
+```{r}
+n_p_year <- n_p 
+
+n_p_year <- n_p_year %>% 
+  filter(location == "S")
+
+#Trying Kruskal Wallis Test - year
+kruskal.test(n_p ~ year, data = n_p_year)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(n_p_year$n_p, g = n_p_year$year,
+                     p.adjust.method = "bonferroni")
+
+#Dunn
+# FSA::dunnTest(n_p_year$n_p ~ n_p_year$year,
+#          data = data,
+#          method = "bonferroni")
+
+```
+
+
+
+
+
+
+
+```{r}
+s_n_year <- s_n 
+
+s_n_year <- s_n_year %>% 
+  filter(location == "S")
+
+
+#Trying Kruskal Wallis Test
+kruskal.test(s_n ~ year, data = s_n_year)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(s_n$s_n, g = s_n$location,
+                     p.adjust.method = "bonferroni")
+
+#Dunn
+FSA::dunnTest(s_n$s_n ~ s_n$location,
+         data = data,
+         method = "bonferroni")
+
+```
+```{r}
+#Trying Kruskal Wallis Test
+kw_secchi <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  select(location, secchi_depth) 
+
+kruskal.test(secchi_depth ~ location, data = kw_secchi)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(kw_secchi$secchi_depth, g = kw_secchi$location,
+                     p.adjust.method = "bonferroni")
+
+#Dunn
+FSA::dunnTest(kw_secchi$secchi_depth ~ kw_secchi$location,
+         data = data,
+         method = "bonferroni")
+
+```
+
+
+
+
+
+
+```{r}
+#Trying Kruskal Wallis Test
+kw_chl <- chl_merge %>% 
+  filter(!site_id == "QU39") %>% 
+  select(location, chl) 
+
+kruskal.test(chl ~ location, data = kw_chl)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(kw_secchi$secchi_depth, g = kw_secchi$location,
+                     p.adjust.method = "bonferroni")
+
+#Dunn
+FSA::dunnTest(kw_secchi$secchi_depth ~ kw_secchi$location,
+         data = data,
+         method = "bonferroni")
+
+
+```
+```{r}
+#Trying Kruskal Wallis Test
+kw_chl_year <- chl_merge %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(site_id == "DFO2") %>% 
+  select(year, chl) 
+
+kruskal.test(chl ~ year, data = kw_chl_year)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(kw_secchi$secchi_depth, g = kw_secchi$location,
+                     p.adjust.method = "bonferroni")
+
+
+kw_chl_year <- kw_chl_year %>% 
+  mutate(year_fact = as.factor(year))
+
+#Dunn
+FSA::dunnTest(kw_chl_year$chl ~ kw_chl_year$year_fact,
+         data = data,
+         method = "bonferroni")
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ```{r}
@@ -771,9 +1133,6 @@ ggsave(here("figures_rev2", "timeseries_nut_ratios.png"), fig,
 ```
 
 
-
-
-
 ```{r}
 #Microscopy May - October 2018-2020 time-series - Calvert
 
@@ -790,27 +1149,171 @@ micro_sum %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = sum, group = group, fill = group)) +
+  ggplot(aes(x = yday, y = sum/100000, group = group, fill = group)) +
   geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
-  geom_point(aes(x = yday, y = sum_all), size = 2) +
-  scale_fill_manual(values = color_palette_micro) +
+  geom_point(aes(x = yday, y = sum_all/100000), size = 2) +
+  scale_fill_manual(values = color_palette_micro,
+                    labels = c("Diat", #Y
+                               "Chry", #Y
+                               "Dict", #Y
+                               "Raph", #Y
+                               "Dino", #Y
+                               "Crypt",#Y
+                               "Chlor", #Y 
+                               "Eugl", #Y
+                               "Hapto")) +
   facet_grid(site_id ~ year, 
              labeller = labeller(site_id = site_labs)) +
+    labs(x = "Year Day",
+         y = bquote("Abundance (cells" ~10^5 ~ L^-1*")")) +
   theme_bw() +
   theme(legend.position = "top",
         legend.direction = "horizontal",
         legend.title = element_blank(),
-        text = element_text(size = 11)) +
-        # strip.background = element_blank(),
-        # strip.text = element_blank()) + 
-  labs(x = "Year Day",
-           y = bquote("Abundance (cells" ~ L^-1*")")) +
-  theme(text = element_text(size = 25)) 
+        text = element_text(size = 25),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(color="black")) +
+        # axis.title.x = element_blank()) +
+  guides(fill = guide_legend(nrow = 1)) 
+
 
 ggsave(here("figures_good", "timeseries_microscopy_calvert.png"),
-       width = 17, height = 10, dpi = 300)
+       width = 12, height = 8, dpi = 300)
 
 ```
+```{r}
+#Adding total abundance column to microsum
+micro_sum <- micro_sum %>% 
+  group_by(date) %>% 
+  mutate(sum_all = sum(sum),
+         sum_all_100k = sum_all/100000) %>% 
+  ungroup()
+
+#Adding survey month
+month_surv <- micro %>% 
+  select(date, month_surv, site_id) %>% 
+  distinct()
+
+micro_sum <- micro_sum %>% 
+  left_join(month_surv)  
+  
+micro_sum <- micro_sum %>%  
+  mutate(year = lubridate::year(date))
+
+```
+
+```{r}
+micro_sum <- micro_sum %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+micro_sum <- arrange(mutate(micro_sum,
+                       location = factor(location, levels = order_loc)))
+```
+
+```{r}
+coeff <- 40
+
+micro_sum %>% 
+  filter(!site_id == "QU39") %>% 
+  ggplot() + 
+  geom_bar(aes(x = as.factor(location), y = sum, fill = group),
+           stat = "identity", position = "fill", color = "black") + 
+  geom_point(aes(x = as.factor(location), y = sum_all_100k/coeff), pch = 21,
+             color = "Black", fill = "white", stroke = 1.5, size = 3) +
+  scale_y_continuous(sec.axis = sec_axis(~ . *coeff,
+                                         name = bquote("Total Abund. (cells"~ 10^5 ~ L^-1*")"))) +
+  facet_grid(year ~ month_surv) + 
+  scale_fill_manual(values = color_palette_micro,
+                    labels = c("Diat", #Y
+                               "Chry", #Y
+                               "Dict", #Y
+                               "Raph", #Y
+                               "Dino", #Y
+                               "Crypt",#Y
+                               "Chlor", #Y 
+                               "Eugl", #Y
+                               "Hapto")) +
+  ylab("% Abundance") +
+  theme_bw() +
+  # labs(y = bquote("Abundance (cells"~ 10^5 ~ L^-1*")")) +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 25),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(color="black"),
+        axis.title.x = element_blank()) +
+  guides(fill = guide_legend(nrow = 1))
+
+ggsave(here("figures_rev2", "phyto_group_test.png"), 
+       width = 12, height = 8, dpi = 300)
+```
+```{r}
+micro_sum <- micro_sum %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(perc_cont = sum/sum_all)
+
+group_percent <- micro_sum %>% 
+  group_by(site_id, group) %>% 
+  summarize(med_cont = median(perc_cont),
+            min_cont = min(perc_cont),
+            max_cont = max(perc_cont)) %>% 
+  ungroup()
+
+group_percent_all <- micro_sum %>% 
+  group_by(group) %>% 
+  summarize(med_cont = median(perc_cont),
+            min_cont = min(perc_cont),
+            max_cont = max(perc_cont),
+            med_sum = median(sum),
+            min_sum = min(sum),
+            max_sum = max(sum)) %>% 
+  ungroup()
+
+cryp <- micro_sum %>% 
+  filter(group == "Cryptophyta")
+```
+
+```{r}
+#Trying Kruskal Wallis Test
+kw_diat <- micro_sum %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(group == "Chlorophyta-Prasinophyta") %>% 
+  mutate(perc_cont = sum/sum_all) %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(date, year, location, sum_all, perc_cont) 
+
+kruskal.test(perc_cont ~ location, data = kw_diat)
+
+
+#Pair-wise wilcox
+pairwise.wilcox.test(kw_secchi$secchi_depth, g = kw_secchi$location,
+                     p.adjust.method = "bonferroni")
+
+
+kw_chl_year <- kw_chl_year %>% 
+  mutate(year_fact = as.factor(year))
+
+#Dunn
+FSA::dunnTest(kw_chl_year$chl ~ kw_chl_year$year_fact,
+         data = data,
+         method = "bonferroni")
+
+
+```
+
+
+
+
+
+
 
 ```{r}
 
