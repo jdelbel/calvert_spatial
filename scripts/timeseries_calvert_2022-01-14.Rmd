@@ -33,6 +33,76 @@ chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv"))
 Working with microscopy data
 
 ```{r}
+#Removing QU39 
+micro <- micro %>% 
+  filter(!site_id == "QU39")
+```
+
+
+
+
+```{r}
+#I want to see what species are the most abundance and have the highest contributions for each group
+micro_stats <- micro %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(species_sum),
+         perc = species_sum/sum_all) %>% 
+  ungroup()
+
+micro_stats_2 <- micro_stats %>% 
+  group_by(group, scientificName) %>% 
+  summarise(med_abund = median(species_sum),
+            min_abund = min(species_sum),
+            max_abund = max(species_sum),
+            med_perc = median(perc),
+            min_perc = min(perc),
+            max_perc = max(perc)) %>% 
+  ungroup()
+
+
+#Trying to look at only species present in 20% of samples
+#How many samples
+sample_num <- micro %>% 
+  distinct(date, site_id)
+
+species_10 <- micro %>% 
+  group_by(scientificName) %>% 
+  summarise(n_obs = n()) %>%
+  ungroup() %>% 
+  mutate(perc_obs = n_obs/50) %>% 
+  filter(perc_obs >= 0.10)
+
+species_10_list <- species_10$scientificName
+
+
+micro_stats_s10 <- micro %>% 
+  filter(scientificName %in% species_10_list) %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(species_sum),
+         perc = species_sum/sum_all) %>% 
+  ungroup()
+
+micro_stats_2_s10 <- micro_stats_s10 %>% 
+  group_by(group, scientificName) %>% 
+  summarise(med_abund = median(species_sum),
+            min_abund = min(species_sum),
+            max_abund = max(species_sum),
+            med_perc = median(perc),
+            min_perc = min(perc),
+            max_perc = max(perc),
+            n_obs = n()) %>% 
+  ungroup()
+
+micro_dino <- micro %>% 
+  filter(class == "Dinophyceae") %>% 
+  filter(genus == "Dinophysis")
+```
+
+
+
+
+
+```{r}
 #Selecting autotrophic groups from class level specifications above. Too coarse for dinos.
 micro <- micro %>% 
   filter(!group == "Cyanobacteria")
