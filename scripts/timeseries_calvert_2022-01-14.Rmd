@@ -38,9 +38,6 @@ micro <- micro %>%
   filter(!site_id == "QU39")
 ```
 
-
-
-
 ```{r}
 #I want to see what species are the most abundance and have the highest contributions for each group
 micro_stats <- micro %>% 
@@ -97,11 +94,6 @@ micro_dino <- micro %>%
   filter(class == "Dinophyceae") %>% 
   filter(genus == "Dinophysis")
 ```
-
-
-
-
-
 ```{r}
 #Selecting autotrophic groups from class level specifications above. Too coarse for dinos.
 micro <- micro %>% 
@@ -366,6 +358,7 @@ chl_merge <- chl_merge %>%
 
 chl_merge <- arrange(mutate(chl_merge,
                        location = factor(location, levels = order_loc)))
+
 ```
 
 ```{r}
@@ -399,6 +392,13 @@ chl_lm = lm(bulk_chl~tchla, data = chem_compare)
 summary(chl_lm) 
 
 ```
+
+```{r}
+#Exporting corrected TChla magnitudes
+write_csv(chl_merge, here("outputs", "bulk_chla_corrected.csv"))
+```
+
+
 
 ```{r}
 #Pulling out dates where there were bloom conditions (Tchla > 5 ug/L)
