@@ -117,13 +117,13 @@ micro_piv <- micro_piv %>%
 species <- micro_piv[, 6:ncol(micro_piv)]
 
 #Creating relative abundance matrix - not currently looking at relative abundance
-# transform_rel <- decostand(species, method = "total")
+transform <- decostand(species, method = "total")
   
 #Log10 transformation + 1 (as per Mahara)
-transform <- log10(species + 1)
+# transform <- log10(species + 1)
 
 #Not currently working with relative abundance
-# transform_rel <- sqrt(transform_rel)
+transform <- sqrt(transform)
 ```
 
 ```{r}
@@ -176,11 +176,11 @@ fviz_gap_stat(gap_stat)
 ```{r}
 #This step sets clusters. Currently, I am not using.
 
-# k <- 6
-# clust <- cutree(cluster.average, k = k)
-# 
-# clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
-#                                    cluster = factor(clust))
+k <- 3
+clust <- cutree(cluster.average, k = k)
+
+clust.df <- clust.df <- data.frame(label = rownames(transform_hc),
+                                   cluster = factor(clust))
 
 # write_csv(clust.df, here("outputs", "clusters_micro_6.csv"))
 ```
@@ -207,10 +207,10 @@ dendrogram_ends <- dendrogram_segments %>%
 ```{r}
 #This is used to draw cluster boxes around the dendrogram clusters in the plot. Not currently using clusters so have turned off, but necessary if using clusters.
 
-# dendrogram_data[["labels"]] <- merge(dendrogram_data[["labels"]], clust.df, by = "label")
-# rect <- aggregate(x~cluster, label(dendrogram_data), range)
-# rect <- data.frame(rect$cluster, rect$x)
-# ymax <- mean(cluster.average$height[length(cluster.average$height) - ((k-2):(k-1))])
+dendrogram_data[["labels"]] <- merge(dendrogram_data[["labels"]], clust.df, by = "label")
+rect <- aggregate(x~cluster, label(dendrogram_data), range)
+rect <- data.frame(rect$cluster, rect$x)
+ymax <- mean(cluster.average$height[length(cluster.average$height) - ((k-2):(k-1))])
 ```
 
 
@@ -252,8 +252,8 @@ p_dend <- ggplot() +
  geom_text(data = dendrogram_ends, aes(x = x, y = y.y, label = sample_name, 
                                        color = site_id),
            hjust = 0, angle = 0, size = 6) +
- # geom_rect(data = rect, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0, ymax = ymax),
- #            color = "black", fill = NA, size = 0.8) +
+ geom_rect(data = rect, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0, ymax = ymax),
+            color = "black", fill = NA, size = 0.8) +
  scale_color_manual(values = site_color) +
  scale_y_reverse(limits = c(0.6, -0.3)) +
  coord_flip() + 
@@ -266,7 +266,7 @@ p_dend <- ggplot() +
  ylab("Dist.") # flipped x and y coordinates for aesthetic reasons
 
 #Turning off saving for now because not needed
-ggsave(here("figures_rev2", "hc_average_names_10perc.png"), p_dend,
+ggsave(here("figures_rev2", "hc_average_names_10perc_rel.png"), p_dend,
        width = 6, height = 12, dpi = 300)
 ```
 
@@ -346,7 +346,7 @@ spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
 spp.scrs2 <- cbind(spp.scrs, test)
 
 spp.scrs2 <- spp.scrs2 %>%
-  filter(r2 >= 0.40)
+  filter(r2 >= 0.30)
 
 ```
 
@@ -593,6 +593,43 @@ cluster <- micro_piv_na$clust_phy
 ```
 
 ```{r}
+#Tried looking at indicator species of the chemtax clusters - didn't really show anything
+
+# chem_test <- micro_piv %>% 
+#     filter(!site_id == "QU39" & date > "2019-01-01") %>% 
+#     mutate(location = case_when(site_id == "DFO2" ~ "F",
+#                               site_id == "KC10" ~ "C",
+#                               site_id == "QCS01" ~ "S",
+#                               TRUE ~ as.character(site_id))) %>% 
+#   unite(sample_name, c(location, date), sep = "", remove = FALSE) %>% 
+#   relocate(location, .after = sample_name)
+# 
+# chem_test <- chem_test %>% 
+#   left_join(clust_chem) %>% 
+#   relocate(cluster, .after = clust_phy) %>% 
+#   rename(chem_clust = cluster)
+# 
+# #Pulling out species counts for transform and input into clustering and NMDS
+# chem_transform <- chem_test[, 10:ncol(chem_test)]
+# 
+# 
+# #Log10 transformation + 1 (as per Mahara)
+# chem_transform <- log10(chem_transform + 1)
+# 
+# 
+# chem_clust <- chem_test$chem_clust
+```
+
+```{r}
+# inv_chem = multipatt(chem_transform, chem_clust, func = "r.g",
+#                        control = how(nperm = 9999))
+# 
+# #Looking at results of analysis
+# summary(inv_chem)
+```
+
+
+```{r}
 #ANOSIM test to see if groupings statistically significant - abundance
 
 #Turning off for now because takes time to analyze.
@@ -610,131 +647,19 @@ ano_cluster = anosim(transform_na, cluster, distance = "bray", permutations = 99
 ano_cluster
 ```
 
-```{r}
-#Want to try ANOSIM on each year-location
-
-micro_piv_2018 <- micro_piv %>% 
-  filter(year == 2018) %>% 
-  arrange(site_id, date)
-
-
-species_2018 <- micro_piv_2018[, 8:99]
-
-
-transform_2018 <- log10(species_2018 + 1)
-
-micro_piv_2019 <- micro_piv %>% 
-  filter(year == 2019) %>% 
-  arrange(site_id, date)
-
-
-species_2019 <- micro_piv_2019[, 8:99]
-
-
-transform_2019 <- log10(species_2019 + 1)
-
-micro_piv_2020 <- micro_piv %>% 
-  filter(year == 2020) %>% 
-  arrange(site_id, date)
-
-
-species_2020 <- micro_piv_2020[, 8:99]
-
-
-transform_2020 <- log10(species_2020 + 1)
-```
-
-```{r}
-site_id_2018 <- micro_piv_2018$site_id
-site_id_2019 <- micro_piv_2019$site_id
-site_id_2020 <- micro_piv_2020$site_id
-```
-
-```{r}
-#ANOSIM test to see if groupings statistically significant - abundance
-
-#Turning off for now because takes time to analyze.
-ano_site_2018 = anosim(transform_2018, site_id_2018,
-                       distance = "bray", permutations = 9999)
-ano_site_2018
-
-ano_site_2019 = anosim(transform_2019, site_id_2019,
-                       distance = "bray", permutations = 9999)
-ano_site_2019
-
-ano_site_2020 = anosim(transform_2020, site_id_2020,
-                       distance = "bray", permutations = 9999)
-ano_site_2020
-
-```
-```{r}
-#Want to try ANOSIM on each year-location
-
-micro_piv_2018_fs <- micro_piv %>% 
-  filter(year == 2018 & (location == "F" | location == "S")) %>% 
-  arrange(site_id, date)
-
-
-species_2018_fs <- micro_piv_2018_fs[, 8:99]
-
-
-transform_2018_fs <- log10(species_2018_fs + 1)
-
-micro_piv_2019 <- micro_piv %>% 
-  filter(year == 2019) %>% 
-  arrange(site_id, date)
-
-
-species_2019 <- micro_piv_2019[, 8:99]
-
-
-transform_2019 <- log10(species_2019 + 1)
-
-micro_piv_2020 <- micro_piv %>% 
-  filter(year == 2020) %>% 
-  arrange(site_id, date)
-
-
-species_2020 <- micro_piv_2020[, 8:99]
-
-
-transform_2020 <- log10(species_2020 + 1)
-```
-
-```{r}
-site_id_2018_fs <- micro_piv_2018_fs$site_id
-site_id_2019 <- micro_piv_2019$site_id
-site_id_2020 <- micro_piv_2020$site_id
-```
 
 ```{r}
 #Indicator species analysis
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by station
-inv_site_2018_fs = multipatt(transform_2018_fs, site_id_fs, func = "r.g",
+inv_site = multipatt(transform, site_id, func = "r.g",
                        control = how(nperm = 9999))
 
 #Looking at results of analysis
 summary(inv_site)
 ```
-```{r}
-#ANOSIM test to see if groupings statistically significant - abundance
 
-#Turning off for now because takes time to analyze.
-ano_site_2018_fs = anosim(transform_2018_fs, site_id_2018_fs,
-                       distance = "bray", permutations = 9999)
-ano_site_2018_fs
-
-ano_site_2019 = anosim(transform_2019, site_id_2019,
-                       distance = "bray", permutations = 9999)
-ano_site_2019
-
-ano_site_2020 = anosim(transform_2020, site_id_2020,
-                       distance = "bray", permutations = 9999)
-ano_site_2020
-
-```
 
 
 ```{r}
@@ -988,35 +913,8 @@ shannon <- diversity(species)
 
 shannon <- as_tibble(shannon)
 
-shannon$date <- micro_piv$date
-shannon$year <- micro_piv$year
-shannon$month <- micro_piv$month_surv
-shannon$location <- micro_piv$location
-```
+shannon$sample_name <- metadata$sample_name
 
-```{r}
-#looking at stats for shannon
-shannon_stats_loc <- shannon %>% 
-  group_by(location) %>% 
-  summarise(med_div = median(value)) %>%
-  ungroup()
-
-shannon_stats_loc_year <- shannon %>% 
-  group_by(year, location) %>% 
-  summarise(med_div = median(value)) %>%
-  ungroup()
-  
-shannon_stats_month <- shannon %>% 
-  group_by(month, location) %>% 
-  summarise(med_div = median(value)) %>%
-  ungroup()
-            
-```
-
-
-
-
-```{r}
 #Setting the order to the same as the clustering using the specified list
 shannon$sample_name <- factor(shannon$sample_name, levels = unique(hc_order))
 
@@ -1055,16 +953,6 @@ ggsave(here("figures_good", "dend_rich_div.png"), fig,
 
 #Richness is somewhat lower at DFO2, but not diversity
 ```
-```{r}
-
-```
-
-
-
-
-
-
-
 ```{r}
 #When are some of these indicator species present at DFO2
 cdec <- micro %>% 

@@ -50,15 +50,16 @@ micro <- micro %>%
 ```{r}
 #Trying to look at only species present in 10% of samples
 #How many samples
-species_10 <- micro %>% 
-  group_by(scientificName) %>% 
+
+species_10 <- micro %>%
+  group_by(scientificName) %>%
   summarise(n_obs = n()) %>%
-  ungroup() %>% 
-  mutate(perc_obs = n_obs/50) %>% 
+  ungroup() %>%
+  mutate(perc_obs = n_obs/50) %>%
   filter(perc_obs >= 0.10)
-
+# 
 species_10_list <- species_10$scientificName
-
+# 
 micro <- micro %>% 
   filter(scientificName %in% species_10_list)
 
@@ -158,18 +159,161 @@ micro_genus %>%
         legend.title = element_blank()) +
   guides(fill = guide_legend(nrow = 2))
 
-ggsave(here("figures_rev2", "diat_test_family.png"),
+ggsave(here("figures_rev2", "diat_test_family2.png"),
        width = 14, height = 8, dpi = 300)
 ```
+
+
+```{r}
+#Goal is to show the prominent diatom species for each sampling date
+
+#1 Look at what species were dominant for each sample
+micro_flag <- micro %>% 
+  filter(!class == "Bacillariophyceae") %>% 
+  group_by(date, site_id) %>% 
+  mutate(total_abund = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(flag_perc = species_sum/total_abund)
+
+# micro_diat_order <- micro_diat %>% 
+#   group_by(date, site_id) %>%
+#   mutate(diat_rank = order(order(species_sum, decreasing = TRUE))) %>% 
+#   ungroup()
+
+flag_diat_stats <- micro_flag %>% 
+  group_by(site_id, scientificName) %>% 
+  summarise(med_abund = median(species_sum),
+            med_perc = median(flag_perc)) %>% 
+  mutate_at(vars(med_perc), funs(round(., 2)))
+
+
+flag_genus <- micro_flag %>% 
+  filter(!is.na(genus)) %>% 
+  group_by(date, site_id, location, month_surv, genus) %>% 
+  summarize(sum_genus = sum(species_sum)) %>% 
+  ungroup() %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(sum_genus)) %>% 
+  ungroup() %>% 
+  mutate(perc_genus = sum_genus/sum_all,
+         year = lubridate::year(date))
+```
+```{r}
+# flag_order <- c("Phaeocystis", "Hillea", "Teleaulax", "Pterosperma",
+#                 "Pyramimonas", "Katodinium", "Dinobryon", "Olisthodiscus",
+#                 "Metromonas", "Monosiga", "Parvicorbicula")
+
+# flag_order <- c("Parvicorbicula", "Monosiga", "Metromonas", "Olisthodiscus",
+#                 "Dinobryon", "Katodinium", "Pyramimonas", "Pterosperma", 
+#                 "Teleaulax", "Hillea", "Phaeocystis")
+
+flag_order <- c("Parvicorbicula", "Monosiga", "Metromonas", 
+                "Scrippsiella", "Katodinium", "Corythodinium", 
+                "Telonema",
+                "Teleaulax", "Hillea",
+                "Tetraselmis", "Pyramimonas", "Pterosperma",
+                "Phaeocystis", 
+                "Dinobryon", "Ciliophrys", "Apedinella")
+
+flag_genus <- arrange(mutate(flag_genus,
+                         genus = factor(genus, levels = flag_order)))
+
+
+#Chemtax - Specify order of phyto groups for figures
+flag_genus <- arrange(mutate(flag_genus,
+                         location = factor(location, levels = order_loc)))
+
+```
+
+```{r}
+# colours_flag = c("#E56AB3",
+#                  "#F9A3CB",
+#                  "#FFCEE6",
+#                  "#9300ff",
+#                  "#95F985",
+#                  "#26D701",
+#                  "#00AB08",
+#                  "#FFDF00",
+#                  "#EDC211",
+#                  "#DAA521",
+#                  "#8B0000",
+#                  "#a23333",
+#                  "#c58080",
+#                  "#0000FF",
+#                  "#4949FF",
+#                  "#BFBFFF")
+
+
+colours_flag = c("#BFBFFF",
+                 "#4949FF",
+                 "#0000FF",
+                 "#4a010d",
+                 "#940119",
+                 "#de0226",
+                 "#DAA521",
+                 "#EDC211",
+                 "#FFDF00",
+                 "#00AB08",
+                 "#26D701",
+                 "#95F985",
+                 "#9300ff",
+                 "#FFCEE6",
+                 "#F9A3CB",
+                 "#E56AB3")
+```
+
+
+
+```{r}
+flag_genus %>% 
+  filter(perc_genus >= 0.05) %>% 
+  ggplot(aes(x = as.factor(location), y = perc_genus, 
+             fill = genus)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  facet_grid(year ~ month_surv) +
+  scale_fill_manual(values = colours_flag) +
+  # scale_fill_brewer(palette = "Paired") +  
+                    # labels = c("Bi.",
+                    #            "C.c.",
+                    #            "C.t.",
+                    #            "P.",
+                    #            "P.n.",
+                    #            "P.n.s.",
+                    #            "R.s.",
+                    #            "S.m.",
+                    #            "T.p.")) +
+  theme_bw() +
+  ylab("Rel. Abund. Flagellates (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 3))
+
+ggsave(here("figures_rev2", "flag_test_family_no-cryp.png"),
+       width = 14, height = 8, dpi = 300)
+```
+
+
+
+
+
+
 ```{r}
 micro %>% 
-  filter(scientificName == "Pseudo-nitzschia seriata"  & year == "2020") %>% 
+  filter(scientificName == "Pseudo-nitzschia seriata"  & year == "2019") %>% 
   ggplot(aes(x = date, y = species_sum, color = location)) +
   geom_line() +
   geom_point()
+```
 
+
+```{r}
 micro %>% 
-  filter(scientificName == "Rhizosolenia setigera"  & year == "2019") %>% 
+  filter(scientificName == "Rhizosolenia setigera"  & year == "2018") %>% 
   ggplot(aes(x = date, y = species_sum, color = location)) +
   geom_line() +
   geom_point()
