@@ -1,0 +1,787 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+
+#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
+
+#For plotting with ggplot2
+
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+
+library(cluster)
+library(ggdendro)
+
+library(RColorBrewer)
+
+library(indicspecies)
+```
+
+
+```{r}
+#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
+
+```
+
+```{r}
+#This just ensures that there are no exact duplicates introduced through joining. There aren't here, but it must have occured in earlier versions and I am keeping it in-case I make changes in the future.
+data <- data %>% 
+  distinct(date, site_id, .keep_all = TRUE)
+
+#Removing QU39 for this worksheet
+data <- data %>% 
+  filter(!site_id == "QU39")
+```
+
+
+
+```{r}
+#selecting data I am going to use with the PCA - I think a case could be made to only include sio@ as this is what comes out as a driver in RDA and also, they all point in the same direction and have the same strength in PCA biplot.
+data_pca <- data %>% 
+  select(date, month, month_surv, site_id, temp = temp_dm, sal = sal_dm, 
+         drho = delta_rho_dm, no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm,
+         secchi = secchi_depth)
+
+
+
+#Trying to add n_p to see what it does to clustering
+data_pca <- data_pca %>% 
+  mutate(n_p = no2/po4,
+         si_n = sio2/po4)
+
+#Removing NA's for analysis (currently only 1)
+data_pca <- data_pca %>% 
+  drop_na()
+
+data_pca[data_pca == Inf] <- 0
+
+#Pulling out explanatory variables
+expl <- data_pca[, 5:13]
+```
+
+
+```{r}
+#Scaling data being used for PCA (Should look into whether I should also center as I did with the mantel tests)
+expl <- scale(expl)
+
+#Converting to a data frame for subsequent analysis.
+expl <- as.data.frame(expl)
+
+```
+
+
+```{r}
+#Running PCA using vegan - when RDA is run without response variables, then it is a PCA
+pca <- rda(expl)
+
+#Looking at results - for interpretation of following look at.
+head(summary(pca))
+
+#Looking at scores
+loadings <- scores (pca, display = 'species', scaling = 0)
+loadings
+```
+
+
+```{r}
+#Looking at the variables with highest correlation with axis 1
+sort (abs (loadings[,1]), decreasing = TRUE)
+```
+```{r}
+#Looking at the variables with highest correlation with axis 2
+sort (abs (loadings[,2]), decreasing = TRUE)
+```
+
+```{r}
+biplot (pca, display = 'species', scaling = 'species')
+```
+
+```{r}
+#Looking at different scalings
+source ('https://raw.githubusercontent.com/zdealveindy/anadat-r/master/scripts/NumEcolR2/cleanplot.pca.R')
+par (mfrow = c(1,2))
+cleanplot.pca (pca, scaling = 1)
+cleanplot.pca (pca, scaling = 2)
+```
+
+```{r}
+#Looking into importance of each axis
+
+# define "evplot" function first:
+source ('https://raw.githubusercontent.com/zdealveindy/anadat-r/master/scripts/NumEcolR1/evplot.R')
+
+# Finally, in the PCA object select the component $eig with the vector of eigenvalues:
+ev <- pca$CA$eig
+
+evplot (ev)
+```
+
+
+```{r}
+library (BiodiversityR)
+sig <- PCAsignificance (pca, axes = 14)
+sig
+
+barplot(sig[c('percentage of variance', 'broken-stick percentage'), ], beside = T, 
+  xlab = 'PCA axis', ylab = 'explained variation [%]', col = c('grey', 'black'), 
+  legend = TRUE)
+```
+
+
+```{r}
+#Trying the same thing, but bringing in arrows from previous plot - trying scaling 2
+#pdf(file = "rda_s2.pdf", width = 6.5, height = 5, pointsize = 2)
+
+p_pca <- biplot(pca, scaling = 1, type = "none", xlab = c("PCA1"),
+               ylab = c("PCA2"), xlim = c(-0.01, 0.1), ylim = c(-1.1, 1.1))
+
+# points(rda.signif, display = 'sites', pch = 21, cex = 2.2,
+#        col = rgb(red = 1, green = 1, blue = 1, alpha = 0.5), scaling = 2,
+#        bg = bg[eco])
+
+points(scores(pca, display = 'sites', choices = c(1, 2), scaling = 1),
+       pch = 21, cex = 2.0,
+       bg = c("blue", "springgreen4", "black", "magenta")[as.factor(data_pca$site_id)])
+
+#So since distance doesn't matter, I can make arrows longer with scaling 2? 
+# arrows(0,0, scores(rda.signif, display = "species", choices = c(1),
+#                    scaling = 1), scores(rda.signif, display = "species",
+#                                             choices = c(2), scaling = 1),
+#        col = "black", length = 0)
+
+# text(pca, scaling = 1, display = "bp", col = "blue",cex = 0.8, font = 2)
+
+# text(scores(rda.signif, display = "species", choices = c(1), scaling = 1),
+#      scores(rda.signif, display = "species", choices = c(2), scaling = 1),
+#      labels = rownames(scores(rda.signif, display = "species", scaling = 1)),
+#      col = "black", cex = 0.8, font = 2)
+
+
+# legend("topleft", legend = levels(eco), bty ="n", col="gray32", pch = 21,
+#        cex = 1.5, pt.bg = bg)
+
+legend("topright", legend = c(levels(as.factor(data_pca$site_id))),
+       pch = 21,
+       pt.bg = c("blue", "springgreen4", "black", "magenta"),
+       bty = "n", cex = 1.5)
+
+#dev.off()
+
+
+```
+
+
+
+```{r}
+#Setting up parameters for plotting PCA
+
+# https://programmer.ink/think/r-redundancy-analysis-rda-ggplot2.html
+# https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html
+
+#Extracting site locations
+sites_loc_pca <- sites.long(p_pca, env.data = expl)
+meta_pca <- data_pca[,1:4]
+sites_loc_pca <- cbind(meta_pca, sites_loc_pca)
+head(sites_loc_pca)
+sites_loc_pca <- sites_loc_pca %>% 
+  mutate(year = lubridate::year(date))
+
+#Species location in ordination
+species_loc_pca <- species.long(p_pca)
+species_loc_pca
+
+axis.long_pca <- axis.long(pca, choices = c(1, 2))
+axis.long_pca
+
+#these are both throwing zeros - One I won't need because I'm not plotting species vectors.
+#trying something from here. https://tem11010.github.io/Plotting-PCAs/
+# env_loc_pca <- as.data.frame(pca$biplot[,1:2])
+vscores <- as.data.frame(pca$CA$v)
+```
+
+
+```{r}
+#Plotting PCA.
+
+# sp_loc_pca <-  as.data.frame(pca$species[,1:2])
+
+ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_pca, aes(x = axis1, y = axis2, fill = as.factor(month_surv),
+                                   shape = site_id, stroke = 1.5), 
+             size = 6, color = "black", alpha = 0.9) +
+  scale_fill_brewer(palette = "RdYlBu") + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_text(data = vscores, aes(x = PC1, y = PC2, label = rownames(vscores)),
+  #           col = 'red') +
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
+               arrow = arrow(length = unit(0.2,"cm")),
+               alpha = 1, color = 'darkgray', size = 1) +
+  geom_text_repel(data = vscores, aes(PC1, PC2,
+                                           label = row.names(vscores)),
+                  box.padding = unit(0.3, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'blue',
+                  # segment.size = 0.5,
+                  # segment.alpha = 0.4,
+                  # arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = -0.02,
+                  # nudge_x = 0.1,
+                  force = 0.1,
+                  max.iter = 3e3,
+                  size = 8,
+                  color = "black") +
+  labs(x = "PCA1 (45%)",
+       y = "PCA2 (25%)") +
+  xlim(-1.0, 1.3) +
+  # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
+  #                                  digits = 3), "%)", sep = ""),
+  #      y = paste("PCA 2 (", format(100 *pca$cont[[1]][2,2], 
+  #                                  digits = 2), "%)", sep = "")) +
+ 
+  # coord_fixed(ratio = 1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.position = c(0.9, 0.6),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24)) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  labs(fill = "Season", shape = "Station")
+
+ggsave(here("figures_good", "PCA_no-chl_nut-rats.png"),
+       width = 10, height = 7, dpi = 300)
+```
+```{r}
+#Plotting PCA.
+
+# sp_loc_pca <-  as.data.frame(pca$species[,1:2])
+
+p1 <- ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_pca, aes(x = axis1, y = axis2, fill = as.factor(month_surv),
+                                   shape = site_id, stroke = 1.5), 
+             size = 6, color = "black", alpha = 0.9) +
+  scale_fill_brewer(palette = "RdYlBu") + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_text(data = vscores, aes(x = PC1, y = PC2, label = rownames(vscores)),
+  #           col = 'red') +
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
+               arrow = arrow(length = unit(0.2,"cm")),
+               alpha = 1, color = 'darkgray', size = 1) +
+  geom_text_repel(data = vscores, aes(PC1, PC2,
+                                           label = row.names(vscores)),
+                  box.padding = unit(0.3, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'blue',
+                  # segment.size = 0.5,
+                  # segment.alpha = 0.4,
+                  # arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = -0.02,
+                  # nudge_x = 0.1,
+                  force = 0.1,
+                  max.iter = 3e3,
+                  size = 8,
+                  color = "black") +
+  labs(x = "PCA1 (45%)",
+       y = "PCA2 (25%)") +
+  xlim(-1.0, 1.3) +
+  # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
+  #                                  digits = 3), "%)", sep = ""),
+  #      y = paste("PCA 2 (", format(100 *pca$cont[[1]][2,2], 
+  #                                  digits = 2), "%)", sep = "")) +
+ 
+  # coord_fixed(ratio = 1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.position = c(0.9, 0.7),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24)) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  labs(fill = "Month", shape = "Station")
+
+p2 <- ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_pca, aes(x = axis1, y = axis2, 
+                                       fill = as.factor(year), 
+                                       shape = site_id, stroke = 1.5), 
+             size = 6, color = "black", alpha = 0.9) +
+  scale_fill_brewer(palette = "Dark2") + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_text(data = vscores, aes(x = PC1, y = PC2, label = rownames(vscores)),
+  #           col = 'red') +
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
+               arrow = arrow(length = unit(0.2,"cm")),
+               alpha = 1, color = 'darkgray', size = 1) +
+  geom_text_repel(data = vscores, aes(PC1, PC2,
+                                           label = row.names(vscores)),
+                  box.padding = unit(0.3, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'blue',
+                  # segment.size = 0.5,
+                  # segment.alpha = 0.4,
+                  # arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = -0.02,
+                  # nudge_x = 0.1,
+                  force = 0.1,
+                  max.iter = 3e3,
+                  size = 8,
+                  color = "black") +
+  labs(x = "PCA1 (45%)",
+       y = "PCA2 (25%)") +
+  xlim(-1.0, 1.3) +
+  # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
+  #                                  digits = 3), "%)", sep = ""),
+  #      y = paste("PCA 2 (", format(100 *pca$cont[[1]][2,2], 
+  #                                  digits = 2), "%)", sep = "")) +
+ 
+  # coord_fixed(ratio = 1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.position = c(0.9, 0.85),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24)) +
+  labs(fill = "Year") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)),
+         color = "none",
+         shape = "none")
+  
+
+fig <- p1/p2
+
+ggsave(here("figures_good", "PCA_no-chl_nut-rats.png"),
+       width = 10, height = 14, dpi = 300)
+```
+
+
+```{r}
+hc <- data_pca[, 5:13]
+
+# hc <- log10(hc + 1)
+
+
+
+
+metadata <- data_pca %>%
+  select(site_id, date) %>% 
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE) %>% 
+  relocate(sample_name, .before = date)
+
+#Creating a list of rownames
+# labs_list <- labs$sample_name
+labs_list <- metadata$sample_name
+
+
+#Making the rownames of the clustering matrix the ones specified in the above list.
+rownames(hc) <- labs_list
+```
+
+
+```{r}
+
+#Performing hierarchical clustering
+
+#Calculating Bray-Curtis Distances
+dis <- vegdist(hc, method = "bray")
+
+#Applying average linkage hierarchical clustering
+cluster.average <- hclust(dis, "average")
+
+```
+
+```{r}
+fviz_nbclust(hc, FUN = hcut, method = "wss")
+fviz_nbclust(hc, FUN = hcut, method = "silhouette")
+gap_stat <- clusGap(hc, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
+```
+
+
+
+
+
+```{r}
+#This step sets clusters. Currently, I am not using.
+
+k <- 3
+clust <- cutree(cluster.average, k = k)
+
+clust.df <- data.frame(label = rownames(hc),
+                                   cluster = factor(clust))
+
+# write_csv(clust.df, here("outputs", "clusters_micro_6.csv"))
+```
+
+```{r}
+# extract dendrogram segment data for plotting
+
+dend <- as.dendrogram(cluster.average)
+dendrogram_data <- dendro_data(dend)
+dendrogram_segments <- dendrogram_data$segments 
+```
+
+```{r}
+#Creating metadata sheet with 
+# metadata <- micro_piv %>% 
+#   select(site_id, date)
+
+# metadata <- micro_piv %>% 
+#    select(sample_name, site_id, date)
+
+#Making unique labels by combining site and date into single string
+# metadata <- metadata %>% 
+#   unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+# get terminal dendrogram segments and join with names.
+dendrogram_ends <- dendrogram_segments %>%
+ filter(yend == 0) %>% 
+ left_join(dendrogram_data$labels, by = "x") %>% 
+ rename(sample_name = label) %>% 
+ left_join(metadata, by = "sample_name") 
+
+```
+
+```{r}
+#This is used to draw cluster boxes around the dendrogram clusters in the plot. Not currently using clusters so have turned off, but necessary if using clusters.
+
+dendrogram_data[["labels"]] <- merge(dendrogram_data[["labels"]], clust.df, by = "label")
+rect <- aggregate(x~cluster, label(dendrogram_data), range)
+rect <- data.frame(rect$cluster, rect$x)
+ymax <- mean(cluster.average$height[length(cluster.average$height) - ((k-2):(k-1))])
+```
+
+
+```{r}
+#I'm not 100% sure how this all works, but it does - sets up colors for the sites for plotting with dendrogram.
+
+# Generate custom color palette for dendrogram ends based on metadata variable - Site
+unique_vars <- levels(factor(dendrogram_ends$site_id)) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("row_id")
+
+# count number of unique variables
+color_count <- length(unique(unique_vars$.))
+
+# get RColorBrewer palette
+get_palette <- colorRampPalette(brewer.pal(n = 3, name = "Set1"))
+
+# produce RColorBrewer palette based on number of unique variables in metadata:
+palette <- get_palette(color_count) %>% 
+ as.data.frame() %>%
+ rename("color" = ".") %>%
+ rownames_to_column(var = "row_id")
+
+color_list <- left_join(unique_vars, palette, by = "row_id") %>%
+ select(-row_id)
+
+site_color <- as.character(color_list$color)
+names(site_color) <- color_list$.
+```
+
+```{r}
+#Plotting dendrogram - saving for incorporation later.
+ggplot() +
+ geom_segment(data = dendrogram_segments, 
+              aes(x = x, y = y, xend = xend, yend = yend)) +
+ geom_segment(data = dendrogram_ends, aes(x = x, y = y.x, xend = xend,
+                                          yend = yend, color = site_id),
+              size = 2) +
+ geom_text(data = dendrogram_ends, aes(x = x, y = y.y, label = sample_name,
+                                       color = site_id),
+           hjust = 0, angle = 0, size = 6) +
+ geom_rect(data = rect, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0, ymax = ymax),
+            color = "black", fill = NA, size = 0.8) +
+ scale_color_manual(values = site_color) +
+ scale_y_reverse(limits = c(0.3, -0.2)) +
+ coord_flip() +
+ theme_bw() +
+ theme(legend.position = "none",
+       axis.title.x = element_blank(),
+       axis.title.y = element_blank(),
+       axis.text.y = element_blank(),
+       text = element_text(size = 30)) +
+ ylab("Distance") # flipped x and y coordinates for aesthetic reasons
+
+ 
+ggsave(here("figures_rev2", "physical_dendro_np.png"),
+       width = 6, height = 12, dpi = 300)
+```
+```{r}
+sites_loc_pca_clust <- sites_loc_pca %>% 
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+clust_df <- clust.df %>%
+  rename(sample_name = label)
+
+sites_loc_pca_clust <- sites_loc_pca_clust %>%
+  left_join(clust_df) %>%
+  relocate(cluster, .after = month_surv)
+
+
+
+```
+
+
+
+
+```{r}
+#Plotting PCA with clusters
+
+# sp_loc_pca <-  as.data.frame(pca$species[,1:2])
+
+p1 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_pca_clust, aes(fill = as.factor(month_surv),
+                                   shape = site_id, stroke = 1.5), 
+             size = 6, color = "black", alpha = 0.9) +
+  # geom_mark_hull(data = sites_loc_pca_clust, aes(color = cluster, label = cluster),
+  #                concavity = 2.8, label.fontsize = 30) + 
+  scale_fill_brewer(palette = "RdYlBu") + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_text(data = vscores, aes(x = PC1, y = PC2, label = rownames(vscores)),
+  #           col = 'red') +
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
+               arrow = arrow(length = unit(0.2,"cm")),
+               alpha = 1, color = 'darkgray', size = 1.5) +
+  geom_text_repel(data = vscores, aes(PC1, PC2,
+                                           label = row.names(vscores)),
+                  box.padding = unit(0.3, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'blue',
+                  # segment.size = 0.5,
+                  # segment.alpha = 0.4,
+                  # arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = -0.02,
+                  # nudge_x = 0.1,
+                  force = 0.1,
+                  max.iter = 3e3,
+                  size = 8,
+                  color = "black") +
+  labs(x = "PCA1 (45%)",
+       y = "PCA2 (25%)") +
+  xlim(-0.9, 1.1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.position = c(0.9, 0.24),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24)) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  labs(fill = "Month", shape = "Station")
+
+p2 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_pca_clust, aes(fill = as.factor(cluster),
+                                   shape = site_id, stroke = 1.5), 
+             size = 6, color = "black", alpha = 0.9) +
+  # geom_mark_hull(data = sites_loc_pca_clust, aes(color = cluster, label = cluster),
+  #                concavity = 2.8, label.fontsize = 30) + 
+  scale_fill_brewer(palette = "Set1") + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  # geom_text(data = vscores, aes(x = PC1, y = PC2, label = rownames(vscores)),
+  #           col = 'red') +
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
+               arrow = arrow(length = unit(0.2,"cm")),
+               alpha = 1, color = 'darkgray', size = 1.5) +
+  geom_text_repel(data = vscores, aes(PC1, PC2,
+                                           label = row.names(vscores)),
+                  box.padding = unit(0.3, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'blue',
+                  # segment.size = 0.5,
+                  # segment.alpha = 0.4,
+                  # arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = -0.02,
+                  # nudge_x = 0.1,
+                  force = 0.1,
+                  max.iter = 3e3,
+                  size = 8,
+                  color = "black") +
+  labs(x = "PCA1 (45%)",
+       y = "PCA2 (25%)") +
+  xlim(-0.9, 1.1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.position = c(0.9, 0.1),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24)) +
+  labs(fill = "Cluster", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)),
+         shape = "none") 
+  
+
+
+# expand = unit(4.1, "mm"), radius = unit(4, "mm")) + 
+
+fig <- p1 + p2
+ 
+ggsave(here("figures_rev2", "PCA_calvert_clust_panel_np.png"), fig,
+       width = 16, height = 8, dpi = 300)
+```
+```{r}
+#Looking at boxplot of each cluster
+data_clust <- data_pca %>% 
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+data_clust <- data_clust %>%
+  left_join(clust_df) %>%
+  relocate(cluster, .after = month_surv)
+
+data_clust <- data_clust %>% 
+  mutate(n_p = no2/po4)
+```
+
+```{r}
+data_clust_long <- data_clust %>% 
+  pivot_longer(c(temp:n_p), names_to = "parameters", values_to = "values")
+```
+
+```{r}
+data_clust_long %>% 
+  ggplot(aes(x = as.factor(cluster), y = values)) +
+  geom_boxplot() +
+  facet_wrap(~ parameters, scales = "free_y")
+```
+```{r}
+#Stats
+data_summ <- data_clust_long %>% 
+  group_by(cluster, parameters) %>% 
+  summarise(mean = mean(values),
+            sdev = sd(values)) %>% 
+  ungroup()
+```
+
+
+
+```{r}
+#What indicator species show up in these clusters?
+#Upload data from my master data standardization sheet
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+
+micro <- micro %>% 
+  filter(!group == "Metazoa") %>% 
+  filter(!group == "Protozoa")
+
+#Selecting columns
+micro_piv <- micro %>% 
+  select(date, month, month_surv, site_id, scientificName, species_sum)
+
+#pivoting wider so species are columns. 
+micro_piv <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+#Adding year to wide format for plotting
+micro_piv <- micro_piv %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  relocate(year, .before = month)
+
+micro_piv <- micro_piv %>% 
+  unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+micro_piv <- micro_piv %>%
+  left_join(clust_df) %>%
+  relocate(cluster, .after = month_surv)
+
+micro_piv <- micro_piv %>% 
+  filter(!is.na(cluster))
+
+#Arranging according to site ID and date
+micro_piv <- micro_piv %>% 
+  arrange(site_id, date)
+
+#Removing QU39 to focus analysis on QU39
+micro_piv <- micro_piv %>% 
+  filter(!site_id == "QU39")
+
+#Pulling out species counts for transform and input into clustering and NMDS
+species <- micro_piv[, 8:ncol(micro_piv)]
+
+#Creating relative abundance matrix - not currently looking at relative abundance
+# transform_rel <- decostand(species, method = "total")
+  
+#Log10 transformation + 1 (as per Mahara)
+transform <- log10(species + 1)
+
+
+```
+
+```{r}
+cluster <- micro_piv$cluster
+```
+
+```{r}
+#Not working...
+
+inv_clust = multipatt(transform, cluster, func = "r.g",
+                       control = how(nperm = 9999))
+
+summary(inv_clust)
+
+```
+
+
+
+
+```{r}
+# https://towardsdatascience.com/common-mistakes-in-cluster-analysis-and-how-to-avoid-them-eb960116d773
+```
+

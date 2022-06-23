@@ -33,6 +33,7 @@ clust_phy <- read_csv(here("outputs", "clusters_phys.csv"))
 
 clust_chem <- read_csv(here("outputs", "chemtax_clusters.csv"))
 ```
+
 ```{r}
 micro <- micro %>% 
   filter(!site_id == "QU39")
@@ -90,6 +91,12 @@ micro <- micro %>%
 distinct_species_2 <- micro %>% 
   distinct(group, scientificName_accepted)
 ```
+
+```{r}
+species <- micro %>% 
+  filter(scientificName == "Thalassiosira nordenskioeldii")
+```
+
 
 
 ```{r}
@@ -436,7 +443,7 @@ p1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
         legend.key = element_blank(), 
         legend.title = element_text(size = 20, face = "bold", colour = "black"), 
         legend.text = element_text(size = 18, colour = "black"),
-        legend.position = c(0.90, 0.68),
+        legend.position = c(0.92, 0.71),
         legend.margin = margin(-0.3,0,0,0, unit = "cm"),
         text = element_text(size = 32)) +
   labs(fill = "Month", shape = "Station") +
@@ -712,12 +719,14 @@ site_id_2020 <- micro_piv_2020$site_id
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by station
-inv_site_2018_fs = multipatt(transform_2018_fs, site_id_fs, func = "r.g",
+inv_site = multipatt(transform, site_id, func = "r.g",
                        control = how(nperm = 9999))
 
 #Looking at results of analysis
 summary(inv_site)
 ```
+
+
 ```{r}
 #ANOSIM test to see if groupings statistically significant - abundance
 
@@ -827,13 +836,13 @@ h1_1 <- micro_heat %>%
    filter(scientificName == "Chaetoceros decipiens" |
            scientificName == "Dactyliosolen phuketensis" |
            scientificName == "Detonula pumila" |
-           scientificName == "Thalassiosira rotula" |
+           # scientificName == "Thalassiosira rotula" |
            scientificName == "Ceratium lineatum" |
            scientificName == "Dactyliosolen fragilissimus" |
            scientificName == "Chaetoceros debilis" |
            scientificName == "Guinardia delicatula" |
            scientificName == "Rhizosolenia setigera" |
-           scientificName == "Chaetoceros seiracanthus" |
+           # scientificName == "Chaetoceros seiracanthus" |
            scientificName == "Skeletonema marinoi") %>%
   ggplot(aes(x = sample_name, y = species_order, fill = log10(count + 1))) +
   geom_tile(color = "black", size = 1) +
@@ -843,15 +852,83 @@ h1_1 <- micro_heat %>%
                       high = "#012345") +
   scale_y_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
                               "Chaetoceros decipiens" = "C.dec.",
-                              "Chaetoceros seiracanthus" = "C.s.",
+                              # "Chaetoceros seiracanthus" = "C.s.",
                               "Dactyliosolen fragilissimus" = "D.f.",
                               "Dactyliosolen phuketensis" = "D.ph.",
                               "Detonula pumila" = "D.p.",
                               "Guinardia delicatula" = "G.d.",
                               "Rhizosolenia setigera" = "R.s.",
                               "Skeletonema marinoi" = "S.m.",
-                              "Thalassiosira rotula" = "T.r.",
+                              # "Thalassiosira rotula" = "T.r.",
                               "Ceratium lineatum" = "C.l.")) +
+  # geom_text(data = dat_text, mapping = aes(x = -Inf, y = -Inf, label = label), 
+  #           hjust = -0.1, vjust = -1) +
+  ylab(bquote(Log^10 ~ "(Abund. +1)")) +
+  annotate("text", x = 1.5, y = 9, label = "e)", size = 10) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = c(0.03, 0.30),
+        legend.direction = "vertical",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank())
+
+```
+
+
+
+
+
+```{r}
+#Plotting indicator species where p < 0.01. 
+
+#Setting the order to the same as the clustering using the specified list
+micro_heat$sample_name <- factor(micro_heat$sample_name, levels = unique(hc_order))
+
+
+h1_2 <- micro_heat %>%   
+   filter(scientificName == "Ceratium lineatum" |
+          scientificName == "Chaetoceros debilis" |
+          scientificName == "Chaetoceros decipiens" |
+          scientificName == "Chaetoceros laciniosus" |
+          scientificName == "Chaetoceros socialis" |
+          scientificName == "Dactyliosolen fragilissimus" |
+          scientificName == "Dactyliosolen phuketensis" |
+          scientificName == "Detonula pumila" |
+          scientificName == "Guinardia delicatula" |
+          scientificName == "Leptocylindrus danicus" |
+          scientificName == "Pseudo-nitzschia seriata" |
+          scientificName == "Rhizosolenia setigera" |
+          scientificName == "Scrippsiella precaria" |
+          scientificName == "Skeletonema marinoi") %>%
+  ggplot(aes(x = sample_name, y = species_order, fill = log10(count + 1))) +
+  geom_tile(color = "black", size = 1) +
+  # facet_grid(group ~ ., scales = "free_y", space = "free") +
+  scale_fill_gradient(name = "",
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  scale_y_discrete(labels = c("Ceratium lineatum" = "C.l.",
+                              "Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros decipiens" = "C.dec.",
+                              "Chaetoceros laciniosus" = "C.lac.",
+                              "Chaetoceros socialis" = "C.soc.",
+                              "Dactyliosolen fragilissimus" = "D.f.",
+                              "Dactyliosolen phuketensis" = "D.ph.",
+                              "Detonula pumila" = "D.pu.",
+                              "Guinardia delicatula" = "G.d",
+                              "Leptocylindrus danicus" = "L.d.",
+                              "Pseudo-nitzschia seriata" = "P.s.",
+                              "Rhizosolenia setigera" = "R.s.",
+                              "Scrippsiella precaria" = "S.p.",
+                              "Skeletonema marinoi" = "S.m.")) +
   # geom_text(data = dat_text, mapping = aes(x = -Inf, y = -Inf, label = label), 
   #           hjust = -0.1, vjust = -1) +
   ylab(bquote(Log^10 ~ "(Abund. +1)")) +
@@ -873,6 +950,8 @@ h1_1 <- micro_heat %>%
         legend.background=element_blank())
 
 ```
+
+
 
 ```{r}
 #Second approach to try to lineup dendrogram with heatmap so that they can be combined in a panel.
@@ -938,7 +1017,7 @@ bar <- micro_rich %>%
   ggplot(aes(x = sample_name, y = n_spec, fill = type)) +
   geom_bar(stat = "identity", position = position_stack(reverse = T),
            color = "black") +
-  # geom_hline(yintercept = 40) +
+  geom_hline(yintercept = 20) +
   scale_fill_manual(values = c("black", "grey"),
                     labels = c("Diat.", "Flag.")) +
   ylab("Rich.") +
@@ -960,6 +1039,20 @@ bar <- micro_rich %>%
 ```
 
 ```{r}
+micro_rich %>% 
+  filter(type == "D") %>% 
+  ggplot(aes(x = as.factor(sample_name), y = n_spec)) + 
+  geom_point()
+
+micro_rich %>% 
+  filter(type == "F") %>% 
+  ggplot(aes(x = as.factor(sample_name), y = n_spec)) + 
+  geom_point()
+```
+
+
+
+```{r}
 #Merging the nMDS with the dendrogram and heatmap.
 fig <- p_dend2 / bar / h1_1 + plot_layout(heights = c(1, 1, 3))
 
@@ -967,6 +1060,17 @@ fig2 <- fig_nmds_horiz / fig
 
 ggsave(here("figures_good", "nmds_year_richness.png"), fig2,
        width = 16, height = 15, dpi = 300)
+
+```
+
+```{r}
+#Merging the nMDS with the dendrogram and heatmap.
+fig <- p_dend2 / bar / h1_2 + plot_layout(heights = c(1, 1, 3))
+
+fig2 <- fig_nmds_horiz / fig
+
+ggsave(here("figures_good", "nmds_year_richness_2.png"), fig2,
+       width = 16, height = 17, dpi = 300)
 
 ```
 
@@ -1148,7 +1252,9 @@ micro_ind_stat <- rbind(dfo_cl, micro_ind_stat)
 #Creating a plot showing number and percent observed for each indicator species by station. Then a second plot with the average abundance of each species for each station.
 
 p1 <- micro_ind_stat %>% 
-  filter(!scientificName == "Skeletonema marinoi") %>% 
+  filter(!scientificName == "Skeletonema marinoi" |
+         !scientificName == "Thalassiosira rotula" |
+         !scientificName == "Chaetoceros seiracanthus") %>% 
   ggplot(aes(x = perc_obs, y = scientificName, fill = site_id)) +
   geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
            color = "black") +
@@ -1174,7 +1280,9 @@ p1 <- micro_ind_stat %>%
   
 
 p2 <- micro_ind_stat %>% 
-  filter(!scientificName == "Skeletonema marinoi") %>% 
+  filter(!scientificName == "Skeletonema marinoi" |
+         !scientificName == "Thalassiosira rotula" |
+         !scientificName == "Chaetoceros seiracanthus") %>% 
   ggplot(aes(x = mean_count, y = scientificName, fill = site_id)) +
   geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
            color = "black") +
@@ -1192,7 +1300,7 @@ p2 <- micro_ind_stat %>%
                               "Guinardia delicatula" = "G.d.",
                               "Rhizosolenia setigera" = "R.s.",
                               "Skeletonema marinoi" = "S.m.",
-                              "Thalassiosira rotula" = "T.r.",
+                              # "Thalassiosira rotula" = "T.r.",
                               "Ceratium lineatum" = "C.l.")) +
   theme_bw() +
     theme(text = element_text(size = 25),
@@ -1204,14 +1312,16 @@ p2 <- micro_ind_stat %>%
 
 fig <- p1 + p2
 
-ggsave(here("figures_rev2", "indicator_species_station_bar.png"), fig,
+ggsave(here("figures_good", "indicator_species_station_bar.png"), fig,
        width = 12, height = 7, dpi = 300)
 ```
 ```{r}
 #Creating a plot showing number and percent observed for each indicator species by station. Then a second plot with the average abundance of each species for each station.
 
 p1 <- micro_ind_stat %>% 
-  filter(!scientificName == "Skeletonema marinoi") %>% 
+    filter(!scientificName == "Skeletonema marinoi" &
+         !scientificName == "Thalassiosira rotula" &
+         !scientificName == "Chaetoceros seiracanthus") %>%  
   ggplot(aes(x = scientificName, y = n_obs, fill = site_id)) +
   geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
            color = "black") +
@@ -1221,14 +1331,14 @@ p1 <- micro_ind_stat %>%
   scale_y_continuous(expand = c(0.01, 0), limits = c(0, 20)) +
   scale_x_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
                               "Chaetoceros decipiens" = "C.dec.",
-                              "Chaetoceros seiracanthus" = "C.s.",
+                              # "Chaetoceros seiracanthus" = "C.s.",
                               "Dactyliosolen fragilissimus" = "D.f.",
                               "Dactyliosolen phuketensis" = "D.ph.",
                               "Detonula pumila" = "D.p.",
                               "Guinardia delicatula" = "G.d.",
                               "Rhizosolenia setigera" = "R.s.",
-                              "Skeletonema marinoi" = "S.m.",
-                              "Thalassiosira rotula" = "T.r.",
+                              # "Skeletonema marinoi" = "S.m.",
+                              # "Thalassiosira rotula" = "T.r.",
                               "Ceratium lineatum" = "C.l.")) +
   theme_bw() +
   labs(y = "# Obs. + (%)") +
@@ -1240,15 +1350,17 @@ p1 <- micro_ind_stat %>%
   
 
 p2 <- micro_ind_stat %>% 
-  filter(!scientificName == "Skeletonema marinoi") %>% 
-  ggplot(aes(x = scientificName, y = median_count,  fill = site_id)) +
+  filter(!scientificName == "Skeletonema marinoi" &
+         !scientificName == "Thalassiosira rotula" &
+         !scientificName == "Chaetoceros seiracanthus") %>% 
+  ggplot(aes(x = scientificName, y = log10(median_count + 1),  fill = site_id)) +
   geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
            color = "black") +
   scale_fill_brewer(palette = "Set1", labels = c("F", "C", "S")) +
   # scale_x_continuous(expand = c(0, 1000)) +
   # ggbreak::scale_x_break(c(55000, 240000)) +
-  labs(y = "Med. Abund (cells l)") +
-  scale_y_continuous(expand = c(0.01, 0), limits = c(0, 18000)) +
+  labs(y = "Median log10(cells L + 1)") +
+  scale_y_continuous(expand = c(0.01, 0), limits = c(0, 5)) +
   scale_x_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
                               "Chaetoceros decipiens" = "C.dec.",
                               "Chaetoceros seiracanthus" = "C.s.",
@@ -1258,7 +1370,7 @@ p2 <- micro_ind_stat %>%
                               "Guinardia delicatula" = "G.d.",
                               "Rhizosolenia setigera" = "R.s.",
                               "Skeletonema marinoi" = "S.m.",
-                              "Thalassiosira rotula" = "T.r.",
+                              # "Thalassiosira rotula" = "T.r.",
                               "Ceratium lineatum" = "C.l.")) +
   theme_bw() +
     theme(text = element_text(size = 25),
@@ -1271,8 +1383,8 @@ p2 <- micro_ind_stat %>%
 
 fig <- p1 / p2
 
-ggsave(here("figures_rev2", "indicator_species_station_bar3.png"), fig,
-       width = 12, height = 7, dpi = 300)
+ggsave(here("figures_good", "indicator_species_station_bar4.png"), fig,
+       width = 12, height = 9, dpi = 300)
 ```
 ```{r}
 micro_ind_ts <- micro %>% 
