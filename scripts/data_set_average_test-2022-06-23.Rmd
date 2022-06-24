@@ -1,0 +1,435 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+```
+
+
+```{r}
+#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
+data <- read_csv(here("outputs", "ctd_merge_2022-03-16_het.csv"))
+
+```
+
+```{r}
+#This just ensures that there are no exact duplicates introduced through joining. There aren't here, but it must have occured in earlier versions and I am keeping it in-case I make changes in the future.
+data <- data %>% 
+  distinct(date, site_id, .keep_all = TRUE)
+
+#Removing QU39 for this worksheet
+data <- data %>% 
+  filter(!site_id == "QU39")
+```
+
+```{r}
+#selecting data I am going to use with the PCA - I think a case could be made to only include sio@ as this is what comes out as a driver in RDA and also, they all point in the same direction and have the same strength in PCA biplot.
+pigments <- data %>% 
+  select(date, month, month_surv, site_id, micro_chl, nano_chl, pico_chl,
+         cyan:diat)
+
+#Changing site_id to location 
+pigments <- pigments %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+```
+
+```{r}
+sf <- pigments %>% 
+  select(date:pico_chl)
+
+sf <- sf %>% 
+  drop_na()
+
+sf_long <- sf %>% 
+  pivot_longer(!date:location, names_to = "size", values_to = "Chla")
+
+sf_long <- sf_long %>% 
+  group_by(date, location) %>% 
+  mutate(sum = sum(Chla)) %>% 
+  ungroup() %>% 
+  mutate(perc = Chla/sum)
+
+sf_long_bloom <- sf_long %>% 
+  filter(sum > 2)
+
+sf_mean <- sf_long_bloom %>% 
+  group_by(location, size) %>% 
+  summarise(mean_perc = mean(perc),
+            mean_chla = mean(Chla)) %>% 
+  ungroup()
+```
+
+```{r}
+chem <- pigments %>% 
+  select(date:location, cyan:diat) 
+
+chem <- chem %>% 
+  drop_na()
+
+chem_long <- chem %>% 
+  pivot_longer(!date:location, names_to = "group", values_to = "tchla")
+
+chem_long <- chem_long %>% 
+  group_by(date, location) %>% 
+  mutate(sum = sum(tchla)) %>% 
+  ungroup() %>% 
+  mutate(perc = tchla/sum)
+
+chem_mean <- chem_long %>% 
+  group_by(location, group) %>% 
+  summarise(mean_perc = mean(perc),
+            mean_tchla = mean(tchla)) %>% 
+  ungroup()
+```
+```{r}
+#Order phytoplankton groups roughly from smallest to largest - create order list
+order_sf <- c("pico_chl", "nano_chl", "micro_chl")
+
+#Chemtax - Specify order of phyto groups for figures
+sf_mean <- arrange(mutate(sf_mean, size = factor(size,
+                                              levels = order_sf)))
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+sf_mean <- arrange(mutate(sf_mean,
+                         location = factor(location, levels = order_loc)))
+```
+
+```{r}
+sf_mean %>% 
+  ggplot(aes(x = as.factor(location), y = mean_perc, fill = size)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black", size = 0.75) +
+  scale_fill_brewer(palette = "Greens") +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 30),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        axis.text = element_text(colour = "black"),
+        axis.line = element_line(colour = "black")) 
+  
+```
+
+```{r}
+#Order phytoplankton groups roughly from smallest to largest - create order list
+order_chem <- c("cyan", "pela", "hapt", "pras2", "pras3", "cryp",
+                "dino", "raph", "diat")
+
+#Chemtax - Specify order of phyto groups for figures
+chem_mean <- arrange(mutate(chem_mean, group = factor(group,
+                                              levels = order_chem)))
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+chem_mean <- arrange(mutate(chem_mean,
+                         location = factor(location, levels = order_loc)))
+
+#Set Color palette for plotting. Currently based on QU39 manuscript. Brewer has some good ones for R style.
+palette_chem <- c("#ff8000", #1 - Diatoms (orange)
+                  "#4d6600", #3 - Raphidophytes (dark green)
+                  "#ff0000", #4 - Dinoflagellates (Red)
+                  "#ffff00", #5 - Cryptophytes (yellow)
+                  "#6EFF7C", #6 - prasinophytes-2 (lighter green)
+                  "#00ff00", #6 - prasinophytes-3 (light green)
+                  "#7d4dcc", #7 - Haptophytes (purple)
+                  "#ff99c7", #2 - Pelagophytes (pink)
+                  "#000000") #8 - Cyanobacteria (black)
+```
+
+```{r}
+chem_mean %>% 
+  ggplot(aes(x = as.factor(location), y = mean_perc, fill = fct_rev(group))) + 
+  geom_bar(stat = "identity", position = "stack", color = "black", size = 0.75) +
+  scale_fill_manual(values = palette_chem) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 30),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        axis.text = element_text(colour = "black"),
+        axis.line = element_line(colour = "black")) +
+  guides(fill = guide_legend(nrow = 2)) 
+```
+
+```{r}
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+```
+
+```{r}
+micro <- micro %>% 
+  filter(!site_id == "QU39")
+```
+
+```{r}
+micro <- micro %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+micro <- micro %>% 
+    mutate(year = lubridate::year(date)) %>% 
+  relocate(year, .after = date)
+```
+
+```{r}
+#Removing cyanobacteria as their counts are not reliable
+micro <- micro %>% 
+  filter(!scientificName_accepted == "Cyanobacteria")
+
+micro <- micro %>% 
+  filter(!group == "Metazoa") %>% 
+  filter(!group == "Protozoa")
+
+```
+
+```{r}
+#Want to do a similar plot to the chemtax but with abundance
+micro_distint <- micro %>% 
+  distinct(group)
+
+
+micro_plot <- micro %>%
+  filter(!group == "Choanoflagellata", !group == "Ciliophora", 
+         !group == "Ebriidea", !group == "Kinetoplastidea", !group == "Metazoa", 
+         !group == "Cyanobacteria", !group == "Protozoa")
+
+micro_plot <- micro_plot %>% 
+  group_by(location, date, group) %>% 
+  summarise(group_sum = sum(species_sum)) %>% 
+  ungroup()
+
+micro_plot <- micro_plot %>% 
+  group_by(location, date) %>% 
+  mutate(abund_total = sum(group_sum)) %>% 
+  ungroup() %>% 
+  mutate(group_perc = group_sum/abund_total)
+
+micro_group_mean <- micro_plot %>% 
+  group_by(location, group) %>% 
+  summarize(mean_perc = mean(group_perc)) %>%
+  ungroup()
+
+```
+```{r}
+micro_group_mean %>% 
+  ggplot(aes(x = as.factor(location), y = mean_perc, fill = fct_rev(group))) + 
+  geom_bar(stat = "identity", position = "stack", color = "black", size = 0.75) +
+  # scale_fill_manual(values = palette_chem) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 30),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        axis.text = element_text(colour = "black"),
+        axis.line = element_line(colour = "black")) +
+  guides(fill = guide_legend(nrow = 2)) 
+```
+
+
+
+
+
+
+```{r}
+#Selecting columns
+micro_piv1 <- micro %>% 
+  select(date, month, month_surv, site_id, location, group, scientificName, species_sum)
+
+micro_piv <- micro %>% 
+  select(date, month, month_surv, site_id, scientificName, species_sum)
+
+micro_diat <- micro_piv1 %>% 
+  filter(group == "Bacillariophyta")
+
+micro_dino <- micro_piv1 %>% 
+  filter(group == "Dinoflagellata")
+
+#pivoting wider so species are columns. 
+micro_diat <- micro_diat %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+micro_dino <- micro_dino %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+micro_all <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+#Pulling out species counts for transform and input into clustering and NMDS
+species_diat <- micro_diat[, 7:ncol(micro_diat)]
+
+species_dino <- micro_dino[, 7:ncol(micro_dino)]
+
+species_all <- micro_all[, 7:ncol(micro_all)]
+```
+
+```{r}
+
+#Look at shannon diversity
+
+shannon_diat <- diversity(species_diat)
+shannon_dino <- diversity(species_dino)
+shannon_all <- diversity(species_all)
+
+shannon_diat <- as_tibble(shannon_diat)
+shannon_diat <- shannon_diat %>% 
+  rename(diat = value)
+
+shannon_dino <- as_tibble(shannon_dino)
+shannon_dino <- shannon_dino %>% 
+  rename(dino = value)
+
+shannon_all <- as_tibble(shannon_all)
+shannon_all <- shannon_all %>% 
+  rename(all = value)
+
+shannon <- cbind(shannon_diat, shannon_dino, shannon_all)
+
+shannon$location <- micro_diat$location
+
+```
+
+```{r}
+shannon_long <- shannon %>% 
+  pivot_longer(!location, names_to = "type", values_to = "value")
+```
+
+```{r}
+shannon_mean <- shannon_long %>% 
+  group_by(location, type) %>% 
+  summarise(mean_shannon = median(value),
+            sdev_shannon = sd(value)) %>% 
+  ungroup()
+```
+
+```{r}
+#Chemtax - Specify order of phyto groups for figures
+shannon_mean <- arrange(mutate(shannon_mean,
+                         location = factor(location, levels = order_loc)))
+```
+
+```{r}
+
+shannon_mean %>% 
+  ggplot(aes(x = as.factor(location), y = mean_shannon,
+             group = type, fill = type)) + 
+  geom_bar(stat = "identity", position = "dodge", color = "black", size = 0.75) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 30),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        axis.text = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+
+```
+```{r}
+#Let's look at difference in diatom 
+shannon$location <- micro_diat$location
+shannon$date <- micro_diat$date
+shannon$month_surv <- micro_diat$month_surv
+
+shannon <- shannon %>% 
+  mutate(year = lubridate::year(date))
+
+shannon_f <- shannon %>% 
+  filter(location == "F") %>% 
+  select(year, month_surv, diat_f = diat)
+
+shannon_s <- shannon %>% 
+  filter(location == "S") %>% 
+  select(year, month_surv, diat_s = diat)
+
+shannon_join <- shannon_s %>% 
+  left_join(shannon_f) %>% 
+  mutate(diff = diat_s - diat_f)
+
+```
+```{r}
+shannon_join %>% 
+  ggplot(aes(x = as.factor(month_surv), y = diff)) + 
+  geom_bar(stat = "identity") +
+  facet_grid(.~year)
+```
+
+
+
+
+```{r}
+#Looking at Richness
+rich_diat <- micro %>% 
+  filter(class == "Bacillariophyceae") %>% 
+  group_by(date, location) %>% 
+  summarise(n_diat = n()) %>% 
+  ungroup()
+
+rich_mean <- rich_diat %>% 
+  group_by(location) %>% 
+  summarise(mean_diat = mean(n_diat)) %>% 
+  ungroup()
+
+
+```
+
+```{r}
+rich_mean %>% 
+  ggplot(aes(x = as.factor(location), y = mean_diat)) + 
+  geom_bar(stat = "identity", color = "black", size = 0.75) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 30),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        axis.text = element_text(colour = "black"),
+        axis.line = element_line(colour = "black"))
+```
+
+
+
+
+```{r}
+# https://towardsdatascience.com/common-mistakes-in-cluster-analysis-and-how-to-avoid-them-eb960116d773
+```
+
