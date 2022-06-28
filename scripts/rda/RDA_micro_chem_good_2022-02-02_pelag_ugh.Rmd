@@ -146,20 +146,37 @@ mm_no_chl <- mm_no_chl %>%
   select(!N2_dm) %>% #Currently not using stability
   select(!dep_26_dm) %>%  #Currently not using 1026 depth
   select(!zeu_dm) %>% #not using z1% (zeu) in this file
-  select(!flu_dm) #not using CTD chl fluorescence
+  select(!flu_dm) %>%  #not using CTD chl fluorescence
+  select(!turb_dm)
 
 #removing NAs for analysis
 mm_no_chl <- mm_no_chl %>% 
   drop_na()
 ```
+```{r}
+expl_join <- mm_no_chl %>% 
+  select(date:site_id, temp_dm:chl)
 
+data_join <- expl_join %>% 
+  left_join(micro_piv)
+```
 
 ```{r}
 #Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
-resp <- mm_no_chl[, 19:139]
+resp <- data_join[, 13:104]
 
 #Explanatory variables
-expl <- mm_no_chl[, 7:15]
+expl <- data_join[, 5:12]
+
+
+
+expl <- expl %>% 
+  mutate(n_p = no2_dm/po4_dm,
+         si_n = sio2_dm/po4_dm)
+
+expl[expl == Inf] <- 0
+expl[is.na(expl)] <- 0
+
 
 #Adding nutrient ratios - I'm not sure this is a good things to do as they will covary with the nutrients
 # expl <- expl %>% 
@@ -182,7 +199,7 @@ expl <- scale(expl)
 expl <- as.data.frame(expl)
 
 expl <- expl %>% 
-  rename(temp = temp_dm, sal = sal_dm, drho = delta_rho_dm, turb = turb_dm,
+  rename(temp = temp_dm, sal = sal_dm, drho = delta_rho_dm,
          no3_no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm, secchi = secchi_depth)
 ```
 

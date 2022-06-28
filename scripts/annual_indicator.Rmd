@@ -1,0 +1,215 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+library(indicspecies)
+library(fuzzySim)
+library(cluster)
+library(patchwork)
+library(vegan)
+library(RColorBrewer)
+
+#Need to go through and test these
+
+```
+
+```{r}
+#Upload data
+
+#Upload data from my master data standardization sheet
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+
+clust_phy <- read_csv(here("outputs", "clusters_phys.csv"))
+
+clust_chem <- read_csv(here("outputs", "chemtax_clusters.csv"))
+```
+
+```{r}
+micro <- micro %>% 
+  filter(!site_id == "QU39")
+```
+
+```{r}
+#Selecting the species groups I will work with and limiting species that rarely observed.
+
+#For now, I am keeping all of the heterotrophic species (just in this workbook)
+
+# micro <- micro %>% 
+#   filter(trophicStatus == "auto")
+
+#Counting how many times each species is observed
+micro <- micro %>%
+  group_by(scientificName) %>%
+  mutate(num_occurrence = n()) %>% 
+  ungroup()
+
+#removing species that have not been observed at least twice -  this is to minimize the influence of zeros. When I used this, it removes some species that are important, but not observed often. So trying with it turned off.
+# micro <- micro %>%
+#   filter(num_occurrence > 5)
+
+#Removing cyanobacteria as their counts are not reliable
+micro <- micro %>% 
+  filter(!scientificName_accepted == "Cyanobacteria")
+
+micro <- micro %>% 
+  filter(!group == "Metazoa") %>% 
+  filter(!group == "Protozoa")
+```
+
+```{r}
+#Trying to look at only species present in 20% of samples
+#How many samples
+sample_num <- micro %>% 
+  distinct(date, site_id)
+
+species_10 <- micro %>% 
+  group_by(scientificName) %>% 
+  summarise(n_obs = n()) %>%
+  ungroup() %>% 
+  mutate(perc_obs = n_obs/50) %>% 
+  filter(perc_obs >= 0.10)
+
+species_10_list <- species_10$scientificName
+
+micro <- micro %>% 
+  filter(scientificName %in% species_10_list)
+
+```
+
+```{r}
+#Sub-setting the species determined via indicator species analysis on station
+micro_ind_stat <- micro %>% 
+  filter(scientificName %in% ind_list)
+
+#Determining number of times each indicator species observed at each station
+micro_ind_stat <- micro_ind_stat %>% 
+  group_by(site_id, scientificName) %>% 
+  summarise(n_obs = n(),
+            max_count = max(species_sum),
+            mean_count = mean(species_sum),
+            median_count = median(species_sum)) %>% 
+  ungroup() 
+
+test <- micro %>% 
+  filter(!site_id == "QU39" & class  == "Bacillariophyceae") %>% 
+  group_by(site_id, scientificName) %>% 
+  summarise(n_obs = n(),
+            max_count = max(species_sum),
+            mean_count = mean(species_sum),
+            median_count = median(species_sum)) %>%
+  ungroup()
+
+#Maybe Friday brain, but this is the best way I could find to count how many times each station was sampled - Want this so I can determine percentage of times each indicator species was observed by station
+n_station <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  group_by(date, site_id) %>% 
+  distinct(date, site_id) %>% 
+  ungroup() %>% 
+  group_by(site_id) %>% 
+  summarise(n_samp = n()) %>% 
+  ungroup()
+
+#Joining total number of times each station was sampled with stats on how many times each species was observed at each station.
+micro_ind_stat <- micro_ind_stat %>% 
+  left_join(n_station) %>% 
+  mutate(perc_obs = n_obs/n_samp,
+         label = scales::percent(perc_obs %>% round(2)))
+```
+
+```{r}
+#Creating a placeholder for Ceratium lineatum for DFO2 - makes plot save a space so the groupings stay consistent.
+dfo_cl <- data.frame(site_id = "DFO2",
+                     scientificName = "Ceratium lineatum",
+                     n_obs = 0,
+                     max_count = 0,
+                     mean_count = 0,
+                     median_count = 0,
+                     n_samp = 0,
+                     perc_obs = 0,
+                     label = "0%")
+                 
+micro_ind_stat <- rbind(dfo_cl, micro_ind_stat)
+```
+
+```{r}
+#Creating a plot showing number and percent observed for each indicator species by station. Then a second plot with the average abundance of each species for each station.
+
+p1 <- micro_ind_stat %>% 
+  filter(!scientificName == "Skeletonema marinoi" |
+         !scientificName == "Thalassiosira rotula" |
+         !scientificName == "Chaetoceros seiracanthus") %>% 
+  ggplot(aes(x = perc_obs, y = scientificName, fill = site_id)) +
+  geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  scale_x_continuous(expand = c(0.01, 0), limits = c(0, 1.03)) +
+  scale_y_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros decipiens" = "C.dec.",
+                              "Chaetoceros seiracanthus" = "C.s.",
+                              "Dactyliosolen fragilissimus" = "D.f.",
+                              "Dactyliosolen phuketensis" = "D.ph.",
+                              "Detonula pumila" = "D.p.",
+                              "Guinardia delicatula" = "G.d.",
+                              "Rhizosolenia setigera" = "R.s.",
+                              "Skeletonema marinoi" = "S.m.",
+                              "Thalassiosira rotula" = "T.r.",
+                              "Ceratium lineatum" = "C.l.")) +
+  theme_bw() +
+  labs(x = "% Observed") +
+  theme(text = element_text(size = 25),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none")
+  
+
+p2 <- micro_ind_stat %>% 
+  filter(!scientificName == "Skeletonema marinoi" |
+         !scientificName == "Thalassiosira rotula" |
+         !scientificName == "Chaetoceros seiracanthus") %>% 
+  ggplot(aes(x = mean_count, y = scientificName, fill = site_id)) +
+  geom_bar(stat = "identity", position = position_dodge2(preserve = "single"), 
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  # scale_x_continuous(expand = c(0, 1000)) +
+  # ggbreak::scale_x_break(c(55000, 240000)) +
+  labs(x = "Mean Abundance (cells l)") +
+  scale_x_continuous(expand = c(0.01, 0), limits = c(0, 26000)) +
+  scale_y_discrete(labels = c("Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros decipiens" = "C.dec.",
+                              "Chaetoceros seiracanthus" = "C.s.",
+                              "Dactyliosolen fragilissimus" = "D.f.",
+                              "Dactyliosolen phuketensis" = "D.ph.",
+                              "Detonula pumila" = "D.p.",
+                              "Guinardia delicatula" = "G.d.",
+                              "Rhizosolenia setigera" = "R.s.",
+                              "Skeletonema marinoi" = "S.m.",
+                              # "Thalassiosira rotula" = "T.r.",
+                              "Ceratium lineatum" = "C.l.")) +
+  theme_bw() +
+    theme(text = element_text(size = 25),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.text = element_text(colour = "black"),
+          legend.position = c(0.85, 0.1),
+          legend.title = element_blank())
+
+fig <- p1 + p2
+
+ggsave(here("figures_good", "indicator_species_station_bar.png"), fig,
+       width = 12, height = 7, dpi = 300)
+```
+
+

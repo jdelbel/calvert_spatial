@@ -28,6 +28,8 @@ library(factoextra)
 #Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
 data <- read_csv(here("outputs", "ctd_merge_2022-03-16_het.csv"))
 
+#Upload microscopy data in long format
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 ```
 
 ```{r}
@@ -37,6 +39,10 @@ data <- data %>%
 
 #Removing QU39 for this worksheet
 data <- data %>% 
+  filter(!site_id == "QU39")
+
+#Remove QU39 from the microscopy data
+micro <- micro %>% 
   filter(!site_id == "QU39")
 ```
 
@@ -54,6 +60,18 @@ pigments <- pigments %>%
                               TRUE ~ as.character(site_id))) %>% 
   relocate(location, .after = site_id)
 
+
+#Changning site to location for microscopy data
+micro <- micro %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+micro <- micro %>% 
+    mutate(year = lubridate::year(date)) %>% 
+  relocate(year, .after = date)
 ```
 
 ```{r}
@@ -64,24 +82,17 @@ sf <- sf %>%
   drop_na()
 
 sf_long <- sf %>% 
-  pivot_longer(!date:location, names_to = "size", values_to = "Chla")
+  pivot_longer(!date:location, names_to = "size", values_to = "chla")
 
-sf_long <- sf_long %>% 
-  group_by(date, location) %>% 
-  mutate(sum = sum(Chla)) %>% 
-  ungroup() %>% 
-  mutate(perc = Chla/sum)
-
-sf_long_bloom <- sf_long %>% 
-  filter(sum > 2)
-
-sf_mean <- sf_long_bloom %>% 
+sf_mean <- sf_long %>% 
   group_by(location, size) %>% 
-  summarise(mean_perc = mean(perc),
-            mean_chla = mean(Chla)) %>% 
-  ungroup()
+  summarise(mean_chla = mean(chla)) %>% 
+  ungroup() %>% 
+  group_by(location) %>% 
+  mutate(sum_chla = sum(mean_chla)) %>% 
+  ungroup() %>% 
+  mutate(mean_perc = mean_chla/sum_chla)
 ```
-
 ```{r}
 chem <- pigments %>% 
   select(date:location, cyan:diat) 
@@ -92,18 +103,51 @@ chem <- chem %>%
 chem_long <- chem %>% 
   pivot_longer(!date:location, names_to = "group", values_to = "tchla")
 
-chem_long <- chem_long %>% 
-  group_by(date, location) %>% 
-  mutate(sum = sum(tchla)) %>% 
-  ungroup() %>% 
-  mutate(perc = tchla/sum)
-
 chem_mean <- chem_long %>% 
   group_by(location, group) %>% 
-  summarise(mean_perc = mean(perc),
-            mean_tchla = mean(tchla)) %>% 
-  ungroup()
+  summarise(mean_tchla = mean(tchla)) %>% 
+  ungroup() %>% 
+  group_by(location) %>% 
+  mutate(sum_tchla = sum(mean_tchla)) %>% 
+  ungroup() %>% 
+  mutate(mean_perc = mean_tchla/sum_tchla)
 ```
+```{r}
+#Removing cyanobacteria as their counts are not reliable
+micro <- micro %>% 
+  filter(!scientificName_accepted == "Cyanobacteria")
+
+micro <- micro %>% 
+  filter(!group == "Metazoa") %>% 
+  filter(!group == "Protozoa")
+
+micro_group <- micro %>%
+  filter(!group == "Choanoflagellata", !group == "Ciliophora", 
+         !group == "Ebriidea", !group == "Kinetoplastidea", !group == "Metazoa", 
+         !group == "Cyanobacteria", !group == "Protozoa")
+```
+
+```{r}
+
+micro_sum <- micro_group %>% 
+  group_by(location, date, group) %>% 
+  summarise(group_sum = sum(species_sum)) %>% 
+  ungroup()
+
+micro_mean <- micro_sum %>% 
+  group_by(location, group) %>% 
+  summarise(mean_abund = mean(group_sum)) %>% 
+  ungroup() %>% 
+  group_by(location) %>% 
+  mutate(sum_abund = sum(mean_abund)) %>% 
+  ungroup() %>% 
+  mutate(mean_perc = mean_abund/sum_abund)
+
+```
+
+
+Plotting Size-fractionated results
+
 ```{r}
 #Order phytoplankton groups roughly from smallest to largest - create order list
 order_sf <- c("pico_chl", "nano_chl", "micro_chl")
@@ -121,21 +165,26 @@ sf_mean <- arrange(mutate(sf_mean,
 ```
 
 ```{r}
-sf_mean %>% 
+sf_fig <- sf_mean %>% 
   ggplot(aes(x = as.factor(location), y = mean_perc, fill = size)) + 
   geom_bar(stat = "identity", position = "stack", color = "black", size = 0.75) +
-  scale_fill_brewer(palette = "Greens") +
+  scale_fill_brewer(palette = "Greens", labels = c(expression(Pico[CHL]),
+                                                   expression(Nano[CHL]),
+                                                   expression(Micro[CHL]))) +
+  labs(y = "%") +
   theme_bw() +
   theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
         text = element_text(size = 30),
-        legend.position = "top",
-        legend.direction = "horizontal",
+        # legend.position = "top",
+        # legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.text = element_text(colour = "black"),
         axis.line = element_line(colour = "black")) 
-  
 ```
+
+Chemtax
+
 
 ```{r}
 #Order phytoplankton groups roughly from smallest to largest - create order list
@@ -166,104 +215,84 @@ palette_chem <- c("#ff8000", #1 - Diatoms (orange)
 ```
 
 ```{r}
-chem_mean %>% 
+chem_fig <- chem_mean %>% 
   ggplot(aes(x = as.factor(location), y = mean_perc, fill = fct_rev(group))) + 
   geom_bar(stat = "identity", position = "stack", color = "black", size = 0.75) +
   scale_fill_manual(values = palette_chem) +
+  # ggsci::scale_fill_npg() +
+  labs(y = "%") +
   theme_bw() +
   theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
         text = element_text(size = 30),
-        legend.position = "top",
-        legend.direction = "horizontal",
+        # legend.position = "top",
+        # legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.text = element_text(colour = "black"),
-        axis.line = element_line(colour = "black")) +
-  guides(fill = guide_legend(nrow = 2)) 
+        axis.line = element_line(colour = "black")) 
+  # guides(fill = guide_legend(nrow = 3)) 
+```
+
+Microscopy
+
+```{r}
+#Order phytoplankton groups roughly from smallest to largest - create order list
+micro_mean$group <- factor(micro_mean$group,
+                         levels = c("Prymnesiophyta-Haptophyta",
+                                    "Euglenophyta",
+                                    "Chlorophyta-Prasinophyta",
+                                    "Cryptophyta",
+                                    "Dinoflagellata",
+                                    "Raphidiophyta",
+                                    "Dictyochophyta",
+                                    "Chrysophyta",
+                                    "Bacillariophyta"))
+
+#Setting colour pallete for microscopy data - roughly comparable to chemtax data
+palette_micro <- c("#ff8000", #Diatoms 
+                   "#2642D5", #Chrysophytes
+                   "#ff99c7", #Dicto (same color as chryso as same pig. group)
+                   "#4d6600", #Raph
+                   "#ff0000", #Dino
+                   "#ffff00", #Crypto
+                   "#00ff00", #Chloro (chloro and eugleno same colour, same pig. group)
+                   "#93FFCA", #Eugleno
+                   "#7d4dcc" #Hapto
+                   )
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+micro_mean <- arrange(mutate(micro_mean,
+                         location = factor(location, levels = order_loc)))
+
+
 ```
 
 ```{r}
-micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
-```
-
-```{r}
-micro <- micro %>% 
-  filter(!site_id == "QU39")
-```
-
-```{r}
-micro <- micro %>% 
-    mutate(location = case_when(site_id == "DFO2" ~ "F",
-                              site_id == "KC10" ~ "C",
-                              site_id == "QCS01" ~ "S",
-                              TRUE ~ as.character(site_id))) %>% 
-  relocate(location, .after = site_id)
-
-micro <- micro %>% 
-    mutate(year = lubridate::year(date)) %>% 
-  relocate(year, .after = date)
-```
-
-```{r}
-#Removing cyanobacteria as their counts are not reliable
-micro <- micro %>% 
-  filter(!scientificName_accepted == "Cyanobacteria")
-
-micro <- micro %>% 
-  filter(!group == "Metazoa") %>% 
-  filter(!group == "Protozoa")
-
-```
-
-```{r}
-#Want to do a similar plot to the chemtax but with abundance
-micro_distint <- micro %>% 
-  distinct(group)
-
-
-micro_plot <- micro %>%
-  filter(!group == "Choanoflagellata", !group == "Ciliophora", 
-         !group == "Ebriidea", !group == "Kinetoplastidea", !group == "Metazoa", 
-         !group == "Cyanobacteria", !group == "Protozoa")
-
-micro_plot <- micro_plot %>% 
-  group_by(location, date, group) %>% 
-  summarise(group_sum = sum(species_sum)) %>% 
-  ungroup()
-
-micro_plot <- micro_plot %>% 
-  group_by(location, date) %>% 
-  mutate(abund_total = sum(group_sum)) %>% 
-  ungroup() %>% 
-  mutate(group_perc = group_sum/abund_total)
-
-micro_group_mean <- micro_plot %>% 
-  group_by(location, group) %>% 
-  summarize(mean_perc = mean(group_perc)) %>%
-  ungroup()
-
-```
-```{r}
-micro_group_mean %>% 
+micro_fig <- micro_mean %>% 
   ggplot(aes(x = as.factor(location), y = mean_perc, fill = fct_rev(group))) + 
   geom_bar(stat = "identity", position = "stack", color = "black", size = 0.75) +
-  # scale_fill_manual(values = palette_chem) +
+  scale_fill_manual(values = palette_micro, labels = c("diat", "chry", "dict",
+                                                       "raph", "dino", "cryp",
+                                                       "chlo", "eugl", "hapt")) +
+  # ggsci::scale_fill_npg() +
+  labs(y = "%") +
   theme_bw() +
   theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
         text = element_text(size = 30),
-        legend.position = "top",
-        legend.direction = "horizontal",
+        # legend.position = "top",
+        # legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.text = element_text(colour = "black"),
-        axis.line = element_line(colour = "black")) +
-  guides(fill = guide_legend(nrow = 2)) 
+        axis.line = element_line(colour = "black")) 
+  # guides(fill = guide_legend(nrow = 3))  
 ```
 
 
-
-
-
+#Looking at Shannon index values.
 
 ```{r}
 #Selecting columns
@@ -347,22 +376,44 @@ shannon_mean <- arrange(mutate(shannon_mean,
 
 ```{r}
 
-shannon_mean %>% 
+shan_fig <- shannon_mean %>% 
   ggplot(aes(x = as.factor(location), y = mean_shannon,
              group = type, fill = type)) + 
   geom_bar(stat = "identity", position = "dodge", color = "black", size = 0.75) +
-  scale_fill_brewer(palette = "Set1") +
+  # scale_fill_brewer(palette = "Set1") +
+  scale_fill_npg() +
+  labs(y = "Shannon H'") +
   theme_bw() +
   theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
         text = element_text(size = 30),
-        legend.position = "top",
-        legend.direction = "horizontal",
+        # legend.position = "top",
+        # legend.direction = "horizontal",
         legend.title = element_blank(),
         axis.text = element_text(colour = "black"),
-        axis.line = element_line(colour = "black"))
+        axis.line = element_line(colour = "black")) 
 
 ```
+
+
+```{r}
+test <- sf_fig / chem_fig / micro_fig / shan_fig
+
+ggsave(here("figures_good", "test_2.png"), test,
+       width = 9, height = 16, dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 ```{r}
 #Let's look at difference in diatom 
 shannon$location <- micro_diat$location
@@ -374,57 +425,110 @@ shannon <- shannon %>%
 
 shannon_f <- shannon %>% 
   filter(location == "F") %>% 
-  select(year, month_surv, diat_f = diat)
+  select(year, month_surv, diat_f = diat, dino_f = dino)
 
 shannon_s <- shannon %>% 
   filter(location == "S") %>% 
-  select(year, month_surv, diat_s = diat)
+  select(year, month_surv, diat_s = diat, dino_s = dino)
 
 shannon_join <- shannon_s %>% 
   left_join(shannon_f) %>% 
-  mutate(diff = diat_s - diat_f)
+  mutate(diat_diff = diat_s - diat_f,
+         dino_diff = dino_s - dino_f)
+
+shannon_compare <- shannon_join %>% 
+  select(year, month_surv, diat_diff, dino_diff) %>% 
+  pivot_longer(!year:month_surv, names_to = "type", values_to = "value")
 
 ```
+
 ```{r}
-shannon_join %>% 
-  ggplot(aes(x = as.factor(month_surv), y = diff)) + 
-  geom_bar(stat = "identity") +
+shannon_compare %>% 
+  ggplot(aes(x = as.factor(month_surv), y = value, fill = type)) + 
+  geom_bar(stat = "identity", position = "dodge", color = "black") +
+  facet_grid(.~year) +
+  theme_bw()  
+```
+
+```{r}
+micro %>% 
+  filter(class == "Bacillariophyceae"& !date %in% date_list) %>% 
+  group_by(site_id, scientificName_accepted) %>% 
+  mutate(n_obs = n()) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(site_id), y = scientificName,
+             fill = n_obs)) +
+  geom_tile(color = "black") +
+  geom_text(aes(label= n_obs)) +
+  scale_fill_gradient(low = "white",
+                       high = "red")
+
+ggsave(here("figures_good", "test2.png"),
+       width = 8, height = 16, dpi = 300)
+```
+```{r}
+micro_test <- micro %>% 
+  distinct(year, month_surv, location, .keep_all = TRUE) %>% 
+  group_by(year, month_surv) %>% 
+  mutate(n_obs = n()) %>% 
+  ungroup() %>% 
+  filter(n_obs < 3)
+
+date_list <- micro_test$date
+
+
+```
+
+
+```{r}
+micro %>% 
+  filter(class == "Dinophyceae" & !date %in% date_list) %>% 
+  group_by(site_id, scientificName_accepted) %>% 
+  mutate(n_obs = n()) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = as.factor(site_id), y = scientificName,
+             fill = n_obs)) +
+  geom_tile(color = "black") +
+  geom_text(aes(label= n_obs)) +
+  scale_fill_gradient(low = "white",
+                       high = "red")
+
+ggsave(here("figures_good", "test2-dino.png"),
+       width = 8, height = 16, dpi = 300)
+```
+
+```{r}
+micro_ps <- micro %>% 
+  filter(scientificName == "Pseudo-nitzschia seriata" & year == 2019)
+
+micro_ps %>% 
+  ggplot(aes(x = month_surv, y = species_sum, color = location)) + 
+  geom_line()
+```
+
+
+```{r}
+data %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(year == 2019) %>% 
+  ggplot(aes(x = month_surv, y = temp_dm, color = site_id)) + 
+  geom_line()
+
+```
+
+```{r}
+micro_df <- micro %>% 
+  filter(scientificName == "Chaetoceros debilis")
+
+micro_df %>% 
+  ggplot(aes(x = month_surv, y = species_sum, color = location)) + 
+  geom_line() +
+  geom_point() +
   facet_grid(.~year)
 ```
 
 
 
-
-```{r}
-#Looking at Richness
-rich_diat <- micro %>% 
-  filter(class == "Bacillariophyceae") %>% 
-  group_by(date, location) %>% 
-  summarise(n_diat = n()) %>% 
-  ungroup()
-
-rich_mean <- rich_diat %>% 
-  group_by(location) %>% 
-  summarise(mean_diat = mean(n_diat)) %>% 
-  ungroup()
-
-
-```
-
-```{r}
-rich_mean %>% 
-  ggplot(aes(x = as.factor(location), y = mean_diat)) + 
-  geom_bar(stat = "identity", color = "black", size = 0.75) +
-  theme_bw() +
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        text = element_text(size = 30),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        axis.text = element_text(colour = "black"),
-        axis.line = element_line(colour = "black"))
-```
 
 
 
@@ -432,4 +536,3 @@ rich_mean %>%
 ```{r}
 # https://towardsdatascience.com/common-mistakes-in-cluster-analysis-and-how-to-avoid-them-eb960116d773
 ```
-
