@@ -89,7 +89,7 @@ micro <- micro %>%
 
 ```{r}
 micro <- micro %>%
-  filter(class == "Bacillariophyceae")
+  filter(!class == "Dinophyceae" & !class == "Bacillariophyceae")
 
 # micro <- micro %>%
 #   mutate(year = lubridate::year(date)) %>%
@@ -217,24 +217,28 @@ spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
 spp.scrs2 <- cbind(spp.scrs, test)
 
 spp.scrs2 <- spp.scrs2 %>%
-  filter(r2 >= 0.40)
+  filter(r2 >= 0.30)
 
 ```
 
 ```{r}
+# https://jkzorz.github.io/2020/04/04/NMDS-extras.html
+
 phy <- data %>% 
   select(date:site_id, temp_dm, sal_dm, delta_rho_dm, no2_dm:secchi_depth)
 
 micro_piv_join <- micro_piv %>% 
   left_join(phy)
 
-env <- micro_piv_join[, 50:56]
+env <- micro_piv_join[, 29:35]
   
 en = envfit(nmds, env, permutations = 999, na.rm = TRUE)
 
 en
 ```
 ```{r}
+# https://jkzorz.github.io/2020/04/04/NMDS-extras.html
+
 en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
 en_coord_cat = as.data.frame(scores(en, "factors")) * ordiArrowMul(en)
 ```
@@ -259,6 +263,7 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
               fontface = "bold", label = row.names(en_coord_cont)) + 
   scale_fill_brewer(palette = "RdYlBu") +
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  xlim(-2, 1) +
   # coord_fixed() + ## need aspect ratio of 1!
   theme(axis.title = element_text(size = 10, face = "bold", colour = "black"),
         panel.background = element_blank(),
@@ -284,7 +289,7 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by station
-inv_site <- multipatt(transform, site_id, func = "r.g",
+inv_site <- multipatt(transform, year, func = "r.g",
                        control = how(nperm = 9999))
 
 #Looking at results of analysis
