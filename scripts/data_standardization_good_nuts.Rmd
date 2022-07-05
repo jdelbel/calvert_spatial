@@ -371,6 +371,26 @@ ctd <- ctd %>%
   left_join(ctd_up)
 ```
 
+
+```{r}
+ctd_calvert <- ctd %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>%
+  filter(!station == "QU39" & year > 2017 & year < 2021 & month > 4 & month < 11)
+
+ctd_calvert %>% 
+  filter(station == "KC10" & pres < 50) %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = sal, y = pres, color = as.factor(year))) +
+  geom_point() +
+  scale_y_reverse() +
+  facet_grid(. ~ month)
+
+```
+
+
+
+
 ```{r}
 #Selecting the pertinent columns for analysis - much easier to assess merging/joining with fewer columns
 

@@ -123,6 +123,10 @@ species <- micro_piv[, 6:ncol(micro_piv)]
 
 #Creating relative abundance matrix - not currently looking at relative abundance
 transform <- decostand(species, method = "total")
+
+
+
+
   
 #Log10 transformation + 1 (as per Mahara)
 # transform <- log1p(species)
@@ -139,8 +143,6 @@ site_id <- micro_piv$site_id
 month <- micro_piv$month_surv
 year <- micro_piv$year
 ```
-
-
 
 ```{r}
 #ANOSIM test to see if groupings statistically significant - abundance
@@ -170,9 +172,6 @@ nmds
 stressplot(nmds)
 
 ```
-
-
-
 
 ```{r}
 #Changing site_id to location 
@@ -241,9 +240,6 @@ en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
 en_coord_cat = as.data.frame(scores(en, "factors")) * ordiArrowMul(en)
 ```
 
-
-
-
 ```{r}
 #Plotting nMDS - commented sections are for if I want to add environmental fits. This is for the absolute data
 
@@ -308,9 +304,6 @@ inv_site_sp <- inv_site_sp %>%
 inv_site_list <- inv_site_sp$rn
 ```
 
-
-
-
 ```{r}
 #Making a heatmap of the indicator species
 micro %>%   
@@ -362,9 +355,8 @@ micro %>%
         legend.background = element_blank())
 
 ggsave(here("figures_good", "heat_test.png"),
-        width = 16, height = 10, dpi = 300)
+        width = 16, height = 8, dpi = 300)
 ```
-
 
 ```{r}
 #should look at relative abundance plot of this, since using.
@@ -433,6 +425,47 @@ ggsave(here("figures_good", "heat_test_rel.png"),
 ```
 
 
+```{r}
+cor_test <- micro %>% 
+  filter(scientificName %in% inv_site_list)
+
+cor_test <- cor_test %>% 
+  select(date, month, month_surv, site_id, scientificName, species_sum)
+
+cor_test_piv <- cor_test %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+
+
+cor_matrix <- cor_test_piv %>% 
+  left_join(phy)
+
+cor_matrix <- cor_matrix %>% 
+  drop_na() %>% 
+  select(`Chaetoceros debilis`:secchi)
+
+spear_rho <- Hmisc::rcorr(as.matrix(cor_matrix), type = c("pearson"))
+
+res2<-rcorr(as.matrix(mtcars[,1:7]))
+flattenCorrMatrix(res2$r, res2$P)
+
+# Insignificant correlations are left blank
+corrplot::corrplot(spear_rho$r, type = "upper", order = "hclust", 
+         p.mat = spear_rho$P, sig.level = 0.001, insig = "blank")
+
+
+
+
+
+
+
+
+# Insignificant correlations are left blank
+fig_corr2 <- corrplot(spear_rho$r, type="upper", order="hclust", 
+         p.mat = spear_rho$P, sig.level = 0.001, insig = "blank")
+
+```
 
 
 
