@@ -1,0 +1,178 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+#Load packages
+library(tidyverse)
+library(patchwork)
+library(here)
+library(readr)
+library(readxl)
+```
+
+```{r}
+#Upload fully formatted microscopy data
+
+micro <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv"))
+
+hplc <- read_csv(here("files", "hplc_2018_2020.csv"))
+
+chl <- read_csv(here("files", "chl_2018_2020.csv"))
+```
+
+```{r}
+#Removing QU39 
+micro <- micro %>% 
+  filter(!site_id == "QU39")
+```
+
+```{r}
+#Summing species for the KC10-QU39 Timeseries
+micro_sum <- micro %>%
+  filter(trophicStatus == "auto") %>% 
+  complete(date, group) %>% # make each day have all species, even if not observed (for joining)
+  group_by(date, group) %>% 
+  summarise(sum = sum(count)) %>% #sum counts for each grouping/class
+  ungroup() %>% 
+  arrange(date, group) %>% 
+  mutate(sum = replace_na(sum, 0),
+         site_id = "KC10")
+```
+```{r}
+chl_join <- chl %>% 
+  filter(line_out_depth == 5 & filter_type == "Bulk GF/F") %>% 
+  select(date, site_id, chla, chla_flag) %>% 
+  filter(chla_flag == "AV" | is.na(chla_flag)) %>% 
+  filter(!is.na(chla))
+
+hplc_join <- hplc %>% 
+  filter(line_out_depth == 5 & !is.na(all_chl_a)) %>% 
+  select(date, site_id, tchla = all_chl_a)
+
+hplc_join <- hplc_join %>% 
+  left_join(chl_join)
+
+hplc_join %>% 
+  ggplot(aes(x = chla, y = tchla)) + 
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_abline(slope = 1, intercept = 0) +
+  ggpubr::stat_cor(label.y.npc = 1.0, vjust = 2, size = 8) +
+  ggpubr::stat_regline_equation(label.y = 18, size = 6)
+
+chl_lm = lm(tchla ~ chla, data = hplc_join) 
+summary(chl_lm) 
+```
+
+
+
+```{r}
+#Separating the 2018 chlorophyll data where there is no HPLC
+chl_cali <- chl_join %>%
+  filter(date < "2019-01-01")
+
+#Applying the correction to the 2018 chl data based on the relationship between chl and HPLC TChla for 2019 and 2020. This relationship is plotted below.
+chl_cali <- chl_cali %>% 
+  mutate(tchla = (0.69*chla) + 0.35)
+
+chl_merge <- chl_cali %>% 
+  select(date, site_id, tchla)
+
+hplc_merge <- hplc %>% 
+  filter(line_out_depth == 5 & !is.na(all_chl_a)) %>% 
+  select(date, site_id, tchla = all_chl_a)
+
+tchla_merge <- rbind(hplc_merge, chl_merge)
+```
+
+
+```{r}
+#Making a location column.
+chl_merge <- chl_merge %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
+
+
+chl_merge <- arrange(mutate(chl_merge,
+                       location = factor(location, levels = order_loc)))
+
+```
+
+```{r}
+#Exporting corrected TChla magnitudes
+# write_csv(chl_merge, here("outputs", "bulk_chla_corrected.csv"))
+```
+
+```{r}
+#Set order or groups for plotting
+
+micro_sum$group <- factor(micro_sum$group,
+                         levels = c("Bacillariophyta", #Y
+                                    "Chrysophyta", #Y
+                                    "Dictyochophyta", #Y
+                                    "Raphidiophyta", #Y
+                                    "Dinoflagellata", #Y
+                                    "Cryptophyta",#Y
+                                    "Chlorophyta-Prasinophyta", #Y 
+                                    "Euglenophyta", #Y
+                                    "Prymnesiophyta-Haptophyta", #Y 
+                                    "Unknown_Chlorophyta?", #Y
+                                    "Unknown_Dinophyceae?", #Y
+                                    "Unknown_flagellate" #Y
+                                    ))
+
+```
+
+```{r}
+#Setting colour pallete for microscopy data - roughly comparable to chemtax data
+color_palette_micro <- c("#ff8000", #Diatoms 
+                   "#2642D5", #Chrysophytes
+                   "#ff99c7", #Dicto (same color as chryso as same pig. group)
+                   "#4d6600", #Raph
+                   "#ff0000", #Dino
+                   "#ffff00", #Crypto
+                   "#00ff00", #Chloro (chloro and eugleno same colour, same pig. group)
+                   "#93FFCA", #Eugleno
+                   "#7d4dcc" #Hapto
+                   )
+
+
+```
+
+```{r}
+
+micro_sum %>% 
+  group_by(date) %>% 
+  mutate(sum_all = sum(sum, na.rm = TRUE)) %>%
+  ungroup() %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = date, y = sum/100000, group = group, fill = group)) + 
+  geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
+  geom_point(aes(x = date, y = sum_all/100000), size = 2) +
+  scale_fill_manual(values = color_palette_micro) +
+  theme_bw() +
+  theme(legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        text = element_text(size = 11)) +
+  labs(x = "Year Day",
+       y = bquote("Abundance (cells" ~10^5 ~ L^-1*")")) +
+  theme(text = element_text(size = 25)) 
+
+ggsave(here("figures_good", "timeseries_kc10.png"),
+       width = 16, height = 6, dpi = 300)
+
+```
+
+
+
+
+
+

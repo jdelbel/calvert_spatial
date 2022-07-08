@@ -89,6 +89,7 @@ micro <- micro %>%
 
 ```{r}
 micro <- micro %>%
+  mutate(year = lubridate::year(date)) %>% 
   filter(class == "Dinophyceae")
 
 # micro <- micro %>%
@@ -225,12 +226,20 @@ spp.scrs2 <- spp.scrs2 %>%
 # https://jkzorz.github.io/2020/04/04/NMDS-extras.html
 
 phy <- data %>% 
-  select(date:site_id, temp_dm, sal_dm, delta_rho_dm, no2_dm:secchi_depth)
+  select(date:site_id, 
+         # temp = temp_dm, 
+         no2 = no2_dm, 
+         sio2 = sio2_dm,
+         po4 = po4_dm,
+         # sal = sal_dm, 
+         # secchi = secchi_depth
+         )
+
 
 micro_piv_join <- micro_piv %>% 
   left_join(phy)
 
-env <- micro_piv_join[, 29:35]
+env <- micro_piv_join[, 29:31]
   
 en = envfit(nmds, env, permutations = 999, na.rm = TRUE)
 
@@ -240,7 +249,7 @@ en
 # https://jkzorz.github.io/2020/04/04/NMDS-extras.html
 
 en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
-en_coord_cat = as.data.frame(scores(en, "factors")) * ordiArrowMul(en)
+
 ```
 
 
@@ -257,10 +266,10 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
                arrow = arrow(length = unit(0.25, "cm")), colour = "grey") +
   geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "grey30",
              fontface = "bold", label = row.names(spp.scrs2)) + 
-  geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2),
                data = en_coord_cont, size =1, alpha = 0.5, colour = "grey30") +
-  geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30", 
-              fontface = "bold", label = row.names(en_coord_cont)) + 
+  geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30",
+              fontface = "bold", label = row.names(en_coord_cont)) +
   scale_fill_brewer(palette = "RdYlBu") +
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
   # coord_fixed() + ## need aspect ratio of 1!
@@ -272,14 +281,14 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
         legend.key = element_blank(),
         legend.title = element_text(size = 10, face = "bold", colour = "black"),
         legend.text = element_text(size = 9, colour = "black"),
-        legend.position = c(0.07, 0.26),
+        # legend.position = c(0.07, 0.26),
         legend.margin = margin(-0.3,0,0,0, unit = "cm"),
         text = element_text(size = 30)) +
-  labs(fill = "Month", shape = "Station") +
+  labs(fill = "Year", shape = "Station") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-# ggsave(here("figures_rev2", "nmds_micro_absolute_CALVERT.png"),
-#        width = 6, height = 4.5, dpi = 300)
+ggsave(here("figures_good", "nmds_dinos_rel.png"),
+       width = 7, height = 4.5, dpi = 300)
 ```
 
 ```{r}
@@ -288,24 +297,24 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by station
-inv_site <- multipatt(transform, site_id, func = "r.g",
+inv_year <- multipatt(transform, year, func = "r.g",
                        control = how(nperm = 9999))
 
 #Looking at results of analysis
-summary(inv_site)
+summary(inv_year)
 
 ```
 
 ```{r}
-inv_site_sp <- data.table::as.data.table(inv_site$sign, keep.rownames = TRUE)
+inv_year_sp <- data.table::as.data.table(inv_year$sign, keep.rownames = TRUE)
 
-inv_site_sp <- inv_site_sp %>% 
-  filter(s.DFO2 == 1 | s.KC10 == 1 | s.QCS01 == 1) %>% 
+inv_year_sp <- inv_year_sp %>% 
+  filter(s.2018 == 1 | s.2019 == 1 | s.2020 == 1) %>% 
   filter(p.value < 0.05) %>% 
   # filter(!rn == "Skeletonema marinoi") %>% 
   arrange(rn)
 
-inv_site_list <- inv_site_sp$rn
+inv_year_list <- inv_year_sp$rn
 ```
 
 
@@ -314,33 +323,33 @@ inv_site_list <- inv_site_sp$rn
 ```{r}
 #Making a heatmap of the indicator species
 micro %>%   
-  filter(scientificName %in% inv_site_list) %>%
+  filter(scientificName %in% inv_year_list) %>%
   ggplot(aes(x = as.factor(date), y = scientificName, fill = log10(species_sum))) +
   geom_tile(color = "black", size = 1) +
-  facet_grid(. ~ site_id , scales = "free_x", space = "free") +
+  facet_grid(. ~ year , scales = "free_x", space = "free") +
   scale_fill_gradient(name = "",
                       low = "#FFFFFF",
                       high = "#012345") +
-  scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
-                              "Chaetoceros convolutus" = "C.con.",
-                              "Chaetoceros debilis" = "C.deb.",
-                              "Chaetoceros decipiens" = "C.dec.",
-                              "Chaetoceros didymus" = "C.did.",
-                              "Chaetoceros laciniosus" = "C.lac.",
-                              "Chaetoceros radicans" = "C.rad.",
-                              "Chaetoceros seiracanthus" = "C.sei.",
-                              "Chaetoceros socialis" = "C.soc.",
-                              "Dactyliosolen fragilissimus" = "D.fra.",
-                              "Dactyliosolen phuketensis" = "D.phu.",
-                              "Detonula pumila" = "D.pum.",
-                              "Eucampia zodiacus" = "E.zod.",
-                              "Guinardia delicatula" = "G.del.",
-                              "Leptocylindrus danicus" = "L.dan.",
-                              "Navicula" = "Nav.",
-                              "Pseudo-nitzschia" = "P.n.",
-                              "Pseudo-nitzschia seriata" = "P.n.s.",
-                              "Skeletonema marinoi" = "S.mar.",
-                              "Thalassiosira rotula" = "T.rot.")) +
+  # scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
+  #                             "Chaetoceros convolutus" = "C.con.",
+  #                             "Chaetoceros debilis" = "C.deb.",
+  #                             "Chaetoceros decipiens" = "C.dec.",
+  #                             "Chaetoceros didymus" = "C.did.",
+  #                             "Chaetoceros laciniosus" = "C.lac.",
+  #                             "Chaetoceros radicans" = "C.rad.",
+  #                             "Chaetoceros seiracanthus" = "C.sei.",
+  #                             "Chaetoceros socialis" = "C.soc.",
+  #                             "Dactyliosolen fragilissimus" = "D.fra.",
+  #                             "Dactyliosolen phuketensis" = "D.phu.",
+  #                             "Detonula pumila" = "D.pum.",
+  #                             "Eucampia zodiacus" = "E.zod.",
+  #                             "Guinardia delicatula" = "G.del.",
+  #                             "Leptocylindrus danicus" = "L.dan.",
+  #                             "Navicula" = "Nav.",
+  #                             "Pseudo-nitzschia" = "P.n.",
+  #                             "Pseudo-nitzschia seriata" = "P.n.s.",
+  #                             "Skeletonema marinoi" = "S.mar.",
+  #                             "Thalassiosira rotula" = "T.rot.")) +
   # geom_text(data = dat_text, mapping = aes(x = -Inf, y = -Inf, label = label), 
   #           hjust = -0.1, vjust = -1) +
   # annotate("text", x = 1.5, y = 11, label = "e)", size = 10) +
@@ -361,8 +370,8 @@ micro %>%
         axis.line = element_line(colour = "black"),
         legend.background = element_blank())
 
-ggsave(here("figures_good", "heat_test.png"),
-        width = 16, height = 10, dpi = 300)
+ggsave(here("figures_good", "heat_dino_year.png"),
+        width = 16, height = 5, dpi = 300)
 ```
 
 

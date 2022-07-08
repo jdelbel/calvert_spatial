@@ -1752,21 +1752,125 @@ pre code {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBwYWNrYWdlc1xubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KHJlYWR4bClcbmxpYnJhcnkoaGVyZSlcbmxpYnJhcnkoZmFjdG9leHRyYSlcbmxpYnJhcnkoZ2dkZW5kcm8pXG5saWJyYXJ5KGRlbmRleHRlbmQpXG5saWJyYXJ5KGNvbG9ybWFwKVxubGlicmFyeShpbmRpY3NwZWNpZXMpXG5saWJyYXJ5KGZ1enp5U2ltKVxubGlicmFyeShjbHVzdGVyKVxubGlicmFyeShwYXRjaHdvcmspXG5saWJyYXJ5KHZlZ2FuKVxubGlicmFyeShSQ29sb3JCcmV3ZXIpXG5cbiNOZWVkIHRvIGdvIHRocm91Z2ggYW5kIHRlc3QgdGhlc2VcblxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBwYWNrYWdlc1xubGlicmFyeSh0aWR5dmVyc2UpXG5gYGAifQ== -->
 <pre class="r"><code>#Upload packages
-library(tidyverse)
-library(readxl)
-library(here)
-library(factoextra)
-library(ggdendro)
-library(dendextend)
-library(colormap)
-library(indicspecies)
-library(fuzzySim)
-library(cluster)
-library(patchwork)
-library(vegan)
-library(RColorBrewer)
+library(tidyverse)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRdGlkeXZlcnNlkiB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41UmVnaXN0ZXJlZCBTMyBtZXRob2RzIG92ZXJ3cml0dGVuIGJ5ICdkYnBseXInOlxuICBtZXRob2QgICAgICAgICBmcm9tXG4gIHByaW50LnRibF9sYXp5ICAgICBcbiAgcHJpbnQudGJsX3NxbCAgICAgIFxuLS0gQXR0YWNoaW5nIHBhY2thZ2VzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB0aWR5dmVyc2UgMS4zLjEgLS1cbnYgZ2dwbG90MiAzLjMuNSAgICAgdiBwdXJyciAgIDAuMy40XG52IHRpYmJsZSAgMy4xLjQgICAgIHYgZHBseXIgICAxLjAuN1xudiB0aWR5ciAgIDEuMS4zICAgICB2IHN0cmluZ3IgMS40LjBcbnYgcmVhZHIgICAyLjAuMSAgICAgdiBmb3JjYXRzIDAuNS4xXG5wYWNrYWdlIJFnZ3Bsb3QykiB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41cGFja2FnZSCRdGliYmxlkiB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41cGFja2FnZSCRdGlkeXKSIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVwYWNrYWdlIJFyZWFkcpIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNXBhY2thZ2UgkWRwbHlykiB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41cGFja2FnZSCRc3RyaW5ncpIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuM3BhY2thZ2UgkWZvcmNhdHOSIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjUtLSBDb25mbGljdHMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZV9jb25mbGljdHMoKSAtLVxueCBkcGx5cjo6ZmlsdGVyKCkgbWFza3Mgc3RhdHM6OmZpbHRlcigpXG54IGRwbHlyOjpsYWcoKSAgICBtYXNrcyBzdGF0czo6bGFnKClcbiJ9 -->
+<pre><code>package 㤼㸱tidyverse㤼㸲 was built under R version 4.0.5Registered S3 methods overwritten by &#39;dbplyr&#39;:
+  method         from
+  print.tbl_lazy     
+  print.tbl_sql      
+-- Attaching packages --------------------------------------------------------------------------------------- tidyverse 1.3.1 --
+v ggplot2 3.3.5     v purrr   0.3.4
+v tibble  3.1.4     v dplyr   1.0.7
+v tidyr   1.1.3     v stringr 1.4.0
+v readr   2.0.1     v forcats 0.5.1
+package 㤼㸱ggplot2㤼㸲 was built under R version 4.0.5package 㤼㸱tibble㤼㸲 was built under R version 4.0.5package 㤼㸱tidyr㤼㸲 was built under R version 4.0.5package 㤼㸱readr㤼㸲 was built under R version 4.0.5package 㤼㸱dplyr㤼㸲 was built under R version 4.0.5package 㤼㸱stringr㤼㸲 was built under R version 4.0.3package 㤼㸱forcats㤼㸲 was built under R version 4.0.5-- Conflicts ------------------------------------------------------------------------------------------ tidyverse_conflicts() --
+x dplyr::filter() masks stats::filter()
+x dplyr::lag()    masks stats::lag()</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShyZWFkeGwpXG5gYGAifQ== -->
+<pre class="r"><code>library(readxl)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFyZWFkeGzjpLzjuLIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuM1xuIn0= -->
+<pre><code>package 㤼㸱readxl㤼㸲 was built under R version 4.0.3</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShoZXJlKVxuYGBgIn0= -->
+<pre class="r"><code>library(here)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRaGVyZZIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNGhlcmUoKSBzdGFydHMgYXQgQzovVXNlcnMvanVzdGluLmJlbGx1ei9Eb2N1bWVudHMvUi9jYWx2ZXJ0X3NwYXRpYWxcbiJ9 -->
+<pre><code>package 㤼㸱here㤼㸲 was built under R version 4.0.4here() starts at C:/Users/justin.belluz/Documents/R/calvert_spatial</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShmYWN0b2V4dHJhKVxuYGBgIn0= -->
+<pre class="r"><code>library(factoextra)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRZmFjdG9leHRyYZIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNVdlbGNvbWUhIFdhbnQgdG8gbGVhcm4gbW9yZT8gU2VlIHR3byBmYWN0b2V4dHJhLXJlbGF0ZWQgYm9va3MgYXQgaHR0cHM6Ly9nb28uZ2wvdmUzV0JhXG4ifQ== -->
+<pre><code>package 㤼㸱factoextra㤼㸲 was built under R version 4.0.5Welcome! Want to learn more? See two factoextra-related books at https://goo.gl/ve3WBa</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ2RlbmRybylcbmBgYCJ9 -->
+<pre class="r"><code>library(ggdendro)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ2RlbmRyb+OkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41XG4ifQ== -->
+<pre><code>package 㤼㸱ggdendro㤼㸲 was built under R version 4.0.5</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShkZW5kZXh0ZW5kKVxuYGBgIn0= -->
+<pre class="r"><code>library(dendextend)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFkZW5kZXh0ZW5k46S847iyIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVcbi0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuV2VsY29tZSB0byBkZW5kZXh0ZW5kIHZlcnNpb24gMS4xNS4xXG5UeXBlIGNpdGF0aW9uKCdkZW5kZXh0ZW5kJykgZm9yIGhvdyB0byBjaXRlIHRoZSBwYWNrYWdlLlxuXG5UeXBlIGJyb3dzZVZpZ25ldHRlcyhwYWNrYWdlID0gJ2RlbmRleHRlbmQnKSBmb3IgdGhlIHBhY2thZ2UgdmlnbmV0dGUuXG5UaGUgZ2l0aHViIHBhZ2UgaXM6IGh0dHBzOi8vZ2l0aHViLmNvbS90YWxnYWxpbGkvZGVuZGV4dGVuZC9cblxuU3VnZ2VzdGlvbnMgYW5kIGJ1Zy1yZXBvcnRzIGNhbiBiZSBzdWJtaXR0ZWQgYXQ6IGh0dHBzOi8vZ2l0aHViLmNvbS90YWxnYWxpbGkvZGVuZGV4dGVuZC9pc3N1ZXNcbk9yIGNvbnRhY3Q6IDx0YWwuZ2FsaWxpQGdtYWlsLmNvbT5cblxuXHRUbyBzdXBwcmVzcyB0aGlzIG1lc3NhZ2UgdXNlOiAgc3VwcHJlc3NQYWNrYWdlU3RhcnR1cE1lc3NhZ2VzKGxpYnJhcnkoZGVuZGV4dGVuZCkpXG4tLS0tLS0tLS0tLS0tLS0tLS0tLS1cblxuXG5BdHRhY2hpbmcgcGFja2FnZTog46S847ixZGVuZGV4dGVuZOOkvOO4slxuXG5UaGUgZm9sbG93aW5nIG9iamVjdCBpcyBtYXNrZWQgZnJvbSDjpLzjuLFwYWNrYWdlOmdnZGVuZHJv46S847iyOlxuXG4gICAgdGhlbWVfZGVuZHJvXG5cblRoZSBmb2xsb3dpbmcgb2JqZWN0IGlzIG1hc2tlZCBmcm9tIOOkvOO4sXBhY2thZ2U6c3RhdHPjpLzjuLI6XG5cbiAgICBjdXRyZWVcbiJ9 -->
+<pre><code>package 㤼㸱dendextend㤼㸲 was built under R version 4.0.5
+---------------------
+Welcome to dendextend version 1.15.1
+Type citation(&#39;dendextend&#39;) for how to cite the package.
+
+Type browseVignettes(package = &#39;dendextend&#39;) for the package vignette.
+The github page is: https://github.com/talgalili/dendextend/
+
+Suggestions and bug-reports can be submitted at: https://github.com/talgalili/dendextend/issues
+Or contact: &lt;tal.galili@gmail.com&gt;
+
+    To suppress this message use:  suppressPackageStartupMessages(library(dendextend))
+---------------------
+
+
+Attaching package: 㤼㸱dendextend㤼㸲
+
+The following object is masked from 㤼㸱package:ggdendro㤼㸲:
+
+    theme_dendro
+
+The following object is masked from 㤼㸱package:stats㤼㸲:
+
+    cutree</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShjb2xvcm1hcClcbmBgYCJ9 -->
+<pre class="r"><code>library(colormap)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFjb2xvcm1hcOOkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41XG4ifQ== -->
+<pre><code>package 㤼㸱colormap㤼㸲 was built under R version 4.0.5</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShpbmRpY3NwZWNpZXMpXG5gYGAifQ== -->
+<pre class="r"><code>library(indicspecies)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFpbmRpY3NwZWNpZXPjpLzjuLIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNUxvYWRpbmcgcmVxdWlyZWQgcGFja2FnZTogcGVybXV0ZVxuXG5BdHRhY2hpbmcgcGFja2FnZTog46S847ixcGVybXV0ZeOkvOO4slxuXG5UaGUgZm9sbG93aW5nIG9iamVjdCBpcyBtYXNrZWQgZnJvbSDjpLzjuLFwYWNrYWdlOmRlbmRleHRlbmTjpLzjuLI6XG5cbiAgICBzaHVmZmxlXG4ifQ== -->
+<pre><code>package 㤼㸱indicspecies㤼㸲 was built under R version 4.0.5Loading required package: permute
+
+Attaching package: 㤼㸱permute㤼㸲
+
+The following object is masked from 㤼㸱package:dendextend㤼㸲:
+
+    shuffle</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShmdXp6eVNpbSlcbmBgYCJ9 -->
+<pre class="r"><code>library(fuzzySim)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFmdXp6eVNpbeOkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41XG5BdHRhY2hpbmcgcGFja2FnZTog46S847ixZnV6enlTaW3jpLzjuLJcblxuVGhlIGZvbGxvd2luZyBvYmplY3QgaXMgbWFza2VkIGZyb20g46S847ixcGFja2FnZTpwdXJycuOkvOO4sjpcblxuICAgIHRyYW5zcG9zZVxuIn0= -->
+<pre><code>package 㤼㸱fuzzySim㤼㸲 was built under R version 4.0.5
+Attaching package: 㤼㸱fuzzySim㤼㸲
+
+The following object is masked from 㤼㸱package:purrr㤼㸲:
+
+    transpose</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShjbHVzdGVyKVxubGlicmFyeShwYXRjaHdvcmspXG5gYGAifQ== -->
+<pre class="r"><code>library(cluster)
+library(patchwork)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFwYXRjaHdvcmvjpLzjuLIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNVxuIn0= -->
+<pre><code>package 㤼㸱patchwork㤼㸲 was built under R version 4.0.5</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh2ZWdhbilcbmBgYCJ9 -->
+<pre class="r"><code>library(vegan)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRdmVnYW6SIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVMb2FkaW5nIHJlcXVpcmVkIHBhY2thZ2U6IGxhdHRpY2VcblJlZ2lzdGVyZWQgUzMgbWV0aG9kIG92ZXJ3cml0dGVuIGJ5ICd2ZWdhbic6XG4gIG1ldGhvZCAgICAgZnJvbSAgICAgIFxuICByZXYuaGNsdXN0IGRlbmRleHRlbmRcblRoaXMgaXMgdmVnYW4gMi41LTdcbiJ9 -->
+<pre><code>package 㤼㸱vegan㤼㸲 was built under R version 4.0.5Loading required package: lattice
+Registered S3 method overwritten by &#39;vegan&#39;:
+  method     from      
+  rev.hclust dendextend
+This is vegan 2.5-7</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShSQ29sb3JCcmV3ZXIpXG5cbiNOZWVkIHRvIGdvIHRocm91Z2ggYW5kIHRlc3QgdGhlc2VcblxuYGBgIn0= -->
+<pre class="r"><code>library(RColorBrewer)
 
 #Need to go through and test these
 </code></pre>
@@ -1781,11 +1885,11 @@ library(RColorBrewer)
 #Upload data from my master data standardization sheet
 micro &lt;- read_csv(here(&quot;outputs&quot;, &quot;micro_master_2021-10-18.csv&quot;)) </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMjkwOSBDb2x1bW5zOiAyMlxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICgxNik6IHNpdGVfaWQsIHRyb3BoaWNTdGF0dXMsIGdyb3VwLCBzY2llbnRpZmljTmFtZSwgb3JpZ19uYW1lLCBzY2llbnRpZmljTmFtZV9hY2NlcHRlZCwgcmFuaywga2luZy4uLlxuZGJsICAgKDUpOiBtb250aCwgbW9udGhfc3VydiwgQXBoaWFJRCwgY291bnQsIHNwZWNpZXNfc3VtXG5kYXRlICAoMSk6IGRhdGVcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMjkwOSBDb2x1bW5zOiAyMlxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDE2KTogc2l0ZV9pZCwgdHJvcGhpY1N0YXR1cywgZ3JvdXAsIHNjaWVudGlmaWNOYW1lLCBvcmlnX25hbWUsIHNjaWVudGlmaWNOYW1lX2FjY2VwdGVkLCByYW5rLCBraW5nZG9tLCBwaHlsdW0sIGNsYXNzLCAuLi5cbmRibCAgICg1KTogbW9udGgsIG1vbnRoX3N1cnYsIEFwaGlhSUQsIGNvdW50LCBzcGVjaWVzX3N1bVxuZGF0ZSAgKDEpOiBkYXRlXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
 <pre><code>Rows: 2909 Columns: 22
--- Column specification ------------------------------------------------------------------------------------
+-- Column specification --------------------------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
-chr  (16): site_id, trophicStatus, group, scientificName, orig_name, scientificName_accepted, rank, king...
+chr  (16): site_id, trophicStatus, group, scientificName, orig_name, scientificName_accepted, rank, kingdom, phylum, class, ...
 dbl   (5): month, month_surv, AphiaID, count, species_sum
 date  (1): date
 
@@ -1795,9 +1899,9 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2x1c3RfcGh5IDwtIHJlYWRfY3N2KGhlcmUoXCJvdXRwdXRzXCIsIFwiY2x1c3RlcnNfcGh5cy5jc3ZcIikpXG5gYGAifQ== -->
 <pre class="r"><code>clust_phy &lt;- read_csv(here(&quot;outputs&quot;, &quot;clusters_phys.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNDggQ29sdW1uczogMlxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgKDEpOiBzYW1wbGVfbmFtZVxuZGJsICgxKTogY2x1c3RlclxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNDggQ29sdW1uczogMlxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAoMSk6IHNhbXBsZV9uYW1lXG5kYmwgKDEpOiBjbHVzdGVyXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
 <pre><code>Rows: 48 Columns: 2
--- Column specification ------------------------------------------------------------------------------------
+-- Column specification --------------------------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr (1): sample_name
 dbl (1): cluster
@@ -1808,9 +1912,9 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2x1c3RfY2hlbSA8LSByZWFkX2NzdihoZXJlKFwib3V0cHV0c1wiLCBcImNoZW10YXhfY2x1c3RlcnMuY3N2XCIpKVxuYGBgIn0= -->
 <pre class="r"><code>clust_chem &lt;- read_csv(here(&quot;outputs&quot;, &quot;chemtax_clusters.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzUgQ29sdW1uczogMlxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgKDEpOiBzYW1wbGVfbmFtZVxuZGJsICgxKTogY2x1c3RlclxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzUgQ29sdW1uczogMlxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAoMSk6IHNhbXBsZV9uYW1lXG5kYmwgKDEpOiBjbHVzdGVyXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
 <pre><code>Rows: 35 Columns: 2
--- Column specification ------------------------------------------------------------------------------------
+-- Column specification --------------------------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr (1): sample_name
 dbl (1): cluster

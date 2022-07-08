@@ -29,27 +29,19 @@ library(RColorBrewer)
 #Upload data
 
 #Upload data from my master data standardization sheet
-micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+micro <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv")) 
 
 #Download physical data
-data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
+# data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
 ```
-
-
-
-
 ```{r}
 micro <- micro %>% 
   filter(!site_id == "QU39")
-```
 
-```{r}
-micro %>% 
-  filter(scientificName == "Prorocentrum micans") %>% 
-  ggplot(aes(x = date, y = species_sum, color = site_id)) + 
-  geom_point()
+micro <- micro %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  relocate(month, .after = date)
 ```
-
 
 
 ```{r}
@@ -101,8 +93,8 @@ micro <- micro %>%
 ```
 
 ```{r}
-micro <- micro %>%
-  filter(class == "Bacillariophyceae")
+# micro <- micro %>%
+#   filter(class == "Bacillariophyceae")
 
 # micro <- micro %>%
 #   mutate(year = lubridate::year(date)) %>%
@@ -115,7 +107,7 @@ micro <- micro %>%
 
 #Selecting columns
 micro_piv <- micro %>% 
-  select(date, month, month_surv, site_id, scientificName, species_sum)
+  select(date, month, site_id, scientificName, species_sum)
 
 #pivoting wider so species are columns. 
 micro_piv <- micro_piv %>% 
@@ -132,10 +124,10 @@ micro_piv <- micro_piv %>%
   arrange(site_id, date)
 
 #Pulling out species counts for transform and input into clustering and NMDS
-species <- micro_piv[, 6:ncol(micro_piv)]
+species <- micro_piv[, 5:ncol(micro_piv)]
 
 #Creating relative abundance matrix - not currently looking at relative abundance
-transform <- decostand(species, method = "total")
+# transform <- decostand(species, method = "total")
 
 #Log10 transformation + 1 (as per Mahara)
 # transform <- log1p(species)
@@ -143,13 +135,13 @@ transform <- decostand(species, method = "total")
 
 
 #Not currently working with relative abundance
-transform <- sqrt(transform)
+# transform <- sqrt(transform)
 ```
 
 ```{r}
 #separating treatments for ANOSMIM and indicator
 site_id <- micro_piv$site_id
-month <- micro_piv$month_surv
+month <- micro_piv$month
 year <- micro_piv$year
 ```
 
@@ -157,8 +149,8 @@ year <- micro_piv$year
 #ANOSIM test to see if groupings statistically significant - abundance
 
 #Turning off for now because takes time to analyze.
-ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
-ano_site
+# ano_site = anosim(transform, site_id, distance = "bray", permutations = 9999)
+# ano_site
 # 
 ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
 ano_month
@@ -227,7 +219,7 @@ spp.scrs2 <- cbind(spp.scrs, test)
 spp.scrs2 <- spp.scrs2 %>%
   filter(r2 >= 0.40)
 
-rownames(spp.scrs2) <- c("P.n.s","R.set.","Bidd.","S.mar.", "C.clos")
+# rownames(spp.scrs2) <- c("P.n.s","R.set.","Bidd.","S.mar.", "C.clos")
 ```
 
 ```{r}
@@ -253,17 +245,17 @@ en_coord_cat = as.data.frame(scores(en, "factors")) * ordiArrowMul(en)
 #Plotting nMDS - commented sections are for if I want to add environmental fits. This is for the absolute data
 
 ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores, aes(fill = as.factor(year), shape = site),
+  geom_point(data = data.scores, aes(fill = as.factor(month), shape = site),
              size = 4, stroke = 1.5) + 
   geom_segment(data = spp.scrs2,
                aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
                arrow = arrow(length = unit(0.25, "cm")), colour = "blue") +
   geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "blue",
              fontface = "bold", label = row.names(spp.scrs2)) + 
-  geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
-               data = en_coord_cont, size =1, alpha = 0.5, colour = "black") +
-  geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "black", 
-              fontface = "bold", label = row.names(en_coord_cont)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size =1, alpha = 0.5, colour = "black") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "black", 
+  #             fontface = "bold", label = row.names(en_coord_cont)) + 
   scale_fill_brewer(palette = "RdYlBu") +
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
   # coord_fixed() + ## need aspect ratio of 1!

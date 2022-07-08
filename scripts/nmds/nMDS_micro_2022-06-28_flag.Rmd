@@ -40,30 +40,20 @@ micro <- micro %>%
 
 
 ```{r}
-#Selecting the species groups I will work with and limiting species that rarely observed.
-
-#For now, I am keeping all of the heterotrophic species (just in this workbook)
-
-# micro <- micro %>% 
-#   filter(trophicStatus == "auto")
-
-#Counting how many times each species is observed
-micro <- micro %>%
-  group_by(scientificName) %>%
-  mutate(num_occurrence = n()) %>% 
-  ungroup()
-
-#removing species that have not been observed at least twice -  this is to minimize the influence of zeros. When I used this, it removes some species that are important, but not observed often. So trying with it turned off.
-# micro <- micro %>%
-#   filter(num_occurrence > 5)
+#
+micro_distinct <- micro %>% 
+  distinct(group, scientificName)
 
 #Removing cyanobacteria as their counts are not reliable
 micro <- micro %>% 
-  filter(!scientificName_accepted == "Cyanobacteria")
+  filter(!scientificName_accepted == "Cyanobacteria" &
+           !group == "Metazoa" &
+           !group == "Protozoa" &
+           !group == "Choanoflagellata" &
+           !group == "Kinetoplastidea" &
+           !group == "Ciliophora")
 
-micro <- micro %>% 
-  filter(!group == "Metazoa") %>% 
-  filter(!group == "Protozoa")
+
 ```
 
 ```{r}
@@ -88,14 +78,10 @@ micro <- micro %>%
 ```
 
 ```{r}
-micro <- micro %>%
-  filter(!class == "Dinophyceae" & !class == "Bacillariophyceae")
-
-# micro <- micro %>%
-#   mutate(year = lubridate::year(date)) %>%
-#   relocate(year, .before = month) %>%
-#   filter(site_id == "QCS01")
+micro <- micro %>% 
+  filter(group == "Cryptophyta")
 ```
+
 
 ```{r}
 #Preparing data for cluster and nMDS analysis - need to be put into two separate matrices.
@@ -217,7 +203,7 @@ spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
 spp.scrs2 <- cbind(spp.scrs, test)
 
 spp.scrs2 <- spp.scrs2 %>%
-  filter(r2 >= 0.30)
+  filter(r2 >= 0.40)
 
 ```
 
@@ -225,12 +211,19 @@ spp.scrs2 <- spp.scrs2 %>%
 # https://jkzorz.github.io/2020/04/04/NMDS-extras.html
 
 phy <- data %>% 
-  select(date:site_id, temp_dm, sal_dm, delta_rho_dm, no2_dm:secchi_depth)
+  select(date:site_id, 
+         temp = temp_dm, 
+         no2 = no2_dm, 
+         sio2 = sio2_dm,
+         po4 = po4_dm,
+         sal = sal_dm, 
+         secchi = secchi_depth
+         )
 
 micro_piv_join <- micro_piv %>% 
   left_join(phy)
 
-env <- micro_piv_join[, 29:35]
+env <- micro_piv_join[, 11:16]
   
 en = envfit(nmds, env, permutations = 999, na.rm = TRUE)
 
@@ -240,7 +233,7 @@ en
 # https://jkzorz.github.io/2020/04/04/NMDS-extras.html
 
 en_coord_cont = as.data.frame(scores(en, "vectors")) * ordiArrowMul(en)
-en_coord_cat = as.data.frame(scores(en, "factors")) * ordiArrowMul(en)
+
 ```
 
 
@@ -289,7 +282,7 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by station
-inv_site <- multipatt(transform, year, func = "r.g",
+inv_site <- multipatt(transform, site_id, func = "r.g",
                        control = how(nperm = 9999))
 
 #Looking at results of analysis
@@ -1778,7 +1771,6 @@ fig <- p1 + p2
 ggsave(here("figures_rev2", "indicator_species_year_bar.png"), fig,
        width = 12, height = 7, dpi = 300)
 ```
-
 
 
 
