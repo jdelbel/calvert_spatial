@@ -1795,120 +1795,31 @@ x dplyr::lag()    masks stats::lag()</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0ltcG9ydGluZyBkYXRhc2V0c1xuXG4jVXBsb2FkIGN0ZCBkYXRhXG5jdGQgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwiY3RkLmNzdlwiKSkgXG5gYGAifQ== -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0ltcG9ydGluZyBkYXRhc2V0c1xuXG4jVXBsb2FkIGN0ZCBkYXRhXG5jdGQgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwiY3RkLmNzdlwiKSkgXG5cbiNVcGxvYWQgY29ycmVjdGVkIHR1cmJpZGl0eSBkYXRhIC0gdGhlIGNvcnJlY3Rpb25zIGFyZSByb3VnaCBhbmQgbmVlZCB0byBiZSByZXZpZXdlZC4gVHJlbmRzIGFyZSBwcm9iYWJseSBjb3JyZWN0LCBidXQgZWFjaCBwb2ludCB3aWxsIGhhdmUgZXJyb3IuXG50dXJiX2NvcnIgPC0gcmVhZF9jc3YoaGVyZShcIm91dHB1dHNcIiwgXCJjb3JyZWN0ZWRfdHVyYmlkaXR5X3YxLmNzdlwiKSlcblxuI1VwbG9hZCBudXRyaWVudCBkYXRhIChRQydkIGRhdGEgZnJvbSB0aGUgcG9ydGFsKVxubnV0cyA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJudXRzXzIwMjEtMTItMTUuY3N2XCIpKVxuXG4jVXBsb2FkIHNlY2NoaSBkaXNrIGRhdGFcbnNlY2NoaSA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJzZWNjaGkuY3N2XCIpKVxuXG4jVXBsb2FkIFBBUiBkZXJpdmVkIHpldVxuemV1IDwtIHJlYWRfY3N2KGhlcmUoXCJvdXRwdXRzXCIsIFwicGFyX2NvcnJlY3RlZC5jc3ZcIikpXG5cbiNVcGxvYWQgQ2FsdmVydCBtaWNyb3Njb3B5IGRhdGFcbm1pY3JvX2MgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwiY2FsdmVydC5jc3ZcIikpXG5cbiNVcGxvYWQgUVUzOSBtaWNyb3Njb3B5IGRhdGFcbm1pY3JvX3EgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwicXUzOS5jc3ZcIikpXG5cbiNBZGQgUVUzOSBhcyBzaXRlX2lkIFxubWljcm9fcSA8LSBtaWNyb19xICU+JSBcbiAgbXV0YXRlKHNpdGVfaWQgPSBcIlFVMzlcIikgJT4lIFxuICByZWxvY2F0ZShzaXRlX2lkLCAuYWZ0ZXIgPSBkYXRlKVxuXG4jQmluZGluZyB0aGUgQ2FsdmVydCBhbmQgUXVhZHJhIE1pY3Jvc2NvcHkgZGF0YXNldHMgaW50byBhIHNpbmdsZSBkYXRhZnJhbWUuXG5taWNybyA8LSByYmluZChtaWNyb19jLCBtaWNyb19xKVxuXG4jSW1wb3J0aW5nIFFVMzkgQ2hlbXRheCBkYXRhXG5jaGVtX3EgPC0gcmVhZF94bHN4KGhlcmUoXCJmaWxlc1wiLCBcInF1MzlfMjAxOV8yMDIwXzVtLnhsc3hcIiksXG4gICAgICAgICAgICAgICAgIHNoZWV0ID0gXCJDb25jZW50cmF0aW9uXCIsXG4gICAgICAgICAgICAgICAgIHJhbmdlID0gXCJFMTpSODJcIilcblxuI0ltcG9ydGluZyBDYWx2ZXJ0IENoZW10YXggZGF0YVxuY2hlbV9jIDwtIHJlYWRfeGxzKGhlcmUoXCJmaWxlc1wiLCBcImNhbHZlcnRfY2hlbXRheC54bHNcIiksXG4gICAgICAgICAgICAgICAgIHNoZWV0ID0gXCJEYXRhU3VtbWFyeVIxXzNcIixcbiAgICAgICAgICAgICAgICAgcmFuZ2UgPSBcIkUzMjU6UjM3NlwiKVxuXG4jQmluZGluZyB0aGUgQ2FsdmVydCBhbmQgUXVhZHJhIE1pY3Jvc2NvcHkgZGF0YXNldHMgaW50byBhIHNpbmdsZSBkYXRhZnJhbWUuXG5jaGVtIDwtIHJiaW5kKGNoZW1fYywgY2hlbV9xKVxuXG4jYnJpbmdpbmcgaW4gbmV3IGNoZW10YXggcnVuIHdpdGggbm8gZGljdHljaG9waHl0ZXMgYW5kIGFkZGVkIHBlbGFnb3BoeXRlcy4gVGhpcyB3aWxsIGJlY29tZSBteSBvZmZpY2lhbCBzaGVldCBhZnRlciBzb21lIHJldmlldywgYnV0IGtlZXBpbmcgdHdvIG9wdGlvbnMgYXZhaWxhYmxlIGhlcmUuXG5jaGVtXzIgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwiY2hlbV9jb21wYXJlX3BlbGFnby5jc3ZcIikpXG5cbiNTZWxlY3RpbmcgbXkgZ29vZCBydW4gZnJvbSB0aGUgc2hlZXQgdGhhdCBoYXMgbXVsdGlwbGUgZGlmZmVyZW50IGNoZW10YXggb3B0aW9uc1xuY2hlbV8yIDwtIGNoZW1fMiAlPiUgXG4gIGZpbHRlcihydW4gPT0gMilcblxuI0JyaW5naW5nIGluIENobG9yb3BoeWxsXG5jaGwgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwiY2hsLmNzdlwiKSlcblxuI1VwbG9hZCBmZWNhbCBwZWxsZXQgY291bnRzXG5mZWMgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwiZmVjYWwuY3N2XCIpKVxuXG4jVXBsb2FkaW5nIG1ldGFkYXRhIGZvciBmZWNhbCBwZWxsZXQgY291bnRzXG5tZXRhIDwtIHJlYWRfY3N2KGhlcmUoXCJmaWxlc1wiLCBcIm1ldGFfcGh5dG9fMjAyMS0wNi0yMS5jc3ZcIikpXG5cbmBgYCJ9 -->
 <pre class="r"><code>#Importing datasets
 
 #Upload ctd data
-ctd &lt;- read_csv(here(&quot;files&quot;, &quot;ctd.csv&quot;)) </code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNzI3NDcgQ29sdW1uczogNTZcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICgxMik6IENydWlzZSwgU3RhdGlvbiwgQm90dG9tIGRlcHRoIChtKSwgQ2FzdCBEaXJlY3Rpb24gRmxhZywgRGVwdGggZmxhZywgQ29uZHVjdGl2aXR5IGZsYWcsIFRlbXBlcmF0dXJlIGZsLi4uXG5kYmwgICgxNik6IENhc3QgUEssIExhdGl0dWRlLCBMb25naXR1ZGUsIERhdGEgUEssIERlcHRoIChtKSwgRHJvcCBzcGVlZCAobS9zKSwgQ29uZHVjdGl2aXR5IChtUy9jbSksIFRlbXBlcmF0dXJlLi4uXG5sZ2wgICgyNyk6IFJhdyBEYXRhIFBLLCBVbmNvcnJlY3RlZCBQcmVzc3VyZSAoZGJhciksIFBBUiBmbGFnLCBGbHVvcm9tZXRyeSBDaGxvcm9waHlsbCBmbGFnLCBDRE9NIChwcGIpLCBDRE9NIGZsLi4uXG5kdHRtICAoMSk6IE1lYXN1cmVtZW50IHRpbWVcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
-<pre><code>Rows: 72747 Columns: 56
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (12): Cruise, Station, Bottom depth (m), Cast Direction Flag, Depth flag, Conductivity flag, Temperature fl...
-dbl  (16): Cast PK, Latitude, Longitude, Data PK, Depth (m), Drop speed (m/s), Conductivity (mS/cm), Temperature...
-lgl  (27): Raw Data PK, Uncorrected Pressure (dbar), PAR flag, Fluorometry Chlorophyll flag, CDOM (ppb), CDOM fl...
-dttm  (1): Measurement time
+ctd &lt;- read_csv(here(&quot;files&quot;, &quot;ctd.csv&quot;)) 
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBjb3JyZWN0ZWQgdHVyYmlkaXR5IGRhdGEgLSB0aGUgY29ycmVjdGlvbnMgYXJlIHJvdWdoIGFuZCBuZWVkIHRvIGJlIHJldmlld2VkLiBUcmVuZHMgYXJlIHByb2JhYmx5IGNvcnJlY3QsIGJ1dCBlYWNoIHBvaW50IHdpbGwgaGF2ZSBlcnJvci5cbnR1cmJfY29yciA8LSByZWFkX2NzdihoZXJlKFwib3V0cHV0c1wiLCBcImNvcnJlY3RlZF90dXJiaWRpdHlfdjEuY3N2XCIpKVxuYGBgIn0= -->
-<pre class="r"><code>#Upload corrected turbidity data - the corrections are rough and need to be reviewed. Trends are probably correct, but each point will have error.
-turb_corr &lt;- read_csv(here(&quot;outputs&quot;, &quot;corrected_turbidity_v1.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjI0ODIgQ29sdW1uczogMTJcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICgyKTogY3RkRmlybSwgc3RhdGlvblxuZGJsICAoOCk6IGNhc3RQaywgY3RkTnVtLCBsYXQsIGxvbmcsIHllYXIsIGRlcHRoLCBwcmVzc3VyZSwgdHVyYl9jb3JcbmR0dG0gKDEpOiB0aW1lXG5kYXRlICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 62482 Columns: 12
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (2): ctdFirm, station
-dbl  (8): castPk, ctdNum, lat, long, year, depth, pressure, turb_cor
-dttm (1): time
-date (1): date
+#Upload corrected turbidity data - the corrections are rough and need to be reviewed. Trends are probably correct, but each point will have error.
+turb_corr &lt;- read_csv(here(&quot;outputs&quot;, &quot;corrected_turbidity_v1.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBudXRyaWVudCBkYXRhIChRQydkIGRhdGEgZnJvbSB0aGUgcG9ydGFsKVxubnV0cyA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJudXRzXzIwMjEtMTItMTUuY3N2XCIpKVxuYGBgIn0= -->
-<pre class="r"><code>#Upload nutrient data (QC&#39;d data from the portal)
-nuts &lt;- read_csv(here(&quot;files&quot;, &quot;nuts_2021-12-15.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMTIwNyBDb2x1bW5zOiA2NVxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDE0KTogd29ya19hcmVhLCBvcmdhbml6YXRpb24sIHByb2plY3QsIHN1cnZleSwgc2l0ZV9pZCwgaGFrYWlfaWQsIHNvdXJjZSwgZmlsdGVyX3R5cGUsIGxhYl90ZWNobmljaWFuLCBubzIuLi5cbmRibCAgKDEzKTogZXZlbnRfcGssIHJuLCBzYW1wbGluZ19ib3V0LCBsYXQsIGxvbmcsIGdhdGhlcl9sYXQsIGdhdGhlcl9sb25nLCBsaW5lX291dF9kZXB0aCwgcHJlc3N1cmVfdHJhbnNkdWNlcl8uLi5cbmxnbCAgKDM0KTogYWN0aW9uLCBpc19yZXBsaWNhdGUsIHByb2plY3Rfc3BlY2lmaWNfaWQsIGNvbGxlY3Rpb25fbWV0aG9kLCBmaWx0ZXJlZCwgaW5zdGFsbGVkLCBuaDRfLCBubzJfbm8zX3VnbCwuLi5cbmR0dG0gICgzKTogY29sbGVjdGVkLCBwcmVzZXJ2ZWQsIGFuYWx5emVkXG5kYXRlICAoMSk6IGRhdGVcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
-<pre><code>Rows: 1207 Columns: 65
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (14): work_area, organization, project, survey, site_id, hakai_id, source, filter_type, lab_technician, no2...
-dbl  (13): event_pk, rn, sampling_bout, lat, long, gather_lat, gather_long, line_out_depth, pressure_transducer_...
-lgl  (34): action, is_replicate, project_specific_id, collection_method, filtered, installed, nh4_, no2_no3_ugl,...
-dttm  (3): collected, preserved, analyzed
-date  (1): date
+#Upload nutrient data (QC&#39;d data from the portal)
+nuts &lt;- read_csv(here(&quot;files&quot;, &quot;nuts_2021-12-15.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBzZWNjaGkgZGlzayBkYXRhXG5zZWNjaGkgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwic2VjY2hpLmNzdlwiKSlcbmBgYCJ9 -->
-<pre class="r"><code>#Upload secchi disk data
-secchi &lt;- read_csv(here(&quot;files&quot;, &quot;secchi.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMjQxIENvbHVtbnM6IDE3XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICAoOCk6IHdvcmtfYXJlYSwgb3JnYW5pemF0aW9uLCBzdXJ2ZXksIHNpdGVfaWQsIGhha2FpX2lkLCByb3dfZmxhZywgcXVhbGl0eV9sZXZlbCwgcXVhbGl0eV9sb2dcbmRibCAgKDUpOiBldmVudF9waywgc2FtcGxpbmdfYm91dCwgbGF0LCBsb25nLCBsaW5lX291dF9kZXB0aFxubGdsICAoMyk6IGFjdGlvbiwgc2VjY2hpX3R5cGUsIGNvbW1lbnRzXG5kYXRlICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 241 Columns: 17
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (8): work_area, organization, survey, site_id, hakai_id, row_flag, quality_level, quality_log
-dbl  (5): event_pk, sampling_bout, lat, long, line_out_depth
-lgl  (3): action, secchi_type, comments
-date (1): date
+#Upload secchi disk data
+secchi &lt;- read_csv(here(&quot;files&quot;, &quot;secchi.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBQQVIgZGVyaXZlZCB6ZXVcbnpldSA8LSByZWFkX2NzdihoZXJlKFwib3V0cHV0c1wiLCBcInBhcl9jb3JyZWN0ZWQuY3N2XCIpKVxuYGBgIn0= -->
-<pre class="r"><code>#Upload PAR derived zeu
-zeu &lt;- read_csv(here(&quot;outputs&quot;, &quot;par_corrected.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjcgQ29sdW1uczogM1xuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDEpOiBzaXRlX2lkXG5kYmwgICgxKTogemV1X2RtXG5kYXRlICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 67 Columns: 3
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (1): site_id
-dbl  (1): zeu_dm
-date (1): date
+#Upload PAR derived zeu
+zeu &lt;- read_csv(here(&quot;outputs&quot;, &quot;par_corrected.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBDYWx2ZXJ0IG1pY3Jvc2NvcHkgZGF0YVxubWljcm9fYyA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJjYWx2ZXJ0LmNzdlwiKSlcbmBgYCJ9 -->
-<pre class="r"><code>#Upload Calvert microscopy data
-micro_c &lt;- read_csv(here(&quot;files&quot;, &quot;calvert.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzg3MCBDb2x1bW5zOiAxOVxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDE2KTogc2l0ZV9pZCwgdHJvcGhpY1N0YXR1cywgZ3JvdXAsIHNjaWVudGlmaWNOYW1lLCBvcmlnX25hbWUsIHNjaWVudGlmaWNOYW1lX2FjY2VwdGVkLCByYW5rLCBraW5nZG9tLCBwaHkuLi5cbmRibCAgICgyKTogQXBoaWFJRCwgY291bnRcbmRhdGUgICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 3870 Columns: 19
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (16): site_id, trophicStatus, group, scientificName, orig_name, scientificName_accepted, rank, kingdom, phy...
-dbl   (2): AphiaID, count
-date  (1): date
+#Upload Calvert microscopy data
+micro_c &lt;- read_csv(here(&quot;files&quot;, &quot;calvert.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBRVTM5IG1pY3Jvc2NvcHkgZGF0YVxubWljcm9fcSA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJxdTM5LmNzdlwiKSlcbmBgYCJ9 -->
-<pre class="r"><code>#Upload QU39 microscopy data
-micro_q &lt;- read_csv(here(&quot;files&quot;, &quot;qu39.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjQyNyBDb2x1bW5zOiAxOVxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDE2KTogc2l0ZV9pZCwgdHJvcGhpY1N0YXR1cywgZ3JvdXAsIHNjaWVudGlmaWNOYW1lLCBvcmlnX25hbWUsIHNjaWVudGlmaWNOYW1lX2FjY2VwdGVkLCByYW5rLCBraW5nZG9tLCBwaHkuLi5cbmRibCAgICgyKTogQXBoaWFJRCwgY291bnRcbmRhdGUgICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 6427 Columns: 19
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (16): site_id, trophicStatus, group, scientificName, orig_name, scientificName_accepted, rank, kingdom, phy...
-dbl   (2): AphiaID, count
-date  (1): date
+#Upload QU39 microscopy data
+micro_q &lt;- read_csv(here(&quot;files&quot;, &quot;qu39.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0FkZCBRVTM5IGFzIHNpdGVfaWQgXG5taWNyb19xIDwtIG1pY3JvX3EgJT4lIFxuICBtdXRhdGUoc2l0ZV9pZCA9IFwiUVUzOVwiKSAlPiUgXG4gIHJlbG9jYXRlKHNpdGVfaWQsIC5hZnRlciA9IGRhdGUpXG5cbiNCaW5kaW5nIHRoZSBDYWx2ZXJ0IGFuZCBRdWFkcmEgTWljcm9zY29weSBkYXRhc2V0cyBpbnRvIGEgc2luZ2xlIGRhdGFmcmFtZS5cbm1pY3JvIDwtIHJiaW5kKG1pY3JvX2MsIG1pY3JvX3EpXG5cbiNJbXBvcnRpbmcgUVUzOSBDaGVtdGF4IGRhdGFcbmNoZW1fcSA8LSByZWFkX3hsc3goaGVyZShcImZpbGVzXCIsIFwicXUzOV8yMDE5XzIwMjBfNW0ueGxzeFwiKSxcbiAgICAgICAgICAgICAgICAgc2hlZXQgPSBcIkNvbmNlbnRyYXRpb25cIixcbiAgICAgICAgICAgICAgICAgcmFuZ2UgPSBcIkUxOlI4MlwiKVxuXG4jSW1wb3J0aW5nIENhbHZlcnQgQ2hlbXRheCBkYXRhXG5jaGVtX2MgPC0gcmVhZF94bHMoaGVyZShcImZpbGVzXCIsIFwiY2FsdmVydF9jaGVtdGF4Lnhsc1wiKSxcbiAgICAgICAgICAgICAgICAgc2hlZXQgPSBcIkRhdGFTdW1tYXJ5UjFfM1wiLFxuICAgICAgICAgICAgICAgICByYW5nZSA9IFwiRTMyNTpSMzc2XCIpXG5cbiNCaW5kaW5nIHRoZSBDYWx2ZXJ0IGFuZCBRdWFkcmEgTWljcm9zY29weSBkYXRhc2V0cyBpbnRvIGEgc2luZ2xlIGRhdGFmcmFtZS5cbmNoZW0gPC0gcmJpbmQoY2hlbV9jLCBjaGVtX3EpXG5cbiNicmluZ2luZyBpbiBuZXcgY2hlbXRheCBydW4gd2l0aCBubyBkaWN0eWNob3BoeXRlcyBhbmQgYWRkZWQgcGVsYWdvcGh5dGVzLiBUaGlzIHdpbGwgYmVjb21lIG15IG9mZmljaWFsIHNoZWV0IGFmdGVyIHNvbWUgcmV2aWV3LCBidXQga2VlcGluZyB0d28gb3B0aW9ucyBhdmFpbGFibGUgaGVyZS5cbmNoZW1fMiA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJjaGVtX2NvbXBhcmVfcGVsYWdvLmNzdlwiKSlcbmBgYCJ9 -->
-<pre class="r"><code>#Add QU39 as site_id 
+#Add QU39 as site_id 
 micro_q &lt;- micro_q %&gt;% 
   mutate(site_id = &quot;QU39&quot;) %&gt;% 
   relocate(site_id, .after = date)
@@ -1930,70 +1841,22 @@ chem_c &lt;- read_xls(here(&quot;files&quot;, &quot;calvert_chemtax.xls&quot;),
 chem &lt;- rbind(chem_c, chem_q)
 
 #bringing in new chemtax run with no dictychophytes and added pelagophytes. This will become my official sheet after some review, but keeping two options available here.
-chem_2 &lt;- read_csv(here(&quot;files&quot;, &quot;chem_compare_pelago.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNzAgQ29sdW1uczogMTJcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICgyKTogRGF0ZSwgU3RhdGlvblxuZGJsICgxMCk6IHJ1biwgQ3lhbm9iYWN0ZXJpYSwgUGVsYWdvLCBIYXB0bywgUHJhc2lub3BoeXRlcy0yLCBQcmFzaW5vcGh5dGVzLTMsIENyeXB0b3BoeXRlcywgRGlub2ZsYWdlbGxhdGVzLTEsIC4uLlxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 70 Columns: 12
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (2): Date, Station
-dbl (10): run, Cyanobacteria, Pelago, Hapto, Prasinophytes-2, Prasinophytes-3, Cryptophytes, Dinoflagellates-1, ...
+chem_2 &lt;- read_csv(here(&quot;files&quot;, &quot;chem_compare_pelago.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1NlbGVjdGluZyBteSBnb29kIHJ1biBmcm9tIHRoZSBzaGVldCB0aGF0IGhhcyBtdWx0aXBsZSBkaWZmZXJlbnQgY2hlbXRheCBvcHRpb25zXG5jaGVtXzIgPC0gY2hlbV8yICU+JSBcbiAgZmlsdGVyKHJ1biA9PSAyKVxuXG4jQnJpbmdpbmcgaW4gQ2hsb3JvcGh5bGxcbmNobCA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJjaGwuY3N2XCIpKVxuYGBgIn0= -->
-<pre class="r"><code>#Selecting my good run from the sheet that has multiple different chemtax options
+#Selecting my good run from the sheet that has multiple different chemtax options
 chem_2 &lt;- chem_2 %&gt;% 
   filter(run == 2)
 
 #Bringing in Chlorophyll
-chl &lt;- read_csv(here(&quot;files&quot;, &quot;chl.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjgwIENvbHVtbnM6IDQ4XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICAoMTQpOiB3b3JrX2FyZWEsIG9yZ2FuaXphdGlvbiwgc3VydmV5LCBzaXRlX2lkLCBsYWJfdGVjaG5pY2lhbiwgaGFrYWlfaWQsIGZpbHRlcl90eXBlLCBhY2lkX2ZsYWcsIGNobGFfZmxhZy4uLlxuZGJsICAoMjIpOiBldmVudF9waywgcm4sIHNhbXBsaW5nX2JvdXQsIGxhdCwgbG9uZywgZ2F0aGVyX2xhdCwgZ2F0aGVyX2xvbmcsIGxpbmVfb3V0X2RlcHRoLCBwcmVzc3VyZV90cmFuc2R1Y2VyXy4uLlxubGdsICAgKDcpOiBhY3Rpb24sIGNvbGxlY3Rpb25fbWV0aG9kLCBwcm9qZWN0X3NwZWNpZmljX2lkLCBpc19ibGFuaywgaXNfc29saWRfc3RhbmRhcmQsIGZpbHRlcl9zaXplX21tLCBjb21tZW50c1xuZHR0bSAgKDQpOiBjb2xsZWN0ZWQsIHByZXNlcnZlZCwgYW5hbHl6ZWQsIGNhbGlicmF0aW9uXG5kYXRlICAoMSk6IGRhdGVcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
-<pre><code>Rows: 680 Columns: 48
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (14): work_area, organization, survey, site_id, lab_technician, hakai_id, filter_type, acid_flag, chla_flag...
-dbl  (22): event_pk, rn, sampling_bout, lat, long, gather_lat, gather_long, line_out_depth, pressure_transducer_...
-lgl   (7): action, collection_method, project_specific_id, is_blank, is_solid_standard, filter_size_mm, comments
-dttm  (4): collected, preserved, analyzed, calibration
-date  (1): date
+chl &lt;- read_csv(here(&quot;files&quot;, &quot;chl.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBmZWNhbCBwZWxsZXQgY291bnRzXG5mZWMgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwiZmVjYWwuY3N2XCIpKVxuYGBgIn0= -->
-<pre class="r"><code>#Upload fecal pellet counts
-fec &lt;- read_csv(here(&quot;files&quot;, &quot;fecal.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMjkzIENvbHVtbnM6IDJcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgKDEpOiBIYWthaSBJRFxuZGJsICgxKTogZmVjYWxcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
-<pre><code>Rows: 293 Columns: 2
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr (1): Hakai ID
-dbl (1): fecal
+#Upload fecal pellet counts
+fec &lt;- read_csv(here(&quot;files&quot;, &quot;fecal.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZGluZyBtZXRhZGF0YSBmb3IgZmVjYWwgcGVsbGV0IGNvdW50c1xubWV0YSA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJtZXRhX3BoeXRvXzIwMjEtMDYtMjEuY3N2XCIpKVxuYGBgIn0= -->
-<pre class="r"><code>#Uploading metadata for fecal pellet counts
-meta &lt;- read_csv(here(&quot;files&quot;, &quot;meta_phyto_2021-06-21.csv&quot;))</code></pre>
+#Uploading metadata for fecal pellet counts
+meta &lt;- read_csv(here(&quot;files&quot;, &quot;meta_phyto_2021-06-21.csv&quot;))
+</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMjA1MyBDb2x1bW5zOiAzM1xuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDExKTogd29ya19hcmVhLCBvcmdhbml6YXRpb24sIHN1cnZleSwgc2l0ZV9pZCwgaGFrYWlfaWQsIHNvdXJjZSwgc2FtcGxlX3N0eWxlLCBsYWJfdGVjaG5pY2lhbiwgcm93X2ZsYWcsIHEuLi5cbmRibCAgKDEzKTogZXZlbnRfcGssIHJuLCBzYW1wbGluZ19ib3V0LCBsYXQsIGxvbmcsIGdhdGhlcl9sYXQsIGdhdGhlcl9sb25nLCBtZXNoX3NpemVfX3VtXywgbmV0X2RpbV9fX2NtXywgbmV0X2wuLi5cbmxnbCAgICg2KTogYWN0aW9uLCBwcm9qZWN0X3NwZWNpZmljX2lkLCBsdWdvbHMsIGFuYWx5emVkLCBhbmFseXppbmdfbGFiLCBjb21tZW50c1xuZHR0bSAgKDIpOiBjb2xsZWN0ZWQsIHByZXNlcnZlZFxuZGF0ZSAgKDEpOiBkYXRlXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
-<pre><code>Rows: 2053 Columns: 33
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (11): work_area, organization, survey, site_id, hakai_id, source, sample_style, lab_technician, row_flag, q...
-dbl  (13): event_pk, rn, sampling_bout, lat, long, gather_lat, gather_long, mesh_size__um_, net_dim___cm_, net_l...
-lgl   (6): action, project_specific_id, lugols, analyzed, analyzing_lab, comments
-dttm  (2): collected, preserved
-date  (1): date
-
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
