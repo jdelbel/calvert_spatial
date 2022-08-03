@@ -1778,61 +1778,27 @@ library(patchwork)</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBkYXRhXG5cbiNBbGwgZGF0YSBtZXJnZWQgdG8gdGhlIENURCBcbmRhdGEgPC0gcmVhZF9jc3YoaGVyZShcIm91dHB1dHNcIiwgXCJjdGRfbWVyZ2VfMjAyMi0wMy0xNl9oZXQuY3N2XCIpKSBcbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBkYXRhXG5cbiNBbGwgZGF0YSBtZXJnZWQgdG8gdGhlIENURCBcbmRhdGEgPC0gcmVhZF9jc3YoaGVyZShcIm91dHB1dHNcIiwgXCJjdGRfbWVyZ2VfMjAyMi0wMy0xNl9oZXQuY3N2XCIpKSBcblxuI0p1c3QgdXNpbmcgY2FsdmVydCBkYXRhXG5kYXRhIDwtIGRhdGEgJT4lIFxuICBmaWx0ZXIoIXNpdGVfaWQgPT0gXCJRVTM5XCIpXG5cbiNVcGxvYWQgZGF0YSBmcm9tIG15IG1hc3RlciBkYXRhIHN0YW5kYXJkaXphdGlvbiBzaGVldFxubWljcm8gPC0gcmVhZF9jc3YoaGVyZShcIm91dHB1dHNcIiwgXCJtaWNyb19tYXN0ZXJfMjAyMS0xMC0xOC5jc3ZcIikpIFxuXG4jUmVtb3ZpbmcgUVUzOVxubWljcm8gPC0gbWljcm8gJT4lIFxuICBmaWx0ZXIoIXNpdGVfaWQgPT0gXCJRVTM5XCIpXG5cbiNVcGxvYWRpbmcgdGhlIGNobC1IUExDIHRpbWVzZXJpZXMgdGhhdCBJIGNyZWF0ZWQgdG8gZWxpbWluYXRlIGRhdGEgUUMgZ2Fwcy5cbnRjaGEgPC0gcmVhZF9jc3YoaGVyZShcIm91dHB1dHNcIiwgXCJjaGxfaHBsY19tZXJnZWQuY3N2XCIpKVxuXG5gYGAifQ== -->
 <pre class="r"><code>#Upload data
 
 #All data merged to the CTD 
-data &lt;- read_csv(here(&quot;outputs&quot;, &quot;ctd_merge_2022-03-16_het.csv&quot;)) </code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNDkgQ29sdW1uczogMTc3XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICAgICgxKTogc2l0ZV9pZFxuZGJsICAoMTc1KTogbW9udGgsIG1vbnRoX3N1cnYsIGxhdCwgbG9uZywgdGVtcF9kbSwgc2FsX2RtLCBOMl9kbSwgZGVsdGFfcmhvX2RtLCB0dXJiX2RtLCBmbHVfZG0sIGRlcF8yNl9kbS4uLlxuZGF0ZSAgICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 49 Columns: 177
--- Column specification --------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr    (1): site_id
-dbl  (175): month, month_surv, lat, long, temp_dm, sal_dm, N2_dm, delta_rho_dm, turb_dm, flu_dm, dep_26_dm...
-date   (1): date
+data &lt;- read_csv(here(&quot;outputs&quot;, &quot;ctd_merge_2022-03-16_het.csv&quot;)) 
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0p1c3QgdXNpbmcgY2FsdmVydCBkYXRhXG5kYXRhIDwtIGRhdGEgJT4lIFxuICBmaWx0ZXIoIXNpdGVfaWQgPT0gXCJRVTM5XCIpXG5cbiNVcGxvYWQgZGF0YSBmcm9tIG15IG1hc3RlciBkYXRhIHN0YW5kYXJkaXphdGlvbiBzaGVldFxubWljcm8gPC0gcmVhZF9jc3YoaGVyZShcIm91dHB1dHNcIiwgXCJtaWNyb19tYXN0ZXJfMjAyMS0xMC0xOC5jc3ZcIikpIFxuYGBgIn0= -->
-<pre class="r"><code>#Just using calvert data
+#Just using calvert data
 data &lt;- data %&gt;% 
   filter(!site_id == &quot;QU39&quot;)
 
 #Upload data from my master data standardization sheet
-micro &lt;- read_csv(here(&quot;outputs&quot;, &quot;micro_master_2021-10-18.csv&quot;)) </code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMjkwOSBDb2x1bW5zOiAyMlxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDE2KTogc2l0ZV9pZCwgdHJvcGhpY1N0YXR1cywgZ3JvdXAsIHNjaWVudGlmaWNOYW1lLCBvcmlnX25hbWUsIHNjaWVudGlmaWNOYW1lX2FjY2VwdGVkLCByYW5rLCBraW5nZG8uLi5cbmRibCAgICg1KTogbW9udGgsIG1vbnRoX3N1cnYsIEFwaGlhSUQsIGNvdW50LCBzcGVjaWVzX3N1bVxuZGF0ZSAgKDEpOiBkYXRlXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
-<pre><code>Rows: 2909 Columns: 22
--- Column specification --------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (16): site_id, trophicStatus, group, scientificName, orig_name, scientificName_accepted, rank, kingdo...
-dbl   (5): month, month_surv, AphiaID, count, species_sum
-date  (1): date
+micro &lt;- read_csv(here(&quot;outputs&quot;, &quot;micro_master_2021-10-18.csv&quot;)) 
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1JlbW92aW5nIFFVMzlcbm1pY3JvIDwtIG1pY3JvICU+JSBcbiAgZmlsdGVyKCFzaXRlX2lkID09IFwiUVUzOVwiKVxuXG4jVXBsb2FkaW5nIHRoZSBjaGwtSFBMQyB0aW1lc2VyaWVzIHRoYXQgSSBjcmVhdGVkIHRvIGVsaW1pbmF0ZSBkYXRhIFFDIGdhcHMuXG50Y2hhIDwtIHJlYWRfY3N2KGhlcmUoXCJvdXRwdXRzXCIsIFwiY2hsX2hwbGNfbWVyZ2VkLmNzdlwiKSlcbmBgYCJ9 -->
-<pre class="r"><code>#Removing QU39
+#Removing QU39
 micro &lt;- micro %&gt;% 
   filter(!site_id == &quot;QU39&quot;)
 
 #Uploading the chl-HPLC timeseries that I created to eliminate data QC gaps.
-tcha &lt;- read_csv(here(&quot;outputs&quot;, &quot;chl_hplc_merged.csv&quot;))</code></pre>
+tcha &lt;- read_csv(here(&quot;outputs&quot;, &quot;chl_hplc_merged.csv&quot;))
+</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjIgQ29sdW1uczogM1xuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDEpOiBzaXRlX2lkXG5kYmwgICgxKTogY2hsXG5kYXRlICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 62 Columns: 3
--- Column specification --------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (1): site_id
-dbl  (1): chl
-date (1): date
-
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
@@ -2855,6 +2821,11 @@ Run `rlang::last_error()` to see where the error occurred.</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0hlbGxpbmdlciB0cmFuc2Zvcm1hdGlvbiBvbiBzcGVjaWVzIGRhdGEgLSBwYXJ0aWN1bGFybHkgc3VpdGVkIHRvIHNwZWNpZXMgYWJ1bmRhbmNlIGRhdGEgd2l0aCBsYXJnZSByYW5nZSBhbmQgbG90cyBvZiB6ZXJvcy4gR2l2ZXMgbG93IHdlaWdodHMgdG8gdmFyaWFibGVzIHdpdGggbG93IGNvdW50cyBhbmQgbWFueSB6ZXJvZXMuXG5yZXNwLmhlbGxfY2hlbSA8LSBkZWNvc3RhbmQocmVzcF9jaGVtLCAnaGVsbCcpXG5cbmBgYCJ9 -->
+<pre class="r"><code>#Hellinger transformation on species data - particularly suited to species abundance data with large range and lots of zeros. Gives low weights to variables with low counts and many zeroes.
+resp.hell_chem &lt;- decostand(resp_chem, &#39;hell&#39;)
+</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
@@ -2931,6 +2902,23 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0NoYW5naW5nIHNpdGVfaWQgdG8gbG9jYXRpb24gXG5tZXRhX2NoZW0gPC0gY2hlbSAlPiUgXG4gIHNlbGVjdChkYXRlOnNpdGVfaWQpICU+JSBcbiAgbXV0YXRlKGxvY2F0aW9uID0gY2FzZV93aGVuKHNpdGVfaWQgPT0gXCJERk8yXCIgfiBcIkZcIixcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHNpdGVfaWQgPT0gXCJLQzEwXCIgfiBcIkNcIixcbiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHNpdGVfaWQgPT0gXCJRQ1MwMVwiIH4gXCJTXCIsXG4gICAgICAgICAgICAgICAgICAgICAgICAgICAgICBUUlVFIH4gYXMuY2hhcmFjdGVyKHNpdGVfaWQpKSkgJT4lIFxuICByZWxvY2F0ZShsb2NhdGlvbiwgLmFmdGVyID0gc2l0ZV9pZClcblxubWV0YV9jaGVtIDwtIG1ldGFfY2hlbSAlPiUgXG4gIG11dGF0ZSh5ZWFyID0gbHVicmlkYXRlOjp5ZWFyKGRhdGUpKVxuXG4jQ2hlbXRheCAtIFNwZWNpZnkgb3JkZXIgb2YgcGh5dG8gZ3JvdXBzIGZvciBmaWd1cmVzXG5tZXRhX2NoZW0gPC0gYXJyYW5nZShtdXRhdGUobWV0YV9jaGVtLFxuICAgICAgICAgICAgICAgICAgICAgICAgIGxvY2F0aW9uID0gZmFjdG9yKGxvY2F0aW9uLCBsZXZlbHMgPSBvcmRlcl9sb2MpKSlcbmBgYCJ9 -->
+<pre class="r"><code>#Changing site_id to location 
+meta_chem &lt;- chem %&gt;% 
+  select(date:site_id) %&gt;% 
+  mutate(location = case_when(site_id == &quot;DFO2&quot; ~ &quot;F&quot;,
+                              site_id == &quot;KC10&quot; ~ &quot;C&quot;,
+                              site_id == &quot;QCS01&quot; ~ &quot;S&quot;,
+                              TRUE ~ as.character(site_id))) %&gt;% 
+  relocate(location, .after = site_id)
+
+meta_chem &lt;- meta_chem %&gt;% 
+  mutate(year = lubridate::year(date))
+
+#Chemtax - Specify order of phyto groups for figures
+meta_chem &lt;- arrange(mutate(meta_chem,
+                         location = factor(location, levels = order_loc)))</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->

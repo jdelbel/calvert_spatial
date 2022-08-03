@@ -1,0 +1,755 @@
+---
+title: Data Wrangling and standardization for Calvert/QU39 spatial paper
+output: html_notebook
+---
+
+The purpose of this folder is to bring all the data together in a single location and then write them to different output files for each type of analysis. Prior to this, analysis was largely exploratory and I was uploading data and wrangling data to each analysis file independently. This approach was getting convoluted and errors/differences between analysis were starting to arise.
+
+Things to look into
+1) where am determining phototrophs from heterotrophs?
+
+*Upload new corrected nutrients - get rid of old makeshift code.
+
+
+
+```{r}
+#Load packages
+library(tidyverse) #Data wrangling
+library(readxl) #Import excel files
+library(gsw) #Gibbs Seawater Toolbox
+library(here) #File structure management
+```
+
+```{r}
+#Importing datasets
+
+#Upload ctd data
+ctd <- read_csv(here("files", "ctd.csv")) 
+
+ctd <- ctd %>% 
+  filter(!Station == "QU39")
+
+#Upload corrected turbidity data - the corrections are rough and need to be reviewed. Trends are probably correct, but each point will have error.
+turb_corr <- read_csv(here("outputs", "corrected_turbidity_v1.csv"))
+
+#Upload nutrient data (QC'd data from the portal)
+nuts <- read_csv(here("files", "nuts_2021-12-15.csv"))
+
+#Upload secchi disk data
+secchi <- read_csv(here("files", "secchi.csv"))
+
+secchi <- secchi %>% 
+  filter(!site_id == "QU39")
+
+#Upload PAR derived zeu
+zeu <- read_csv(here("outputs", "par_corrected.csv"))
+
+#Upload Calvert microscopy data
+micro <- read_csv(here("files", "calvert.csv"))
+
+
+#Importing Calvert Chemtax data
+chem <- read_xls(here("files", "calvert_chemtax.xls"),
+                 sheet = "DataSummaryR1_3",
+                 range = "E325:R376")
+
+#bringing in new chemtax run with no dictychophytes and added pelagophytes. This will become my official sheet after some review, but keeping two options available here.
+chem_2 <- read_csv(here("files", "chem_compare_pelago.csv"))
+
+#Selecting my good run from the sheet that has multiple different chemtax options
+chem_2 <- chem_2 %>% 
+  filter(run == 2)
+
+#Bringing in Chlorophyll
+chl <- read_csv(here("files", "chl.csv"))
+
+chl <- chl %>% 
+  filter(!site_id == "QU39")
+
+#Upload fecal pellet counts
+fec <- read_csv(here("files", "fecal.csv"))
+
+#Uploading metadata for fecal pellet counts
+meta <- read_csv(here("files", "meta_phyto_2021-06-21.csv"))
+
+```
+
+
+```{r}
+#Fixing some errors in the microscopy dataset
+
+#For some reason, Ebria was classed as a dinoflagellate in some instances. Fixing here and making a heterotroph.
+micro <- micro %>% 
+  mutate(group = case_when(scientificName == "Ebria tripartita" ~ "Ebriidea",
+         TRUE ~ as.character(as.character(group))),
+         trophicStatus = case_when(scientificName == "Ebria tripartita" ~ "hetero",
+         TRUE ~ as.character(as.character(trophicStatus))))
+
+#Pseudo-nitzschia - deli and multi cannot be discerned and need to be summed. Seriata is discernable and can be left.
+
+#Here, I filter out the P.deli and multi, sum their counts and rename them P.n.
+p_s <- micro %>% 
+  filter(scientificName == "Pseudo-nitzschia delicatissima" | 
+           scientificName == "Pseudo-nitzschia multiseries") %>% 
+  group_by(date, site_id) %>% 
+  mutate(count2 = sum(count)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, count2, .keep_all = TRUE) %>% 
+  mutate(scientificName = "Pseudo-nitzschia",
+         scientificName_accepted = "Pseudo-nitzschia",
+         orig_name = "Pseudo-nitzschia") %>% 
+  select(!count) %>% 
+  rename(count = count2)
+
+#Here, I remove P.deli and P.multi from the main sheet, so I can reintroduce the summed counts.
+micro <- micro %>% 
+  filter(!(scientificName == "Pseudo-nitzschia delicatissima" | 
+           scientificName == "Pseudo-nitzschia multiseries"))
+
+#Here, I reintroduce the summed counts as overarching Psuedo-nitzschia
+micro <- rbind(micro, p_s)
+
+#Arranging by date and station
+micro <- micro %>% 
+  arrange(date, site_id)
+
+#Test to see if it worked - looks like it did.
+p_n_check <- micro %>% 
+  filter(genus == "Pseudo-nitzschia") %>% 
+  distinct(scientificName)
+
+#Isolating ciliates to compare with microscopy data
+cil <- micro %>% 
+  filter(group == "Ciliophora") %>% 
+  group_by(date, site_id) %>% 
+  mutate(count2 = sum(count)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, count2, .keep_all = TRUE) %>% 
+  select(!count) %>% 
+  rename(count = count2) %>% 
+  mutate(scientificName = "ciliates",
+         scientificName_accepted = "ciliates",
+         orig_name = "ciliates")
+
+#Classifying the heterotrophic (as Identified by Louis, but probably more as is a really complex group. These are the ones usually considered) dinoflagellates as hetero.
+
+# Gymnodinium, Gyrodinium and Katodinium
+micro <- micro %>% 
+  mutate(trophicStatus = case_when(genus == "Gymnodinium" ~ "hetero",
+         TRUE ~ as.character(as.character(trophicStatus))),
+         trophicStatus = case_when(genus == "Gyrodinium" ~ "hetero",
+         TRUE ~ as.character(as.character(trophicStatus))),
+         trophicStatus = case_when(genus == "Katodinium" ~ "hetero",
+         TRUE ~ as.character(as.character(trophicStatus))))
+
+dino_het <- micro %>% 
+  filter(genus == "Gymnodinium" | genus == "Gyrodinium" | genus == "Katodinium") %>% 
+  group_by(date, site_id) %>% 
+  mutate(count2 = sum(count)) %>% 
+  ungroup() %>% 
+  distinct(date, site_id, count2, .keep_all = TRUE) %>% 
+  select(!count) %>% 
+  rename(count = count2) %>% 
+  mutate(scientificName = "dino_het",
+         scientificName_accepted = "dino_het",
+         orig_name = "dino_het")
+```
+
+```{r}
+#Making changes to datasets to make them easier to work with.
+
+#making CTD labels shorter and easier to work with. Selecting the columns I want to work with.
+ctd <- ctd %>% 
+  rename(pres = `Pressure (dbar)`,
+         sal = `Salinity (PSU)`,
+         temp = `Temperature (deg C)`,
+         date = `Measurement time`,
+         station = Station,
+         cast_pk = `Cast PK`,
+         par = `PAR (umol m-2 s-1)`)
+
+#Renaming Chemtax columns to make them easier to work with. Selecting the columns I want for analysis.
+chem <- select(chem,
+               date = Date, site_id = Station, cyan = Cyanobacteria, 
+               hapto = Hapto, green = `Prasinophytes-3`, cryp = Cryptophytes,
+               dino = `Dinoflagellates-1`, dict = Dictyo, raph = Raphido,
+               diat = `Diatoms-1`)
+
+chem_2 <- select(chem_2,
+               date = Date, site_id = Station, cyan = Cyanobacteria, 
+               pela = Pelago, hapt = Hapto, pras2 = `Prasinophytes-2`,
+               pras3 = `Prasinophytes-3`, cryp = Cryptophytes,
+               dino = `Dinoflagellates-1`, raph = Raphido,
+               diat = `Diatoms-1`)
+
+#Setting number of decimal places for chemtax data
+chem <- chem %>% 
+  mutate_at(vars(cyan:diat), funs(round(., 2)))
+
+#Selecting columns I need from the Secchi workbook. Removing two records where the secchi depth was 999.
+secchi <- secchi %>% 
+  select(date, site_id, secchi_depth = line_out_depth) %>% 
+  filter(secchi_depth < 30)
+
+#Selecting columns I need from the turbidity workbook.
+turb_corr <- turb_corr %>% 
+  select(cast_pk = castPk, pres = pressure, turb_cor)
+
+#Setting data format for Chemtax data. They usually import in a strange format and need to be fixed.
+chem$date <- as.Date(chem$date, "%Y-%m-%d")
+
+chem_2 <- chem_2 %>% 
+  mutate(date = lubridate::mdy(date))
+
+#Looking at coordinates for the CTD dataset - creating a list of unique coordinates
+ctd_coord <- ctd %>% 
+  distinct(station, Latitude, Longitude)
+
+#Some CTD casts are missing coordinates that are required for GSW calculations. Fill the coordinates in using those from the Hakai Station Master - Latitude
+ctd <- ctd %>% 
+  mutate(Latitude = case_when(station == "QU39" & is.na(Latitude) ~ 50.03001,
+                              station == "QCS01" & is.na(Latitude) ~ 51.70493,
+                              station == "KC10" & is.na(Latitude) ~ 51.65064,
+                              station == "DFO2" & is.na(Latitude) ~ 51.52111,
+         TRUE ~ as.numeric(as.character(Latitude))))
+
+#Filling in missing Longitude
+ctd <- ctd %>% 
+  mutate(Longitude = case_when(station == "QU39" & is.na(Longitude) ~ -125.0989,
+                              station == "QCS01" & is.na(Longitude) ~ -128.2388,
+                              station == "KC10" & is.na(Longitude) ~ -127.9513,
+                              station == "DFO2" & is.na(Longitude) ~ -127.5590,
+         TRUE ~ as.numeric(as.character(Longitude))))
+
+#Making a Tidy/long format for the Chemtax data. This needs to be done for plotting. The other datasets are already in this format
+chem_tidy <- chem %>% 
+  pivot_longer(c(cyan, hapto, green, cryp, dino, dict, raph, diat),
+                 names_to = "phyto_group", values_to = "TChla") %>% 
+  group_by(date, site_id) %>% 
+  mutate(TChla_sum = sum(TChla)) %>% 
+  ungroup() %>% 
+  mutate(rel_abun = TChla/TChla_sum) %>% 
+  mutate_at(vars(TChla:rel_abun), funs(round(., 2)))
+
+chem_tidy2 <- chem_2 %>% 
+  pivot_longer(c(cyan, hapt, pela, pras2, pras3, cryp, dino, raph, diat),
+                 names_to = "phyto_group", values_to = "TChla") %>% 
+  group_by(date, site_id) %>% 
+  mutate(TChla_sum = sum(TChla)) %>% 
+  ungroup() %>% 
+  mutate(rel_abun = TChla/TChla_sum) %>% 
+  mutate_at(vars(TChla:rel_abun), funs(round(., 2)))
+
+
+#Instead of doing this each individually, might be best to do to final merged dataset.
+
+#adding year/month/day to CTD dataset
+ctd <- ctd %>%
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date))
+
+```
+
+```{r}
+#Performing GSW calculations
+
+#Calculating absolute salinity
+SA <- gsw_SA_from_SP(ctd$sal, ctd$pres, ctd$Longitude, ctd$Latitude)
+
+#Converting absolute salinity output to a dataframe
+SA <- as.data.frame(SA)
+
+#Calculating conservative temperature
+CT <- gsw_CT_from_t(SA$SA, ctd$temp, ctd$pres)
+
+#Converting conservative temperature output to a dataframe
+CT <- as.data.frame(CT)
+
+#Calculating Density
+rho = gsw_rho(SA$SA, CT$CT, ctd$pres)
+
+#Converting Density to a dataframe
+rho <- as.data.frame(rho)
+
+#Calculating Brunt-Vaisala frequency
+bv <- gsw_Nsquared(SA$SA, CT$CT, ctd$pres)
+
+#Converting Brunt-Vaisala frequency to a dataframe
+bv <- bind_rows(bv)
+
+#Adding a row at the bottom of the Brunt-Vaisala dataframe to make the vector length equal to the other calculations
+bv <- bv %>% 
+  add_row(N2 = NA, p_mid = NA)
+
+#Binding calculations to ctd dataframe
+ctd <- cbind(ctd, SA, CT, rho, bv)
+```
+
+```{r}
+#Looking for 1026 depths 
+ctd_up <- ctd %>% 
+  select(cast_pk, pres, rho) %>% 
+  group_by(cast_pk) %>% 
+  filter(abs(rho - 1026) == min(abs(rho - 1026))) %>% 
+  ungroup() %>% 
+  select(cast_pk, dep_26 = pres)
+```
+
+```{r}
+#Performing calculations for delta_rho 
+
+#Finding minimum cast start depth for each profile to determine range of depths to use for density difference. Only 5 casts start deeper than three meters and only 1 doesn't go to 30m. Using 2 and 30 meters for delta_rho calculation
+range_pres <- ctd %>% 
+  group_by(cast_pk) %>% 
+  summarise(min_pres = min(pres),
+            max_pres = max(pres)) %>% 
+  ungroup() %>% 
+  arrange(desc(min_pres))
+
+#The next few steps are used to determine the density difference as a measure of stratification. Using 2 and 30m
+
+#Filter 2m data from the CTD datasheet
+ctd_2 <- ctd %>% 
+  filter(pres == 2) %>% 
+  select(cast_pk, station, Latitude, Longitude, date, year:day, rho)
+
+#filter 30m data
+ctd_30 <- ctd %>% 
+  filter(pres == 30) %>% 
+  select(cast_pk, rho)
+
+#joining 2m data to 3m data
+ctd_dd <- ctd_2 %>% 
+  left_join(ctd_30, by = "cast_pk") %>% 
+  rename(rho_2 = rho.x, 
+         rho_30 = rho.y)
+
+#Calculating difference in density
+ctd_dd <- ctd_dd %>% 
+  mutate(delta_rho = rho_30 - rho_2)
+
+#Preparing delta_rho calculation sheet for merging back into ctd datasheet
+ctd_dd <- ctd_dd %>% 
+  select(cast_pk, delta_rho)
+```
+
+
+```{r}
+#Merging delta_rho and the corrected turbidity back into the ctd workbook here
+
+#Merging/joining delta_rho and corrected turbidity into ctd datasheet
+ctd <- ctd %>% 
+  left_join(ctd_dd) %>% 
+  left_join(turb_corr) %>% 
+  left_join(ctd_up)
+```
+
+
+```{r}
+ctd_calvert <- ctd %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>%
+  filter(!station == "QU39" & year > 2017 & year < 2021)
+
+ctd_calvert %>% 
+  filter(station == "KC10" & pres < 50) %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = sal, y = pres, color = as.factor(year))) +
+  geom_point() +
+  scale_y_reverse() +
+  facet_grid(. ~ month)
+
+```
+
+
+```{r}
+#Trying FWI calculation
+# fwi <- ctd %>% 
+#   select(cast_pk, date, station, pres, sal) %>% 
+#   group_by(cast_pk) %>% 
+#   filter(sal < 30.1 & pres > 2) %>% 
+#   ungroup() %>% 
+#   mutate(fwc_1 = ((30.1 - sal)/30.1)) %>% 
+#   group_by(cast_pk) %>% 
+#   mutate(fwc = sum(fwc_1)) %>% 
+#   ungroup() %>% 
+#   distinct(cast_pk, fwc, .keep_all = TRUE)
+# 
+# test <- ctd %>% 
+#   filter(station == "QCS01")
+# 
+# test2 <- fwi %>% 
+#   filter(station == "KC10")
+```
+
+
+
+
+
+```{r}
+#Selecting the pertinent columns for analysis - much easier to assess merging/joining with fewer columns
+
+#Selecting 5 m depth CTD data, selecting  columns and renaming certain columns for merging with nutrients and phytoplankton data.
+ctd_5 <- ctd %>%
+  filter(pres == 5) %>% 
+  rename(date_long = date) %>% 
+  mutate(date = lubridate::date(date_long)) %>%
+  select(cast_pk, date, date_long, site_id = station, Latitude, Longitude, pres, 
+         temp, sal, N2, delta_rho, turb_cor, flu = `Fluorometry Chlorophyll (ug/L)`,
+         dep_26)
+
+#Limited years to those being used for analysis
+ctd_5 <- ctd_5 %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01")
+
+#Selecting 5m nutrients and limiting to useful columns (my column selections are scattered all over the place and this could be done to all files much earlier, no? Chunk 2)
+nuts_5 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  select(date, collected, site_id, no2_no3_um, po4, sio2)
+```
+
+```{r}
+#Calculating the daily means for datasets with replicates and replicate casts.
+
+#Determining how many replicate casts there are.
+dup_ctd <- ctd_5 %>% 
+  group_by(date, site_id) %>% 
+  mutate(dups = n()) %>% 
+  arrange(date) %>% 
+  ungroup() %>%
+  filter(dups > 1)  
+
+# Calculating time difference between replicate casts. 
+## Result - 2 just over an hour and one over 4 hours. The four hour one has very similar values, so including in daily mean calculation, but could remove as. 
+dup_ctd <- dup_ctd %>% 
+  group_by(date, site_id) %>% 
+  arrange(date_long) %>% 
+  mutate(time_diff = as.numeric(date_long - lag(date_long), units = "hours"))
+
+ctd_dm <- ctd_5 %>% 
+  select(date, site_id, temp:dep_26) %>% 
+  group_by(date, site_id) %>% 
+  summarise(temp_dm = mean(temp),
+            sal_dm = mean(sal),
+            N2_dm = mean(N2),
+            delta_rho_dm = mean(delta_rho),
+            turb_dm = mean(turb_cor),
+            flu_dm = mean(flu),
+            dep_26_dm = mean(dep_26)) %>% 
+  ungroup()
+
+lat_long <- ctd_5 %>% 
+  select(date, site_id, lat = Latitude, long = Longitude) %>% 
+  group_by(date, site_id) %>% 
+  summarise(lat = mean(lat),
+            long = mean(long)) %>% 
+  ungroup()
+
+ctd_dm <- ctd_dm %>% 
+  left_join(lat_long) %>% 
+  relocate(lat, .after = site_id) %>% 
+  relocate(long, .after = lat)
+
+# Separating replicate nutrient data from 5m depth data. 
+## Duplicates only from QU39 outside of the dates under investigation. Not bothering with looking at difference in time.
+dups_nuts <- nuts_5 %>% 
+  group_by(date, site_id) %>% 
+  mutate(dups = n()) %>% 
+  ungroup() %>%
+  filter(dups > 1)
+  
+#Performing daily mean on 5m depth nutrient data
+nuts_dm <- nuts_5 %>% 
+  group_by(date, site_id) %>% 
+  summarise(no2_dm = mean(no2_no3_um),
+            sio2_dm = mean(sio2),
+            po4_dm = mean(po4)) %>% 
+  ungroup()
+```
+
+```{r}
+#To merge with the environmental driver data, the microscopy needs to be transformed to wide format where species represent columns and samples represent rows. Up until now, I have done this in the individual statistical analysis workbooks, but better to do it once here. The only issue is that for some statistical analysis, I remove some species that are infrequently observed and I haven't decided on a final method for this. It needs to be done while the data is still in long format, so i will need two outputs. Less concerned about data matches for taxonomy anyways.
+
+##Removing data outside of timeframe under investigation
+micro <- micro %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01")
+
+#Removing unknown classifications (Protozoa). Summing counts where I have multiple records of the same species for a day, but different qualifiers
+micro <- micro %>%
+  filter(!scientificName == "Protozoa") %>%
+  group_by(date, site_id, scientificName) %>%
+  mutate(species_sum = sum(count)) %>%
+  distinct(date, site_id, scientificName, species_sum, .keep_all = TRUE) %>% 
+  ungroup() 
+
+#Removing species that are clearly heterotrophs (some hetero/mixos remain in the photo class though)
+#Need to revamp this as nMDS now includes some
+# heterotrophs...
+# micro_piv <- micro %>% 
+#   filter(trophicStatus == "auto")
+
+#For now, using the same as I have for nMDS - I really need to go through and clean this file up so it's more intiutive and errors aren't perpetuated. Right now, defeating purpose of doing it like this.
+micro_piv <- micro %>%
+  filter(!scientificName_accepted == "Cyanobacteria") %>% 
+  filter(!group == "Metazoa") %>% 
+  filter(!group == "Protozoa") %>% 
+  filter(!group == "Kinetoplastidea") %>% 
+  filter(!group == "Choanoflagellata")
+
+#Looking at what species I am currently including in my output files - Using this, I am pretty much including everything but somewhat large or difficult to enumerate species. This inclusion has degraded the RDA analysis likely because some of the heterotrophs have different dynamics when compared to the phytoplankton. I will leave it for now. Groups to consider in particular are Kinetoplastidea, Choanoflagellata and some of the Ciliophora.
+species_list <- micro_piv %>% 
+  distinct(group, scientificName_accepted)
+
+
+#Selecting columns for easier tranformation to wide format.
+micro_piv <- micro_piv %>%
+  select(date, site_id, scientificName, species_sum)
+
+cil_piv <- cil %>%
+  select(date, site_id, scientificName, count)
+
+dino_het_piv <- dino_het %>%
+  select(date, site_id, scientificName, count)
+
+  
+# This is where I lose group level data - need to reformat this for plotting at group level etc.
+# micro <- micro %>%
+#   filter(!scientificName == "Protozoa") %>%
+#   group_by(date, site_id, scientificName) %>%
+#   summarize(species_sum = sum(count)) %>%
+#   ungroup()
+
+#Summing the total abundance for each day - might be easier in column format.
+# micro <- micro %>% 
+#   group_by(date, site_id) %>% 
+
+#pivoting wider so species are columns. 
+micro_piv <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0)) %>% 
+  arrange(site_id, date)
+
+cil_piv <- cil_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = count) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0)) %>% 
+  arrange(site_id, date)
+
+dino_het_piv <- dino_het_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = count) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0)) %>% 
+  arrange(site_id, date)
+
+```
+
+```{r}
+#Working with fecal pellet data to make it mergeable with the rest of the data
+
+#limiting meta dataset to pertinent columns
+meta <- meta %>% 
+  select(hakai_id, date, site_id)
+
+#Renaming hakai ID column for merging
+fec <- fec %>% 
+  rename(hakai_id = `Hakai ID`)
+
+#Joining fecal pellet Hakai IDs with metadata so I can get dates. There are some with missing dates - no hakai_id match - why? Continuing as they may not be pertinent.
+fec <- fec %>% 
+  left_join(meta)
+
+fec_merge <- fec %>% 
+  select(date, site_id, fecal)
+```
+
+```{r}
+#Merging all of the microscopy data
+
+micro_merge <- micro_piv %>% 
+  left_join(cil_piv) %>% 
+  left_join((dino_het_piv)) %>% 
+  left_join(fec_merge)
+
+#Setting NA's to 0 - zeros emerged from merging with ciliate data. True zeros - days when they weren't observed represents a 0 count.
+micro_merge <- micro_merge %>% 
+  mutate_if(is.numeric , replace_na, replace = 0)
+
+micro_merge <- micro_merge %>% 
+  relocate(ciliates, .after = site_id) %>% 
+  relocate(dino_het, .after = site_id) %>% 
+  relocate(fecal, .after = site_id) 
+```
+
+```{r}
+#Working with the chlorophyll data to make it mergeable with other data.
+
+#Checking for duplicate data - doesn't appear to be any.
+chl_dup <- chl %>% 
+  group_by(date, site_id, filter_type) %>% 
+  summarize(n = n()) %>% 
+  ungroup() %>% 
+  filter(n > 1)
+
+#Selecting only Size fractions, checking for duplicates, calculating relative contributions of each size fraction
+chl_sf <- chl %>% 
+  filter(!filter_type == "Bulk GF/F", chla_flag == "AV" | chla_flag == "ADL" |
+           is.na(chla_flag)) %>% 
+  select(date, site_id, filter_type, chla, chla_flag) %>% 
+  group_by(date, site_id) %>% 
+  mutate(n = n(),
+         chl_sum = sum(chla)) %>% 
+  ungroup() %>% 
+  mutate(chl_per = chla/chl_sum)
+
+#Separating bulk chlorophyll data
+chl_bulk <- chl %>% 
+  filter(filter_type == "Bulk GF/F", chla_flag == "AV" | chla_flag == "ADL" |
+           is.na(chla_flag)) %>% 
+  select(date, site_id, filter_type, chla)
+
+#Pivoting SF concentration data wider for joining with other data
+chl_sf_wide <- chl_sf %>% 
+  select(date, site_id, filter_type, chla) %>% 
+  pivot_wider(names_from = filter_type, values_from = chla) %>% 
+  rename(micro_chl = '20um', nano_chl = '3um', pico_chl = 'GF/F')
+
+#Pivoting SF percent data wider for joining with other data
+chl_sfp_wide <- chl_sf %>% 
+  select(date, site_id, filter_type, chl_per) %>% 
+  pivot_wider(names_from = filter_type, values_from = chl_per) %>% 
+  rename(micro_perc = '20um', nano_perc = '3um', pico_perc = 'GF/F')
+
+#Pivoting bulk wide for joining with other data
+chl_bulk_wide <- chl_bulk %>% 
+  select(date, site_id, filter_type, chla) %>% 
+  pivot_wider(names_from = filter_type, values_from = chla) %>% 
+  rename(bulk_chl = 'Bulk GF/F')
+
+chl_merge <- chl_sf_wide %>% 
+  left_join(chl_sfp_wide) %>% 
+  left_join(chl_bulk_wide)
+
+```
+
+```{r}
+#Merging ctd and nutrient data
+
+#Still need to merge - turbidity (pull from correction workbook). Why are there so many days with missing turbidity? Every CTD cast should have turbidity data, no? Need to look into this. Did I account for days where two different CTDs may have been used???
+
+#Dates to investigate
+#2018-01-24 - QU39 - Sensor blank was > 3
+#2018-04-22 - QCS01 - Sensor had very high blank values > 70
+#2018-04-25 - DFO2 - Same survey/sensor
+#2018-04-28 - KC10 - Same survey/sensor
+#2020-07-22 - QU39 - Exists. 15453. D
+#2020-07-29 - QU39 - programming issue, fixed
+#2020-08-06 - QCS01 - fixed.
+#2020-09-22 - QU39 - programming issue, fixed
+
+ctd_merge <- ctd_dm %>% 
+  left_join(nuts_dm) %>% 
+  left_join(secchi) %>% 
+  left_join(zeu) %>% 
+  left_join(chl_merge) %>% 
+  left_join(micro_merge) %>% 
+  left_join(chem_2)
+
+#I thintk this is where I would bring in the zeu depth.
+
+ctd_merge <- ctd_merge %>% 
+  distinct(date, site_id, .keep_all = TRUE)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+#This final ctd_merge_ds files, should be an overarching, standardized and consistent file that I can now pull into all of my different analysis scripts. This should reduced error and data mismatches. The only analysis that may need to be done independently is nMDS where I need to remove species that aren't observed very often. 
+
+#Cross check my current RDA file that the sample size of the analysis is 67 and if it is larger, why? What have I cut out here?
+
+#It's actually less - 59 - Why? One reason could be chlorophyll data, which I incorporated and may have had missing data. Incorporate here and see. 8 Chlorophyll samples missing - this explains the disparity. Should be good to go.
+
+#Exporting as a csv to pull into other analysis.
+write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2022-03-16_het.csv"))
+
+#Exporting as a csv to pull into other analysis.
+write_csv(micro, here("outputs", "micro_all_2022-07-29.csv"))
+
+#Exporting non-downscaled kc10 and QU39 dataset.
+write_csv(micro_kc10, here("outputs", "micro_kc10_2022-03-16_het.csv"))
+
+#Exporting downscaled kc10 and QU39 dataset.
+write_csv(micro_kc10_ds, here("outputs", "micro_kc10_ds_2022-03-16_het.csv"))
+
+#Exporting as a csv to pull into other analysis.
+write_csv(cil_ds, here("outputs", "ciliate_master_2022-03-16_het.csv"))
+
+#Exporting as a csv to pull into other analysis.
+write_csv(dino_het_ds, here("outputs", "dino-het_master_2022-03-16_het.csv"))
+
+#Exporting as a csv to pull into other analysis.
+write_csv(fec_ds, here("outputs", "fecal_master_2022-03-16_het.csv"))
+
+#Exporting as a csv to pull into other analysis.
+write_csv(chem_2, here("outputs", "chemtax_master_2022-03-16_het.csv"))
+```
+
+```{r}
+#Looking into fluorometer - chl relationship
+ctd_merge_ds %>% 
+  ggplot(aes(x = bulk_chl, y = flu_dm)) +
+  geom_point() +
+  xlim(0, 25) +
+  ylim(0, 25)
+
+test <- ctd_merge_ds %>%
+  filter(!is.na(diat)) %>% 
+  mutate(tchla = cyan + hapto + green + cryp + dino + dict + raph + diat)
+
+test %>% 
+  ggplot(aes(x = flu_dm, y = tchla)) +
+  geom_point() +
+  xlim(0, 25) +
+  ylim(0, 25)
+```
+
+```{r}
+#Looking at par zeu to secchi relationship - What do you trust? Keep secchi_depth?
+
+ctd_merge_ds %>% 
+  ggplot(aes(x = zeu_dm, y = secchi_depth*2.8)) +
+  geom_point()
+
+ctd_merge_ds %>% 
+  ggplot(aes(x = date)) +
+  geom_point(aes(y = secchi_depth*2.8), color = "red") +
+  geom_point(aes(y = zeu_dm), color = "blue") +
+  facet_wrap(~site_id, ncol = 1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

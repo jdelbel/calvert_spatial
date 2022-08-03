@@ -22,6 +22,7 @@ library(BiodiversityR)
 library(ggsci)
 library(ggrepel)
 library(ggforce)
+
 library(patchwork)
 
 library(cluster)
@@ -51,6 +52,7 @@ data <- data %>%
   filter(!site_id == "QU39")
 ```
 
+
 ```{r}
 #selecting data I am going to use with the PCA - I think a case could be made to only include sio@ as this is what comes out as a driver in RDA and also, they all point in the same direction and have the same strength in PCA biplot.
 data_pca <- data %>% 
@@ -65,6 +67,14 @@ data_pca <- data_pca %>%
                               site_id == "QCS01" ~ "S",
                               TRUE ~ as.character(site_id))) %>% 
   relocate(location, .after = site_id)
+```
+
+
+```{r}
+#Working with nitrate ratios - Strom et al. (2006): 
+
+# "In addition, samples with nitrate concentrations <0.5 μM (primarily from July) were excluded from all N:P slope calculations. Below 0.5 μM, phosphate use was not associated with measurable changes in nitrate, indicating that phytoplankton production was fueled entirely by regenerated N at these times."
+
 
 #Trying to add n_p to see what it does to clustering
 data_pca <- data_pca %>% 
@@ -303,6 +313,18 @@ ggplot() +
 ggsave(here("figures_good", "pca.png"),
        width = 10, height = 7, dpi = 300)
 ```
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
 
 
 

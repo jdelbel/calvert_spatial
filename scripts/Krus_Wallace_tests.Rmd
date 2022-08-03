@@ -14,26 +14,26 @@ library(readxl)
 
 ```{r}
 #Upload fully formatted microscopy data
-micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
+# micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 
 #Upload microscopy data merged with physical and biogeochemical measures
 data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv")) 
 
 #Uploading chemtax data
-chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv"))
+# chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv"))
 
 #Uploading PCA Clustering data
-pca_clust <- read_csv(here("outputs", "clusters_phys_2022-04-19.csv"))
+# pca_clust <- read_csv(here("outputs", "clusters_phys_2022-04-19.csv"))
 
 #Uploading corrected chlorophyll data
-chla <- read_csv(here("outputs", "bulk_chla_corrected.csv"))
+# chla <- read_csv(here("outputs", "bulk_chla_corrected.csv"))
 
 ```
 
 ```{r}
 #Removing QU39 from sheets
-micro <- micro %>% 
-  filter(!site_id == "QU39")
+# micro <- micro %>% 
+#   filter(!site_id == "QU39")
 
 data <- data %>% 
   filter(!site_id == "QU39")
@@ -49,11 +49,11 @@ data <- data %>%
                               site_id == "QCS01" ~ "S",
                               TRUE ~ as.character(site_id)))
 
-micro <- micro %>% 
-    mutate(location = case_when(site_id == "DFO2" ~ "F",
-                              site_id == "KC10" ~ "C",
-                              site_id == "QCS01" ~ "S",
-                              TRUE ~ as.character(site_id)))
+# micro <- micro %>% 
+#     mutate(location = case_when(site_id == "DFO2" ~ "F",
+#                               site_id == "KC10" ~ "C",
+#                               site_id == "QCS01" ~ "S",
+#                               TRUE ~ as.character(site_id)))
 
 #Order locations from fjord to shelf
 order_loc <- c("F", "C", "S")
@@ -62,9 +62,17 @@ order_loc <- c("F", "C", "S")
 data <- arrange(mutate(data,
                        location = factor(location, levels = order_loc)))
 
-micro <- arrange(mutate(micro,
-                       location = factor(location, levels = order_loc)))
+# micro <- arrange(mutate(micro,
+#                        location = factor(location, levels = order_loc)))
 ```
+
+```{r}
+pys_chem <- data %>% 
+  select(location, temp_dm:secchi_depth)
+```
+
+
+
 
 ```{r}
 #Creating site-id for merging with PCA clusters.
@@ -131,7 +139,7 @@ n_p <- data %>%
   filter(!site_id == "QU39") %>%
   mutate(year = lubridate::year(date)) %>% 
   select(year, location, cluster, no2_dm, po4_dm) %>% 
-  filter(po4_dm > 0.0001) %>% 
+  filter(po4_dm > 0.5) %>% 
   mutate(n_p = no2_dm/po4_dm)
   
 #Calculating stats for N:P by station
@@ -151,11 +159,19 @@ n_p_clust <- n_p %>%
   ungroup()
 
 #Doing the same as above for the Si:N ratio
+data_test <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date)) %>%
+  select(year, location, cluster, sio2_dm, no2_dm) %>% 
+  filter(no2_dm > 0 & sio2_dm > 0) %>% 
+  mutate(s_n = sio2_dm/no2_dm)
+
+
 s_n <- data %>% 
   filter(!site_id == "QU39") %>% 
   mutate(year = lubridate::year(date)) %>%
   select(year, location, cluster, sio2_dm, no2_dm) %>% 
-  filter(no2_dm > 0.0001) %>% 
+  filter(no2_dm > 0 & sio2_dm > 0) %>% 
   mutate(s_n = sio2_dm/no2_dm) 
 
 
@@ -177,10 +193,11 @@ s_n_clust <- s_n %>%
 ```{r}
 #Trying Kruskal Wallis Test followed by Dunn's test if differences found. Instead of creating separate code for each parameter - just changing code depending on what I am looking at.
 
-kruskal.test(temp_dm ~ location, data = data)
+
+kruskal.test(s_n ~ location, data = data_test)
 
 #Dunn
-FSA::dunnTest(data$temp_dm ~ data$location,
+FSA::dunnTest(data_test$s_n ~ data_test$location,
          data = data,
          method = "bonferroni")
 

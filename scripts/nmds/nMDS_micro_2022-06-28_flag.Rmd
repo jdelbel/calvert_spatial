@@ -79,7 +79,8 @@ micro <- micro %>%
 
 ```{r}
 micro <- micro %>% 
-  filter(group == "Cryptophyta")
+  filter(!group == "Bacillariophyta" &
+           !group == "Dinoflagellata")
 ```
 
 
@@ -145,6 +146,8 @@ ano_year
 
 
 ```{r}
+set.seed(123)
+
 #Running nmds on Calvert data
 nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
                          k = 2, trymax = 100) 
@@ -250,10 +253,10 @@ ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
                arrow = arrow(length = unit(0.25, "cm")), colour = "grey") +
   geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "grey30",
              fontface = "bold", label = row.names(spp.scrs2)) + 
-  geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
-               data = en_coord_cont, size =1, alpha = 0.5, colour = "grey30") +
-  geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30", 
-              fontface = "bold", label = row.names(en_coord_cont)) + 
+  # geom_segment(aes(x = 0, y = 0, xend = NMDS1, yend = NMDS2), 
+  #              data = en_coord_cont, size =1, alpha = 0.5, colour = "grey30") +
+  # geom_text(data = en_coord_cont, aes(x = NMDS1, y = NMDS2), colour = "grey30", 
+  #             fontface = "bold", label = row.names(en_coord_cont)) + 
   scale_fill_brewer(palette = "RdYlBu") +
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
   xlim(-2, 1) +

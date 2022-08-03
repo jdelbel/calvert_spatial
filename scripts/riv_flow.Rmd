@@ -14,7 +14,22 @@ library(here) #File structure management
 ```{r}
 #Upload river data
 riv <- read_csv(here("files", "river.csv")) 
+
+temp <- read_csv(here("files", "temp_lookout.csv")) 
 ```
+```{r}
+temp <- temp[-c(1:3), ]
+
+temp <- temp %>% 
+  filter(`Measurement time` > "2018-01-01" & `Measurement time` < "2021-01-01")
+
+temp <- temp %>% 
+  filter(!is.na(TAirLookout1) & TAirLookout2_Q_level == 2) %>% 
+  mutate(yday = lubridate::yday(`Measurement time`))
+
+```
+
+
 
 ```{r}
 #Wrangle data to pertinent parameters and time-frame.
@@ -27,12 +42,29 @@ riv <- riv %>%
   select(date = Date, year, month, yday, dis = Value) %>% 
   filter(year > 2017 & year < 2022)
 
+riv <- riv %>% 
+  group_by(year, month) %>% 
+  mutate(avg = mean(dis)) %>% 
+  ungroup()
+
 ```
 
 ```{r}
 #Plot discharge over three years
 riv %>% 
   ggplot(aes(x = yday, y = dis, color = as.factor(year))) +
+  geom_line()
+
+riv %>% 
+  ggplot() +
+  geom_bar(aes(x = as.factor(month), y = avg, fill = as.factor(year)),
+           stat = "identity", position = "dodge", color = "black") +
+  theme_bw()
+```
+```{r}
+#Plot discharge over three years
+temp %>% 
+  ggplot(aes(x = yday, y = TAirLookout1, color = as.factor(Year))) +
   geom_line()
 ```
 

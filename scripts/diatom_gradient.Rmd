@@ -76,6 +76,13 @@ micro_diat <- micro %>%
   ungroup() %>% 
   mutate(diat_perc = species_sum/total_abund)
 
+micro_dino <- micro %>% 
+  filter(group == "Dinoflagellata") %>% 
+  group_by(date, site_id) %>% 
+  mutate(total_abund = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(diat_perc = species_sum/total_abund)
+
 # micro_diat_order <- micro_diat %>% 
 #   group_by(date, site_id) %>%
 #   mutate(diat_rank = order(order(species_sum, decreasing = TRUE))) %>% 
@@ -98,7 +105,24 @@ micro_genus <- micro_diat %>%
   ungroup() %>% 
   mutate(perc_genus = sum_genus/sum_all,
          year = lubridate::year(date))
+
+micro_genus_dino <- micro_dino %>% 
+  filter(!is.na(genus)) %>% 
+  group_by(date, site_id, location, month_surv, genus) %>% 
+  summarize(sum_genus = sum(species_sum)) %>% 
+  ungroup() %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(sum_genus)) %>% 
+  ungroup() %>% 
+  mutate(perc_genus = sum_genus/sum_all,
+         year = lubridate::year(date))
+
+test_chaet <- micro_genus %>% 
+  filter(genus == "Chaetoceros") %>% 
+  distinct(date, location)
 ```
+
+
 ```{r}
 #Merging genus level data with chlorophyll
 micro_genus <- micro_genus %>% 
@@ -171,6 +195,99 @@ micro_genus %>%
 ggsave(here("figures_good", "diat_genus_chla.png"),
        width = 14, height = 8, dpi = 300)
 ```
+
+```{r}
+diat_global <- micro_genus %>%
+  select(date, location, genus, sum_genus, perc_genus) %>% 
+  group_by(location, genus) %>% 
+  summarise(median_perc = median(perc_genus),
+            mean_perc = mean(perc_genus)) %>% 
+  ungroup()
+
+dino_global <- micro_genus_dino %>%
+  select(date, location, genus, sum_genus, perc_genus) %>% 
+  group_by(location, genus) %>% 
+  summarise(median_perc = median(perc_genus),
+            mean_perc = mean(perc_genus)) %>% 
+  ungroup()
+
+colourCount = length(unique(diat_global$genus))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+```
+
+
+```{r}
+diat_global %>% 
+  ggplot(aes(x = as.factor(location), y = median_perc, fill = genus)) +
+  geom_bar(stat = "identity", position = "fill", color = "black") +
+  scale_fill_manual(values = getPalette(colourCount)) +
+  theme_bw() +
+  ylab("Rel. Abund. Diatoms (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        # legend.position = "top",
+        # legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 1))
+
+
+ggsave(here("figures_good", "test.png"),
+       width = 9, height = 5.5, dpi = 300)
+```
+```{r}
+dino_global %>% 
+  ggplot(aes(x = as.factor(location), y = median_perc, fill = genus)) +
+  geom_bar(stat = "identity", position = "fill", color = "black") +
+  scale_fill_manual(values = getPalette(colourCount)) +
+  theme_bw() +
+  ylab("Rel. Abund. Diatoms (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        # legend.position = "top",
+        # legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 1))
+
+
+ggsave(here("figures_good", "test_dino.png"),
+       width = 9, height = 5.5, dpi = 300)
+```
+
+
+
+```{r}
+coeff <- 12.5
+
+micro_genus %>% 
+  # filter(perc_genus >= 0.05) %>% 
+  ggplot(aes(x = as.factor(location), y = perc_genus, 
+             fill = genus)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  geom_point(aes(x = as.factor(location), y = chl/coeff), pch = 21,
+             color = "Black", fill = "white", stroke = 1.5, size = 3) +
+  scale_y_continuous(sec.axis = sec_axis(~ . *coeff, name = "TChla")) +
+  facet_grid(year ~ month_surv) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  theme_bw() +
+  ylab("Rel. Abund. Diatoms (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        # legend.position = "top",
+        # legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 1))
+
+ggsave(here("figures_good", "diat_genus_chla_2.png"),
+       width = 16, height = 8, dpi = 300)
+```
+
+
 
 
 ```{r}
