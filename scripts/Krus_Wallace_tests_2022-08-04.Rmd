@@ -1,0 +1,255 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Load packages
+library(tidyverse)
+library(patchwork)
+library(here)
+library(readr)
+library(readxl)
+library(ggpubr)
+```
+
+```{r}
+#Upload fully formatted microscopy data
+# micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
+
+#Upload microscopy data merged with physical and biogeochemical measures
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv")) 
+
+tchla <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
+
+
+
+#Uploading chemtax data
+# chem <- read_csv(here("outputs", "chemtax_master_2021-11-04.csv"))
+
+#Uploading PCA Clustering data
+# pca_clust <- read_csv(here("outputs", "clusters_phys_2022-04-19.csv"))
+
+#Uploading corrected chlorophyll data
+# chla <- read_csv(here("outputs", "bulk_chla_corrected.csv"))
+
+```
+
+```{r}
+#Removing QU39 from sheets
+# micro <- micro %>% 
+#   filter(!site_id == "QU39")
+
+data <- data %>% 
+  filter(!site_id == "QU39")
+```
+
+```{r}
+#Adding location to sheets and then creating unique station names for merging and plotting
+
+#Making a location column.
+data <- data %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
+
+# micro <- micro %>% 
+#     mutate(location = case_when(site_id == "DFO2" ~ "F",
+#                               site_id == "KC10" ~ "C",
+#                               site_id == "QCS01" ~ "S",
+#                               TRUE ~ as.character(site_id)))
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Apply ordering to data for 
+data <- arrange(mutate(data,
+                       location = factor(location, levels = order_loc)))
+
+# micro <- arrange(mutate(micro,
+#                        location = factor(location, levels = order_loc)))
+```
+
+```{r}
+pys_chem <- data %>% 
+  select(location, temp_dm:secchi_depth)
+```
+
+
+
+
+```{r}
+#Creating site-id for merging with PCA clusters.
+data <- data %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE) %>% 
+  relocate(sample_name, .before = date)
+
+
+```
+
+```{r}
+#I want to look at annual averages of important variables
+
+#Global medians grouped by station
+data_glob_loc <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  select(location, temp_dm:bulk_chl) %>% 
+  mutate(n_p = no2_dm/po4_dm,
+         si_n = sio2_dm/no2_dm) %>% 
+  group_by(location) %>% 
+  summarise(across(temp_dm:si_n, .f = list(mean = mean, median = median,
+                                               min = min, max = max, sd = sd),
+                   na.rm = TRUE)) %>% 
+  ungroup()
+
+```
+
+
+```{r}
+#Statistical tests showed that silicate was different between years for DFO2 only
+
+#Looking at annual means in silicate for DFO2
+annual_dfo2_sio2 <- data %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(site_id == "DFO2") %>% 
+  select(year, sio2_dm) %>% 
+  group_by(year) %>% 
+  summarise(across(sio2_dm, .f = list(mean = mean, median = median,
+                                               min = min, max = max, sd = sd),
+                   na.rm = TRUE)) %>% 
+  ungroup()
+```
+
+
+```{r}
+#Nutrient Ratios show some crazy trends due to zero values. Filtering out for stats calculationg.
+
+#Removing zero PO4 values
+n_p <- data %>% 
+  filter(!site_id == "QU39") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(year, location, no2_dm, po4_dm) %>% 
+  filter(po4_dm > 0 & no2_dm > 0) %>% 
+  mutate(n_p = no2_dm/po4_dm)
+  
+#Calculating stats for N:P by station
+n_p_loc <- n_p %>% 
+  group_by(location) %>% 
+  summarise(across(n_p, .f = list(mean = mean, median = median,
+                                               min = min, max = max, sd = sd),
+                   na.rm = TRUE)) %>% 
+  ungroup()
+
+s_n <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date)) %>%
+  select(year, location, sio2_dm, no2_dm) %>% 
+  filter(no2_dm > 0 & sio2_dm > 0) %>% 
+  mutate(s_n = sio2_dm/no2_dm) 
+
+
+s_n_2 <- data %>% 
+  filter(!site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date)) %>%
+  select(year, location, sio2_dm, no2_dm) %>% 
+  filter(no2_dm >= 0.5 & sio2_dm > 0) %>% 
+  mutate(s_n = sio2_dm/no2_dm)
+
+s_n_loc <- s_n %>% 
+  group_by(location) %>% 
+  summarise(across(s_n, .f = list(mean = mean, median = median,
+                                               min = min, max = max, sd = sd),
+                   na.rm = TRUE)) %>% 
+  ungroup() 
+
+
+```
+
+```{r}
+#Trying Kruskal Wallis Test followed by Dunn's test if differences found. Instead of creating separate code for each parameter - just changing code depending on what I am looking at.
+
+
+kruskal.test(n_p ~ location, data = n_p)
+
+#Dunn
+FSA::dunnTest(n_p$n_p ~ n_p$location,
+         data = data,
+         method = "bonferroni")
+
+```
+
+```{r}
+
+
+my_comparisons <- list( c("F", "C"), c("F", "S"))
+
+f1 <- ggboxplot(data, x = "location", y = "temp_dm",
+          fill = "location", palette = "jco", size = 0.5) + 
+  stat_compare_means(comparisons = my_comparisons,
+                     label.y = c(14.5, 15.2), size = 7) + 
+  stat_compare_means(label.y = 16.5, size = 6) +
+  theme_bw() +
+  labs(y = expression("Temperature ("*~degree*C*")")) +
+  theme(legend.position = "none",
+        text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black")) 
+  
+my_comparisons2 <- list(c("C", "S"), c("F", "S"))
+
+f2 <- ggboxplot(data, x = "location", y = "sal_dm",
+          fill = "location", palette = "jco", size = 0.5)+ 
+  stat_compare_means(comparisons = my_comparisons2,
+                     label.y = c(32.2, 32.7), size = 7) + 
+  stat_compare_means(label.y = 33.5, size = 6) +
+  theme_bw() +
+  labs(y = "Salinity") +
+  theme(legend.position = "none",
+        text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black")) 
+
+my_comparisons3 <- list( c("F", "C"), c("C", "S"), c("F", "S"))
+
+ggboxplot(data, x = "location", y = "delta_rho_dm",
+          fill = "location", palette = "jco", size = 0.5)+ 
+  stat_compare_means(comparisons = my_comparisons3,
+                     label.y = c(16, 9, 18), size = 7) + 
+  stat_compare_means(label.y = 21.5, size = 6) +
+  theme_bw() +
+  ylim(0, 22) +
+  labs(y = expression(Delta*rho)) +
+  theme(legend.position = "none",
+        text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black")) 
+
+ggboxplot(data, x = "location", y = "sio2_dm",
+          fill = "location", palette = "jco", size = 0.5)+ 
+  stat_compare_means(comparisons = my_comparisons) + 
+  stat_compare_means(label.y = 47) +
+  theme_bw()
+
+ggboxplot(data, x = "location", y = "secchi_depth",
+          fill = "location", palette = "jco", size = 0.5)+ 
+  stat_compare_means(comparisons = my_comparisons) + 
+  stat_compare_means(label.y = 18) +
+  theme_bw()
+
+ggboxplot(tchla, x = "location", y = "tchla",
+          fill = "location", palette = "jco", size = 0.5)+ 
+  stat_compare_means(comparisons = my_comparisons3) + 
+  stat_compare_means(label.y = 18) +
+  theme_bw()
+
+```
+
+
+
+
+
+

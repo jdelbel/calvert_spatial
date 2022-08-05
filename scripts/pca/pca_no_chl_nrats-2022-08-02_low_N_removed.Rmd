@@ -71,15 +71,6 @@ data_pca <- data_pca %>%
 
 
 ```{r}
-#Working with nitrate ratios - Strom et al. (2006): 
-
-# "In addition, samples with nitrate concentrations <0.5 μM (primarily from July) were excluded from all N:P slope calculations. Below 0.5 μM, phosphate use was not associated with measurable changes in nitrate, indicating that phytoplankton production was fueled entirely by regenerated N at these times."
-
-#Makes sense, but removed 7 records. See what it does to the PCA. May be worth running with and without ratios.
-
-data_pca <- data_pca %>% 
-  filter(no2 >= 0.5)
-
 
 #Trying to add n_p to see what it does to clustering
 data_pca <- data_pca %>% 
@@ -159,10 +150,24 @@ f2 <- data_pca %>%
 
 fig <- f1 / f2
 
-ggsave(here("figures_good", "nut_rat_scat.png"), fig,
+ggsave(here("figures_good", "nut_rat_scat2.png"), fig,
        width = 16, height = 12, dpi = 300)
 
 ```
+
+```{r}
+#Working with nitrate ratios - Strom et al. (2006): 
+
+# "In addition, samples with nitrate concentrations <0.5 μM (primarily from July) were excluded from all N:P slope calculations. Below 0.5 μM, phosphate use was not associated with measurable changes in nitrate, indicating that phytoplankton production was fueled entirely by regenerated N at these times."
+
+#Makes sense, but removed 7 records. See what it does to the PCA. May be worth running with and without ratios.
+
+
+data_pca <- data_pca %>%
+  filter(no2 > 0 & sio2 > 0 & po4 > 0)
+```
+
+
 
 ```{r}
 data_pca %>% 
@@ -377,8 +382,8 @@ ggplot() +
                   max.iter = 3e3,
                   size = 8,
                   color = "black") +
-  labs(x = "PCA1 (49%)",
-       y = "PCA2 (22%)") +
+  labs(x = "PCA1 (47%)",
+       y = "PCA2 (24%)") +
   # xlim(-0.75, 0.8) +
   # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
   #                                  digits = 3), "%)", sep = ""),
@@ -398,7 +403,7 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Month", shape = "Station")
 
-ggsave(here("figures_good", "pca_2.png"),
+ggsave(here("figures_good", "pca_3.png"),
        width = 10, height = 7, dpi = 300)
 ```
 
@@ -531,7 +536,7 @@ p2 <- ggplot() +
 
 fig <- p1/p2
 
-ggsave(here("figures_good", "pca_year.png"),
+ggsave(here("figures_good", "pca_year_2.png"),
        width = 10, height = 14, dpi = 300)
 ```
 
@@ -580,7 +585,7 @@ fviz_gap_stat(gap_stat)
 ```{r}
 #This step sets clusters. Currently, set to three. Not fully supported by silhouette plot, but does make sense considering the data.
 
-k <- 2
+k <- 3
 clust <- cutree(cluster.average, k = k)
 
 clust.df <- data.frame(label = rownames(hc),
@@ -680,7 +685,7 @@ ggplot() +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
  
-ggsave(here("figures_good", "physical_dendro_5_ward_new_rats.png"),
+ggsave(here("figures_good", "physical_dendro_5_ward_new_rats_2.png"),
        width = 6, height = 12, dpi = 300)
 ```
 

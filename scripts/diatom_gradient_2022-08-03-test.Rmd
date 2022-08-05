@@ -261,21 +261,16 @@ ggsave(here("figures_good", "test2_other.png"),
 ```
 
 ```{r}
-coeff <- 12.5
-
-micro_long %>% 
+micro_long_dino %>% 
   mutate(year = lubridate::year(date)) %>% 
   # filter(perc_genus >= 0.05) %>% 
   ggplot(aes(x = as.factor(location), y = perc, 
              fill = genus)) + 
   geom_bar(stat = "identity", position = "stack", color = "black") +  
-  geom_point(aes(x = as.factor(location), y = chl/coeff), pch = 21,
-             color = "Black", fill = "white", stroke = 1.5, size = 3) +
-  scale_y_continuous(sec.axis = sec_axis(~ . *coeff, name = "TChla")) +
   facet_grid(year ~ month_surv) +
   scale_fill_manual(values = getPalette(colourCount)) +
   theme_bw() +
-  ylab("Rel. Abund. Diatoms (%)") +
+  ylab("Rel. Abund. Dinoflag. (%)") +
   theme(text = element_text(size = 25),
         axis.title.x = element_blank(),
         # axis.text.y = element_blank(),
@@ -285,10 +280,17 @@ micro_long %>%
         legend.title = element_blank()) +
   guides(fill = guide_legend(ncol = 1))
 
-ggsave(here("figures_good", "diat_genus_chla_3.png"),
+ggsave(here("figures_good", "dino_genus.png"),
        width = 16, height = 8, dpi = 300)
 ```
 
+```{r}
+kato <- micro %>% 
+  filter(scientificName == "Katodinium")
+
+pro <- micro %>% 
+  filter(genus == "Prorocentrum")
+```
 
 
 

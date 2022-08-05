@@ -150,7 +150,7 @@ hplc_join %>%
   ggpubr::stat_cor(label.y.npc = 1.0, vjust = 2, size = 8) +
   ggpubr::stat_regline_equation(label.y = 18, size = 6)
 
-chl_lm = lm(tchla ~ chla, data = hplc_join) 
+chl_lm = lm(chla ~ tchla, data = hplc_join) 
 summary(chl_lm) 
 ```
 
@@ -163,7 +163,7 @@ chl_cali <- chl_join %>%
 
 #Applying the correction to the 2018 chl data based on the relationship between chl and HPLC TChla for 2019 and 2020. This relationship is plotted below.
 chl_cali <- chl_cali %>% 
-  mutate(tchla = (0.69*chla) + 0.35)
+  mutate(tchla = (chla + 0.04)/1.24)
 
 chl_merge <- chl_cali %>% 
   select(date, site_id, tchla)
@@ -173,6 +173,17 @@ hplc_merge <- hplc %>%
   select(date, site_id, tchla = all_chl_a)
 
 tchla_merge <- rbind(hplc_merge, chl_merge)
+
+tchla_export <- tchla_merge %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
+```
+
+```{r}
+#Write output to csv.
+write_csv(tchla_export, here("outputs", "tchla_calibration_2022-08-04.csv"))
 ```
 
 ```{r}
