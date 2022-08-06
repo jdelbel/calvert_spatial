@@ -38,17 +38,7 @@ data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
 
 
 
-```{r}
-micro <- micro %>% 
-  filter(!site_id == "QU39")
-```
 
-```{r}
-micro %>% 
-  filter(scientificName == "Prorocentrum micans") %>% 
-  ggplot(aes(x = date, y = species_sum, color = site_id)) + 
-  geom_point()
-```
 
 
 
@@ -143,7 +133,7 @@ transform <- decostand(species, method = "total")
 
 
 #Not currently working with relative abundance
-transform <- sqrt(transform)
+transform <- asin(sqrt(transform))
 ```
 
 ```{r}
@@ -170,6 +160,8 @@ ano_year
 
 
 ```{r}
+set.seed(123)
+
 #Running nmds on Calvert data
 nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
                          k = 2, trymax = 100) 
