@@ -1,0 +1,923 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+library(indicspecies)
+library(fuzzySim)
+library(cluster)
+library(patchwork)
+library(vegan)
+library(RColorBrewer)
+
+#Need to go through and test these
+
+```
+
+```{r}
+#Upload data
+
+#Upload data from my master data standardization sheet
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+
+```
+
+```{r}
+micro <- micro %>% 
+  filter(!site_id == "QU39")
+```
+
+```{r}
+#Adding location instead of site ID.
+micro <- micro %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) 
+```
+
+
+```{r}
+#Creating a list of distinct species and groups
+species_distinct <- micro %>% 
+  distinct(group, scientificName)
+
+#Removing groups that are not well quantified or that I am not looking at
+micro <- micro %>% 
+  filter(!scientificName_accepted == "Cyanobacteria" &
+           !group == "Metazoa" &
+           !group == "Protozoa" &
+           !group == "Choanoflagellata" &
+           !group == "Ciliophora" &
+           !group == "Kinetoplastidea")
+
+```
+
+```{r}
+#Trying to look at only species present in 10%.
+
+#Determining total number of samples - 50.
+sample_num <- micro %>% 
+  distinct(date, site_id)
+
+#Determining species that are present in > 10% of samples.
+species_10 <- micro %>% 
+  group_by(scientificName) %>% 
+  summarise(n_obs = n()) %>%
+  ungroup() %>% 
+  mutate(perc_obs = n_obs/50) %>% 
+  filter(perc_obs >= 0.10)
+
+#Creating a list of species in > 10% of samples.
+species_10_list <- species_10$scientificName
+
+#Removing species that are not present in > 10% of samples.
+micro <- micro %>% 
+  filter(scientificName %in% species_10_list)
+
+```
+
+```{r}
+#Creating separate sheets for just diatoms and dinoflagellates
+micro_diat <- micro %>% 
+  filter(class == "Bacillariophyceae")
+
+micro_dino <- micro %>% 
+  filter(class == "Dinophyceae")
+```
+
+```{r}
+#Preparing data for nMDS analysis - needs to be in wide matrix.
+
+#Selecting columns - all species
+micro_piv <- micro %>% 
+  select(date, month, month_surv, location, scientificName, species_sum)
+
+micro_piv_diat <- micro_diat %>% 
+  select(date, month, month_surv, location, scientificName, species_sum)
+
+micro_piv_dino <- micro_dino %>% 
+  select(date, month, month_surv, location, scientificName, species_sum)
+
+#pivoting wider so species are columns. 
+micro_piv <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+#Diatoms
+micro_piv_diat <- micro_piv_diat %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+#Dinoflagellates
+micro_piv_dino <- micro_piv_dino %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+
+#Adding year to wide format for plotting
+micro_piv <- micro_piv %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  relocate(year, .before = month)
+
+#Diatoms
+micro_piv_diat <- micro_piv_diat %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  relocate(year, .before = month)
+
+#Dinoflaggelates
+micro_piv_dino <- micro_piv_dino %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  relocate(year, .before = month)
+```
+
+
+```{r}
+#Pulling out species counts for transform and input into clustering and NMDS
+species <- micro_piv[, 6:ncol(micro_piv)]
+
+#Diatoms
+species_diat <- micro_piv_diat[, 6:ncol(micro_piv_diat)]
+
+#Dinoflagellates
+species_dino <- micro_piv_dino[, 6:ncol(micro_piv_dino)]
+
+#Creating relative abundance matrix 
+transform <- decostand(species, method = "total")
+
+transform_diat <- decostand(species_diat, method = "total")
+
+transform_dino <- decostand(species_dino, method = "total")
+
+
+#Performing square root transformation
+transform <- sqrt(transform)
+
+#Diatoms
+transform_diat <- sqrt(transform_diat)
+
+#Dinoflagellates
+transform_dino <- sqrt(transform_dino)
+```
+
+```{r}
+#Setting up for ANOSIM and Indicator tests
+
+#separating treatments for ANOSMIM and indicator
+loc <- micro_piv$location
+month <- micro_piv$month_surv
+year <- micro_piv$year
+```
+
+```{r}
+#ANOSIM test to see if groupings statistically significant 
+
+#By Station
+# ano_site = anosim(transform, loc, distance = "bray", permutations = 9999)
+# ano_site
+# 
+# ano_site_diat = anosim(transform_diat, loc, distance = "bray", permutations = 9999)
+# ano_site_diat
+# 
+# ano_site_dino = anosim(transform_dino, loc, distance = "bray", permutations = 9999)
+# ano_site_dino
+```
+
+```{r}
+# ano_month = anosim(transform, month, distance = "bray", permutations = 9999)
+# ano_month
+# 
+# ano_month_diat = anosim(transform_diat, month, distance = "bray", permutations = 9999)
+# ano_month_diat
+# 
+# ano_month_dino = anosim(transform_dino, month, distance = "bray", permutations = 9999)
+# ano_month_dino
+```
+
+
+```{r}
+# ano_year = anosim(transform, year, distance = "bray", permutations = 9999)
+# ano_year
+# 
+# ano_year_diat = anosim(transform_diat, year, distance = "bray", permutations = 9999)
+# ano_year_diat
+# 
+# ano_year_dino = anosim(transform_dino, year, distance = "bray", permutations = 9999)
+# ano_year_dino
+
+```
+
+```{r}
+set.seed(123)
+
+#Running nmds all species
+nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Show results including stress 
+nmds
+
+#Checking stressplot for fit
+stressplot(nmds)
+
+```
+
+```{r}
+set.seed(123)
+
+#Running nmds diatoms
+nmds_diat <-  metaMDS(transform_diat, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Show results including stress 
+nmds_diat
+
+#Checking stressplot for fit
+stressplot(nmds_diat)
+```
+
+```{r}
+set.seed(123)
+
+#Running nmds dinoflagellates
+nmds_dino <-  metaMDS(transform_dino, distance = "bray", autotransform = FALSE,
+                         k = 2, trymax = 100) 
+
+#Show results including stress 
+nmds_dino
+
+#Checking stressplot for fit
+stressplot(nmds_dino)
+```
+```{r}
+#Pulling NMDS scores, months and stations for plotting NMDS is ggplot
+
+#All species
+data.scores = as.data.frame(scores(nmds))
+data.scores$month_surv = micro_piv$month_surv
+data.scores$site = micro_piv$location
+data.scores$year = micro_piv$year
+
+#Diatoms
+data.scores_diat = as.data.frame(scores(nmds_diat))
+data.scores_diat$month_surv = micro_piv$month_surv
+data.scores_diat$site = micro_piv$location
+data.scores_diat$year = micro_piv$year
+
+
+#Dinoflagellates
+data.scores_dino = as.data.frame(scores(nmds_dino))
+data.scores_dino$month_surv = micro_piv$month_surv
+data.scores_dino$site = micro_piv$location
+data.scores_dino$year = micro_piv$year
+
+```
+
+```{r}
+#Order locations from fjord to shelf for plotting order
+order_loc <- c("F", "C", "S")
+
+#Setting location order for plots 
+data.scores <- arrange(mutate(data.scores,
+                         site = factor(site, levels = order_loc)))
+
+data.scores_diat <- arrange(mutate(data.scores_diat,
+                         site = factor(site, levels = order_loc)))
+
+data.scores_dino <- arrange(mutate(data.scores_dino,
+                         site = factor(site, levels = order_loc)))
+```
+
+
+```{r}
+#Looking at species scores to add to the nmds plot
+
+#All species
+vf <- envfit(nmds, transform, perm = 999)
+
+#Diatoms
+vf_diat <- envfit(nmds_diat, transform_diat, perm = 999)
+
+#Dinoflagellates
+vf_dino <- envfit(nmds_dino, transform_dino, perm = 999)
+
+#Pulling out r2 scores
+#All species
+r2 <- vf$vectors$r
+
+#Diatoms
+r2_diat <- vf_diat$vectors$r
+
+#Diatoms
+r2_dino <- vf_dino$vectors$r
+
+#MAking dataframe out of r2 values
+#All species
+r2_df <- as.data.frame(r2)
+
+#Diatoms
+r2_df_diat <- as.data.frame(r2_diat)
+
+#Dino
+r2_df_dino <- as.data.frame(r2_dino)
+
+#Pulling and binding vectors and r2 scores
+#All species
+spp.scrs <- as.data.frame(scores(vf, display = "vectors"))
+spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
+spp.scrs2 <- cbind(spp.scrs, r2_df)
+
+#diatoms
+spp.scrs_diat <- as.data.frame(scores(vf_diat, display = "vectors"))
+spp.scrs_diat <- cbind(spp.scrs_diat, Species = rownames(spp.scrs_diat))
+spp.scrs2_diat <- cbind(spp.scrs_diat, r2_df_diat)
+
+#dinoflagellates
+spp.scrs_dino <- as.data.frame(scores(vf_dino, display = "vectors"))
+spp.scrs_dino <- cbind(spp.scrs_dino, Species = rownames(spp.scrs_dino))
+spp.scrs2_dino <- cbind(spp.scrs_dino, r2_df_dino)
+```
+
+
+```{r}
+#Pulling species with only r2 > 0.3 scores
+#All species
+spp.scrs2 <- spp.scrs2 %>%
+  filter(r2 >= 0.30)
+
+#Diatoms
+spp.scrs2_diat <- spp.scrs2_diat %>%
+  filter(r2_diat >= 0.30)
+
+#Dinoflagellates
+spp.scrs2_dino <- spp.scrs2_dino %>%
+  filter(r2_dino >= 0.30)
+```
+
+
+```{r}
+#Making shorter abbreviated species names for plotting
+
+rownames(spp.scrs2) <- c("C.lac.",
+                         "P.n.s.",
+                         "Din.",
+                         "Hill.",
+                         "Tel.",
+                         "S.mar.",
+                         "P.n.",
+                         "C.cin.",
+                         "C.soc.",
+                         "C.clo.",
+                         "P.ori.")
+
+rownames(spp.scrs2_diat) <- c("D.fra.",
+                              "E.zod.",
+                              "L.dan.",
+                              "P.n.s.",
+                              "R.set.",
+                              "Bidd.",
+                              "S.mar.",
+                              "C.ten.",
+                              "C.soc.",
+                              "C.clo.")
+
+rownames(spp.scrs2_dino) <- c("Pro.p.",
+                              "S.tro.",
+                              "Kat.",
+                              "Pro.c.")
+                              
+```
+
+```{r}
+#This is the horizontal version of the month and year nMDS panel shown incorporated into a large panel later 
+
+f1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores, aes(fill = as.factor(month_surv), shape = site),
+             size = 7, stroke = 1.5) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  geom_segment(data = spp.scrs2,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+               size = 1.2, alpha = 0.7) +
+  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
+  ggrepel::geom_text_repel(data = spp.scrs2, aes(x = NMDS1, y = NMDS2, 
+                                           label = row.names(spp.scrs2)),
+                  # box.padding = unit(0.5, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.5,
+                  segment.alpha = 0.7,
+                  arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = 0.2,
+                  # nudge_x = -0.2,
+                  force = 3,
+                  max.iter = 3e3,
+                  size = 7) +
+  # xlim(-0.4, 0.7) +
+  # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
+  # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+f2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores, aes(fill = as.factor(year), shape = site),
+             size = 7, stroke = 1.5) + 
+  scale_fill_brewer(palette = "Dark2") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  geom_segment(data = spp.scrs2,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+               size = 1.2, alpha = 0.7) +
+  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
+  ggrepel::geom_text_repel(data = spp.scrs2, aes(x = NMDS1, y = NMDS2, 
+                                           label = row.names(spp.scrs2)),
+                  # box.padding = unit(0.5, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.5,
+                  segment.alpha = 0.7,
+                  arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = 0.2,
+                  # nudge_x = -0.2,
+                  force = 3,
+                  max.iter = 3e3,
+                  size = 7) +
+  # xlim(-0.4, 0.7) +
+  # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
+  # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        # axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+f3 <- ggplot(data = data.scores_diat, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores_diat, aes(fill = as.factor(month_surv), shape = site),
+             size = 7, stroke = 1.5) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  geom_segment(data = spp.scrs2_diat,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+               size = 1.2, alpha = 0.7) +
+  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
+  ggrepel::geom_text_repel(data = spp.scrs2_diat, aes(x = NMDS1, y = NMDS2, 
+                                           label = row.names(spp.scrs2_diat)),
+                  # box.padding = unit(0.5, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.5,
+                  segment.alpha = 0.7,
+                  arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = 0.2,
+                  # nudge_x = -0.2,
+                  force = 3,
+                  max.iter = 3e3,
+                  size = 7) +
+  # xlim(-0.4, 0.7) +
+  # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
+  # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+f4 <- ggplot(data = data.scores_diat, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores_diat, aes(fill = as.factor(year), shape = site),
+             size = 7, stroke = 1.5) + 
+  scale_fill_brewer(palette = "Dark2") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  geom_segment(data = spp.scrs2_diat,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+               size = 1.2, alpha = 0.7) +
+  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
+  ggrepel::geom_text_repel(data = spp.scrs2_diat, aes(x = NMDS1, y = NMDS2, 
+                                           label = row.names(spp.scrs2_diat)),
+                  # box.padding = unit(0.5, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.5,
+                  segment.alpha = 0.7,
+                  arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = 0.2,
+                  # nudge_x = -0.2,
+                  force = 3,
+                  max.iter = 3e3,
+                  size = 7) +
+  # xlim(-0.4, 0.7) +
+  # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
+  # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        # axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+f5 <- ggplot(data = data.scores_dino, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores_dino, aes(fill = as.factor(month_surv), shape = site),
+             size = 7, stroke = 1.5) + 
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  geom_segment(data = spp.scrs2_dino,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+               size = 1.2, alpha = 0.7) +
+  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
+  ggrepel::geom_text_repel(data = spp.scrs2_dino, aes(x = NMDS1, y = NMDS2, 
+                                           label = row.names(spp.scrs2_dino)),
+                  # box.padding = unit(0.5, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.5,
+                  segment.alpha = 0.7,
+                  arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = 0.2,
+                  # nudge_x = -0.2,
+                  force = 3,
+                  max.iter = 3e3,
+                  size = 7) +
+  # xlim(-0.4, 0.7) +
+  # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
+  # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 20, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 18, colour = "black"),
+        legend.position = c(0.87, 0.6),
+        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+f6 <- ggplot(data = data.scores_dino, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores_dino, aes(fill = as.factor(year), shape = site),
+             size = 7, stroke = 1.5) + 
+  scale_fill_brewer(palette = "Dark2") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  geom_segment(data = spp.scrs2_dino,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+               size = 1.2, alpha = 0.7) +
+  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
+  ggrepel::geom_text_repel(data = spp.scrs2_dino, aes(x = NMDS1, y = NMDS2, 
+                                           label = row.names(spp.scrs2_dino)),
+                  # box.padding = unit(0.5, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.5,
+                  segment.alpha = 0.7,
+                  arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = 0.2,
+                  # nudge_x = -0.2,
+                  force = 3,
+                  max.iter = 3e3,
+                  size = 7) +
+  # xlim(-0.4, 0.7) +
+  # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
+  # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        # axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.key = element_blank(), 
+        legend.title = element_text(size = 20, face = "bold", colour = "black"), 
+        legend.text = element_text(size = 18, colour = "black"),
+        legend.position = c(0.87, 0.7),
+        legend.margin = margin(-0.3,0,0,0, unit = "cm"),
+        text = element_text(size = 32)) +
+  labs(fill = "Year", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+
+fig <- f1 + f3 + f5 + f2 + f4 + f6 
+
+ggsave(here("figures_good", "nmds_relative_panel_2022-08-08.png"), fig,
+       width = 16, height = 10, dpi = 300)
+```
+
+```{r}
+#Indicator species analysis
+# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
+
+#Indicators by station for all species
+inv_site = multipatt(transform, loc, func = "r.g",
+                       control = how(nperm = 9999))
+
+#Looking at results of analysis
+summary(inv_site)
+```
+
+```{r}
+inv_site_sp <- data.table::as.data.table(inv_site$sign, keep.rownames = TRUE)
+
+inv_site_sp <- inv_site_sp %>% 
+  filter(s.C == 1 | s.F == 1 | s.S == 1) %>% 
+  filter(p.value < 0.05) %>% 
+  # filter(!rn == "Skeletonema marinoi") %>% 
+  arrange(rn)
+
+inv_site_list <- inv_site_sp$rn
+```
+
+```{r}
+#should look at relative abundance plot of this, since using.
+micro <- micro %>% 
+  group_by(date, location) %>% 
+  mutate(sum_total = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(perc_total = species_sum/sum_total)
+
+micro <- arrange(mutate(micro,
+                         location = factor(location, levels = order_loc)))
+```
+
+```{r}
+
+#Making a heatmap of the indicator species
+micro %>%   
+  filter(scientificName %in% inv_site_list |
+           scientificName == "Skeletonema marinoi") %>% 
+  ggplot(aes(x = as.factor(date), y = scientificName, fill = sqrt(perc_total))) +
+  geom_tile(color = "black", size = 1) +
+  facet_grid(group ~ location , scales = "free", space = "free") +
+  scale_fill_gradient(name = expression(sqrt("%")),
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  scale_y_discrete(labels = c("Ceratium lineatum" = "C.lin.", 
+                              "Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros decipiens" = "C.dec.",
+                              "Chaetoceros radicans" = "C.rad.",
+                              "Chaetoceros seiracanthus" = "C.sei.",
+                              "Chaetoceros similis" = "C.sim.",
+                              "Chaetoceros socialis" = "C.soc.",
+                              "Dactyliosolen phuketensis" = "D.phu.",
+                              "Detonula pumila" = "D.pum.",
+                              "Eucampia zodiacus" = "E.zod.",
+                              "Leptocylindrus danicus" = "L.dan.",
+                              "Guinardia delicatula" = "G.del.",
+                              "Gymnodinium" = "Gymn",
+                              "Protoperidinium" = "Pro",
+                              "Protoperidinium steinii" = "Pro.s",
+                              "Prorocentrum micans" = "P.mic.",
+                              "Pseudo-nitzschia seriata" = "P.n.s.",
+                              "Pterosperma" = "Pter.",
+                              "Dinophysis acuta" = "D.acu.",
+                              "Skeletonema marinoi" = "S.mar.",
+                              "Teleaulax acuta" = "T.acu.")) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.03, 0.30),
+        legend.direction = "vertical",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank())
+
+ggsave(here("figures_good", "indicator_all_rel_2022-08-08.png"),
+        width = 16, height = 8, dpi = 300)
+
+```
+
+```{r}
+#Indicator species analysis
+# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
+
+#Indicators by station for diatoms
+inv_site_diat = multipatt(transform_diat, loc, func = "r.g",
+                       control = how(nperm = 9999))
+
+#Looking at results of analysis
+summary(inv_site_diat)
+```
+
+```{r}
+inv_site_sp_diat <- data.table::as.data.table(inv_site_diat$sign, keep.rownames = TRUE)
+
+inv_site_sp_diat <- inv_site_sp_diat %>% 
+  filter(s.C == 1 | s.F == 1 | s.S == 1) %>% 
+  filter(p.value < 0.05) %>% 
+  # filter(!rn == "Skeletonema marinoi") %>% 
+  arrange(rn)
+
+inv_site_list_diat <- inv_site_sp_diat$rn
+```
+
+
+```{r}
+#should look at relative abundance plot of this, since using.
+micro_diat <- micro_diat %>% 
+  group_by(date, location) %>% 
+  mutate(sum_total = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(perc_total = species_sum/sum_total)
+
+micro_diat <- arrange(mutate(micro_diat,
+                         location = factor(location, levels = order_loc)))
+```
+
+```{r}
+
+#Making a heatmap of the indicator species
+micro_diat %>%   
+  filter(scientificName %in% inv_site_list_diat) %>%
+  ggplot(aes(x = as.factor(date), y = scientificName, fill = sqrt(perc_total))) +
+  geom_tile(color = "black", size = 1) +
+  facet_grid(. ~ location , scales = "free_x", space = "free") +
+  scale_fill_gradient(name = expression(sqrt("%")),
+                      low = "#FFFFFF",
+                      high = "#012345") +
+  scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
+                              "Chaetoceros convolutus" = "C.con.",
+                              "Chaetoceros debilis" = "C.deb.",
+                              "Chaetoceros decipiens" = "C.dec.",
+                              "Chaetoceros didymus" = "C.did.",
+                              "Chaetoceros laciniosus" = "C.lac.",
+                              "Chaetoceros radicans" = "C.rad.",
+                              "Chaetoceros seiracanthus" = "C.sei.",
+                              "Chaetoceros socialis" = "C.soc.",
+                              "Dactyliosolen fragilissimus" = "D.fra.",
+                              "Dactyliosolen phuketensis" = "D.phu.",
+                              "Detonula pumila" = "D.pum.",
+                              "Eucampia zodiacus" = "E.zod.",
+                              "Guinardia delicatula" = "G.del.",
+                              "Leptocylindrus danicus" = "L.dan.",
+                              "Navicula" = "Nav.",
+                              "Pseudo-nitzschia" = "P.n.",
+                              "Pseudo-nitzschia seriata" = "P.n.s.",
+                              "Skeletonema marinoi" = "S.mar.",
+                              "Thalassiosira rotula" = "T.rot.")) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.03, 0.30),
+        legend.direction = "vertical",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank())
+
+ggsave(here("figures_good", "indicator_diatoms_rel_2022-08-08.png"),
+        width = 16, height = 8, dpi = 300)
+
+```
+```{r}
+#Indicator species analysis
+# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
+
+#Indicators by station for diatoms
+inv_site_dino = multipatt(transform_dino, loc, func = "r.g",
+                       control = how(nperm = 9999))
+
+#Looking at results of analysis
+summary(inv_site_dino)
+```
+```{r}
+#Indicator species analysis
+# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
+
+#Indicators by month - all species
+inv_month = multipatt(transform, month, func = "r.g",
+                       control = how(nperm = 9999))
+
+#Indicators by month - diatoms
+inv_month_diat = multipatt(transform_diat, month, func = "r.g",
+                       control = how(nperm = 9999))
+
+#Indicators by month - dinos
+inv_month_dino = multipatt(transform_dino, month, func = "r.g",
+                       control = how(nperm = 9999))
+
+#Looking at results of analysis
+summary(inv_month)
+summary(inv_month_diat)
+summary(inv_month_dino)
+```
+```{r}
+#Indicator species analysis
+# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
+
+#Indicators by year - all species
+inv_year = multipatt(transform, year, func = "r.g",
+                       control = how(nperm = 9999))
+
+#Indicators by year - diatoms
+inv_year_diat = multipatt(transform_diat, year, func = "r.g",
+                       control = how(nperm = 9999))
+
+#Indicators by year - dinos
+inv_year_dino = multipatt(transform_dino, year, func = "r.g",
+                       control = how(nperm = 9999))
+
+#Looking at results of analysis
+summary(inv_year)
+summary(inv_year_diat)
+summary(inv_year_dino)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
