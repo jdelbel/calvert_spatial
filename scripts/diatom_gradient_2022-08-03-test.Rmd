@@ -292,5 +292,76 @@ pro <- micro %>%
   filter(genus == "Prorocentrum")
 ```
 
+```{r}
+#Calculating shannon diversity index
+
+#Pulling out species columns for shannon calculations
+
+shan_all <- micro_all[, 7:ncol(micro_all)]
+shan_diat <- micro_diat[, 7:ncol(micro_diat)]
+shan_dino <- micro_dino[, 7:ncol(micro_dino)]
+
+#Calculating shannon diversity for each group
+shan_all <- diversity(shan_all)
+shan_diat <- diversity(shan_diat)
+shan_dino <- diversity(shan_dino)
+
+
+```
+
+```{r}
+#Converting Shannon calculations back into tibble and giving group name for merging
+shan_all <- as_tibble(shan_all)
+shan_all <- shan_all %>% 
+  rename(all = value)
+
+shan_diat <- as_tibble(shan_diat)
+shan_diat <- shan_diat %>% 
+  rename(diat = value)
+
+shan_dino <- as_tibble(shan_dino)
+shan_dino <- shan_dino %>% 
+  rename(dino = value)
+
+#Merging shannon groups
+shan_merge <- cbind(shan_diat, shan_dino, shan_all)
+
+shan_merge$date <- micro_diat$date
+shan_merge$year <- micro_diat$year
+shan_merge$month_surv <- micro_diat$month_surv
+shan_merge$location <- micro_diat$location
+
+shan_merge <- shan_merge %>%
+  relocate(date:location, .before = diat) %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  relocate(year, .after = date)
+  
+```
+
+```{r}
+shan_long <- shan_merge %>% 
+  pivot_longer(!date:location, names_to = "type", values_to = "value")
+```
+
+```{r}
+shan_long %>% 
+  filter(type == "diat") %>% 
+  ggplot(aes(x = as.factor(month_surv), y = value, fill = location)) + 
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_grid(year ~ .)
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 

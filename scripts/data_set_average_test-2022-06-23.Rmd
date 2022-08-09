@@ -441,6 +441,15 @@ shannon_compare <- shannon_join %>%
   pivot_longer(!year:month_surv, names_to = "type", values_to = "value")
 
 ```
+```{r}
+shannon_s %>% 
+  ggplot(aes(x = as.factor(month_surv), y = dino_s, color = as.factor(year))) + 
+  geom_point() 
+  
+```
+
+
+
 
 ```{r}
 shannon_compare %>% 
