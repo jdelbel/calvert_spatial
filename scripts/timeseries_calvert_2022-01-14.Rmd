@@ -1389,32 +1389,47 @@ FSA::dunnTest(kw_chl_year$chl ~ kw_chl_year$year_fact,
 
 #Microscopy full year comparison of KC10 to QU39
 micro_sum_2 %>% 
+  filter(!is.na(group)) %>% 
   group_by(date, site_id) %>% 
   mutate(sum_all = sum(sum, na.rm = TRUE)) %>%
   ungroup() %>% 
   mutate(year = lubridate::year(date),
          month = lubridate::month(date),
          yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = yday, y = sum, group = group, fill = group)) +
+  ggplot(aes(x = date, y = sum/100000, group = group, fill = group)) +
   geom_area(position = "stack", alpha = 0.8, size = 0.5, colour = "black") +
-  geom_point(aes(x = yday, y = sum_all), size = 2) +
-  scale_fill_manual(values = color_palette_micro) +
-  facet_grid(site_id ~ year) +
+  geom_point(aes(x = date, y = sum_all/100000), size = 2) +
+  scale_fill_manual(values = color_palette_micro,
+                    labels = c("diat",
+                               "chry",
+                               "dict",
+                               "raph,",
+                               "raph",
+                               "dino",
+                               "chlo",
+                               "eugl",
+                               "hapt")) +
+  facet_grid(site_id ~ .) +
+labs(x = "Date",
+       y = bquote("Abundance. (cells" ~10^5 ~ L^-1*")")) +
   theme_bw() +
   theme(legend.position = "top",
         legend.direction = "horizontal",
         legend.title = element_blank(),
-        text = element_text(size = 11)) +
-        # strip.background = element_blank(),
-        # strip.text = element_blank()) + 
-  labs(x = "Year Day",
-           y = bquote("Abundance (cells" ~ L^-1*")")) +
-  theme(text = element_text(size = 25)) 
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"),
+        text = element_text(size = 32)) +
+  guides(fill = guide_legend(nrow = 1))
 
-ggsave(here("figures_rev2", "timeseries_kc10_qu39.png"),
-       width = 17, height = 10, dpi = 300)
+ggsave(here("figures_good", "timeseries_kc10_qu39.png"),
+       width = 16, height = 10, dpi = 300)
 
 ```
+
+
+
+
 ```{r}
 
 #Microscopy full year comparison of KC10 to QU39 with QU39 timeseries downscaled to similar temporal resolution as KC10 (monthly)
@@ -1627,4 +1642,3 @@ ggsave(here("figures_rev2", "timeseries_calvert_sf_bar.png"),
        width = 17, height = 10, dpi = 300)
 
 ```
-

@@ -244,9 +244,10 @@ temp <- ctd %>%
            ymin = 0, ymax = 35, alpha = .1) +
   annotate("rect", xmin = as.Date("2020-05-01"), xmax = as.Date("2020-11-01"),
            ymin = 0, ymax = 35, alpha = .1) +
-  geom_point(color = "red", size = 2) +
-  geom_line(color = "red", size = 1) +
+  geom_point(color = "red", size = 3) +
+  geom_line(color = "red", size = 2) +
   coord_cartesian(ylim = c(6, 15)) +
+  labs(y = expression("Temp. ("*~degree*C*")")) +
   theme_bw() +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_blank(),
@@ -261,9 +262,10 @@ sal <- ctd %>%
            ymin = 0, ymax = 35, alpha = .1) +
   annotate("rect", xmin = as.Date("2020-05-01"), xmax = as.Date("2020-11-01"),
            ymin = 0, ymax = 35, alpha = .1) +
-  geom_point(color = "blue", size = 2) +
-  geom_line(color = "blue", size = 1) +
+  geom_point(color = "blue", size = 3) +
+  geom_line(color = "blue", size = 2) +
   coord_cartesian(ylim = c(26.5, 31.5)) +
+  labs(y = "Salinity") +
   theme_bw() +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_blank(),
@@ -278,9 +280,10 @@ drho <- ctd %>%
            ymin = 0, ymax = 35, alpha = .1) +
   annotate("rect", xmin = as.Date("2020-05-01"), xmax = as.Date("2020-11-01"),
            ymin = 0, ymax = 35, alpha = .1) +
-  geom_point(color = "black", size = 2) +
-  geom_line(color = "black", size = 1) +
+  geom_point(color = "black", size = 3) +
+  geom_line(color = "black", size = 2) +
   coord_cartesian(ylim = c(0, 9)) +
+  labs(y = expression(Delta*rho)) +
   theme_bw() +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_blank(),
@@ -288,17 +291,18 @@ drho <- ctd %>%
 
 nut_fig <- nuts %>% 
   filter(line_out_depth == 5) %>% 
-  ggplot(aes(x = date, y = no2_no3_um)) +
+  ggplot(aes(x = date, y = sio2)) +
   annotate("rect", xmin = as.Date("2018-05-01"), xmax = as.Date("2018-11-01"),
-           ymin = 0, ymax = 35, alpha = .1) +
+           ymin = 0, ymax = 50, alpha = .1) +
   annotate("rect", xmin = as.Date("2019-05-01"), xmax = as.Date("2019-11-01"),
-           ymin = 0, ymax = 35, alpha = .1) +
+           ymin = 0, ymax = 50, alpha = .1) +
   annotate("rect", xmin = as.Date("2020-05-01"), xmax = as.Date("2020-11-01"),
-           ymin = 0, ymax = 35, alpha = .1) +
-  geom_point(color = "black", size = 2) +
-  geom_line(color = "black", size = 1) +
+           ymin = 0, ymax = 50, alpha = .1) +
+  geom_point(color = "black", size = 3) +
+  geom_line(color = "black", size = 2) +
+  labs(y = expression("Sio2 (um)")) +
   theme_bw() +
-  coord_cartesian(ylim = c(0, 22)) +
+  coord_cartesian(ylim = c(0, 40)) +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         text = element_text(size = 35))
@@ -324,7 +328,8 @@ micro <- micro_sum %>%
   geom_point(aes(y = tchla/coeff), pch = 8,
              color = "Black", stroke = 1.5, size = 2) +
   scale_y_continuous(limits = c(0, 35),
-                     sec.axis = sec_axis(~ . *coeff, name = "TChla")) +
+                     sec.axis = sec_axis(~ . *coeff, name = "TChla (ug/L)")) +
+  geom_hline(yintercept = 5/coeff, linetype = "dotted") +
   scale_fill_manual(values = color_palette_micro,
                     labels = c("diat",
                                "chry",
@@ -349,20 +354,12 @@ micro <- micro_sum %>%
 pan <- temp/sal/drho/nut_fig/micro
 
 
-ggsave(here("figures_good", "timeseries_kc10.png"), pan,
+ggsave(here("figures_good", "timeseries_kc10_sil.png"), pan,
        width = 16, height = 20, dpi = 300)
 
 ```
 
-```{r}
 
-
-ctd %>% 
-  filter(pres == 5) %>% 
-  ggplot(aes(x = date, y = sal)) +
-  geom_point() +
-  geom_line()
-```
 
 
 

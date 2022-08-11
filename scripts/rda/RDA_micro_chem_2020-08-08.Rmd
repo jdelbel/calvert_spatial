@@ -147,12 +147,18 @@ micro_join <- data %>%
 #removing NAs for analysis
 micro_join <- micro_join %>% 
   drop_na()
+
+# micro_join <- micro_join %>% 
+#   filter(no2 > 0 & po4 > 0 & sio2 > 0) 
 ```
+
 
 
 ```{r}
 #Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
 resp <- micro_join[, 13:95]
+
+# resp <- decostand(resp, method = "total")
 
 #Explanatory variables
 expl <- micro_join[, 5:12]

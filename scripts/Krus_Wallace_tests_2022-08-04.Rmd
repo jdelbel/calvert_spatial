@@ -42,8 +42,14 @@ data <- data %>%
 ```{r}
 #Selecting important physical/chemical parameters and mankin names easier to work with.
 env <- data %>% 
-  select(location, t = temp_dm, s = sal_dm, dr = delta_rho_dm, no2 = no2_dm,
-         po4 = po4_dm, sio2 = sio2_dm, secchi = secchi_depth)
+  mutate(year = lubridate::year(date)) %>% 
+  select(location, month, month_surv, year, t = temp_dm, s = sal_dm,
+         dr = delta_rho_dm, no2 = no2_dm, po4 = po4_dm, sio2 = sio2_dm,
+         secchi = secchi_depth)
+
+tchla <- tchla %>% 
+  mutate(year = lubridate::year(date)) %>%
+  relocate(year, .after = date)
 ```
 
 ```{r}
@@ -211,6 +217,55 @@ fig <- (f1 + f2 + f3) / (f4 + f5 + f6)
 
 ggsave(here("figures_good", "kruskal_dunn_panel.png"), 
        width = 14, height = 10, dpi = 300)
+```
+
+```{r}
+env_f <- env %>% 
+  filter(location == "F")
+
+year_all <- list(c("2018", "2019"), c("2019", "2020"), c("2018", "2020"))
+year_18_20 <- list(c("2018", "2020"))
+
+ggboxplot(env_f, x = "year", y 
+          = "sio2",
+          fill = "year", palette = "jco", size = 0.5)+ 
+  stat_compare_means(comparisons = year_18_20, size = 7) + 
+  stat_compare_means(label.y = 47, size = 6) +
+  theme_bw() +
+  labs(y = expression("Sio2 (um)")) +
+  theme(legend.position = "none",
+        text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black")) 
+
+ggsave(here("figures_good", "kruskal_dunn_dfo2_year.png"), 
+       width = 8, height = 6, dpi = 300)
+```
+
+```{r}
+tchla_f <- tchla %>% 
+  filter(location == "S")
+
+ggboxplot(tchla_f, x = "year", y = "tchla",
+          fill = "year", palette = "jco", size = 0.5)+ 
+  stat_compare_means(comparisons = year_all, size = 7) + 
+  stat_compare_means(label.y = 20, size = 6) +
+  theme_bw() +
+  labs(y = expression("TChla (ug/L)")) +
+  theme(legend.position = "none",
+        text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black")) 
+```
+
+```{r}
+env %>% 
+  filter(location == "F") %>% 
+  ggplot(aes(x = month_surv, y = s, color = as.factor(year))) +
+  geom_line() +
+  geom_point()
 ```
 
 
