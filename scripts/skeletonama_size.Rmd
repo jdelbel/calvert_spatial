@@ -1,0 +1,50 @@
+---
+title: "Skeletonema counts separated by size"
+output: html_notebook
+---
+
+Bringing in size designations for Skeletonema marinoi and cross checking with my full species list to make sure that the counts and dates are comparable
+
+
+```{r}
+#Load packages
+library(tidyverse) #Data wrangling
+library(readxl) #Import excel files
+library(here) #File structure management
+```
+
+```{r}
+#Uploading metadata to attaech to skeletoma counts based on hakai_ids.
+meta <- read_csv(here("files", "meta_phyto_2021-06-21.csv"))
+
+s_mar <- read_xlsx(here("files", "s_mar_size.xlsx"))
+```
+
+```{r}
+#Pivoting to tidy format for skeletonema worksheet
+s_mar_long <- s_mar %>% 
+  pivot_longer(c(CPHY476:ncol(s_mar)),
+               names_to = "hakai_id", values_to = "counts")
+```
+
+```{r}
+#cutting down metadata file to only include pertinent columns
+meta <- meta %>% 
+  select(date, site_id, hakai_id)
+```
+
+```{r}
+#joining skeletonema counts with metadata
+s_mar_long <- s_mar_long %>% 
+  left_join(meta) %>% 
+  select(date, site_id, species, counts)
+```
+```{r}
+#Pivoting wider for comparison with my master sheet
+s_mar_wide <- s_mar_long %>% 
+  pivot_wider(names_from = species, values_from = counts)
+
+
+
+```
+

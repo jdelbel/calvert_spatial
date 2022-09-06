@@ -1,0 +1,652 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(patchwork)
+library(RColorBrewer)
+
+```
+
+```{r}
+#Upload data from my master data standardization sheet
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+
+#Uploading chl data that has been converted to TChla
+chl <- read_csv(here("outputs", "chl_hplc_merged.csv"))
+
+#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
+
+```
+
+```{r}
+#Remove QU39
+micro <- micro %>% 
+  filter(!site_id == "QU39")
+
+#Add year column
+micro <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  relocate(year, .after = date)
+```
+
+```{r}
+# Changing site_id to location 
+micro <- micro %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+```
+
+```{r}
+#looking at only species present in 10% or more of samples -  might be too conservative here.
+
+# species_10 <- micro %>%
+#   group_by(scientificName) %>%
+#   summarise(n_obs = n()) %>%
+#   ungroup() %>%
+#   mutate(perc_obs = n_obs/50) %>%
+#   filter(perc_obs >= 0.10)
+# # 
+# species_10_list <- species_10$scientificName
+# # 
+# micro <- micro %>% 
+#   filter(scientificName %in% species_10_list)
+
+```
+
+```{r}
+micro_diat <- micro %>% 
+  filter(group == "Bacillariophyta")
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+micro_diat <- arrange(mutate(micro_diat,
+                         location = factor(location, levels = order_loc)))
+
+#I want to look at species that never contribute to more than a certain percentage to the total biomass
+
+#Make a total diatom sum column for each date and then divide each species count by the total to derive a relative contribution
+micro_diat <- micro_diat %>% 
+  group_by(date, location) %>% 
+  mutate(sum_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(diat_perc = species_sum/sum_count)
+
+#Make a column showing the max contribution for each species
+micro_diat <- micro_diat %>% 
+  group_by(scientificName) %>% 
+  mutate(max = max(diat_perc),
+         max_abund = max(species_sum)) %>% 
+  ungroup() 
+
+
+micro_diat_gt5_perc <- micro_diat %>% 
+  filter(max_abund >= 25000)
+
+
+colourCount = length(unique(micro_diat_gt5_perc$scientificName))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+
+
+micro_diat_gt5_perc %>% 
+  ggplot(aes(x = as.factor(month_surv), y = species_sum/100000, 
+             fill = scientificName)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  facet_grid(location ~ year) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  theme_bw() +
+  ylab("Abund. Diatoms (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        # legend.position = "top",
+        # legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 1))
+
+ggsave(here("figures_good", "timeseries-diatoms_gt25k.png"),
+       width = 16, height = 8, dpi = 300)
+```
+
+```{r}
+#This seems to work pretty well - Can decide between percentage or abundance threshold. Would be good to add specifications for skeletonema size (This is going to be super tricky to add.)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+#Goal is to show the prominent diatom species for each sampling date
+
+#Separating diatoms
+micro_diat <- micro %>% 
+  filter(class == "Bacillariophyceae") %>% 
+  group_by(date, site_id) %>% 
+  mutate(total_abund = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(diat_perc = species_sum/total_abund)
+
+#separating dinoflagellates
+micro_dino <- micro %>% 
+  filter(group == "Dinoflagellata") %>% 
+  group_by(date, site_id) %>% 
+  mutate(total_abund = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(diat_perc = species_sum/total_abund)
+
+#Summing diatoms to genus level
+micro_genus <- micro_diat %>% 
+  filter(!is.na(genus)) %>% 
+  group_by(date, site_id, location, month_surv, genus) %>% 
+  summarize(sum_genus = sum(species_sum)) %>% 
+  ungroup() %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(sum_genus)) %>% 
+  ungroup() %>% 
+  mutate(perc_genus = sum_genus/sum_all,
+         year = lubridate::year(date))
+
+#Summing dinoflagellates to genus level
+micro_genus_dino <- micro_dino %>% 
+  filter(!is.na(genus)) %>% 
+  group_by(date, site_id, location, month_surv, genus) %>% 
+  summarize(sum_genus = sum(species_sum)) %>% 
+  ungroup() %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(sum_genus)) %>% 
+  ungroup() %>% 
+  mutate(perc_genus = sum_genus/sum_all,
+         year = lubridate::year(date))
+```
+
+```{r}
+#Merging genus level data with chlorophyll
+micro_genus <- micro_genus %>% 
+  left_join(chl)
+```
+```{r}
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+micro_genus <- arrange(mutate(micro_genus,
+                         location = factor(location, levels = order_loc)))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+#define the colours to use in the figure
+colours = c( "#A54657",
+             "#582630",
+             "#F7EE7F",
+             "#4DAA57",
+             "#F1A66A",
+             "#F26157",
+             "#F9ECCC",
+             "#679289",
+             "#33658A",
+             "#F6AE2D")
+```
+
+
+
+```{r}
+coeff <- 12.5
+
+micro_genus %>% 
+  filter(perc_genus >= 0.05) %>% 
+  ggplot(aes(x = as.factor(location), y = perc_genus, 
+             fill = genus)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  geom_point(aes(x = as.factor(location), y = chl/coeff), pch = 21,
+             color = "Black", fill = "white", stroke = 1.5, size = 3) +
+  scale_y_continuous(sec.axis = sec_axis(~ . *coeff, name = "TChla")) +
+  facet_grid(year ~ month_surv) +
+  scale_fill_manual(values = colours) +  
+                    # labels = c("Bi.",
+                    #            "C.c.",
+                    #            "C.t.",
+                    #            "P.",
+                    #            "P.n.",
+                    #            "P.n.s.",
+                    #            "R.s.",
+                    #            "S.m.",
+                    #            "T.p.")) +
+  theme_bw() +
+  ylab("Rel. Abund. Diatoms (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 2))
+
+ggsave(here("figures_good", "diat_genus_chla.png"),
+       width = 14, height = 8, dpi = 300)
+```
+
+```{r}
+diat_global <- micro_genus %>%
+  select(date, location, genus, sum_genus, perc_genus) %>% 
+  group_by(location, genus) %>% 
+  summarise(median_perc = median(perc_genus),
+            mean_perc = mean(perc_genus)) %>% 
+  ungroup()
+
+dino_global <- micro_genus_dino %>%
+  select(date, location, genus, sum_genus, perc_genus) %>% 
+  group_by(location, genus) %>% 
+  summarise(median_perc = median(perc_genus),
+            mean_perc = mean(perc_genus)) %>% 
+  ungroup()
+
+colourCount = length(unique(diat_global$genus))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+```
+
+
+```{r}
+diat_global %>% 
+  ggplot(aes(x = as.factor(location), y = median_perc, fill = genus)) +
+  geom_bar(stat = "identity", position = "fill", color = "black") +
+  scale_fill_manual(values = getPalette(colourCount)) +
+  theme_bw() +
+  ylab("Rel. Abund. Diatoms (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        # legend.position = "top",
+        # legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 1))
+
+
+ggsave(here("figures_good", "test.png"),
+       width = 9, height = 5.5, dpi = 300)
+```
+```{r}
+dino_global %>% 
+  ggplot(aes(x = as.factor(location), y = median_perc, fill = genus)) +
+  geom_bar(stat = "identity", position = "fill", color = "black") +
+  scale_fill_manual(values = getPalette(colourCount)) +
+  theme_bw() +
+  ylab("Rel. Abund. Diatoms (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        # legend.position = "top",
+        # legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 1))
+
+
+ggsave(here("figures_good", "test_dino.png"),
+       width = 9, height = 5.5, dpi = 300)
+```
+
+
+
+```{r}
+coeff <- 12.5
+
+micro_genus %>% 
+  # filter(perc_genus >= 0.05) %>% 
+  ggplot(aes(x = as.factor(location), y = perc_genus, 
+             fill = genus)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  geom_point(aes(x = as.factor(location), y = chl/coeff), pch = 21,
+             color = "Black", fill = "white", stroke = 1.5, size = 3) +
+  scale_y_continuous(sec.axis = sec_axis(~ . *coeff, name = "TChla")) +
+  facet_grid(year ~ month_surv) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  theme_bw() +
+  ylab("Rel. Abund. Diatoms (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        # legend.position = "top",
+        # legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 1))
+
+ggsave(here("figures_good", "diat_genus_chla_2.png"),
+       width = 16, height = 8, dpi = 300)
+```
+
+
+
+
+```{r}
+#Goal is to show the prominent diatom species for each sampling date
+
+#1 Look at what species were dominant for each sample
+micro_flag <- micro %>% 
+  filter(!class == "Bacillariophyceae") %>% 
+  group_by(date, site_id) %>% 
+  mutate(total_abund = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(flag_perc = species_sum/total_abund)
+
+# micro_diat_order <- micro_diat %>% 
+#   group_by(date, site_id) %>%
+#   mutate(diat_rank = order(order(species_sum, decreasing = TRUE))) %>% 
+#   ungroup()
+
+flag_diat_stats <- micro_flag %>% 
+  group_by(site_id, scientificName) %>% 
+  summarise(med_abund = median(species_sum),
+            med_perc = median(flag_perc)) %>% 
+  mutate_at(vars(med_perc), funs(round(., 2)))
+
+
+flag_genus <- micro_flag %>% 
+  filter(!is.na(genus)) %>% 
+  group_by(date, site_id, location, month_surv, genus) %>% 
+  summarize(sum_genus = sum(species_sum)) %>% 
+  ungroup() %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_all = sum(sum_genus)) %>% 
+  ungroup() %>% 
+  mutate(perc_genus = sum_genus/sum_all,
+         year = lubridate::year(date))
+```
+```{r}
+# flag_order <- c("Phaeocystis", "Hillea", "Teleaulax", "Pterosperma",
+#                 "Pyramimonas", "Katodinium", "Dinobryon", "Olisthodiscus",
+#                 "Metromonas", "Monosiga", "Parvicorbicula")
+
+# flag_order <- c("Parvicorbicula", "Monosiga", "Metromonas", "Olisthodiscus",
+#                 "Dinobryon", "Katodinium", "Pyramimonas", "Pterosperma", 
+#                 "Teleaulax", "Hillea", "Phaeocystis")
+
+flag_order <- c("Parvicorbicula", "Monosiga", "Metromonas", 
+                "Scrippsiella", "Katodinium", "Corythodinium", 
+                "Telonema",
+                "Teleaulax", "Hillea",
+                "Tetraselmis", "Pyramimonas", "Pterosperma",
+                "Phaeocystis", 
+                "Dinobryon", "Ciliophrys", "Apedinella")
+
+flag_genus <- arrange(mutate(flag_genus,
+                         genus = factor(genus, levels = flag_order)))
+
+
+#Chemtax - Specify order of phyto groups for figures
+flag_genus <- arrange(mutate(flag_genus,
+                         location = factor(location, levels = order_loc)))
+
+```
+
+```{r}
+# colours_flag = c("#E56AB3",
+#                  "#F9A3CB",
+#                  "#FFCEE6",
+#                  "#9300ff",
+#                  "#95F985",
+#                  "#26D701",
+#                  "#00AB08",
+#                  "#FFDF00",
+#                  "#EDC211",
+#                  "#DAA521",
+#                  "#8B0000",
+#                  "#a23333",
+#                  "#c58080",
+#                  "#0000FF",
+#                  "#4949FF",
+#                  "#BFBFFF")
+
+
+colours_flag = c("#BFBFFF",
+                 "#4949FF",
+                 "#0000FF",
+                 "#4a010d",
+                 "#940119",
+                 "#de0226",
+                 "#DAA521",
+                 "#EDC211",
+                 "#FFDF00",
+                 "#00AB08",
+                 "#26D701",
+                 "#95F985",
+                 "#9300ff",
+                 "#FFCEE6",
+                 "#F9A3CB",
+                 "#E56AB3")
+```
+
+
+
+```{r}
+flag_genus %>% 
+  filter(perc_genus >= 0.05) %>% 
+  ggplot(aes(x = as.factor(location), y = perc_genus, 
+             fill = genus)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  facet_grid(year ~ month_surv) +
+  scale_fill_manual(values = colours_flag) +
+  # scale_fill_brewer(palette = "Paired") +  
+                    # labels = c("Bi.",
+                    #            "C.c.",
+                    #            "C.t.",
+                    #            "P.",
+                    #            "P.n.",
+                    #            "P.n.s.",
+                    #            "R.s.",
+                    #            "S.m.",
+                    #            "T.p.")) +
+  theme_bw() +
+  ylab("Rel. Abund. Flagellates (%)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 3))
+
+ggsave(here("figures_rev2", "flag_test_family_no-cryp.png"),
+       width = 14, height = 8, dpi = 300)
+```
+
+
+
+
+
+
+```{r}
+micro %>% 
+  filter(scientificName == "Pseudo-nitzschia seriata"  & year == "2019") %>% 
+  ggplot(aes(x = date, y = species_sum, color = location)) +
+  geom_line() +
+  geom_point()
+```
+
+
+```{r}
+micro %>% 
+  filter(scientificName == "Rhizosolenia setigera"  & year == "2018") %>% 
+  ggplot(aes(x = date, y = species_sum, color = location)) +
+  geom_line() +
+  geom_point()
+
+```
+
+
+
+
+
+
+
+```{r}
+#What about selecting only species that ever exceed 50000k. Doing a median of these and then plotting. 
+diat_gt100k <- micro %>% 
+  filter(!site_id == "QU39" & class == "Bacillariophyceae" 
+         & species_sum >= 100000) %>%
+  distinct(scientificName)
+
+test <- micro %>% 
+  filter(scientificName == "Chaetoceros debilis")
+
+diat_gt100k_list <- diat_gt100k$scientificName
+
+diat_test2 <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(!site_id == "QU39" 
+         & class == "Bacillariophyceae" 
+         & scientificName %in% diat_gt100k_list) %>%
+  group_by(site_id, year, month_surv, scientificName) %>% 
+  summarize(med_count = median(species_sum)) %>% 
+  mutate(rank_med = order(order(med_count, decreasing = TRUE))) %>% 
+  ungroup()
+
+diat_test2 <- diat_test2 %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) 
+
+diat_test2 <- arrange(mutate(diat_test2,
+                         location = factor(location, levels = order_loc)))
+```
+
+```{r}
+diat_test2 %>% 
+  ggplot(aes(x = as.factor(location), y = med_count, fill = scientificName)) + 
+  geom_bar(stat = "identity", position = "fill", color = "black") + 
+  facet_grid(year ~ month_surv) + 
+  scale_fill_brewer(palette = "Paired", 
+                    labels = c("Bi.",
+                               "C.c.",
+                               "C.t.",
+                               "P.",
+                               "P.n.",
+                               "P.n.s.",
+                               "R.s.",
+                               "S.m.",
+                               "T.p.")) +
+  theme_bw() +
+  ylab("%") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 1))
+
+ggsave(here("figures_rev2", "diat_test.png"), 
+       width = 12, height = 8, dpi = 300)
+```
+
+```{r}
+diat_test2 %>% 
+  ggplot(aes(x = as.factor(location), y = (med_count/100000),
+             fill = scientificName)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  facet_grid(year ~ month_surv, scales = "free_y") + 
+  scale_fill_brewer(palette = "Paired", 
+                    labels = c("Bi.",
+                               "C.c.",
+                               "C.t.",
+                               "P.",
+                               "P.n.",
+                               "P.n.s.",
+                               "R.s.",
+                               "S.m.",
+                               "T.p.")) +
+  theme_bw() +
+  ylab("%") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 1))
+
+ggsave(here("figures_rev2", "diat_test_abund.png"), 
+       width = 12, height = 8, dpi = 300)
+```
+
+```{r}
+coeff <- 12.5
+
+diat_test2 %>% 
+  ggplot() + 
+  geom_bar(aes(x = as.factor(location), y = med_count, fill = scientificName),
+           stat = "identity", position = "fill", color = "black") + 
+  geom_point(aes(x = as.factor(location), y = chl/coeff), pch = 21,
+             color = "Black", fill = "white", stroke = 1.5, size = 3) +
+  scale_y_continuous(sec.axis = sec_axis(~ . *coeff, name = "TChla")) +
+  facet_grid(year ~ month_surv) + 
+  # geom_text(aes(label = year), x = Inf, y = Inf, hjust = 1.5, vjust = 1.5,
+            # check_overlap = TRUE) +
+  scale_fill_brewer(palette = "Paired", 
+                    labels = c("Bi.",
+                               "C.c.",
+                               "C.t.",
+                               "P.",
+                               "P.n.",
+                               "P.n.s.",
+                               "R.s.",
+                               "S.m.",
+                               "T.p.")) +
+  theme_bw() +
+  ylab("%") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(nrow = 1))
+
+ggsave(here("figures_rev2", "diat_test_perc_tchla.png"), 
+       width = 12, height = 8, dpi = 300)
+```
