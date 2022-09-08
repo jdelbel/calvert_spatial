@@ -141,6 +141,7 @@ ggsave(here("figures_good", "timeseries-diatoms_gt10_perc_sm_size.png"),
 ```{r}
 #One of the request was total abundance versus TChla. How does it match?
 
+#Determining total abundance of autotrophic species. May need to reformat what I consider autotrophic species.
 total_abund <- micro %>% 
   filter(trophicStatus == "auto") %>% 
   group_by(date, site_id) %>% 
@@ -148,20 +149,128 @@ total_abund <- micro %>%
   ungroup() %>% 
   mutate(abund_perc = (species_sum/abund_sum)*100) 
 
-test <- total_abund %>% 
+#Pulling the record with the dominant group contributing to total biomass
+total_abund_top <- total_abund %>% 
   group_by(date, site_id) %>%
   top_n(n = 1, wt = abund_perc)
 
 
-
-total_abund <- total_abund %>% 
+total_abund_top <- total_abund_top %>% 
   left_join(chl)
-
-total_abund %>% 
-  ggplot(aes(x = abund_sum/100000, y = chl)) + 
-  geom_point()
+```
+```{r}
+palette_group <- c("#ff8000", #1 - Diatoms (orange)
+                   "#4d6600", #3 - Raphidophytes (dark green)
+                   "#ffff00", #5 - Cryptophytes (yellow)
+                   "#7d4dcc" #7 - Haptophytes (purple)
+                   ) 
 ```
 
+
+```{r}
+total_abund_top %>% 
+  ggplot(aes(x = abund_sum/100000, y = chl)) + 
+  geom_point(aes(fill = as.factor(group)), pch = 21, size = 4.5, stroke = 1.5) +
+  geom_smooth(method = "lm", color = "black", se = FALSE) +
+  # ggpubr::stat_cor(aes(label = ..rr.label..), label.y = 14, size = 8) +
+  # ggpubr::stat_cor(aes(label = ..p.label..), label.y = 10, size = 8) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  xlim(0, 35) +
+  ylim(0, 15) +
+  labs(x = "Abundance (10^5 cells L)",
+       y = "TChla (ug/L)") +
+  scale_fill_manual(values = palette_group,
+                    name = "Dom. Group", 
+                    breaks = c("Bacillariophyta", "Raphidiophyta", 
+                               "Cryptophyta", "Prymnesiophyta-Haptophyta"),
+                    labels = c("Diat.", "Raph.", "Cryp.", "Hapt.")) +
+  theme_bw() +
+  theme(text = element_text(size = 24),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.85, 0.84))
+
+ggsave(here("figures_good", "abund_tchla.png"),
+       width = 7.5, height = 6, dpi = 300)
+```
+```{r}
+#I want to look at heterotrophic dinoflagellates that have high grazing rates
+
+```
+
+```{r}
+
+micro_dino <- micro %>% 
+  filter(group == "Dinoflagellata")
+
+#Chemtax - Specify order of phyto groups for figures
+micro_dino <- arrange(mutate(micro_dino,
+                         location = factor(location, levels = order_loc)))
+
+#I want to look at species that never contribute to more than a certain percentage to the total biomass
+
+#Make a total diatom sum column for each date and then divide each species count by the total to derive a relative contribution
+micro_dino <- micro_dino %>% 
+  group_by(date, location) %>% 
+  mutate(sum_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(dino_perc = species_sum/sum_count)
+
+#Make a column showing the max contribution for each species
+micro_dino <- micro_dino %>% 
+  group_by(scientificName) %>% 
+  mutate(max = max(dino_perc),
+         max_abund = max(species_sum)) %>% 
+  ungroup() 
+
+
+micro_dino_gt5_perc <- micro_dino %>% 
+  filter(max >= 0.10)
+
+
+colourCount = length(unique(micro_dino_gt5_perc$scientificName))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+
+
+micro_dino_gt5_perc %>% 
+  ggplot(aes(x = as.factor(month_surv), y = species_sum/100000, 
+             fill = scientificName)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  facet_grid(location ~ year) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  theme_bw() +
+  ylab("Abund. Diatoms (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+ggsave(here("figures_good", "timeseries-dino_gt10_perc_sm_size.png"),
+       width = 16, height = 12, dpi = 300)
+
+```
+```{r}
+micro %>%
+  filter(genus == "Dinophysis") %>% 
+  ggplot(aes(x = as.factor(month_surv), y = species_sum/100000, 
+             fill = scientificName)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  facet_grid(location ~ year) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  theme_bw() +
+  ylab("Abund. Diatoms (10^5 cells L)") +
+  theme(text = element_text(size = 15),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+```
 
 
 
