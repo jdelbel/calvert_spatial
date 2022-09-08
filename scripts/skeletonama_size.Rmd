@@ -14,10 +14,14 @@ library(here) #File structure management
 ```
 
 ```{r}
-#Uploading metadata to attaech to skeletoma counts based on hakai_ids.
+#Uploading metadata to attach to skeletonema counts based on hakai_ids.
 meta <- read_csv(here("files", "meta_phyto_2021-06-21.csv"))
 
+#Uploading datasheet with S.marinoi counts separated by size.
 s_mar <- read_xlsx(here("files", "s_mar_size.xlsx"))
+
+#Downloading master datasheet where S.marinoi are not separated by size (for comparison)
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
 ```
 
 ```{r}
@@ -43,8 +47,62 @@ s_mar_long <- s_mar_long %>%
 #Pivoting wider for comparison with my master sheet
 s_mar_wide <- s_mar_long %>% 
   pivot_wider(names_from = species, values_from = counts)
+```
 
+```{r}
+#Removing QU39 from master sheet and filtering out skeletonema marinoi.
+micro_join <- micro %>% 
+  filter(!site_id == "QU39") %>% 
+  filter(scientificName == "Skeletonema marinoi") 
+```
 
+```{r}
+#joining the size counts with the master data
+micro_join <- micro_join %>% 
+  left_join(s_mar_wide)
 
+#All of my master data have a match.
+check_na <- micro_join %>% 
+  filter(is.na(`Skeletonema marinoi large`) & is.na(`Skeletonema marinoi small`))
+```
+
+```{r}
+#summing the counts from the size designations to see if they match the master data.
+micro_join <- micro_join %>% 
+  mutate(sm_sum = `Skeletonema marinoi large` + `Skeletonema marinoi small`)
+
+#Checking if the sum of the size designations matches the master data. All TRUE, data looks good.
+micro_join <- micro_join %>% 
+  mutate(match = species_sum == sm_sum)
+```
+
+```{r}
+#creating an output to feed into my analysis - replace current summed data in the master sheet. Needs to be in the same format - so some creative wrangling needed to make this work so I don't have to redo all of my previous standardization etc.
+
+#Making the small and large designations long format
+s_mar_export <- micro_join %>% 
+  pivot_longer(c(`Skeletonema marinoi large`:`Skeletonema marinoi small`),
+               names_to = "scientificName_2", values_to = "species_sum_2")
+
+#Removing the old scientific names and columns related to the summed data.
+s_mar_export <- s_mar_export %>% 
+  select(-scientificName, 
+         -count, 
+         -species_sum, 
+         -sm_sum, 
+         -match)
+
+#Making the new size designations the scientificName and placing in correct location. Making the count and species_sum columns match those in the master sheet. I should probably remove the species sum column because it is redundant and confusing.
+s_mar_export <- s_mar_export %>% 
+  rename(scientificName = scientificName_2) %>% 
+  relocate(scientificName, .after = group) %>% 
+  rename(count = species_sum_2) %>% 
+  mutate(species_sum = count)
+
+```
+
+```{r}
+#Exporting as a csv for upload into me analysis workbooks.
+write_csv(s_mar_export, here("outputs", "s_mar_size.csv"))
 ```
 

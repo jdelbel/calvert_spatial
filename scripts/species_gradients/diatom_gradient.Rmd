@@ -23,13 +23,27 @@ chl <- read_csv(here("outputs", "chl_hplc_merged.csv"))
 #Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
 data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
 
+#Uploading size separated S.marinoi counts.
+sm_size <- read_csv(here("outputs", "s_mar_size.csv"))
 ```
 
 ```{r}
 #Remove QU39
 micro <- micro %>% 
   filter(!site_id == "QU39")
+```
 
+```{r}
+
+#Careful here - removing original s.marinoi counts and replacing with size separated counts. Ensure that the outputs are comparable.
+micro <- micro %>% 
+  filter(!scientificName == "Skeletonema marinoi")
+
+micro <- rbind(micro, sm_size)
+
+```
+
+```{r}
 #Add year column
 micro <- micro %>% 
   mutate(year = lubridate::year(date)) %>% 
@@ -92,7 +106,7 @@ micro_diat <- micro_diat %>%
 
 
 micro_diat_gt5_perc <- micro_diat %>% 
-  filter(max_abund >= 25000)
+  filter(max >= 0.10)
 
 
 colourCount = length(unique(micro_diat_gt5_perc$scientificName))
@@ -106,24 +120,47 @@ micro_diat_gt5_perc %>%
   facet_grid(location ~ year) +
   scale_fill_manual(values = getPalette(colourCount)) + 
   theme_bw() +
-  ylab("Abund. Diatoms (%)") +
+  ylab("Abund. Diatoms (10^5 cells L)") +
   theme(text = element_text(size = 25),
         axis.title.x = element_blank(),
         # axis.text.y = element_blank(),
         axis.text = element_text(colour = "black"),
-        # legend.position = "top",
-        # legend.direction = "horizontal",
+        legend.position = "bottom",
+        legend.direction = "horizontal",
         legend.title = element_blank()) +
-  guides(fill = guide_legend(ncol = 1))
+  guides(fill = guide_legend(ncol = 4))
 
-ggsave(here("figures_good", "timeseries-diatoms_gt25k.png"),
-       width = 16, height = 8, dpi = 300)
+ggsave(here("figures_good", "timeseries-diatoms_gt10_perc_sm_size.png"),
+       width = 16, height = 12, dpi = 300)
 ```
 
 ```{r}
-#This seems to work pretty well - Can decide between percentage or abundance threshold. Would be good to add specifications for skeletonema size (This is going to be super tricky to add.)
+#This seems to work pretty well - Can decide between percentage or abundance threshold. 
 ```
 
+```{r}
+#One of the request was total abundance versus TChla. How does it match?
+
+total_abund <- micro %>% 
+  filter(trophicStatus == "auto") %>% 
+  group_by(date, site_id) %>% 
+  mutate(abund_sum = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(abund_perc = (species_sum/abund_sum)*100) 
+
+test <- total_abund %>% 
+  group_by(date, site_id) %>%
+  top_n(n = 1, wt = abund_perc)
+
+
+
+total_abund <- total_abund %>% 
+  left_join(chl)
+
+total_abund %>% 
+  ggplot(aes(x = abund_sum/100000, y = chl)) + 
+  geom_point()
+```
 
 
 
