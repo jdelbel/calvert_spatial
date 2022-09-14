@@ -20,11 +20,17 @@ data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
 #Uploading Chlorophyll data
 tchla <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
 
+#Fecal
+fec <- read_csv(here("outputs", "fecal_master_2022-03-16_het.csv"))
+
 ```
 
 ```{r}
 #Remove QU39
 data <- data %>% 
+  filter(!site_id == "QU39")
+
+fec <- fec %>% 
   filter(!site_id == "QU39")
 ```
 
@@ -33,6 +39,12 @@ data <- data %>%
 
 #Making a location column.
 data <- data %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
+
+fec <- fec %>% 
     mutate(location = case_when(site_id == "DFO2" ~ "F",
                               site_id == "KC10" ~ "C",
                               site_id == "QCS01" ~ "S",
@@ -61,6 +73,9 @@ env <- arrange(mutate(env,
                        location = factor(location, levels = order_loc)))
 
 tchla <- arrange(mutate(tchla,
+                       location = factor(location, levels = order_loc)))
+
+fec <- arrange(mutate(fec,
                        location = factor(location, levels = order_loc)))
 ```
 
@@ -110,7 +125,7 @@ s_n_loc <- s_n %>%
 #Reason Kruskal Wallis test is used is because many (but not all) of the parameters do not meet assumptions for one way ANOVA, so figure better to be consistent and use same test across. When data plotted, clear that there are differences suggesting test is working. 
 
 #Kruskal Wallace test
-kruskal.test(n_p ~ location, data = n_p)
+kruskal.test(fecal ~ location, data = fec)
 
 #Dunn Test to look where differences are occuring.
 FSA::dunnTest(n_p$n_p ~ n_p$location,
@@ -218,6 +233,26 @@ fig <- (f1 + f2 + f3) / (f4 + f5 + f6)
 ggsave(here("figures_good", "kruskal_dunn_panel.png"), 
        width = 14, height = 10, dpi = 300)
 ```
+
+```{r}
+ggboxplot(fec, x = "location", y = "fecal",
+          fill = "location", palette = "jco", size = 0.5)+ 
+  # stat_compare_means(comparisons = fc_cs_fs) + 
+  stat_compare_means(label.y = 1200, size = 6) +
+  theme_bw() +
+  labs(y = expression("Fecal (pellets/L)")) +
+  theme(legend.position = "none",
+        text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"))
+
+ggsave(here("figures_good", "kruskal_dunn_fecal.png"), 
+       width = 6, height = 4, dpi = 300)
+```
+
+
+
 
 ```{r}
 env_f <- env %>% 

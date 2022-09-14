@@ -143,7 +143,7 @@ hplc_join <- hplc_join %>%
   left_join(chl_join)
 
 hplc_join %>% 
-  ggplot(aes(x = chla, y = tchla)) + 
+  ggplot(aes(x = tchla, y = chla)) + 
   geom_point() +
   geom_smooth(method = "lm") +
   geom_abline(slope = 1, intercept = 0) +

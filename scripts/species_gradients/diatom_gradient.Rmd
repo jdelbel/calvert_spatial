@@ -25,12 +25,33 @@ data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
 
 #Uploading size separated S.marinoi counts.
 sm_size <- read_csv(here("outputs", "s_mar_size.csv"))
+
+fec <- read_csv(here("outputs", "fecal_master_2022-03-16_het.csv"))
+
+#Upload microscopy data merged with physical and biogeochemical measures
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv")) 
 ```
 
 ```{r}
 #Remove QU39
 micro <- micro %>% 
   filter(!site_id == "QU39")
+
+#Remove QU39
+data <- data %>% 
+  filter(!site_id == "QU39")
+
+data <- data %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
+
+env <- data %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  select(location, month, month_surv, year, t = temp_dm, s = sal_dm,
+         dr = delta_rho_dm, no2 = no2_dm, po4 = po4_dm, sio2 = sio2_dm,
+         secchi = secchi_depth)
 ```
 
 ```{r}
@@ -135,6 +156,47 @@ ggsave(here("figures_good", "timeseries-diatoms_gt10_perc_sm_size.png"),
 ```
 
 ```{r}
+micro_diat_gt5_perc %>%
+  mutate(yday = lubridate::yday(date)) %>% 
+  filter(year == 2019 & location == "S") %>% 
+  ggplot(aes(x = date, y = species_sum/100000, 
+             fill = scientificName)) + 
+  geom_area(stat = "identity", position = "stack", color = "black") + 
+  facet_grid(location ~ year) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  theme_bw() +
+  ylab("Abund. Diatoms (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+```
+```{r}
+env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = as.factor(month_surv), y = t, fill = as.factor(year))) + 
+  geom_bar(stat = "identity", position = "dodge", color = "black") + 
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  coord_cartesian(ylim = c(8, 16)) +
+  theme_bw() +
+  ylab("temp") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+```
+
+
+
+```{r}
 #This seems to work pretty well - Can decide between percentage or abundance threshold. 
 ```
 
@@ -192,6 +254,7 @@ total_abund_top %>%
 ggsave(here("figures_good", "abund_tchla.png"),
        width = 7.5, height = 6, dpi = 300)
 ```
+
 ```{r}
 #I want to look at heterotrophic dinoflagellates that have high grazing rates
 
@@ -248,21 +311,71 @@ micro_dino_gt5_perc %>%
         legend.title = element_blank()) +
   guides(fill = guide_legend(ncol = 4))
 
-ggsave(here("figures_good", "timeseries-dino_gt10_perc_sm_size.png"),
+ggsave(here("figures_good", "timeseries-dino_gt10_perc.png"),
        width = 16, height = 12, dpi = 300)
 
 ```
 ```{r}
 micro %>%
-  filter(genus == "Dinophysis") %>% 
-  ggplot(aes(x = as.factor(month_surv), y = species_sum/100000, 
+  filter(genus == "Gymnodinium") %>% 
+  ggplot(aes(x = as.factor(month_surv), y = species_sum/1000, 
              fill = scientificName)) + 
   geom_bar(stat = "identity", position = "stack", color = "black") + 
   facet_grid(location ~ year) +
   scale_fill_manual(values = getPalette(colourCount)) + 
   theme_bw() +
-  ylab("Abund. Diatoms (10^5 cells L)") +
-  theme(text = element_text(size = 15),
+  ylab("Abund. Diatoms (10^3 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+ggsave(here("figures_good", "timeseries-gymnodinium.png"),
+       width = 16, height = 12, dpi = 300)
+```
+```{r}
+micro %>%
+  filter(genus == "Dinophysis") %>% 
+  ggplot(aes(x = as.factor(month_surv), y = species_sum/1000, 
+             fill = scientificName)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  facet_grid(location ~ year) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  theme_bw() +
+  ylab("Abund. Diatoms (10^3 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+ggsave(here("figures_good", "timeseries-dino.png"),
+       width = 16, height = 12, dpi = 300)
+```
+```{r}
+cil <- micro %>% 
+  filter(group == "Ciliophora")
+
+cil <- arrange(mutate(cil,
+                       location = factor(location, levels = order_loc)))
+
+cil %>%
+  filter(scientificName == "Oligotrichea") %>% 
+  ggplot(aes(x = as.factor(month_surv), y = species_sum/1000, 
+             fill = scientificName)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  facet_grid(location ~ year) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  theme_bw() +
+  ylab("Abund. Diatoms (10^3 cells L)") +
+  theme(text = element_text(size = 25),
         axis.title.x = element_blank(),
         # axis.text.y = element_blank(),
         axis.text = element_text(colour = "black"),
@@ -272,7 +385,39 @@ micro %>%
   guides(fill = guide_legend(ncol = 4))
 ```
 
+```{r}
+fec <- fec %>% 
+  filter(!site_id == "QU39")
 
+fec <- fec %>% 
+  mutate(year = lubridate::year(date))
+
+fec <- fec %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
+
+fec <- arrange(mutate(fec,
+                       location = factor(location, levels = order_loc)))
+
+
+fec %>%
+  ggplot(aes(x = as.factor(month_surv), y = fecal)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") + 
+  facet_grid(location ~ year) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  theme_bw() +
+  ylab("Abund. Diatoms (10^3 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+```
 
 
 
