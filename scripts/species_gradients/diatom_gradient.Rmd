@@ -49,7 +49,7 @@ data <- data %>%
 
 env <- data %>% 
   mutate(year = lubridate::year(date)) %>% 
-  select(location, month, month_surv, year, t = temp_dm, s = sal_dm,
+  select(location, date, month, month_surv, year, t = temp_dm, s = sal_dm,
          dr = delta_rho_dm, no2 = no2_dm, po4 = po4_dm, sio2 = sio2_dm,
          secchi = secchi_depth)
 ```
@@ -156,16 +156,193 @@ ggsave(here("figures_good", "timeseries-diatoms_gt10_perc_sm_size.png"),
 ```
 
 ```{r}
-micro_diat_gt5_perc %>%
-  mutate(yday = lubridate::yday(date)) %>% 
-  filter(year == 2019 & location == "S") %>% 
-  ggplot(aes(x = date, y = species_sum/100000, 
-             fill = scientificName)) + 
-  geom_area(stat = "identity", position = "stack", color = "black") + 
-  facet_grid(location ~ year) +
+env <- env %>% 
+  mutate(yday = lubridate::yday(date))
+
+
+f1 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = t, fill = as.factor(year), color = as.factor(year))) + 
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  scale_color_manual(values = getPalette(colourCount)) +
+  coord_cartesian(ylim = c(8, 16)) +
+  theme_bw() +
+  ylab("temp") +
+  ggtitle("Shelf") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.35, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f2 <- env %>% 
+  filter(location == "C") %>% 
+  ggplot(aes(x = yday, y = t, fill = as.factor(year), color = as.factor(year))) + 
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  scale_color_manual(values = getPalette(colourCount)) +
+  coord_cartesian(ylim = c(8, 16)) +
+  theme_bw() +
+  ylab("temp") +
+  ggtitle("Channel") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.35, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f3 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = s, fill = as.factor(year), color = as.factor(year))) + 
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  scale_color_manual(values = getPalette(colourCount)) +
+  coord_cartesian(ylim = c(26, 33)) +
+  theme_bw() +
+  ylab("Salinity") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.35, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f4 <- env %>% 
+  filter(location == "C") %>% 
+  ggplot(aes(x = yday, y = s, fill = as.factor(year), color = as.factor(year))) + 
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  scale_color_manual(values = getPalette(colourCount)) +
+  coord_cartesian(ylim = c(26, 33)) +
+  theme_bw() +
+  ylab("Salinity") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.35, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f5 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = sio2, fill = as.factor(year), color = as.factor(year))) + 
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  scale_color_manual(values = getPalette(colourCount)) +
+  coord_cartesian(ylim = c(0, 35)) +
+  theme_bw() +
+  ylab("siO2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.35, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f6 <- env %>% 
+  filter(location == "C") %>% 
+  ggplot(aes(x = yday, y = sio2, fill = as.factor(year), color = as.factor(year))) + 
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  scale_color_manual(values = getPalette(colourCount)) +
+  coord_cartesian(ylim = c(0, 35)) +
+  theme_bw() +
+  ylab("siO2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.35, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f7 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = sio2/no2, fill = as.factor(year), color = as.factor(year))) + 
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  scale_color_manual(values = getPalette(colourCount)) +
+  coord_cartesian(ylim = c(0, 15)) +
+  theme_bw() +
+  ylab("siO2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.35, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f8 <- env %>% 
+  filter(location == "C") %>% 
+  ggplot(aes(x = yday, y = sio2/no2, fill = as.factor(year),
+             color = as.factor(year))) + 
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  scale_color_manual(values = getPalette(colourCount)) +
+  coord_cartesian(ylim = c(0, 15)) +
+  theme_bw() +
+  ylab("siO2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.35, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+
+
+fig <- (f1 + f2) / (f3 + f4) / (f5 + f6) / (f7 + f8)
+
+ggsave(here("figures_good", "test.png"), fig,
+       width = 16, height = 18, dpi = 300)
+
+
+test <- micro %>% 
+  filter(location == "S") %>% 
+  distinct(date)
+
+```
+
+
+```{r}
+env %>% 
+  filter(location == "S" & year == 2019) %>% 
+  ggplot(aes(x = date, y = dr)) + 
+  geom_point() +
+  geom_line() +
   scale_fill_manual(values = getPalette(colourCount)) + 
   theme_bw() +
-  ylab("Abund. Diatoms (10^5 cells L)") +
+  ylab("temp") +
   theme(text = element_text(size = 25),
         axis.title.x = element_blank(),
         # axis.text.y = element_blank(),
@@ -174,14 +351,13 @@ micro_diat_gt5_perc %>%
         legend.direction = "horizontal",
         legend.title = element_blank()) +
   guides(fill = guide_legend(ncol = 4))
-```
-```{r}
+
 env %>% 
-  filter(location == "S") %>% 
-  ggplot(aes(x = as.factor(month_surv), y = t, fill = as.factor(year))) + 
-  geom_bar(stat = "identity", position = "dodge", color = "black") + 
+  filter(location == "S" & year == 2019) %>% 
+  ggplot(aes(x = date, y = po4)) + 
+  geom_point() +
+  geom_line() +
   scale_fill_manual(values = getPalette(colourCount)) + 
-  coord_cartesian(ylim = c(8, 16)) +
   theme_bw() +
   ylab("temp") +
   theme(text = element_text(size = 25),
@@ -367,14 +543,14 @@ cil <- arrange(mutate(cil,
                        location = factor(location, levels = order_loc)))
 
 cil %>%
-  filter(scientificName == "Oligotrichea") %>% 
-  ggplot(aes(x = as.factor(month_surv), y = species_sum/1000, 
+  filter(scientificName == "Tintinnina") %>% 
+  ggplot(aes(x = as.factor(month_surv), y = species_sum/10000, 
              fill = scientificName)) + 
   geom_bar(stat = "identity", position = "stack", color = "black") + 
   facet_grid(location ~ year) +
   scale_fill_manual(values = getPalette(colourCount)) + 
   theme_bw() +
-  ylab("Abund. Diatoms (10^3 cells L)") +
+  ylab("Abund. (10^4 cells L)") +
   theme(text = element_text(size = 25),
         axis.title.x = element_blank(),
         # axis.text.y = element_blank(),
@@ -383,6 +559,9 @@ cil %>%
         legend.direction = "horizontal",
         legend.title = element_blank()) +
   guides(fill = guide_legend(ncol = 4))
+
+ggsave(here("figures_good", "timeseries-tinn.png"),
+       width = 16, height = 12, dpi = 300)
 ```
 
 ```{r}
@@ -403,12 +582,12 @@ fec <- arrange(mutate(fec,
 
 
 fec %>%
-  ggplot(aes(x = as.factor(month_surv), y = fecal)) + 
+  ggplot(aes(x = as.factor(month_surv), y = fecal*100)) + 
   geom_bar(stat = "identity", position = "stack", color = "black") + 
   facet_grid(location ~ year) +
   scale_fill_manual(values = getPalette(colourCount)) + 
   theme_bw() +
-  ylab("Abund. Diatoms (10^3 cells L)") +
+  ylab("Abund. (pellets L)") +
   theme(text = element_text(size = 25),
         axis.title.x = element_blank(),
         # axis.text.y = element_blank(),
