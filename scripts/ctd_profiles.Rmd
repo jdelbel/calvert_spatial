@@ -1,0 +1,102 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+#Load packages
+library(tidyverse) #Data wrangling
+library(readxl) #Import excel files
+library(here) #File structure management
+```
+
+```{r}
+ctd <- read_csv(here("files", "ctd_qcs_v1.csv"))
+
+```
+
+```{r}
+ctd <- ctd %>% 
+  rename(date = `Measurement time`,
+         pres = `Pressure (dbar)`,
+         sal = `Salinity (PSU)`,
+         temp = `Temperature (deg C)`,
+         date = `Measurement time`,
+         station = Station,
+         cast_pk = `Cast PK`,
+         par = `PAR (umol m-2 s-1)`)
+
+ctd <- ctd %>% 
+  mutate(date = lubridate::date(date))
+
+```
+
+```{r}
+ctd %>% 
+  mutate(year = lubridate::year(date)) %>%
+  filter(date == "2019-05-13" | date == "2019-06-09" | date == "2019-07-07" |
+           date == "2019-08-06" | date == "2019-08-31" |
+           date == "2020-05-01" | date == "2020-06-08" |
+           date == "2020-07-05" | date == "2020-09-04") %>% 
+  filter(station == "QCS01" | station == "HKP03" | station == "HKP01") %>% 
+  ggplot(aes(y = pres, x = sal, fill = station)) + 
+  geom_point(pch = 21, size = 3) +
+  geom_vline(xintercept = 31) +
+  scale_y_reverse(lim = c(25, 0)) +
+  facet_grid(. ~ date)
+
+ggsave(here("figures_good", "ctd_profs_sal.png"),
+       width = 16, height = 6, dpi = 300)
+```
+```{r}
+ctd %>% 
+  mutate(year = lubridate::year(date)) %>%
+  filter(date == "2019-05-13" | date == "2019-06-09" | date == "2019-07-07" |
+           date == "2019-08-06" | date == "2019-08-31" |
+           date == "2020-05-01" | date == "2020-06-08" |
+           date == "2020-07-05" | date == "2020-09-04") %>% 
+  filter(station == "QCS01" | station == "HKP03" | station == "HKP01") %>% 
+  ggplot(aes(y = pres, x = temp, fill = station)) + 
+  geom_point(pch = 21, size = 3) +
+  # geom_vline(xintercept = 31) +
+  scale_y_reverse(lim = c(25, 0)) +
+  facet_grid(. ~ date)
+
+ggsave(here("figures_good", "ctd_profs_temp.png"),
+       width = 16, height = 6, dpi = 300)
+
+
+
+
+```
+
+```{r}
+ctd %>% 
+  filter(station == "QCS01") %>% 
+  ggplot(aes(x = date, y = pres, z = sal)) +
+  geom_contour_filled(binwidth=.8) +
+  geom_point() +
+  scale_y_reverse(lim = c(25, 0)) 
+```
+
+
+
+
+
+
+```{r}
+ctd %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(date == "2019-05-13" | date == "2019-06-09" | date == "2019-07-07" |
+           date == "2020-05-01" | date == "2020-06-08" |
+           date == "2020-07-05" | date == "2020-09-04") %>% 
+  filter(station == "QCS01" | station == "HKP03" | station == "HKP01") %>% 
+  ggplot(aes(y = sal, x = temp, color = station, shape = as.factor(date))) + 
+  geom_point(size = 3) +
+  # geom_vline(xintercept = 31) +
+  # scale_y_reverse(lim = c(25, 0)) +
+  facet_grid(. ~ year)
+```
+

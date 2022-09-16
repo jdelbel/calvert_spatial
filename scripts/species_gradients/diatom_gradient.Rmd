@@ -242,14 +242,14 @@ f4 <- env %>%
 
 f5 <- env %>% 
   filter(location == "S") %>% 
-  ggplot(aes(x = yday, y = sio2, fill = as.factor(year), color = as.factor(year))) + 
+  ggplot(aes(x = yday, y = dr, fill = as.factor(year), color = as.factor(year))) + 
   geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
   geom_line(size = 2) +
   scale_fill_manual(values = getPalette(colourCount)) + 
   scale_color_manual(values = getPalette(colourCount)) +
-  coord_cartesian(ylim = c(0, 35)) +
+  coord_cartesian(ylim = c(0, 8)) +
   theme_bw() +
-  ylab("siO2") +
+  ylab("Delat rho") +
   theme(text = element_text(size = 25),
         axis.title.x = element_blank(),
         # axis.text.y = element_blank(),
@@ -261,32 +261,32 @@ f5 <- env %>%
 
 f6 <- env %>% 
   filter(location == "C") %>% 
-  ggplot(aes(x = yday, y = sio2, fill = as.factor(year), color = as.factor(year))) + 
+  ggplot(aes(x = yday, y = dr, fill = as.factor(year), color = as.factor(year))) + 
   geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
   geom_line(size = 2) +
   scale_fill_manual(values = getPalette(colourCount)) + 
   scale_color_manual(values = getPalette(colourCount)) +
-  coord_cartesian(ylim = c(0, 35)) +
+  coord_cartesian(ylim = c(0, 8)) +
   theme_bw() +
-  ylab("siO2") +
+  ylab("Delta Rho") +
   theme(text = element_text(size = 25),
         axis.title.x = element_blank(),
         axis.text.y = element_blank(),
         axis.title.y = element_blank(),
         axis.text = element_text(colour = "black"),
-        legend.position = c(0.35, 0.9),
+        legend.position = "none",
         legend.direction = "horizontal",
         legend.title = element_blank()) +
   guides(fill = guide_legend(ncol = 4))
 
 f7 <- env %>% 
   filter(location == "S") %>% 
-  ggplot(aes(x = yday, y = sio2/no2, fill = as.factor(year), color = as.factor(year))) + 
+  ggplot(aes(x = yday, y = sio2, fill = as.factor(year), color = as.factor(year))) + 
   geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
   geom_line(size = 2) +
   scale_fill_manual(values = getPalette(colourCount)) + 
   scale_color_manual(values = getPalette(colourCount)) +
-  coord_cartesian(ylim = c(0, 15)) +
+  coord_cartesian(ylim = c(0, 35)) +
   theme_bw() +
   ylab("siO2") +
   theme(text = element_text(size = 25),
@@ -300,13 +300,12 @@ f7 <- env %>%
 
 f8 <- env %>% 
   filter(location == "C") %>% 
-  ggplot(aes(x = yday, y = sio2/no2, fill = as.factor(year),
-             color = as.factor(year))) + 
+  ggplot(aes(x = yday, y = sio2, fill = as.factor(year), color = as.factor(year))) + 
   geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
   geom_line(size = 2) +
   scale_fill_manual(values = getPalette(colourCount)) + 
   scale_color_manual(values = getPalette(colourCount)) +
-  coord_cartesian(ylim = c(0, 15)) +
+  coord_cartesian(ylim = c(0, 35)) +
   theme_bw() +
   ylab("siO2") +
   theme(text = element_text(size = 25),
@@ -318,7 +317,6 @@ f8 <- env %>%
         legend.direction = "horizontal",
         legend.title = element_blank()) +
   guides(fill = guide_legend(ncol = 4))
-
 
 
 fig <- (f1 + f2) / (f3 + f4) / (f5 + f6) / (f7 + f8)
