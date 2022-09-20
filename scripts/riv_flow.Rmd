@@ -15,17 +15,21 @@ library(here) #File structure management
 #Upload river data
 riv <- read_csv(here("files", "river.csv")) 
 
+riv_bella <- read_xlsx(here("files", "riv_bella_xl.xlsx"))
+
 temp <- read_csv(here("files", "temp_lookout.csv")) 
+
 ```
+
 ```{r}
-temp <- temp[-c(1:3), ]
-
-temp <- temp %>% 
-  filter(`Measurement time` > "2018-01-01" & `Measurement time` < "2021-01-01")
-
-temp <- temp %>% 
-  filter(!is.na(TAirLookout1) & TAirLookout2_Q_level == 2) %>% 
-  mutate(yday = lubridate::yday(`Measurement time`))
+# temp <- temp[-c(1:3), ]
+# 
+# temp <- temp %>% 
+#   filter(`Measurement time` > "2018-01-01" & `Measurement time` < "2021-01-01")
+# 
+# temp <- temp %>% 
+#   filter(!is.na(TAirLookout1) & TAirLookout2_Q_level == 2) %>% 
+#   mutate(yday = lubridate::yday(`Measurement time`))
 
 ```
 
@@ -47,6 +51,19 @@ riv <- riv %>%
   mutate(avg = mean(dis)) %>% 
   ungroup()
 
+riv_bella <- riv_bella %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+riv_bella <- riv_bella %>% 
+  group_by(year, month) %>% 
+  mutate(avg = mean(dis)) %>% 
+  ungroup()
+
 ```
 
 ```{r}
@@ -63,8 +80,14 @@ riv %>%
 ```
 ```{r}
 #Plot discharge over three years
-temp %>% 
-  ggplot(aes(x = yday, y = TAirLookout1, color = as.factor(Year))) +
+riv_bella %>% 
+  ggplot(aes(x = yday, y = dis, color = as.factor(year))) +
   geom_line()
+
+riv_bella %>% 
+  ggplot() +
+  geom_bar(aes(x = as.factor(month), y = avg, fill = as.factor(year)),
+           stat = "identity", position = "dodge", color = "black") +
+  theme_bw()
 ```
 

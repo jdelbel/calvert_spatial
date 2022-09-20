@@ -13,8 +13,7 @@ library(here) #File structure management
 ```
 
 ```{r}
-ctd <- read_csv(here("files", "ctd_qcs_v1.csv"))
-
+ctd <- read_csv(here("files", "ctd_qcs01_kc10_dfo2.csv"))
 ```
 
 ```{r}
@@ -50,6 +49,50 @@ ctd %>%
 ggsave(here("figures_good", "ctd_profs_sal.png"),
        width = 16, height = 6, dpi = 300)
 ```
+
+```{r}
+kc10_dates <- ctd %>% 
+  filter(station == "KC10") %>% 
+  distinct(date)
+
+ctd %>% 
+  mutate(year = lubridate::year(date)) %>%
+  filter(date == "2019-05-11" | date == "2019-06-10" | date == "2019-07-10" |
+           date == "2019-08-03" | date == "2019-09-01" |
+           date == "2020-04-30" | date == "2020-07-02" |
+           date == "2020-08-07" | date == "2020-09-03") %>% 
+  filter(station == "KC10") %>% 
+  ggplot(aes(y = pres, x = sal, fill = station)) + 
+  geom_point(pch = 21, size = 3) +
+  geom_vline(xintercept = 31) +
+  scale_y_reverse(lim = c(25, 0)) +
+  facet_grid(. ~ date)
+```
+```{r}
+dfo2_dates <- ctd %>% 
+  filter(station == "DFO2") %>% 
+  distinct(date)
+
+ctd %>% 
+  mutate(year = lubridate::year(date)) %>%
+  filter(date == "2019-05-14" | date == "2019-06-11" | date == "2019-07-06" |
+           date == "2019-08-05" | date == "2019-09-02" |
+           date == "2020-05-04" | date == "2020-06-06" |
+           date == "2020-07-06" | date == "2020-08-08" | date == "2020-09-05") %>% 
+  filter(station == "DFO2") %>% 
+  ggplot(aes(y = pres, x = sal, fill = station)) + 
+  geom_point(pch = 21, size = 3) +
+  geom_vline(xintercept = 31) +
+  scale_y_reverse(lim = c(25, 0)) +
+  facet_grid(. ~ date)
+```
+
+
+
+
+
+
+
 ```{r}
 ctd %>% 
   mutate(year = lubridate::year(date)) %>%
@@ -72,31 +115,12 @@ ggsave(here("figures_good", "ctd_profs_temp.png"),
 
 ```
 
-```{r}
-ctd %>% 
-  filter(station == "QCS01") %>% 
-  ggplot(aes(x = date, y = pres, z = sal)) +
-  geom_contour_filled(binwidth=.8) +
-  geom_point() +
-  scale_y_reverse(lim = c(25, 0)) 
-```
 
 
 
 
 
 
-```{r}
-ctd %>% 
-  mutate(year = lubridate::year(date)) %>% 
-  filter(date == "2019-05-13" | date == "2019-06-09" | date == "2019-07-07" |
-           date == "2020-05-01" | date == "2020-06-08" |
-           date == "2020-07-05" | date == "2020-09-04") %>% 
-  filter(station == "QCS01" | station == "HKP03" | station == "HKP01") %>% 
-  ggplot(aes(y = sal, x = temp, color = station, shape = as.factor(date))) + 
-  geom_point(size = 3) +
-  # geom_vline(xintercept = 31) +
-  # scale_y_reverse(lim = c(25, 0)) +
-  facet_grid(. ~ year)
-```
+
+
 
