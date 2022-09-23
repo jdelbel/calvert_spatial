@@ -49,6 +49,27 @@ ctd %>%
 ggsave(here("figures_good", "ctd_profs_sal.png"),
        width = 16, height = 6, dpi = 300)
 ```
+```{r}
+ctd %>% 
+  mutate(year = lubridate::year(date)) %>%
+  filter(date == "2019-05-13" | date == "2019-06-09" | date == "2019-07-07" |
+           date == "2019-08-06" | date == "2019-08-31" |
+           date == "2020-05-01" | date == "2020-06-08" |
+           date == "2020-07-05" | date == "2020-09-04") %>% 
+  filter(station == "QCS01" | station == "HKP03" | station == "HKP01") %>% 
+  ggplot(aes(y = pres, x = `Fluorometry Chlorophyll (ug/L)`, fill = station)) + 
+  geom_point(pch = 21, size = 3) +
+  geom_vline(xintercept = 5) +
+  scale_y_reverse(lim = c(25, 0)) +
+  facet_grid(. ~ date)
+
+ggsave(here("figures_good", "ctd_profs_flu.png"),
+       width = 16, height = 6, dpi = 300)
+```
+
+
+
+
 
 ```{r}
 kc10_dates <- ctd %>% 
@@ -113,6 +134,16 @@ ggsave(here("figures_good", "ctd_profs_temp.png"),
 
 
 
+```
+```{r}
+ctd %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  filter(station == "QCS01" & month == 7) %>% 
+  ggplot(aes(y = pres, x = sal, fill = as.factor(year))) + 
+  geom_point(pch = 21, size = 2) +
+  # geom_vline(xintercept = 31) +
+  scale_y_reverse(lim = c(20, 0)) 
 ```
 
 
