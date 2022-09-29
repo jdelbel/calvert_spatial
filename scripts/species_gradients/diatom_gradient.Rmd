@@ -433,6 +433,11 @@ ggsave(here("figures_good", "test2.png"), fig,
        width = 16, height = 16, dpi = 300)
 ```
 
+
+
+
+
+
 ```{r}
 f1 <- micro %>% 
   filter(year == 2020) %>% 

@@ -21,6 +21,7 @@ library(ggdendro)
 library(RColorBrewer)
 library(indicspecies)
 library(factoextra)
+library(ggpubr)
 ```
 
 
@@ -352,13 +353,244 @@ shannon_all <- shannon_all %>%
 shannon <- cbind(shannon_diat, shannon_dino, shannon_all)
 
 shannon$location <- micro_diat$location
-
+shannon$date <- micro_diat$date
+shannon$month_surv <- micro_diat$month_surv
 ```
 
 ```{r}
 shannon_long <- shannon %>% 
-  pivot_longer(!location, names_to = "type", values_to = "value")
+  pivot_longer(!location:month_surv, names_to = "type", values_to = "value")
 ```
+
+```{r}
+shannon_long <- arrange(mutate(shannon_long,
+                         location = factor(location, levels = order_loc)))
+```
+
+
+```{r}
+fc_cs_fs <- list( c("F", "C"), c("C", "S"), c("F", "S"))
+all_year <- list( c("2018", "2019"), c("2019", "2020"), c("2018", "2020"))
+y18_20 <- list(c("2018", "2020"))
+y18_19_20 <- list(c("2018", "2020"), c("2019", "2020"))
+
+fc_fs <- list( c("F", "C"), c("F", "S")) #my_comparisons
+fs_cs <- list(c("C", "S"), c("F", "S")) #my_comparisons2
+f_s <- list(c("C", "F"))
+fc_cs_fs <- list( c("F", "C"), c("C", "S"), c("F", "S")) #my_comparisons3
+```
+
+
+```{r}
+shannon_long %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = as.factor(year), y = value)) +
+  geom_boxplot(fill = "grey") +
+  geom_jitter(aes(fill = as.factor(month_surv), shape = as.factor(location)),
+              size = 5, stroke = 1.5) +
+  stat_compare_means(comparisons = all_year,
+                     label.y = c(4,5,6),
+                     size = 7) + 
+  stat_compare_means(label.y = 10, size = 6) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) +
+  facet_grid(. ~ type) +
+  theme_bw() +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        # panel.background = element_blank(),
+        # panel.border = element_rect(fill = NA, colour = "black"), 
+        # axis.ticks = element_blank(),
+        # axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        # legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+ggsave(here("figures_good", "shannon_krus_test_year.png"), 
+       width = 16, height = 5, dpi = 300)
+```
+
+
+```{r}
+f1 <- shannon_long %>% 
+  filter(type == "all") %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = as.factor(location), y = value)) +
+  geom_boxplot(fill = "grey") +
+  geom_jitter(aes(fill = as.factor(month_surv), shape = as.factor(year)),
+              size = 5, stroke = 1.5) +
+  stat_compare_means(comparisons = fc_fs,
+                     label.y = c(3, 3.5),
+                     size = 7) + 
+  stat_compare_means(label.y = 4, size = 6) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) +
+  ylab("Shannon H'") +
+  ggtitle("All Species") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 25, face = "bold", colour = "black"),
+        # panel.background = element_blank(),
+        # panel.border = element_rect(fill = NA, colour = "black"), 
+        # axis.ticks = element_blank(),
+        # axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+f2 <- shannon_long %>% 
+  filter(type == "diat") %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = as.factor(location), y = value)) +
+  geom_boxplot(fill = "grey") +
+  geom_jitter(aes(fill = as.factor(month_surv), shape = as.factor(year)),
+              size = 5, stroke = 1.5) +
+  stat_compare_means(comparisons = fc_fs,
+                     label.y = c(3, 3.5),
+                     size = 7) + 
+  stat_compare_means(label.y = 4, size = 6) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) +
+  ylab("Shannon H'") +
+  ggtitle("Diatoms") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 25, face = "bold", colour = "black"),
+        # panel.background = element_blank(),
+        # panel.border = element_rect(fill = NA, colour = "black"), 
+        # axis.ticks = element_blank(),
+        # axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+f3 <- shannon_long %>% 
+  filter(type == "dino") %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = as.factor(location), y = value)) +
+  geom_boxplot(fill = "grey") +
+  geom_jitter(aes(fill = as.factor(month_surv), shape = as.factor(year)),
+              size = 5, stroke = 1.5) +
+  stat_compare_means(label.y = 4, size = 6) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) +
+  ylab("Shannon H'") +
+  ggtitle("Dinoflagellates") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 25, face = "bold", colour = "black"),
+        # panel.background = element_blank(),
+        # panel.border = element_rect(fill = NA, colour = "black"), 
+        # axis.ticks = element_blank(),
+        # axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Year") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+
+f4 <- shannon_long %>% 
+  filter(type == "all") %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = as.factor(year), y = value)) +
+  geom_boxplot(fill = "grey") +
+  geom_jitter(aes(fill = as.factor(month_surv), shape = as.factor(location)),
+              size = 5, stroke = 1.5) +
+  stat_compare_means(label.y = 4, size = 6) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(23, 24, 25)) +
+  ylab("Shannon H'") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 25, face = "bold", colour = "black"),
+        # panel.background = element_blank(),
+        # panel.border = element_rect(fill = NA, colour = "black"), 
+        # axis.ticks = element_blank(),
+        # axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+f5 <- shannon_long %>% 
+  filter(type == "diat") %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = as.factor(year), y = value)) +
+  geom_boxplot(fill = "grey") +
+  geom_jitter(aes(fill = as.factor(month_surv), shape = as.factor(location)),
+              size = 5, stroke = 1.5) +
+  stat_compare_means(comparisons = y18_20,
+                     label.y = 3.5,
+                     size = 7) + 
+  stat_compare_means(label.y = 4, size = 6) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(23, 24, 25)) +
+  ylab("Shannon H'") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 25, face = "bold", colour = "black"),
+        # panel.background = element_blank(),
+        # panel.border = element_rect(fill = NA, colour = "black"), 
+        # axis.ticks = element_blank(),
+        # axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+f6 <- shannon_long %>% 
+  filter(type == "dino") %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = as.factor(year), y = value)) +
+  geom_boxplot(fill = "grey") +
+  geom_jitter(aes(fill = as.factor(month_surv), shape = as.factor(location)),
+              size = 5, stroke = 1.5) +
+  stat_compare_means(comparisons = y18_19_20,
+                     label.y = c(3, 3.5),
+                     size = 7) + 
+  stat_compare_means(label.y = 4, size = 6) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(23, 24, 25)) +
+  ylab("Shannon H'") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 25, face = "bold", colour = "black"),
+        # panel.background = element_blank(),
+        # panel.border = element_rect(fill = NA, colour = "black"), 
+        # axis.ticks = element_blank(),
+        # axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+fig <- f1 + f2 + f3 + f4 + f5 + f6
+
+ggsave(here("figures_good", "shannon_krus_test_year_location.png"), fig, 
+       width = 16, height = 10, dpi = 300)
+
+```
+
+
 
 ```{r}
 shannon_mean <- shannon_long %>% 
@@ -398,7 +630,7 @@ shan_fig <- shannon_mean %>%
 ```{r}
 test <- sf_fig / chem_fig / micro_fig / shan_fig
 
-ggsave(here("figures_good", "test_2.png"), test,
+ggsave(here("figures_good", "shannon_test.png"), test,
        width = 9, height = 16, dpi = 300)
 ```
 

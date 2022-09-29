@@ -791,14 +791,15 @@ micro_diat <- arrange(mutate(micro_diat,
 ```{r}
 
 #Making a heatmap of the indicator species
-micro_diat %>%   
+diat <- micro_diat %>%   
   filter(scientificName %in% inv_site_list_diat) %>%
   ggplot(aes(x = as.factor(date), y = scientificName, fill = sqrt(perc_total))) +
   geom_tile(color = "black", size = 1) +
   facet_grid(. ~ location , scales = "free_x", space = "free") +
-  scale_fill_gradient(name = expression(sqrt("%")),
-                      low = "#FFFFFF",
-                      high = "#012345") +
+  # scale_fill_gradient(name = expression(sqrt("%")),
+  #                     low = "#012345",
+  #                     high = "#FFFFFF") +
+  scale_fill_distiller(palette = "Spectral", name = expression(sqrt("%"))) +
   scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
                               "Chaetoceros convolutus" = "C.con.",
                               "Chaetoceros debilis" = "C.deb.",
@@ -823,7 +824,8 @@ micro_diat %>%
   theme(axis.title.x = element_blank(),
         strip.background = element_blank(),
         strip.text.y = element_blank(),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
         axis.title.y = element_blank(),
         text = element_text(size = 25),
         axis.text = element_text(colour = "black"),
@@ -833,12 +835,28 @@ micro_diat %>%
         # legend.position = c(0.03, 0.30),
         legend.direction = "vertical",
         axis.line = element_line(colour = "black"),
-        legend.background = element_blank())
+        legend.background = element_blank(),
+        legend.key.height = unit(2.5, "cm"))
+
+#Could add color bars for year and month.
+# micro_diat %>%  
+#   mutate(year = lubridate::year(date)) %>% 
+#   ggplot(aes(x = as.factor(date), y = 1, fill = as.factor(year))) +
+#   geom_tile(color = "black", size = 1) +
+#   facet_grid(. ~ location , scales = "free_x", space = "free")
+# 
+# micro_diat %>%  
+#   ggplot(aes(x = as.factor(date), y = 1, fill = as.factor(month))) +
+#   geom_tile(color = "black", size = 1) +
+#   facet_grid(. ~ location , scales = "free_x", space = "free")
+
 
 ggsave(here("figures_good", "indicator_diatoms_rel_2022-08-08.png"),
         width = 16, height = 8, dpi = 300)
 
 ```
+Let's try relative abundance on dinflagellates and add significant species to heatmap.
+
 ```{r}
 #Indicator species analysis
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
@@ -892,6 +910,153 @@ summary(inv_year)
 summary(inv_year_diat)
 summary(inv_year_dino)
 ```
+
+```{r}
+inv_year_sp_dino <- data.table::as.data.table(inv_year_dino$sign, keep.rownames = TRUE)
+
+inv_year_sp_dino <- inv_year_sp_dino %>% 
+  filter(s.2018 == 1 | s.2019 == 1 | s.2020 == 1) %>% 
+  filter(p.value < 0.05) %>% 
+  # filter(!rn == "Skeletonema marinoi") %>% 
+  arrange(rn)
+
+inv_site_list_dino <- inv_year_sp_dino$rn
+```
+
+
+```{r}
+#should look at relative abundance plot of this, since using.
+micro_dino <- micro_dino %>% 
+  group_by(date, location) %>% 
+  mutate(sum_total = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(perc_total = species_sum/sum_total)
+
+micro_dino <- arrange(mutate(micro_dino,
+                         location = factor(location, levels = order_loc)))
+```
+
+```{r}
+
+#Making a heatmap of the indicator species
+dino <- micro_dino %>%   
+  mutate(year = lubridate::year(date)) %>% 
+  filter(scientificName %in% inv_site_list_dino) %>%
+  ggplot(aes(x = as.factor(date), y = scientificName, fill = sqrt(perc_total))) +
+  geom_tile(color = "black", size = 1) +
+  facet_grid(. ~ location , scales = "free_x", space = "free") +
+  # scale_fill_gradient(name = expression(sqrt("%")),
+  #                     low = "#012345",
+  #                     high = "#FFFFFF") +
+  scale_fill_distiller(palette = "Spectral") +
+  scale_y_discrete(labels = c("Scrippsiella trochoidea" = "S.t.",
+                              "Protoperidinium steinii" = "Prot.s.",
+                              "Protoperidinium" = "Prot.c",
+                              "Prorocentrum" = "Proro.",
+                              "Katodinium" = "Kat.",
+                              "Gyrodinium" = "Gyro.",
+                              "Corythodinium" = "Cor.",
+                              "Ceratium horridum" = "C.h.")) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        # legend.direction = "none",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank())
+
+#Could add color bars for year and month.
+# micro_diat %>%  
+#   mutate(year = lubridate::year(date)) %>% 
+#   ggplot(aes(x = as.factor(date), y = 1, fill = as.factor(year))) +
+#   geom_tile(color = "black", size = 1) +
+#   facet_grid(. ~ location , scales = "free_x", space = "free")
+# 
+# micro_diat %>%  
+#   ggplot(aes(x = as.factor(date), y = 1, fill = as.factor(month))) +
+#   geom_tile(color = "black", size = 1) +
+#   facet_grid(. ~ location , scales = "free_x", space = "free")
+
+
+ggsave(here("figures_good", "indicator_dino_rel_2022-08-08.png"),
+        width = 16, height = 5, dpi = 300)
+
+```
+
+```{r}
+#Could add color bars for year and month.
+year <- micro_diat %>%
+  mutate(year = lubridate::year(date)) %>%
+  ggplot(aes(x = as.factor(date), y = 1, fill = as.factor(year))) +
+  geom_tile() +
+  facet_grid(. ~ location , scales = "free_x", space = "free") +
+  scale_fill_brewer(palette = "Dark2") +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        # legend.direction = "none",
+        # axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_blank())
+ 
+month <- micro_diat %>%
+  ggplot(aes(x = as.factor(date), y = 1, fill = as.factor(month_surv))) +
+  geom_tile(color = "white", size = 0.3) +
+  facet_grid(. ~ location , scales = "free_x", space = "free") +
+  scale_fill_brewer(palette = "RdYlBu") +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        # legend.direction = "none",
+        # axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_blank())
+```
+
+```{r}
+panel <- diat / dino / plot_spacer() / year / plot_spacer() / month + 
+  plot_layout(heights = c(2, 0.8, -0.08, 0.1, -0.1, 0.1), guides = "collect")
+
+ggsave(here("figures_good", "indicator_comb_test.png"), panel,
+        width = 16, height = 10, dpi = 300)
+```
+
 
 
 
