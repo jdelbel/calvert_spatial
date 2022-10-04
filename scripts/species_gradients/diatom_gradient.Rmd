@@ -159,6 +159,7 @@ micro_diat_gt5_perc %>%
 ggsave(here("figures_good", "timeseries-diatoms_gt10_perc_sm_size.png"),
        width = 16, height = 12, dpi = 300)
 ```
+
 ```{r}
 micro_auto <- micro %>% 
   filter(trophicStatus == "auto")
@@ -816,6 +817,51 @@ ps_shelf <- f1 / f2 / f3
 ggsave(here("figures_good", "test_ps_shelf.png"), ps_shelf,
        width = 16, height = 8, dpi = 300)
 ```
+
+```{r}
+micro_diat_gt5_perc %>% 
+  filter(year == 2019 & location == "S") %>% 
+  ggplot() + 
+  geom_bar(data = micro_diat_gt5_perc, aes(x = month_surv, y = species_sum/100000, 
+             fill = scientificName), stat = "identity", position = "stack", color = "black") + 
+  scale_fill_manual(values = getPalette(colourCount)) + 
+  theme_bw() +
+  ylab("Abund. Diatoms (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = sio2/no2, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Temp") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.35, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+```
+
+
+
+
+
 
 ```{r}
 f1 <- micro %>% 

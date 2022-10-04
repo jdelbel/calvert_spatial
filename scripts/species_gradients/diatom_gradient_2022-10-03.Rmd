@@ -1,0 +1,891 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(patchwork)
+library(RColorBrewer)
+library(ggpubr)
+
+```
+
+```{r}
+#Upload data from my master data standardization sheet
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+
+#Uploading chl data that has been converted to TChla
+chl <- read_csv(here("outputs", "chl_hplc_merged.csv"))
+
+#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
+
+#Uploading size separated S.marinoi counts.
+sm_size <- read_csv(here("outputs", "s_mar_size.csv"))
+
+fec <- read_csv(here("outputs", "fecal_master_2022-03-16_het.csv"))
+
+#Upload microscopy data merged with physical and biogeochemical measures
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv")) 
+
+
+c <- read_csv(here("outputs", "chemtax_master_2022-03-16_het.csv"))
+
+wind <- read_csv(here("files", "wind.csv"), skip = 3)
+```
+
+```{r}
+#Remove QU39
+micro <- micro %>% 
+  filter(!site_id == "QU39")
+
+#Remove QU39
+data <- data %>% 
+  filter(!site_id == "QU39")
+
+data <- data %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
+
+env <- data %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  select(location, date, month, month_surv, year, yday, t = temp_dm, s = sal_dm,
+         dr = delta_rho_dm, no2 = no2_dm, po4 = po4_dm, sio2 = sio2_dm,
+         secchi = secchi_depth)
+```
+
+```{r}
+
+#Careful here - removing original s.marinoi counts and replacing with size separated counts. Ensure that the outputs are comparable.
+micro <- micro %>% 
+  filter(!scientificName == "Skeletonema marinoi")
+
+micro <- rbind(micro, sm_size)
+
+```
+
+```{r}
+#Add year column
+micro <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  relocate(year, .after = date)
+```
+
+```{r}
+# Changing site_id to location 
+micro <- micro %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+```
+
+```{r}
+micro_diat <- micro %>% 
+  filter(group == "Bacillariophyta")
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+micro_diat <- arrange(mutate(micro_diat,
+                         location = factor(location, levels = order_loc)))
+
+#I want to look at species that never contribute to more than a certain percentage to the total biomass
+
+#Make a total diatom sum column for each date and then divide each species count by the total to derive a relative contribution
+micro_diat <- micro_diat %>% 
+  group_by(date, location) %>% 
+  mutate(sum_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(diat_perc = species_sum/sum_count)
+
+#Make a column showing the max contribution for each species
+micro_diat <- micro_diat %>% 
+  group_by(scientificName) %>% 
+  mutate(max = max(diat_perc),
+         max_abund = max(species_sum)) %>% 
+  ungroup() 
+
+
+micro_diat_gt5_perc <- micro_diat %>% 
+  filter(max >= 0.10)
+
+
+colourCount = length(unique(micro_diat_gt5_perc$scientificName))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+```
+
+```{r}
+
+micro_dino <- micro %>% 
+  filter(group == "Dinoflagellata")
+
+#Chemtax - Specify order of phyto groups for figures
+micro_dino <- arrange(mutate(micro_dino,
+                         location = factor(location, levels = order_loc)))
+
+#I want to look at species that never contribute to more than a certain percentage to the total biomass
+
+#Make a total diatom sum column for each date and then divide each species count by the total to derive a relative contribution
+micro_dino <- micro_dino %>% 
+  group_by(date, location) %>% 
+  mutate(sum_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(dino_perc = species_sum/sum_count)
+
+#Make a column showing the max contribution for each species
+micro_dino <- micro_dino %>% 
+  group_by(scientificName) %>% 
+  mutate(max = max(dino_perc),
+         max_abund = max(species_sum)) %>% 
+  ungroup() 
+
+
+micro_dino_gt5_perc <- micro_dino %>% 
+  filter(max >= 0.10)
+
+micro_dino_2019 <- micro_dino_gt5_perc %>% 
+  filter(location == "S") 
+
+colourCount3 = length(unique(micro_dino_2019$scientificName))
+getPalette3 = colorRampPalette(brewer.pal(9, "Set1"))
+
+```
+
+```{r}
+micro_pn_2019 <- micro_diat_gt5_perc %>% 
+  filter(location == "S") 
+
+colourCount2 = length(unique(micro_pn_2019$scientificName))
+getPalette2 = colorRampPalette(brewer.pal(9, "Set1"))
+```
+```{r}
+f1 <- micro_pn_2019 %>%   
+  ggplot() + 
+  geom_bar(aes(x = as.factor(month_surv), y = species_sum/100000, 
+           fill = scientificName), stat = "identity", position = "stack",
+           color = "black") + 
+  scale_fill_manual(values = getPalette(colourCount2)) + 
+  facet_grid(. ~ year) +
+  theme_bw() +
+  ylab("Diatoms (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+
+f2 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = s, fill = as.factor(year), color = as.factor(year))) +
+  # geom_bar(stat = "identity", position = "dodge") +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Salinity") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.5, 0.95),
+        legend.background = element_blank(),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f3 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = t, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Temp") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f4 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = dr, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Delta_rho") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f5 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = no2, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("NO2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f6 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = po4, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("PO4") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f7 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = sio2, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("sio2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+test <- f1 / (f2+f3+f4 + f5+f6+f7) + plot_layout(heights = c(0.5, 1)) 
+
+ggsave(here("figures_good", "shelf_compositions_drivers.png"), test, 
+       width = 16, height = 13, dpi = 300)
+
+```
+
+
+```{r}
+species_list <- micro %>% 
+  distinct(genus)
+
+f1 <- micro_pn_2019 %>%
+  mutate(yday = lubridate::yday(date)) %>%
+  filter(genus == "Skeletonema") %>% 
+  group_by(year, month_surv, genus) %>% 
+  mutate(genus_sum = sum(count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = yday, y = genus_sum/10^5, fill = as.factor(year),
+             color = as.factor(year))) +
+  # geom_bar(stat = "identity", position = "dodge") +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw() +
+  ylab("S.mar. (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f2 <- micro_pn_2019 %>%   
+  mutate(yday = lubridate::yday(date)) %>%
+  filter(genus == "Pseudo-nitzschia") %>% 
+  group_by(year, month_surv, genus) %>% 
+  mutate(genus_sum = sum(count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = yday, y = genus_sum/10^5, fill = as.factor(year),
+             color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw() +
+  ylab("P.n. (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f3 <- micro_dino_2019 %>%
+  mutate(yday = lubridate::yday(date)) %>% 
+  filter(genus == "Katodinium") %>% 
+  group_by(year, month_surv, genus) %>% 
+  mutate(genus_sum = sum(count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = yday, y = genus_sum/10^3, fill = as.factor(year),
+             color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw() +
+  ylab("Kat. (10^4 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+
+f4 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = s, fill = as.factor(year), color = as.factor(year))) +
+  # geom_bar(stat = "identity", position = "dodge") +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Salinity") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.5, 0.95),
+        legend.background = element_blank(),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f5 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = t, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Temp") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f6 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = dr, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Delta_rho") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f7 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = no2, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("NO2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f8 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = po4, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("PO4") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f9 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = sio2, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("sio2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+test <- f1+f2+f3 + f4+f5+f6 + f7+f8+f9 
+
+ggsave(here("figures_good", "shelf_compositions_drivers_species.png"), test,
+       width = 16, height = 12, dpi = 300)
+
+```
+
+```{r}
+species_list <- micro %>% 
+  distinct(genus)
+
+my_colors <- RColorBrewer::brewer.pal(2, "Dark2")[2:3]
+
+f1 <- micro_pn_2019 %>%
+  mutate(yday = lubridate::yday(date)) %>%
+  filter(genus == "Skeletonema") %>% 
+  group_by(year, month_surv, genus) %>% 
+  mutate(genus_sum = sum(count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = yday, y = genus_sum/10^5, fill = as.factor(year),
+             color = as.factor(year))) +
+  # geom_bar(stat = "identity", position = "dodge") +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw() +
+  ylab("S.mar. (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f2 <- micro_pn_2019 %>%   
+  mutate(yday = lubridate::yday(date)) %>%
+  filter(genus == "Pseudo-nitzschia") %>% 
+  group_by(year, month_surv, genus) %>% 
+  mutate(genus_sum = sum(count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = yday, y = genus_sum/10^5, fill = as.factor(year),
+             color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw() +
+  ylab("P.n. (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f3 <- micro_dino_2019 %>%
+  mutate(yday = lubridate::yday(date)) %>% 
+  filter(genus == "Katodinium") %>% 
+  group_by(year, month_surv, genus) %>% 
+  mutate(genus_sum = sum(count)) %>% 
+  ungroup() %>% 
+  ggplot(aes(x = yday, y = genus_sum/10^3, fill = as.factor(year),
+             color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw() +
+  ylab("Kat. (10^3 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f4 <- c %>%
+  mutate(yday = lubridate::yday(date),
+         year = lubridate::year(date)) %>% 
+  filter(site_id == "QCS01") %>% 
+  ggplot(aes(x = yday, y = diat, fill = as.factor(year),
+             color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = my_colors) +
+  scale_color_manual(values = my_colors) +
+  theme_bw() +
+  ylab("Diat. (ug/L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f5 <- c %>%
+  mutate(yday = lubridate::yday(date),
+         year = lubridate::year(date)) %>% 
+  filter(site_id == "QCS01") %>% 
+  ggplot(aes(x = yday, y = dino, fill = as.factor(year),
+             color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = my_colors) +
+  scale_color_manual(values = my_colors) +
+  theme_bw() +
+  ylab("Dino. (ug/L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f6 <- c %>%
+  mutate(yday = lubridate::yday(date),
+         year = lubridate::year(date)) %>% 
+  filter(site_id == "QCS01") %>% 
+  ggplot(aes(x = yday, y = hapt, fill = as.factor(year),
+             color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_manual(values = my_colors) +
+  scale_color_manual(values = my_colors) +
+  theme_bw() +
+  ylab("Hapt. (ug/L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+
+f7 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = s, fill = as.factor(year), color = as.factor(year))) +
+  # geom_bar(stat = "identity", position = "dodge") +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Salinity") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.5, 0.95),
+        legend.background = element_blank(),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f8 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = t, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Temp") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f9 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = dr, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Delta_rho") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f10 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = no2, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("NO2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f11 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = po4, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("PO4") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f12 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = sio2, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("sio2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+test <- f1+f2+f3 + f4+f5+f6 + f7+f8+f9  + f10+f11+f12 + plot_layout(ncol = 3)
+
+ggsave(here("figures_good", "shelf_compositions_chemtax.png"), test,
+       width = 16, height = 14, dpi = 300)
+
+```
+```{r}
+s_n <- env %>% 
+  filter(location == "S") %>%
+  mutate(s_n = sio2/no2)
+
+
+f1 <- env %>% 
+  filter(location == "S") %>% 
+  mutate(s_n = sio2/no2) %>% 
+  ggplot(aes(x = yday, y = no2/sio2, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(0, 5)) +
+  theme_bw() +
+  ylab("NO2:SIO2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f2 <- env %>% 
+  filter(location == "S") %>% 
+  ggplot(aes(x = yday, y = no2/po4, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(0, 5)) +
+  theme_bw() +
+  ylab("NO2:PO4") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+nut_rats <- f1 + f2
+
+ggsave(here("figures_good", "shelf_nut_rats.png"),
+       width = 12, height = 4, dpi = 300)
+```
+
+
+
+
+
+
+
