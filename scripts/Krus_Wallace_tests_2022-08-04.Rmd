@@ -142,7 +142,8 @@ FSA::dunnTest(n_p$n_p ~ n_p$location,
 fc_fs <- list( c("F", "C"), c("F", "S")) #my_comparisons
 fs_cs <- list(c("C", "S"), c("F", "S")) #my_comparisons2
 fc_cs_fs <- list( c("F", "C"), c("C", "S"), c("F", "S")) #my_comparisons3
-
+fs <- list(c("F", "S"))
+fc <- list(c("F", "C"))
 ```
 
 
@@ -296,12 +297,64 @@ ggboxplot(tchla_f, x = "year", y = "tchla",
 ```
 
 ```{r}
-env %>% 
-  filter(location == "F") %>% 
-  ggplot(aes(x = month_surv, y = s, color = as.factor(year))) +
-  geom_line() +
-  geom_point()
+env <- env %>% 
+  mutate(n_p = no2/po4,
+         n_s = no2/sio2,
+         p_s = po4/sio2)
 ```
+
+
+```{r}
+f1 <- ggboxplot(env, x = "location", y = "n_p",
+          fill = "location", palette = "jco", size = 0.5)+ 
+  stat_compare_means(comparisons = fc_fs, size = 7) + 
+  stat_compare_means(label.y = 18, size = 6) +
+  theme_bw() +
+  labs(y = expression("N:P")) +
+  theme(legend.position = "none",
+        text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"))
+
+f2 <- ggboxplot(env, x = "location", y = "n_s",
+          fill = "location", palette = "jco", size = 0.5)+ 
+  stat_compare_means(comparisons = fc, size = 7, 
+                     label.y = c(0.65)) + 
+  stat_compare_means(label.y = 1, size = 6) +
+  coord_cartesian(ylim = c(0, 1)) +
+  theme_bw() +
+  labs(y = expression("N:S")) +
+  theme(legend.position = "none",
+        text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"))
+
+
+
+f3 <- ggboxplot(env, x = "location", y = "p_s",
+          fill = "location", palette = "jco", size = 0.5)+ 
+  stat_compare_means(comparisons = fs, size = 7, 
+                     label.y = c(0.15, 0.16, 0.17)) + 
+  stat_compare_means(label.y = 0.22, size = 6) +
+  coord_cartesian(ylim = c(0, 0.22)) +
+  theme_bw() +
+  labs(y = expression("P:S")) +
+  theme(legend.position = "none",
+        text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"))
+
+
+
+fig <- f1 + f2 + f3
+
+ggsave(here("figures_good", "kruskal_dunn_ratios.png"), fig,
+       width = 14, height = 5, dpi = 300)
+```
+
 
 
 

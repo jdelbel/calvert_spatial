@@ -886,6 +886,272 @@ ggsave(here("figures_good", "shelf_nut_rats.png"),
 
 
 
+```{r}
+micro_pn_c <- micro_diat_gt5_perc %>% 
+  filter(location == "C") 
+
+colourCount_c = length(unique(micro_pn_c$scientificName))
+getPalette_c = colorRampPalette(brewer.pal(9, "Set1"))
+```
+
+
+```{r}
+f1 <- micro_pn_c %>%   
+  ggplot() + 
+  geom_bar(aes(x = as.factor(month_surv), y = species_sum/100000, 
+           fill = scientificName), stat = "identity", position = "stack",
+           color = "black") + 
+  scale_fill_manual(values = getPalette_c(colourCount_c)) + 
+  facet_grid(. ~ year) +
+  theme_bw() +
+  ylab("Diatoms (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+
+f2 <- env %>% 
+  filter(location == "C") %>% 
+  ggplot(aes(x = yday, y = s, fill = as.factor(year), color = as.factor(year))) +
+  # geom_bar(stat = "identity", position = "dodge") +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  coord_cartesian(ylim = c(26.5, 32.5)) +
+  theme_bw() +
+  ylab("Salinity") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.5, 0.95),
+        legend.background = element_blank(),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f3 <- env %>% 
+  filter(location == "C") %>% 
+  ggplot(aes(x = yday, y = t, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Temp") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f4 <- env %>% 
+  filter(location == "C") %>% 
+  ggplot(aes(x = yday, y = dr, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("Delta_rho") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f5 <- env %>% 
+  filter(location == "C") %>% 
+  ggplot(aes(x = yday, y = no2, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("NO2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f6 <- env %>% 
+  filter(location == "C") %>% 
+  ggplot(aes(x = yday, y = po4, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("PO4") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+f7 <- env %>% 
+  filter(location == "C") %>% 
+  ggplot(aes(x = yday, y = sio2, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  ylab("sio2") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+test <- f1 / (f2+f3+f4 + f5+f6+f7) + plot_layout(heights = c(0.5, 1)) 
+
+ggsave(here("figures_good", "channel_compositions_drivers.png"), test, 
+       width = 16, height = 13, dpi = 300)
+
+```
+
+
+```{r}
+micro_all <- micro 
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+micro_all <- arrange(mutate(micro_all,
+                         location = factor(location, levels = order_loc)))
+
+
+micro_all <- micro_all %>% 
+  filter(trophicStatus == "auto")
+#I want to look at species that never contribute to more than a certain percentage to the total biomass
+
+#Make a total diatom sum column for each date and then divide each species count by the total to derive a relative contribution
+micro_all <- micro_all %>% 
+  group_by(date, location) %>% 
+  mutate(sum_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(perc = species_sum/sum_count)
+
+#Make a column showing the max contribution for each species
+micro_all <- micro_all %>% 
+  group_by(scientificName) %>% 
+  mutate(max = max(perc),
+         max_abund = max(species_sum)) %>% 
+  ungroup() 
+
+
+micro_all_gt10_perc <- micro_all %>% 
+  filter(max >= 0.10)
+
+
+colourCount = length(unique(micro_all_gt10_perc$scientificName))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+```
+
+```{r}
+micro_all_c <- micro_all_gt10_perc %>% 
+  filter(location == "C") 
+
+colourCount_c = length(unique(micro_all_c$scientificName))
+getPalette_c = colorRampPalette(brewer.pal(12, "Paired"))
+```
+
+```{r}
+spec_dist <- micro_all_c %>% 
+  distinct(scientificName)
+
+spec_ord <- c("Biddulphiales",
+              "Chaetoceros cinctus",
+              "Chaetoceros tenuissimus",
+              "Pseudo-nitzschia",
+              "Pseudo-nitzschia seriata",
+              "Rhizosolenia setigera",
+              "Skeletonema marinoi large",
+              "Skeletonema marinoi small",
+              "Thalassiosira nordenskioeldii",
+              "Thalassiosira pacifica",
+              "Olisthodiscus",
+              "Hillea",
+              "Teleaulax",
+              "Pterosperma",
+              "Pyramimonas orientalis",
+              "Phaeocystis pouchetii")
+
+micro_all_c <- arrange(mutate(micro_all_c,
+                         scientificName = factor(scientificName,
+                                                 levels = spec_ord)))
+```
+
+
+
+```{r}
+micro_all_c %>%   
+  ggplot() + 
+  geom_bar(aes(x = as.factor(month_surv), y = species_sum/100000, 
+           fill = scientificName), stat = "identity", position = "stack",
+           color = "black") + 
+  scale_fill_manual(values = getPalette_c(colourCount_c)) + 
+  facet_grid(. ~ year) +
+  theme_bw() +
+  ylab("Diatoms (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+ggsave(here("figures_good", "channel_compositions_test.png"),
+       width = 16, height = 8, dpi = 300)
+```
+
 
 
 
