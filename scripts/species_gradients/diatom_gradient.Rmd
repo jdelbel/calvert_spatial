@@ -1258,7 +1258,7 @@ env %>%
 
 #Determining total abundance of autotrophic species. May need to reformat what I consider autotrophic species.
 total_abund <- micro %>% 
-  filter(trophicStatus == "auto") %>% 
+  filter(!site_id == "QU39" & trophicStatus == "auto") %>% 
   group_by(date, site_id) %>% 
   mutate(abund_sum = sum(species_sum)) %>% 
   ungroup() %>% 
