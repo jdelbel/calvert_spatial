@@ -11,6 +11,7 @@ library(here)
 library(patchwork)
 library(RColorBrewer)
 library(ggpubr)
+library(broom)
 
 ```
 
@@ -1184,9 +1185,9 @@ ggsave(here("figures_good", "compositions_all_chl.png"),
 
 ```{r}
 micro_join %>%   
-  filter(genus == "Gyrodinium") %>% 
+  filter(group == "Ciliophora") %>% 
   ggplot() + 
-  geom_bar(aes(x = month_surv, y = species_sum/1000),
+  geom_bar(aes(x = month_surv, y = species_sum/10000, fill = scientificName),
            stat = "identity", position = "stack", color = "black") + 
   geom_line(aes(x = month_surv, y = chl), size = 1.5) +
   geom_point(aes(x = month_surv, y = chl), size = 2.0) +
@@ -1203,8 +1204,280 @@ micro_join %>%
   guides(fill = guide_legend(ncol = 4))
 ```
 ```{r}
-micro_join %>%   
-  filter(genus == "Gymnodinium")
+#Dinoflagellate species known to feed on diatoms
+#Gonyaulax (skeletonema)
+#Gymnodinium (skel + chain diatoms)
+#Gyrodinium (diatom chains)
+#Prorocentrum(skel)
+#Protoperidinium (medium to large diatoms and dinoflagellates - 30-80%)
+#Scrippsiella trochoideas (Skel)
+#Oligotrichea (ciliate)
+#Myrionecta rubra (cryptophytes)
+#Dinophysis (Cryptophytes)
+#Tintinnina (Ciliate)
+#Fecal
+
+#Things to correlate against 
+#TChla
+#S.mar (small)
+#S.mar (large)
+#S.mar (total)
+#diatom abundance 
+#Cryptophyte abundance
+
+#First do the summarizing and filtering for each grouping I want correlated against.
+s_sum <- micro %>% 
+  filter(scientificName == "Skeletonema marinoi small" | 
+           scientificName == "Skeletonema marinoi small") %>% 
+  group_by(date, site_id) %>% 
+  summarise(exp_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(scientificName = "Skeletonema marinoi sum") %>% 
+  relocate(scientificName, .before = exp_count)
+
+s_small <- micro %>% 
+  filter(scientificName == "Skeletonema marinoi small") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+s_large <- micro %>% 
+  filter(scientificName == "Skeletonema marinoi large") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+d_sum <- micro %>% 
+  filter(group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(exp_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(scientificName = "Diatom sum") %>% 
+  relocate(scientificName, .before = exp_count)
+
+c_sum <- micro %>% 
+  filter(group == "Cryptophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(exp_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(scientificName = "crypto sum") %>% 
+  relocate(scientificName, .before = exp_count)
+
+chl_corr <- chl %>% 
+  select(date, site_id, exp_count = chl) %>% 
+  mutate(scientificName = "TChla") %>% 
+  relocate(scientificName, .before = exp_count)
+
+cor_exp <- rbind(s_sum, s_small, s_large, d_sum, c_sum, chl_corr)
+
+cor_het <- micro %>% 
+  filter(genus == "Gonyaulax" |
+           genus == "Gymnodinium" |
+           genus == "Gyrodinium" |
+           genus == "Prorocentrum" |
+           genus == "Protoperidinium" |
+           genus == "Scrippsiella" |
+           genus == "Dinophysis" |
+           group == "Ciliophora") %>% 
+  select(date, month_surv, site_id, name = scientificName, het_count = species_sum)
+
+test <- micro %>% 
+  filter(scientificName == "Prorocentrum minimum")
+           
+fec_merge <- fec %>%
+  filter(!site_id == "QU39") %>% 
+  mutate(name = "fecal") %>% 
+  select(date, month_surv, site_id, name, het_count = fecal)
+
+cor_het <- rbind(cor_het, fec_merge)
+
+data <- cor_het %>% 
+  left_join(cor_exp)
+
+data <- data %>% 
+  filter(!(name == "Prorocentrum minimum" |
+           name == "Dinophysis" |
+           name == "Dinophysis rotundata"))
+
+data_nest <- data %>% 
+  group_by(name, scientificName) %>%
+  nest()
+
+head(data_nest)
+
+str(head(slice(data_nest, 1)))
+
+cor_fun <- function(df) cor.test(df$het_count,
+                                 df$exp_count,
+                                 method = "spearman") %>% tidy()
+
+data_nest <- mutate(data_nest, model = map(data, cor_fun))
+
+corr_pr <- select(data_nest, -data) %>% unnest()
+
+corr_pr
+
+corr_pr <- mutate(corr_pr, sig = ifelse(p.value <0.05, "Sig.", "Non Sig."))
 ```
 
 
+```{r}
+ggplot()+
+  geom_tile(data = corr_pr,
+            aes(scientificName, name, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr, sig == "Sig."),
+            aes(scientificName, name),
+            size = 1,
+            colour = "black",
+            fill = "transparent")+
+  geom_text(data = corr_pr,
+            aes(scientificName, name, label = round(estimate, 2),
+            fontface = ifelse(sig == "Sig.", "bold", "plain")))+
+  scale_fill_gradient2(breaks = seq(-1, 1, 0.2))+
+  labs(x = "", y = "", fill = "", p.value = "")+
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 25))
+
+ggsave(here("figures_good", "correlations_test.png"),
+       width = 12, height = 14, dpi = 300)
+```
+
+```{r}
+#Dinoflagellate species known to feed on diatoms
+#Gonyaulax (skeletonema)
+#Gymnodinium (skel + chain diatoms)
+#Gyrodinium (diatom chains)
+#Prorocentrum(skel)
+#Protoperidinium (medium to large diatoms and dinoflagellates - 30-80%)
+#Scrippsiella trochoideas (Skel)
+#Oligotrichea (ciliate)
+#Myrionecta rubra (cryptophytes)
+#Dinophysis (Cryptophytes)
+#Tintinnina (Ciliate)
+#Fecal
+
+#Things to correlate against 
+#TChla
+#S.mar (small)
+#S.mar (large)
+#S.mar (total)
+#diatom abundance 
+#Cryptophyte abundance
+
+#First do the summarizing and filtering for each grouping I want correlated against.
+s_sum <- micro %>% 
+  filter(scientificName == "Skeletonema marinoi small" | 
+           scientificName == "Skeletonema marinoi small") %>% 
+  group_by(date, site_id) %>% 
+  summarise(exp_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(scientificName = "Skeletonema marinoi sum") %>% 
+  relocate(scientificName, .before = exp_count)
+
+s_small <- micro %>% 
+  filter(scientificName == "Skeletonema marinoi small") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+s_large <- micro %>% 
+  filter(scientificName == "Skeletonema marinoi large") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+d_sum <- micro %>% 
+  filter(group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(exp_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(scientificName = "Diatom sum") %>% 
+  relocate(scientificName, .before = exp_count)
+
+c_sum <- micro %>% 
+  filter(group == "Cryptophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(exp_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(scientificName = "crypto sum") %>% 
+  relocate(scientificName, .before = exp_count)
+
+chl_corr <- chl %>% 
+  select(date, site_id, exp_count = chl) %>% 
+  mutate(scientificName = "TChla") %>% 
+  relocate(scientificName, .before = exp_count)
+
+cor_exp <- rbind(s_sum, s_small, s_large, d_sum, c_sum, chl_corr)
+
+cor_het <- micro %>% 
+  filter(genus == "Gonyaulax" |
+           genus == "Gymnodinium" |
+           genus == "Gyrodinium" |
+           genus == "Prorocentrum" |
+           genus == "Protoperidinium" |
+           genus == "Scrippsiella" |
+           genus == "Dinophysis") %>% 
+  group_by(date, site_id, genus) %>% 
+  summarise(het_count = sum(species_sum)) %>% 
+  select(date, site_id, name = genus, het_count)
+
+
+
+cor_het2 <- micro %>%
+  filter(group == "Ciliophora") %>% 
+  select(date, month_surv, site_id, name = scientificName, het_count = species_sum)
+
+cor_het3 <- rbind(cor_het, cor_het2)
+           
+fec_merge <- fec %>%
+  filter(!site_id == "QU39") %>% 
+  mutate(name = "fecal") %>% 
+  select(date, month_surv, site_id, name, het_count = fecal)
+
+cor_het4 <- rbind(cor_het3, fec_merge)
+
+data <- cor_het4 %>% 
+  left_join(cor_exp)
+
+data_nest <- data %>% 
+  group_by(name, scientificName) %>%
+  nest()
+
+head(data_nest)
+
+str(head(slice(data_nest, 1)))
+
+cor_fun <- function(df) cor.test(df$het_count,
+                                 df$exp_count,
+                                 method = "spearman") %>% tidy()
+
+data_nest <- mutate(data_nest, model = map(data, cor_fun))
+
+corr_pr <- select(data_nest, -data) %>% unnest()
+
+corr_pr
+
+corr_pr <- mutate(corr_pr, sig = ifelse(p.value <0.05, "Sig.", "Non Sig."))
+```
+
+
+```{r}
+ggplot()+
+  geom_tile(data = corr_pr,
+            aes(scientificName, name, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr, sig == "Sig."),
+            aes(scientificName, name),
+            size = 1,
+            colour = "black",
+            fill = "transparent")+
+  geom_text(data = corr_pr,
+            aes(scientificName, name, label = round(estimate, 2),
+            fontface = ifelse(sig == "Sig.", "bold", "plain")))+
+  # scale_fill_gradient2(breaks = seq(-1, 1, 0.2))+
+  labs(x = "", y = "", fill = "", p.value = "")+
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        text = element_text(size = 25))
+
+ggsave(here("figures_good", "correlations_test2.png"),
+       width = 12, height = 14, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```

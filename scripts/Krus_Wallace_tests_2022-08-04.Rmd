@@ -251,8 +251,93 @@ ggboxplot(fec, x = "location", y = "fecal",
 ggsave(here("figures_good", "kruskal_dunn_fecal.png"), 
        width = 6, height = 4, dpi = 300)
 ```
+```{r}
+fec <- fec %>% 
+  mutate(year = lubridate::year(date))
 
 
+ggboxplot(fec, x = "year", y = "fecal",
+          fill = "year", palette = "jco", size = 0.5)+ 
+  # stat_compare_means(comparisons = fc_cs_fs) + 
+  stat_compare_means(label.y = 1200, size = 6) +
+  theme_bw() +
+  labs(y = expression("Fecal (pellets/L)")) +
+  theme(legend.position = "none",
+        text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.text = element_text(colour = "black"))
+
+ggsave(here("figures_good", "kruskal_dunn_fecal_year.png"), 
+       width = 6, height = 4, dpi = 300)
+```
+```{r}
+year_19_20 <- list(c("2019", "2020"))
+
+
+fec %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = as.factor(year), y = fecal)) +
+  geom_boxplot(fill = "grey") +
+  geom_jitter(aes(fill = as.factor(month_surv), shape = as.factor(location)),
+              size = 5, stroke = 1.5) +
+  stat_compare_means(comparisons = year_19_20,
+                     label.y = c(1300),
+                     size = 7) +
+  stat_compare_means(label.y = 1500, size = 6) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) +
+  ylab("Fecal(pellets/L") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 25, face = "bold", colour = "black"),
+        # panel.background = element_blank(),
+        # panel.border = element_rect(fill = NA, colour = "black"), 
+        # axis.ticks = element_blank(),
+        # axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        # legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+ggsave(here("figures_good", "kruskal_dunn_fecal_year.png"), 
+       width = 8, height = 6, dpi = 300)
+```
+```{r}
+year_19_20 <- list(c("2019", "2020"))
+
+
+fec %>%
+  ggplot(aes(x = as.factor(location), y = fecal)) +
+  geom_boxplot(fill = "grey") +
+  geom_jitter(aes(fill = as.factor(month_surv), shape = as.factor(year)),
+              size = 5, stroke = 1.5) +
+  # stat_compare_means(comparisons = year_19_20,
+  #                    label.y = c(1300),
+  #                    size = 7) +
+  stat_compare_means(label.y = 1500, size = 6) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
+  scale_shape_manual(values = c(21, 22, 23 ,24)) +
+  ylab("Fecal(pellets/L") +
+  theme_bw() +
+  theme(plot.title = element_text(size = 25, face = "bold", colour = "black"),
+        # panel.background = element_blank(),
+        # panel.border = element_rect(fill = NA, colour = "black"), 
+        # axis.ticks = element_blank(),
+        # axis.text = element_blank(),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        # legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+ggsave(here("figures_good", "kruskal_dunn_fecal_location.png"), 
+       width = 8, height = 6, dpi = 300)
+```
 
 
 ```{r}
