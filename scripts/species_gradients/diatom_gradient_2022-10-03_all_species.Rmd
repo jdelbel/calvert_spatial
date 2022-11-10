@@ -169,6 +169,7 @@ micro_pn_2019 <- micro_diat_gt5_perc %>%
 colourCount2 = length(unique(micro_pn_2019$scientificName))
 getPalette2 = colorRampPalette(brewer.pal(9, "Set1"))
 ```
+
 ```{r}
 f1 <- micro_pn_2019 %>%   
   ggplot() + 
@@ -1053,6 +1054,29 @@ ggsave(here("figures_good", "channel_compositions_drivers.png"), test,
 
 ```
 
+```{r}
+env %>% 
+  select(location, date, year, month_surv, yday, t:secchi) %>% 
+  ggplot(aes(x = yday, y = t, fill = as.factor(year), color = as.factor(year))) +
+  geom_point(pch = 21, color = "black", size = 5, stroke = 1.5) +
+  geom_line(size = 2) +
+  # geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_color_brewer(palette = "Dark2") +
+  # coord_cartesian(ylim = c(29.5, 32.5)) +
+  theme_bw() +
+  facet_grid(. ~ location) +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+```
 
 ```{r}
 micro_all <- micro 
@@ -1085,53 +1109,86 @@ micro_all <- micro_all %>%
 
 
 micro_all_gt10_perc <- micro_all %>% 
-  filter(max >= 0.10)
+  mutate(scientificName2 = ifelse(max < 0.25, "Other", scientificName))
+```
 
 
-colourCount = length(unique(micro_all_gt10_perc$scientificName))
-getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+```{r}
+micro_all_gt10_perc2 <- micro_all_gt10_perc %>% 
+  group_by(date, month_surv, location, scientificName2) %>% 
+  summarise(species_sum = sum(species_sum)) %>% 
+  ungroup()
 ```
 
 ```{r}
-micro_all_c <- micro_all_gt10_perc  
+micro_all_c <- micro_all_gt10_perc2  
 
-colourCount_c = length(unique(micro_all_c$scientificName))
-getPalette_c = colorRampPalette(brewer.pal(12, "Paired"))
+colourCount_c = length(unique(micro_all_c$scientificName2))
+getPalette_c = colorRampPalette(brewer.pal(10, "Paired"))
 ```
 
 ```{r}
 spec_dist <- micro_all_c %>% 
-  distinct(scientificName)
+  distinct(scientificName2)
 
+#20%
+# spec_ord <- c("Biddulphiales",
+#               "Chaetoceros cinctus",
+#               "Chaetoceros tenuissimus",
+#               "Pseudo-nitzschia seriata",
+#               "Rhizosolenia setigera",
+#               "Skeletonema marinoi small",
+#               "Skeletonema marinoi large",
+#               "Olisthodiscus",
+#               "Hillea",
+#               "Teleaulax",
+#               "Phaeocystis pouchetii",
+#               "Pyramimonas orientalis",
+#               "Other")
+
+#25%
 spec_ord <- c("Biddulphiales",
-              "Chaetoceros cinctus",
               "Chaetoceros tenuissimus",
-              "Pseudo-nitzschia",
               "Pseudo-nitzschia seriata",
               "Rhizosolenia setigera",
-              "Skeletonema marinoi large",
               "Skeletonema marinoi small",
-              "Thalassiosira nordenskioeldii",
-              "Thalassiosira pacifica",
+              "Skeletonema marinoi large",
               "Olisthodiscus",
               "Hillea",
               "Teleaulax",
-              "Pterosperma",
-              "Pyramimonas orientalis",
-              "Phaeocystis pouchetii")
+              "Phaeocystis pouchetii",
+              "Other")
+
+
+#10%
+# spec_ord <- c("Biddulphiales",
+#               "Chaetoceros cinctus",
+#               "Chaetoceros tenuissimus",
+#               "Pseudo-nitzschia",
+#               
+#               "Rhizosolenia setigera",
+#               "Skeletonema marinoi large",
+#               "Skeletonema marinoi small",
+#               "Thalassiosira nordenskioeldii",
+#               "Thalassiosira pacifica",
+#               "Olisthodiscus",
+#               "Hillea",
+#               "Teleaulax",
+#               "Pterosperma",
+#               "Pyramimonas orientalis",
+#               "Phaeocystis pouchetii")
 
 micro_all_c <- arrange(mutate(micro_all_c,
-                         scientificName = factor(scientificName,
+                         scientificName2 = factor(scientificName2,
                                                  levels = spec_ord)))
 ```
 
-
-
 ```{r}
 micro_all_c %>%   
+  mutate(year = lubridate::year(date)) %>% 
   ggplot() + 
   geom_bar(aes(x = as.factor(month_surv), y = species_sum/100000, 
-           fill = scientificName), stat = "identity", position = "stack",
+           fill = scientificName2), stat = "identity", position = "stack",
            color = "black") + 
   scale_fill_manual(values = getPalette_c(colourCount_c)) + 
   facet_grid(location ~ year) +
@@ -1148,9 +1205,10 @@ micro_all_c %>%
         strip.text.y = element_blank()) +
   guides(fill = guide_legend(ncol = 4))
 
-ggsave(here("figures_good", "compositions_all_test.png"),
+ggsave(here("figures_good", "compositions_all_25_perc.png"),
        width = 16, height = 12, dpi = 300)
 ```
+
 ```{r}
 micro_all_chl <- micro_all_c %>% 
   left_join(chl)
@@ -1158,6 +1216,8 @@ micro_all_chl <- micro_all_c %>%
 micro_join <- micro %>% 
   left_join(chl)
 ```
+
+
 ```{r}
 micro_all_chl %>%   
   ggplot() + 

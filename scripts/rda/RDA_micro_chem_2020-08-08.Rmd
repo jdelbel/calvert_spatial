@@ -151,6 +151,11 @@ micro_join <- micro_join %>%
 # micro_join <- micro_join %>% 
 #   filter(no2 > 0 & po4 > 0 & sio2 > 0) 
 ```
+```{r}
+micro_join %>% 
+  ggplot(aes(x = `Chaetoceros decipiens`, y = temp)) + 
+  geom_point()
+```
 
 
 

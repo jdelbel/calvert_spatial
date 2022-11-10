@@ -11,6 +11,7 @@ library(patchwork)
 library(here)
 library(readr)
 library(readxl)
+library(RColorBrewer)
 ```
 
 ```{r}
@@ -621,6 +622,7 @@ ggsave(here("figures_rev2", "timeseries_calvert.png"),
        width = 17, height = 10, dpi = 300)
 
 ```
+
 ```{r}
 
 #Microscopy May - October 2018-2020 time-series - Calvert
@@ -687,6 +689,7 @@ ggsave(here("figures_rev2", "timeseries_kc10_qu39.png"),
        width = 17, height = 10, dpi = 300)
 
 ```
+
 ```{r}
 
 #Microscopy full year comparison of KC10 to QU39
@@ -729,7 +732,108 @@ ggsave(here("figures_rev2", "timeseries_kc10_qu39_ml.png"),
        width = 17, height = 10, dpi = 300)
 
 ```
+```{r}
+micro_all <- micro_kc10
 
+micro_all <- micro_all %>% 
+  filter(site_id == "QU39" | site_id == "KC10")
+
+micro_all <- micro_all %>% 
+  filter(trophicStatus == "auto")
+#I want to look at species that never contribute to more than a certain percentage to the total biomass
+
+#Make a total diatom sum column for each date and then divide each species count by the total to derive a relative contribution
+micro_all <- micro_all %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(perc = species_sum/sum_count)
+
+#Make a column showing the max contribution for each species
+micro_all <- micro_all %>% 
+  group_by(scientificName) %>% 
+  mutate(max = max(perc),
+         max_abund = max(species_sum)) %>% 
+  ungroup() 
+
+
+micro_all_gt10_perc <- micro_all %>% 
+  filter(max >= 0.20)
+
+
+colourCount = length(unique(micro_all_gt10_perc$scientificName))
+getPalette = colorRampPalette(brewer.pal(9, "Set1"))
+```
+
+```{r}
+micro_all_c <- micro_all_gt10_perc  
+
+colourCount_c = length(unique(micro_all_c$scientificName))
+getPalette_c = colorRampPalette(brewer.pal(12, "Paired"))
+```
+
+```{r}
+spec_dist <- micro_all_c %>% 
+  distinct(scientificName)
+
+spec_ord <- c("Biddulphiales",
+              "Chaetoceros cinctus",
+              "Chaetoceros tenuissimus",
+              "Pseudo-nitzschia",
+              "Pseudo-nitzschia seriata",
+              "Rhizosolenia setigera",
+              "Skeletonema marinoi large",
+              "Skeletonema marinoi small",
+              "Thalassiosira nordenskioeldii",
+              "Thalassiosira pacifica",
+              "Olisthodiscus",
+              "Hillea",
+              "Teleaulax",
+              "Pterosperma",
+              "Pyramimonas orientalis",
+              "Phaeocystis pouchetii")
+
+micro_all_c <- arrange(mutate(micro_all_c,
+                         scientificName = factor(scientificName,
+                                                 levels = spec_ord)))
+```
+
+
+
+```{r}
+micro_all_c_2 <- micro_all_c %>%
+    complete(date, site_id, scientificName, fill = list(species_sum = 0))
+  
+  
+
+
+
+micro_all_c_2 %>%
+  mutate(year = lubridate::year(date)) %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  mutate(yday = lubridate::yday(date)) %>% 
+  ggplot() + 
+  geom_area(aes(x = yday, y = species_sum/100000, 
+           fill = scientificName), stat = "identity", position = "stack",
+           color = "black") + 
+  scale_fill_manual(values = getPalette_c(colourCount_c)) + 
+  facet_grid(site_id ~ year, scales = "free_y") +
+  theme_bw() +
+  ylab("Phyto. Abundance (10^5 cells L)") +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4))
+
+ggsave(here("figures_good", "compositions_all_test_kc10_qu39.png"),
+       width = 16, height = 12, dpi = 300)
+```
 
 
 

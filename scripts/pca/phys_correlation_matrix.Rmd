@@ -1,0 +1,313 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+
+#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
+
+#For plotting with ggplot2
+
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+
+library(patchwork)
+
+library(cluster)
+library(ggdendro)
+
+library(RColorBrewer)
+
+library(indicspecies)
+
+library(factoextra)
+
+library(ggcorrplot) #Correlation plots
+
+library(zoo)
+```
+
+
+```{r}
+#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
+
+data <- data %>% 
+  left_join(chl)
+
+riv <- read_csv(here("files", "river.csv")) 
+```
+
+```{r}
+#This just ensures that there are no exact duplicates introduced through joining. There aren't here, but it must have occured in earlier versions and I am keeping it in-case I make changes in the future.
+data <- data %>% 
+  distinct(date, site_id, .keep_all = TRUE)
+
+#Removing QU39 for this worksheet
+data <- data %>% 
+  filter(!site_id == "QU39")
+```
+
+```{r}
+riv <- riv %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+riv2 <- riv %>%
+  mutate(dis_b4 = rollmeanr(lag(dis, 1), k = 4, fill = NA),
+         dis_b45 = rollmeanr(lag(dis, 1), k = 45, fill = NA))
+
+riv3 <- riv2 %>% 
+  select(date, dis, dis_b4, dis_b45)
+```
+
+```{r}
+data <- data %>% 
+  left_join(riv3)
+```
+
+
+```{r}
+#selecting data I am going to use with the PCA - I think a case could be made to only include sio@ as this is what comes out as a driver in RDA and also, they all point in the same direction and have the same strength in PCA biplot.
+data_pca <- data %>% 
+  select(date, month, month_surv, site_id, temp = temp_dm, sal = sal_dm, 
+         drho = delta_rho_dm, no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm,
+         secchi = secchi_depth, dis, dis_b4, dis_b45, tchla)
+
+#Changing site_id to location 
+data_pca <- data_pca %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+```
+
+
+```{r}
+#Working with nitrate ratios - Strom et al. (2006): 
+
+# "In addition, samples with nitrate concentrations <0.5 μM (primarily from July) were excluded from all N:P slope calculations. Below 0.5 μM, phosphate use was not associated with measurable changes in nitrate, indicating that phytoplankton production was fueled entirely by regenerated N at these times."
+
+
+#Trying to add n_p to see what it does to clustering
+# data_corr <- data_pca %>%
+#   mutate(n_p = no2/po4,
+#          n_s = no2/sio2,
+#          p_s = po4/sio2)
+
+data_corr <- data_pca %>%
+  drop_na()
+
+data_corr <- data_corr %>%
+  rename(T = temp,
+         S = sal,
+         "\u394\u3C1" = drho,
+         "NO\u2083\u207B+NO\u2082\u207B" = no2,
+         "SiO\u2082\u207B" = sio2,
+         "PO\u2084\u207B" = po4,
+         TChla = tchla)
+
+```
+
+```{r}
+#Creating correlogram to show link between variables
+data_all <- data_corr %>% 
+  select(T:TChla)
+
+
+data_s <- data_corr %>% 
+  filter(location == "S") %>% 
+  select(T:TChla)
+
+data_c <- data_corr %>% 
+  filter(location == "C") %>% 
+  select(T:TChla)
+
+data_f <- data_corr %>% 
+  filter(location == "F") %>% 
+  select(T:TChla)
+
+#Making correlation matrix
+cor_all <- round(cor(data_all), 2)
+
+# row.names(cor_all) <- c("T",
+#                         "S",
+#                         "\u394\u3C1",
+#                         "NO\u2083\u207B+NO\u2082\u207B ",
+#                         "SiO\u2082\u207B",
+#                         "PO\u2084\u207B",
+#                         "Secchi",
+#                         "TChla")
+# 
+# colnames(cor_all) <- c("T",
+#                         "S",
+#                         "\u394\u3C1",
+#                         "NO\u2083\u207B+NO\u2082\u207B ",
+#                         "SiO\u2082\u207B",
+#                         "PO\u2084\u207B",
+#                         "Secchi",
+#                         "TChla")
+
+
+cor_s <- round(cor(data_s), 2)
+cor_c <- round(cor(data_c), 2)
+
+# row.names(cor_c) <- c("T",
+#                         "S",
+#                         "\u394\u3C1", 
+#                         "NO\u2083\u207B+NO\u2082\u207B ",
+#                         "SiO\u2082\u207B",
+#                         "PO\u2084\u207B",
+#                         "Secchi",
+#                         "TChla")
+# 
+# colnames(cor_c) <- c("T",
+#                      "S",
+#                      "\u394\u3C1", 
+#                      "NO\u2083\u207B+NO\u2082\u207B ",
+#                      "SiO\u2082\u207B",
+#                      "PO\u2084\u207B",
+#                      "Secchi",
+#                      "TChla")
+
+
+
+cor_f <- round(cor(data_f), 2)
+
+#Making significance' matrix
+p.mat_all <- cor_pmat(data_all)
+p.mat_s <- cor_pmat(data_s)
+p.mat_c <- cor_pmat(data_c)
+p.mat_f <- cor_pmat(data_f)
+```
+
+```{r}
+f1 <- ggcorrplot(cor_all,
+  p.mat = p.mat_all,
+  method = "square",
+  type = "lower",
+  sig.level = 0.05,
+  lab = TRUE,
+  # title = "All data",
+  insig = "blank") +
+  theme_bw() +
+  annotate(geom = "text", x = 1.5, y = 10, label= "All", size = 10) +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_blank(),
+        axis.text.y = element_text(angle = 0, color = 'black'),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+
+f2 <- ggcorrplot(cor_f,
+  p.mat = p.mat_f,
+  method = "square",
+  type = "lower",
+  sig.level = 0.05,
+  lab = TRUE,
+  # title = "Fjord",
+  insig = "blank") +
+  theme_bw() +
+  annotate(geom = "text", x = 2, y = 10, label= "Fjord", size = 10) +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+
+f3 <- ggcorrplot(cor_c,
+  p.mat = p.mat_c,
+  method = "square",
+  type = "lower",
+  sig.level = 0.05,
+  lab = TRUE,
+  # title = "Channel",
+  insig = "blank") +
+  annotate(geom = "text", x = 2.5, y = 10, label= "Channel", size = 10) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 90, color = 'black', vjust = 0.4),
+        axis.text.y = element_text(angle = 0, color = 'black'),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+
+f4 <- ggcorrplot(cor_s,
+  p.mat = p.mat_s,
+  method = "square",
+  type = "lower",
+  sig.level = 0.05,
+  lab = TRUE,
+  # title = "Shelf",
+  insig = "blank") +
+  theme_bw() +
+  annotate(geom = "text", x = 2.0, y = 10, label= "Shelf", size = 10) +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 90, color = 'black', vjust = 0.4),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+
+fig <- (f1 + f2 + f3 + f4)
+
+ggsave(here("figures_good", "corr_test_2.png"), fig,
+       width = 12, height = 12, dpi = 300)
+```
+
+```{r}
+ggcorrplot(cor_c,
+  p.mat = p.mat_c,
+  method = "square",
+  type = "lower",
+  sig.level = 0.01,
+  lab = TRUE,
+  # title = "Channel",
+  insig = "blank") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(angle = 90, color = 'black', vjust = 0.4),
+        axis.text.y = element_text(angle = 0, color = 'black'),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+```
+```{r}
+data_c %>% 
+  ggplot(aes(x = S, y = dis_b4)) +
+  geom_point()
+```
+```{r}
+data %>% 
+  filter(site_id == "QCS01") %>% 
+  ggplot(aes(x = delta_rho_dm, y = dis_b45)) +
+  geom_point()
+```
+
+
+```{r}

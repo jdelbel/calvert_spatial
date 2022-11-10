@@ -1,0 +1,256 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(patchwork)
+library(RColorBrewer)
+library(ggpubr)
+library(broom)
+
+```
+
+```{r}
+#Upload data from my master data standardization sheet
+micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+
+#Uploading chl data that has been converted to TChla
+chl <- read_csv(here("outputs", "chl_hplc_merged.csv"))
+
+#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
+
+#Uploading size separated S.marinoi counts.
+sm_size <- read_csv(here("outputs", "s_mar_size.csv"))
+
+fec <- read_csv(here("outputs", "fecal_master_2022-03-16_het.csv"))
+
+#Upload microscopy data merged with physical and biogeochemical measures
+data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv")) 
+
+
+c <- read_csv(here("outputs", "chemtax_master_2022-03-16_het.csv"))
+
+wind <- read_csv(here("files", "wind.csv"), skip = 3)
+```
+
+```{r}
+#Remove QU39
+micro <- micro %>% 
+  filter(!site_id == "QU39")
+
+#Remove QU39
+data <- data %>% 
+  filter(!site_id == "QU39")
+
+data <- data %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id)))
+
+env <- data %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  select(location, date, month, month_surv, year, yday, t = temp_dm, s = sal_dm,
+         dr = delta_rho_dm, no2 = no2_dm, po4 = po4_dm, sio2 = sio2_dm,
+         secchi = secchi_depth)
+```
+
+```{r}
+
+#Careful here - removing original s.marinoi counts and replacing with size separated counts. Ensure that the outputs are comparable.
+micro <- micro %>% 
+  filter(!scientificName == "Skeletonema marinoi")
+
+micro <- rbind(micro, sm_size)
+
+```
+
+```{r}
+#Add year column
+micro <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  relocate(year, .after = date)
+```
+
+```{r}
+# Changing site_id to location 
+micro <- micro %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+chl <- chl %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+```
+
+```{r}
+micro_all <- micro 
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+micro_all <- arrange(mutate(micro_all,
+                         location = factor(location, levels = order_loc)))
+
+
+micro_all <- micro_all %>% 
+  filter(trophicStatus == "auto")
+#I want to look at species that never contribute to more than a certain percentage to the total biomass
+
+#Make a total diatom sum column for each date and then divide each species count by the total to derive a relative contribution
+micro_all <- micro_all %>% 
+  group_by(date, location) %>% 
+  mutate(sum_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(perc = species_sum/sum_count)
+
+#Make a column showing the max contribution for each species
+micro_all <- micro_all %>% 
+  group_by(scientificName) %>% 
+  mutate(max = max(perc),
+         max_abund = max(species_sum)) %>% 
+  ungroup() 
+
+
+micro_all_gt10_perc <- micro_all %>% 
+  mutate(scientificName2 = ifelse(max < 0.25, "Other", scientificName))
+```
+
+
+```{r}
+micro_all_gt10_perc2 <- micro_all_gt10_perc %>% 
+  group_by(date, month_surv, location, scientificName2) %>% 
+  summarise(species_sum = sum(species_sum)) %>% 
+  ungroup()
+```
+```{r}
+micro_all_c <- micro_all_gt10_perc2  
+
+colourCount_c = length(unique(micro_all_c$scientificName2))
+getPalette_c = colorRampPalette(brewer.pal(11, "Paired"))
+```
+
+```{r}
+spec_dist <- micro_all_c %>% 
+  distinct(scientificName2)
+
+#25%
+spec_ord <- c("Biddulphiales",
+              "Chaetoceros tenuissimus",
+              "Pseudo-nitzschia seriata",
+              "Rhizosolenia setigera",
+              "Skeletonema marinoi small",
+              "Skeletonema marinoi large",
+              "Olisthodiscus",
+              "Hillea",
+              "Teleaulax",
+              "Phaeocystis pouchetii",
+              "Other")
+
+#20%
+# spec_ord <- c("Biddulphiales",
+#               "Chaetoceros cinctus",
+#               "Chaetoceros tenuissimus",
+#               "Pseudo-nitzschia seriata",
+#               "Rhizosolenia setigera",
+#               "Skeletonema marinoi small",
+#               "Skeletonema marinoi large",
+#               "Olisthodiscus",
+#               "Hillea",
+#               "Teleaulax",
+#               "Phaeocystis pouchetii",
+#               "Pyramimonas orientalis",
+#               "Other")
+
+#10%
+# spec_ord <- c("Biddulphiales",
+#               "Chaetoceros cinctus",
+#               "Chaetoceros tenuissimus",
+#               "Pseudo-nitzschia",
+#               
+#               "Rhizosolenia setigera",
+#               "Skeletonema marinoi large",
+#               "Skeletonema marinoi small",
+#               "Thalassiosira nordenskioeldii",
+#               "Thalassiosira pacifica",
+#               "Olisthodiscus",
+#               "Hillea",
+#               "Teleaulax",
+#               "Pterosperma",
+#               "Pyramimonas orientalis",
+#               "Phaeocystis pouchetii")
+
+micro_all_c <- arrange(mutate(micro_all_c,
+                         scientificName2 = factor(scientificName2,
+                                                 levels = spec_ord)))
+```
+
+```{r}
+micro_all_chl <- micro_all_c %>% 
+  left_join(chl)
+
+micro_all_chl <- arrange(mutate(micro_all_chl,
+                         location = factor(location, levels = order_loc)))
+```
+```{r}
+ann_text <- data.frame(species_sum = 30 , month_surv = 5.5 ,lab = "F",
+                       location = factor(F, levels = c("F","C","S")))
+p + geom_text(data = ann_text,label = "Text")
+```
+
+
+
+
+```{r}
+coeff <- 2
+
+micro_all_chl %>%   
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot() + 
+  geom_bar(aes(x = month_surv, y = species_sum/100000, 
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") + 
+  scale_fill_manual(values = getPalette_c(colourCount_c)) + 
+  geom_line(aes(x = month_surv, y = chl*coeff), size = 1.5) +
+  geom_point(aes(x = month_surv, y = chl*coeff, 
+                 color = ifelse(chl < 5, "Fail", "Pass")), size = 2.5, pch = 21,
+             stroke = 2, fill = "black") +
+  scale_y_continuous(name = "Phyto. Abundance (10^5 cells L)",
+                     sec.axis = sec_axis(~ . /coeff, name = "TChla")) +
+  scale_color_manual(values = c("black", "green"))+
+  facet_grid(location ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4),
+         color = F)
+
+ggsave(here("figures_good", "compositions_all_25_perc.png"),
+       width = 16, height = 12, dpi = 300)
+```
+
+
+
+
+
