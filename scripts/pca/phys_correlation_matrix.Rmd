@@ -44,12 +44,16 @@ library(zoo)
 #Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
 data <- read_csv(here("outputs", "ctd_merge_2021-11-04_chem.csv"))
 
-chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
+chl <- read_csv(here("outputs", "bulk_chla_corrected.csv"))
 
 data <- data %>% 
   left_join(chl)
 
 riv <- read_csv(here("files", "river.csv")) 
+
+ethel_wind <- read_csv(here("files", "ethel_wind.csv"))
+
+lk_wind <- read_csv(here("files", "wind_lookout.csv")) 
 ```
 
 
@@ -86,8 +90,57 @@ riv3 <- riv2 %>%
 ```
 
 ```{r}
+ethel_wind2 <- ethel_wind %>%
+  filter(WindSpd_UQL == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+  filter(year > 2017 & year < 2022)
+
+ew_da <- ethel_wind2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_w = mean(WindSpd_Avg),
+            dm_wd = mean(WindDir_Avg)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(w_b1 = rollmeanr(lag(dm_w, 1), k = 3, fill = NA),
+         wd_b1 = rollmeanr(lag(dm_wd, 1), k = 3, fill = NA)) %>% 
+  select(date, eth_w = w_b1, eth_wd = wd_b1)
+
+lk_wind2 <- lk_wind %>%
+  filter(WindSpd_UQL == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+  filter(year > 2017 & year < 2022)
+
+lk_da <- lk_wind2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_w = mean(WindSpd_Avg),
+            dm_wd = mean(WindDir_Avg)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(w_b1 = rollmeanr(lag(dm_w, 1), k = 3, fill = NA),
+         wd_b1 = rollmeanr(lag(dm_wd, 1), k = 3, fill = NA)) %>% 
+  select(date, lk_w = w_b1, lk_wd = wd_b1)
+  
+```
+
+```{r}
 data <- data %>% 
   left_join(riv3)
+
+data <- data %>% 
+  left_join(ew_da)
+
+data <- data %>% 
+  left_join(lk_da)
 ```
 
 
@@ -97,7 +150,8 @@ data <- data %>%
 data_pca <- data %>% 
   select(date, month, month_surv, site_id, temp = temp_dm, sal = sal_dm, 
          drho = delta_rho_dm, no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm,
-         secchi = secchi_depth, dis, dis_b1, dis_b25, dis_b40, tchla)
+         secchi = secchi_depth, dis, dis_b1, dis_b25, dis_b40, eth_w, eth_wd,
+         lk_w, lk_wd, tchla = chl)
 
 #Changing site_id to location 
 data_pca <- data_pca %>% 
@@ -156,48 +210,8 @@ data_f <- data_corr %>%
 #Making correlation matrix
 cor_all <- round(cor(data_all), 2)
 
-# row.names(cor_all) <- c("T",
-#                         "S",
-#                         "\u394\u3C1",
-#                         "NO\u2083\u207B+NO\u2082\u207B ",
-#                         "SiO\u2082\u207B",
-#                         "PO\u2084\u207B",
-#                         "Secchi",
-#                         "TChla")
-# 
-# colnames(cor_all) <- c("T",
-#                         "S",
-#                         "\u394\u3C1",
-#                         "NO\u2083\u207B+NO\u2082\u207B ",
-#                         "SiO\u2082\u207B",
-#                         "PO\u2084\u207B",
-#                         "Secchi",
-#                         "TChla")
-
-
 cor_s <- round(cor(data_s), 2)
 cor_c <- round(cor(data_c), 2)
-
-# row.names(cor_c) <- c("T",
-#                         "S",
-#                         "\u394\u3C1", 
-#                         "NO\u2083\u207B+NO\u2082\u207B ",
-#                         "SiO\u2082\u207B",
-#                         "PO\u2084\u207B",
-#                         "Secchi",
-#                         "TChla")
-# 
-# colnames(cor_c) <- c("T",
-#                      "S",
-#                      "\u394\u3C1", 
-#                      "NO\u2083\u207B+NO\u2082\u207B ",
-#                      "SiO\u2082\u207B",
-#                      "PO\u2084\u207B",
-#                      "Secchi",
-#                      "TChla")
-
-
-
 cor_f <- round(cor(data_f), 2)
 
 #Making significance' matrix
@@ -212,7 +226,7 @@ f1 <- ggcorrplot(cor_all,
   p.mat = p.mat_all,
   method = "square",
   type = "lower",
-  sig.level = 0.05,
+  sig.level = 0.01,
   lab = TRUE,
   # title = "All data",
   insig = "blank",
@@ -231,7 +245,7 @@ f2 <- ggcorrplot(cor_f,
   p.mat = p.mat_f,
   method = "square",
   type = "lower",
-  sig.level = 0.05,
+  sig.level = 0.01,
   lab = TRUE,
   # title = "Fjord",
   insig = "blank",
@@ -250,7 +264,7 @@ f3 <- ggcorrplot(cor_c,
   p.mat = p.mat_c,
   method = "square",
   type = "lower",
-  sig.level = 0.05,
+  sig.level = 0.01,
   lab = TRUE,
   # title = "Channel",
   insig = "blank",
@@ -269,7 +283,7 @@ f4 <- ggcorrplot(cor_s,
   p.mat = p.mat_s,
   method = "square",
   type = "lower",
-  sig.level = 0.05,
+  sig.level = 0.01,
   lab = TRUE,
   # title = "Shelf",
   insig = "blank",
@@ -286,40 +300,23 @@ f4 <- ggcorrplot(cor_s,
 
 fig <- (f1 + f2 + f3 + f4)
 
-ggsave(here("figures_good", "corr_test_2_P01.png"), fig,
+ggsave(here("figures_good", "corr_test_2_P01_wind.png"), fig,
        width = 12, height = 12, dpi = 300)
 ```
 
 ```{r}
-ggcorrplot(cor_c,
-  p.mat = p.mat_c,
-  method = "square",
-  type = "lower",
-  sig.level = 0.01,
-  lab = TRUE,
-  # title = "Channel",
-  insig = "blank") +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.text.x = element_text(angle = 90, color = 'black', vjust = 0.4),
-        axis.text.y = element_text(angle = 0, color = 'black'),
-        axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        plot.title = element_text(margin = margin(t = 40,b = -30)),
-        legend.position = "none")
+data_corr %>% 
+  ggplot(aes(x = eth_w, y = lk_wd)) +
+  geom_point() +
+  labs(x = "Ethel Wind Speed", y = "Lookout Wind Direction") +
+  theme_bw() 
+  
+
+data_s %>% 
+  ggplot(aes(x = secchi, lk_wd)) +
+  geom_point() 
 ```
 
-```{r}
-data_c %>% 
-  ggplot(aes(x = S, y = dis_b4)) +
-  geom_point()
-```
-```{r}
-data %>% 
-  filter(site_id == "QCS01") %>% 
-  ggplot(aes(x = sio2_dm, y = dis_b40)) +
-  geom_point()
-```
 
 
 
