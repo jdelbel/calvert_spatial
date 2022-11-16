@@ -150,7 +150,7 @@ hplc_join %>%
   ggpubr::stat_cor(label.y.npc = 1.0, vjust = 2, size = 8) +
   ggpubr::stat_regline_equation(label.y = 18, size = 6)
 
-\chl_lm = lm(chla ~ tchla, data = hplc_join) 
+chl_lm = lm(chla ~ tchla, data = hplc_join) 
 summary(chl_lm) 
 ```
 
