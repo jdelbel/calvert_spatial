@@ -498,6 +498,10 @@ smsi <- data %>%
   filter(scientificName == "Diatom sum" & name == "sio2") %>% 
   select(date, sio2 = vals)
 
+smt <- data %>% 
+  filter(scientificName == "Diatom sum" & name == "temp") %>% 
+  select(date, temp = vals)
+
 riv_w_j <- riv_w %>% 
     mutate(year = lubridate::year(date),
            yday = lubridate::yday(date)) %>% 
@@ -515,7 +519,9 @@ riv_w_j <- riv_w_j %>%
   left_join(lk_da) %>% 
   left_join(smd) %>% 
   left_join(smn) %>% 
-  left_join(smsi)
+  left_join(smsi) %>%
+  left_join(smt) 
+
 ```
 
 
@@ -562,6 +568,24 @@ f2 <- riv_w_j %>%
 
 f3 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
+  geom_area(aes(y = temp), size = 1, color = "red", fill = "red", alpha = 0.5) +
+  geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  scale_y_continuous(name = "Temp",
+                     sec.axis = sec_axis(~./coeff_dr,
+                                         name = "Diat. Abund.")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+
+f4 <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
   geom_area(aes(y = sio2), size = 1, color = "deepskyblue", fill = "deepskyblue",
             alpha = 0.5) +
   geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
@@ -577,33 +601,11 @@ f3 <- riv_w_j %>%
         strip.background = element_blank(),
         strip.text.x = element_blank())
 
-fig <- f1 / f2 / f3
+fig <- f1 / f2 / f3 / f4
 
-ggsave(here("figures_good", "KC10_Wannock_dr_TS.png"), fig,
-        width = 16, height = 10, dpi = 300)
+ggsave(here("figures_good", "KC10_Wannock_dr_temp_TS.png"), fig,
+        width = 16, height = 12, dpi = 300)
 ```
-
-```{r}
-riv_w_j %>% 
-  ggplot(aes(x = yday)) +
-  geom_area(aes(y = sio2), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
-  geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
-             color = "black", stroke = 2) +
-  scale_y_continuous(name = "\u394\u3C1",
-                     sec.axis = sec_axis(~./coeff_dr,
-                                         name = "Diatom Abundance")) +
-  facet_grid(. ~ year) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.text = element_text(color = 'black'),
-        axis.title.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank())
-```
-
-
-
-
 
 ```{r}
 f1 <- riv_w_j %>% 
@@ -650,14 +652,15 @@ ggsave(here("figures_good", "KC10_Wannock_sal_DRho.png"), fig,
 
 riv_w_j %>% 
   mutate(month = lubridate::month(date)) %>% 
-  ggplot(aes(x = lk_wd, y = abund)) +
-  geom_point(aes(fill = as.factor(month)), size = 4, pch = 21,
+  filter(month > 4 & month < 11) %>% 
+  ggplot(aes(x = abund, y = lk_wd)) +
+  geom_point(aes(fill = as.factor(year)), size = 4, pch = 21,
              color = "black", stroke = 2) +
   scale_fill_brewer(palette = "RdYlBu") +
   geom_smooth(method = 'lm', color = "black") +
-  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 10,
-                   label.x = 0, label.y = 9) +
-  lims(y = c(0, 10)) +
+  # ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 10,
+  #                  label.x = 0, label.y = 15) +
+  # lims(y = c(0, 10)) +
   labs(x = "Wannock Dis. B10", y = "\u394\u3C1",) +
   labs(fill = "Month") +
   theme_bw() +
@@ -665,8 +668,43 @@ riv_w_j %>%
         axis.text.x = element_text(color = 'black'))
 
 ```
+```{r}
+riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = lk_wd), size = 1, color = "deepskyblue", fill = "deepskyblue",
+            alpha = 0.5) +
+  geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  scale_y_continuous(name = "SiO\u2082\u207B",
+                     sec.axis = sec_axis(~./coeff_dr,
+                                         name = "Diat. Abund.")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
 
 
+```{r}
+riv_w_j %>% 
+  mutate(month = lubridate::month(date)) %>%
+  ggplot(aes(x = as.factor(month))) +
+  geom_boxplot(aes(y = lk_wd, color = as.factor(year)),
+            size = 1) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none")
+
+ggsave(here("figures_good", "KC10_wind_year_box.png"),
+        width = 16, height = 4, dpi = 300)
+```
 
 
 
