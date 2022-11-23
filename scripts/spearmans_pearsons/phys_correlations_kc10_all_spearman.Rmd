@@ -1,0 +1,593 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(here)
+library(patchwork)
+library(RColorBrewer)
+library(ggpubr)
+library(broom)
+library(zoo)
+library(gsw)
+```
+
+```{r}
+#Upload data from my master data standardization sheet
+# micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+
+micro <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv"))
+
+ctd <- read_csv(here("files", "kc10_ctd.csv"))
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+nuts <- read_csv(here("files", "kc10_nuts.csv"))
+
+riv <- read_csv(here("files", "river.csv")) 
+
+riv_b <- read_csv(here("files", "riv_bella_4.csv"))
+
+ethel_wind <- read_csv(here("files", "ethel_wind.csv"))
+
+lk_wind <- read_csv(here("files", "wind_lookout.csv"))
+
+lk_par <- read_csv(here("files", "lookout_par.csv"))
+```
+
+```{r}
+#Removing QU39 
+micro <- micro %>% 
+  filter(!site_id == "QU39")
+```
+
+```{r}
+ctd <- ctd %>% 
+  select(date_time = `Measurement time`,
+         pres = `Pressure (dbar)`,
+         sal = `Salinity (PSU)`,
+         temp = `Temperature (deg C)`) %>% 
+  mutate(date = lubridate::date(date_time)) %>% 
+  relocate(date, .after = date_time)
+
+ctd <- ctd %>% 
+  group_by(date, pres) %>% 
+  summarise(temp = mean(temp),
+            sal = mean(sal)) %>% 
+  ungroup()
+
+```
+
+```{r}
+#Performing GSW calculations
+
+#Some CTD casts are missing coordinates that are required for GSW calculations. Fill the coordinates in using those from the Hakai Station Master - Latitude
+ctd <- ctd %>% 
+  mutate(latitude = 51.65064,
+         longitude = -127.9513)
+                              
+
+#Calculating absolute salinity
+SA <- gsw_SA_from_SP(ctd$sal, ctd$pres, ctd$longitude, ctd$latitude)
+
+#Converting absolute salinity output to a dataframe
+SA <- as.data.frame(SA)
+
+#Calculating conservative temperature
+CT <- gsw_CT_from_t(SA$SA, ctd$temp, ctd$pres)
+
+#Converting conservative temperature output to a dataframe
+CT <- as.data.frame(CT)
+
+#Calculating Density
+rho = gsw_rho(SA$SA, CT$CT, ctd$pres)
+
+#Converting Density to a dataframe
+rho <- as.data.frame(rho)
+
+#Calculating Brunt-Vaisala frequency
+bv <- gsw_Nsquared(SA$SA, CT$CT, ctd$pres)
+
+#Converting Brunt-Vaisala frequency to a dataframe
+bv <- bind_rows(bv)
+
+#Adding a row at the bottom of the Brunt-Vaisala dataframe to make the vector length equal to the other calculations
+bv <- bv %>% 
+  add_row(N2 = NA, p_mid = NA)
+
+#Binding calculations to ctd dataframe
+ctd <- cbind(ctd, SA, CT, rho, bv)
+```
+
+```{r}
+#Filter 2m data from the CTD datasheet
+ctd_2 <- ctd %>% 
+  filter(pres == 2) %>% 
+  select(date, rho_2 = rho)
+
+#filter 30m data
+ctd_30 <- ctd %>% 
+  filter(pres == 30) %>% 
+  select(date, rho_30 = rho)
+
+#joining 2m data to 3m data
+ctd_dd <- ctd_2 %>% 
+  left_join(ctd_30)
+
+#Calculating difference in density
+ctd_dd <- ctd_dd %>% 
+  mutate(delta_rho = rho_30 - rho_2) %>% 
+  select(date, delta_rho)
+
+ctd <- ctd %>% 
+  left_join(ctd_dd)
+```
+
+
+```{r}
+ctd <- ctd %>% 
+  filter(pres == 5)
+
+nuts <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  select(date, no2_no3_um, po4, sio2)
+
+data <- ctd %>% 
+  left_join(nuts)
+
+
+```
+
+
+```{r}
+riv <- riv %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+riv_w <- riv %>%
+  mutate(Wan_b1 = rollmeanr(lag(dis, 1), k = 10, fill = NA),
+         Wan_b25 = rollmeanr(lag(dis, 25), k = 4, fill = NA),
+         Wan_b40 = rollmeanr(lag(dis, 40), k = 4, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+riv_w <- riv_w %>% 
+  select(date, Wan_b1, Wan_b25, Wan_b40)
+```
+
+```{r}
+riv_b <- riv_b %>% 
+  mutate(Date = lubridate::mdy(Date))
+
+riv_b <- riv_b %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+riv_b <- riv_b %>%
+  mutate(Bel_b1 = rollmeanr(lag(dis, 1), k = 5, fill = NA),
+         Bel_b5 = rollmeanr(lag(dis, 5), k = 4, fill = NA),
+         Bel_b10 = rollmeanr(lag(dis, 10), k = 4, fill = NA),
+         Bel_b25 = rollmeanr(lag(dis, 25), k = 4, fill = NA),
+         Bel_b40 = rollmeanr(lag(dis, 40), k = 4, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+riv_b <- riv_b %>% 
+  select(date, Bel_b1, Bel_b5, Bel_b10, Bel_b25, Bel_b40)
+```
+
+```{r}
+ethel_wind2 <- ethel_wind %>%
+  filter(WindSpd_UQL == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+  filter(year > 2017 & year < 2022)
+
+ew_da <- ethel_wind2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_w = mean(WindSpd_Avg),
+            dm_wd = mean(WindDir_Avg)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(w_b1 = rollmeanr(lag(dm_w, 1), k = 3, fill = NA),
+         wd_b1 = rollmeanr(lag(dm_wd, 1), k = 3, fill = NA)) %>% 
+  select(date, eth_w = w_b1, eth_wd = wd_b1)
+
+lk_wind2 <- lk_wind %>%
+  filter(WindSpd_UQL == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+  filter(year > 2017 & year < 2022)
+
+lk_da <- lk_wind2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_w = mean(WindSpd_Avg),
+            dm_wd = mean(WindDir_Avg)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(w_b1 = rollmeanr(lag(dm_w, 1), k = 3, fill = NA),
+         wd_b1 = rollmeanr(lag(dm_wd, 1), k = 3, fill = NA)) %>% 
+  select(date, lk_w = w_b1, lk_wd = wd_b1)
+  
+```
+
+```{r}
+par <- lk_par %>%
+  filter(`1hourPAR_UQL` == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, par = `1hourPAR`) %>% 
+  filter(year > 2017 & year < 2022)
+
+par <- par %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_par = mean(par)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(par_b1 = rollmeanr(lag(dm_par, 1), k = 3, fill = NA)) %>% 
+  select(date, par_b1)
+  
+```
+
+```{r}
+data <- data %>% 
+  left_join(riv_w) %>% 
+  left_join(riv_b) %>% 
+  left_join(ew_da) %>% 
+  left_join(lk_da) %>% 
+  left_join(par)
+```
+
+```{r}
+data_pca <- data %>% 
+  select(date, temp, sal, 
+         delta_rho, no2_no3_um, sio2, po4, 
+         Wan_b1, 
+         # Bel_b1,
+         eth_w, eth_wd, 
+         lk_w, lk_wd,
+         par_b1)
+
+
+data_pca <- data_pca %>%
+  drop_na()
+```
+
+
+
+```{r}
+#Dinoflagellate species known to feed on diatoms
+#Gonyaulax (skeletonema)
+#Gymnodinium (skel + chain diatoms)
+#Gyrodinium (diatom chains)
+#Prorocentrum(skel)
+#Protoperidinium (medium to large diatoms and dinoflagellates - 30-80%)
+#Scrippsiella trochoideas (Skel)
+#Oligotrichea (ciliate)
+#Myrionecta rubra (cryptophytes)
+#Dinophysis (Cryptophytes)
+#Tintinnina (Ciliate)
+#Fecal
+
+#Things to correlate against 
+#TChla
+#S.mar (small)
+#S.mar (large)
+#S.mar (total)
+#diatom abundance 
+#Cryptophyte abundance
+
+#First do the summarizing and filtering for each grouping I want correlated against.
+s_sum <- micro %>% 
+  filter(scientificName == "Skeletonema marinoi") %>% 
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+#No correlations found for any site. 
+pns <- micro %>%
+  filter(scientificName == "Pseudo-nitzschia seriata") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+pn <- micro %>%
+  filter(scientificName == "Pseudo-nitzschia") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+hill <- micro %>%
+  filter(scientificName == "Hillea") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+tel <- micro %>%
+  filter(scientificName == "Teleaulax") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+d_sum <- micro %>% 
+  filter(group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(exp_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(scientificName = "Diatom sum") %>% 
+  relocate(scientificName, .before = exp_count)
+
+c_sum <- micro %>% 
+  filter(group == "Cryptophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(exp_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(scientificName = "crypto sum") %>% 
+  relocate(scientificName, .before = exp_count)
+
+chl_corr <- chl %>% 
+  select(date, site_id, exp_count = tchla) %>% 
+  mutate(scientificName = "TChla") %>% 
+  relocate(scientificName, .before = exp_count)
+```
+
+
+```{r}
+cor_exp <- rbind(s_sum, d_sum, c_sum, chl_corr, pn, pns, hill,
+                 tel)
+```
+
+```{r}
+data_pca_long <- data_pca %>% 
+  pivot_longer(cols = c(temp:par_b1), names_to = "name", values_to = "vals")
+```
+
+
+```{r}
+data <- data_pca_long %>% 
+  left_join(cor_exp)
+
+```
+
+
+```{r}
+data_nest <- data %>% 
+  group_by(name, scientificName) %>%
+  nest()
+
+head(data_nest)
+
+str(head(slice(data_nest, 1)))
+
+cor_fun <- function(df) cor.test(df$vals,
+                                 df$exp_count,
+                                 method = "spearman") %>% tidy()
+
+data_nest <- mutate(data_nest, model = map(data, cor_fun))
+
+corr_pr <- select(data_nest, -data) %>% unnest()
+
+corr_pr
+
+corr_pr <- mutate(corr_pr, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+```
+
+```{r}
+# Order locations from fjord to shelf
+driver_loc <- c("temp",
+                "sal",
+                "delta_rho",
+                "no2_no3_um",
+                "sio2",
+                "po4",
+                # "secchi",
+                "par_b1",
+                "eth_w",
+                "eth_wd",
+                "lk_w",
+                "lk_wd",
+                "Wan_b1",
+                "Bel_b1")
+
+phy_loc <- c("Diatom sum",
+             # "Skeletonema marinoi large",
+             # "Skeletonema marinoi small",
+             "Skeletonema marinoi",
+             "Pseudo-nitzschia",
+             "Pseudo-nitzschia seriata",
+             "crypto sum",
+             "Hillea",
+             "Teleaulax",
+             "TChla")
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         name = factor(name, levels = driver_loc)))
+
+corr_pr <- arrange(mutate(corr_pr,
+                         scientificName = factor(scientificName,
+                                                 levels = phy_loc)))
+
+```
+
+
+
+
+```{r}
+ggplot()+
+  geom_tile(data = corr_pr,
+            aes(scientificName, name, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr, sig == "Sig."),
+            aes(scientificName, name),
+            size = 1.5,
+            colour = "black",
+            fill = "transparent") +
+  geom_text(data = corr_pr,
+            aes(scientificName, name, label = round(estimate, 2), 
+                fontface = ifelse(sig == "Sig.", "bold", "plain")),
+            size = 7) +
+  scale_x_discrete(labels = c("crypto sum" = "Cryp.", 
+                              "Diatom sum" = "Diat.",
+                              "Skeletonema marinoi large" = "S.mar.L",
+                              "Skeletonema marinoi small" = "S.mar.S",
+                              "Skeletonema marinoi" = "S.mar.",
+                              "Pseudo-nitzschia seriata" = "P.n.s",
+                              "Pseudo-nitzschia" = "P.n.",
+                              "Hillea" = "Hill.",
+                              "Teleaulax" = "Tel.",
+                              "Phaeocystis pouchetii" = "P.p.")) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+                       name = "Spearman Correlation") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.03, 0.30),
+        legend.direction = "vertical",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.height = unit(2.5, "cm"),
+        legend.title = element_text(size = 30, angle = -90),
+        legend.title.align = 0.5) +
+        guides(fill = guide_colourbar(title.position = "right")) 
+
+ggsave(here("figures_good", "correlations_KC10_Full_year_Spearman.png"),
+       width = 12, height = 12, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```
+
+
+
+
+```{r}
+sms <- data %>% 
+  filter(scientificName == "Diatom sum" & name == "sal")
+
+riv_w_j <- riv_w %>% 
+    mutate(year = lubridate::year(date),
+           yday = lubridate::yday(date)) %>% 
+  select(date, year, yday, Wan_b1)
+
+riv_b_j <- riv_b %>% 
+    mutate(year = lubridate::year(date),
+           yday = lubridate::yday(date)) %>% 
+  select(date, year, yday, Bel_b1)
+
+riv_w_j <- riv_w_j %>% 
+  left_join(sms) %>% 
+  left_join(riv_b_j) %>% 
+  left_join(par) %>% 
+  left_join(lk_da)
+```
+
+
+```{r}
+coeff <- 100
+
+riv_w_j <- riv_w_j %>% 
+  mutate(abund = exp_count/100000)
+
+riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_line(aes(y = Wan_b1), size = 2, color = "blue") +
+  geom_line(aes(y = Bel_b1), size = 2, color = "red") +
+  geom_point(aes(y = abund*coeff), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  scale_y_continuous(name = "Wannock",
+                     sec.axis = sec_axis(~./coeff, name="Diatom Abundance")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(color = 'black'))
+
+ggsave(here("figures_good", "Channel_Wannock_Diatom_Abund_Full_year.png"), 
+       width = 16, height = 8, dpi = 300)
+
+
+```
+
+```{r}
+coeff_s <- 100
+
+riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_line(aes(y = Wan_b1), size = 2, color = "blue") +
+  geom_line(aes(y = Bel_b1), size = 2, color = "red") +
+  geom_point(aes(y = vals*coeff_s), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  scale_y_continuous(name = "Wannock",
+                     sec.axis = sec_axis(~./coeff_s, name="Diatom Abundance")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(color = 'black'))
+
+ggsave(here("figures_good", "Channel_Salinity_Diatom_Abund_Full_year.png"), 
+       width = 16, height = 8, dpi = 300)
+
+```
+
+
+
+
+```{r}
+coeff <- 10
+
+riv_w_j <- riv_w_j %>% 
+  mutate(abund = exp_count/100000)
+
+riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_line(aes(y = lk_wd), size = 2, color = "blue") +
+  geom_point(aes(y = abund*coeff), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  scale_y_continuous(name = "Wannock",
+                     sec.axis = sec_axis(~./coeff, name="Diatom Abundance")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_text(color = 'black'))
+
+ggsave(here("figures_good", "Channel_WIND_Diatom_Abund_Full_year.png"),
+       width = 16, height = 8, dpi = 300)
+
+
+```
+```{r}
+riv_w_j %>% 
+  ggplot(aes(x = Wan_b1, y = abund)) +
+  geom_point(size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) 
+```
+
+
+
+
+
+
+
+
+
