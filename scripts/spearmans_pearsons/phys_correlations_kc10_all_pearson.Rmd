@@ -452,7 +452,7 @@ ggplot()+
                               "Phaeocystis pouchetii" = "P.p.")) +
   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
                        midpoint = 0, limit = c(-1 , 1), space = "Lab", 
-                       name = "Spearman Correlation") +
+                       name = "Pearson Correlation") +
   theme_bw() +
   theme(text = element_text(size = 30),
         axis.title.x = element_blank(),
@@ -486,6 +486,18 @@ ggsave(here("figures_good", "correlations_KC10_Full_year_Pearson.png"),
 sms <- data %>% 
   filter(scientificName == "Diatom sum" & name == "sal")
 
+smd <- data %>% 
+  filter(scientificName == "Diatom sum" & name == "delta_rho") %>% 
+  select(date, dr = vals)
+
+smn <- data %>% 
+  filter(scientificName == "Diatom sum" & name == "no2_no3_um") %>% 
+  select(date, no2 = vals)
+
+smsi <- data %>% 
+  filter(scientificName == "Diatom sum" & name == "sio2") %>% 
+  select(date, sio2 = vals)
+
 riv_w_j <- riv_w %>% 
     mutate(year = lubridate::year(date),
            yday = lubridate::yday(date)) %>% 
@@ -500,7 +512,10 @@ riv_w_j <- riv_w_j %>%
   left_join(sms) %>% 
   left_join(riv_b_j) %>% 
   left_join(par) %>% 
-  left_join(lk_da)
+  left_join(lk_da) %>% 
+  left_join(smd) %>% 
+  left_join(smn) %>% 
+  left_join(smsi)
 ```
 
 
@@ -510,77 +525,145 @@ coeff <- 100
 riv_w_j <- riv_w_j %>% 
   mutate(abund = exp_count/100000)
 
-riv_w_j %>% 
+f1 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
-  geom_line(aes(y = Wan_b1), size = 2, color = "blue") +
-  geom_line(aes(y = Bel_b1), size = 2, color = "red") +
+  geom_area(aes(y = Wan_b1), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+  geom_line(aes(y = Bel_b1), size = 1, color = "red") +
   geom_point(aes(y = abund*coeff), size = 4, pch = 21, fill = "darkgreen",
              color = "black", stroke = 2) +
-  scale_y_continuous(name = "Wannock",
-                     sec.axis = sec_axis(~./coeff, name="Diatom Abundance")) +
+  scale_y_continuous(name = "Discharge",
+                     sec.axis = sec_axis(~./coeff,
+                                         name = "Diat. Abund.")) +
   facet_grid(. ~ year) +
   theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.text.x = element_text(color = 'black'))
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
 
-ggsave(here("figures_good", "Channel_Wannock_Diatom_Abund_Full_year.png"), 
-       width = 16, height = 8, dpi = 300)
+coeff_dr <- 1
 
+f2 <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = dr), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
+  geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  scale_y_continuous(name = "\u394\u3C1",
+                     sec.axis = sec_axis(~./coeff_dr,
+                                         name = "Diat. Abund.")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
 
+f3 <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = sio2), size = 1, color = "deepskyblue", fill = "deepskyblue",
+            alpha = 0.5) +
+  geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  scale_y_continuous(name = "SiO\u2082\u207B",
+                     sec.axis = sec_axis(~./coeff_dr,
+                                         name = "Diat. Abund.")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+fig <- f1 / f2 / f3
+
+ggsave(here("figures_good", "KC10_Wannock_dr_TS.png"), fig,
+        width = 16, height = 10, dpi = 300)
 ```
 
 ```{r}
-coeff_s <- 100
-
 riv_w_j %>% 
   ggplot(aes(x = yday)) +
-  geom_line(aes(y = Wan_b1), size = 2, color = "blue") +
-  geom_line(aes(y = Bel_b1), size = 2, color = "red") +
-  geom_point(aes(y = vals*coeff_s), size = 4, pch = 21, fill = "darkgreen",
+  geom_area(aes(y = sio2), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
+  geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
              color = "black", stroke = 2) +
-  scale_y_continuous(name = "Wannock",
-                     sec.axis = sec_axis(~./coeff_s, name="Diatom Abundance")) +
+  scale_y_continuous(name = "\u394\u3C1",
+                     sec.axis = sec_axis(~./coeff_dr,
+                                         name = "Diatom Abundance")) +
   facet_grid(. ~ year) +
   theme_bw() +
   theme(text = element_text(size = 25),
-        axis.text.x = element_text(color = 'black'))
-
-ggsave(here("figures_good", "Channel_Salinity_Diatom_Abund_Full_year.png"), 
-       width = 16, height = 8, dpi = 300)
-
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
 ```
 
 
 
 
-```{r}
-coeff <- 10
 
-riv_w_j <- riv_w_j %>% 
-  mutate(abund = exp_count/100000)
+```{r}
+f1 <- riv_w_j %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = Wan_b1, y = vals)) +
+  geom_point(aes(fill = as.factor(month)), size = 4, pch = 21,
+             color = "black", stroke = 2) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  geom_smooth(method = 'lm', color = "black") +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 10,
+                   label.x = 325, label.y = 31.5) +
+  labs(x = "Wannock Dis. B10", y = "Salinity (5m)",) +
+  labs(fill = "Month") +
+  theme_bw() +
+  ggtitle("Channel (KC10)") + 
+  theme(text = element_text(size = 25),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+
+f2 <- riv_w_j %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = Wan_b1, y = dr)) +
+  geom_point(aes(fill = as.factor(month)), size = 4, pch = 21,
+             color = "black", stroke = 2) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  geom_smooth(method = 'lm', color = "black") +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 10,
+                   label.x = 0, label.y = 10) +
+  lims(y = c(0, 10)) +
+  labs(x = "Wannock Dis. B10", y = "\u394\u3C1",) +
+  labs(fill = "Month") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(color = 'black'),
+        legend.position = "none")
+
+fig <- f1 / f2 + plot_layout(guides = "collect")
+
+ggsave(here("figures_good", "KC10_Wannock_sal_DRho.png"), fig,
+        width = 9, height = 12, dpi = 300)
+```
+```{r}
 
 riv_w_j %>% 
-  ggplot(aes(x = yday)) +
-  geom_line(aes(y = lk_wd), size = 2, color = "blue") +
-  geom_point(aes(y = abund*coeff), size = 4, pch = 21, fill = "darkgreen",
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = lk_wd, y = abund)) +
+  geom_point(aes(fill = as.factor(month)), size = 4, pch = 21,
              color = "black", stroke = 2) +
-  scale_y_continuous(name = "Wannock",
-                     sec.axis = sec_axis(~./coeff, name="Diatom Abundance")) +
-  facet_grid(. ~ year) +
+  scale_fill_brewer(palette = "RdYlBu") +
+  geom_smooth(method = 'lm', color = "black") +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 10,
+                   label.x = 0, label.y = 9) +
+  lims(y = c(0, 10)) +
+  labs(x = "Wannock Dis. B10", y = "\u394\u3C1",) +
+  labs(fill = "Month") +
   theme_bw() +
   theme(text = element_text(size = 25),
         axis.text.x = element_text(color = 'black'))
 
-ggsave(here("figures_good", "Channel_WIND_Diatom_Abund_Full_year.png"),
-       width = 16, height = 8, dpi = 300)
-
-
-```
-```{r}
-riv_w_j %>% 
-  ggplot(aes(x = Wan_b1, y = abund)) +
-  geom_point(size = 4, pch = 21, fill = "darkgreen",
-             color = "black", stroke = 2) 
 ```
 
 
