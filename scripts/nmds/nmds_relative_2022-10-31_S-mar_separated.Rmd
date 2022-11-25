@@ -211,6 +211,12 @@ month <- micro_piv$month_surv
 year <- micro_piv$year
 ```
 
+
+
+
+
+
+
 ```{r}
 #ANOSIM test to see if groupings statistically significant 
 
@@ -828,21 +834,35 @@ inv_site_list_diat
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by year - all species
-# inv_year = multipatt(transform, year, func = "r.g",
-#                        control = how(nperm = 9999))
+inv_year = multipatt(transform, year, func = "r.g",
+                       control = how(nperm = 9999))
 # 
 # #Indicators by year - diatoms
-# inv_year_diat = multipatt(transform_diat, year, func = "r.g",
-#                        control = how(nperm = 9999))
+inv_year_diat = multipatt(transform_diat, year, func = "r.g",
+                       control = how(nperm = 9999))
 # 
 # #Indicators by year - dinos
-# inv_year_dino = multipatt(transform_dino, year, func = "r.g",
-#                        control = how(nperm = 9999))
+inv_year_dino = multipatt(transform_dino, year, func = "r.g",
+                       control = how(nperm = 9999))
 # 
 # #Looking at results of analysis
-# summary(inv_year)
-# summary(inv_year_diat)
-# summary(inv_year_dino)
+summary(inv_year)
+summary(inv_year_diat)
+summary(inv_year_dino)
+```
+
+```{r}
+inv_year_sp <- data.table::as.data.table(inv_year$sign, keep.rownames = TRUE)
+
+inv_year_sp <- inv_year_sp %>% 
+  filter(s.2018 == 1 | s.2019 == 1 | s.2020 == 1) %>% 
+  filter(p.value < 0.01) %>% 
+  # filter(!rn == "Skeletonema marinoi") %>% 
+  arrange(rn)
+
+inv_year_list <- inv_year_sp$rn
+
+inv_year_list
 ```
 
 ```{r}
@@ -1237,6 +1257,62 @@ panel <- all_2 / plot_spacer() / year / plot_spacer() / month +
 
 ggsave(here("figures_good", "indicator_comb_all_2.png"), panel,
         width = 16, height = 11, dpi = 300)
+```
+
+```{r}
+micro %>%   
+  filter(scientificName %in% inv_year_list) %>% 
+  ggplot(aes(x = as.factor(date), y = scientificName, fill = sqrt(perc_total))) +
+  geom_tile(color = "black", size = 1) +
+  facet_grid(group ~ location , scales = "free", space = "free") +
+  scale_fill_distiller(palette = "Spectral", name = expression(sqrt("%"))) +
+  # scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
+  #                             "Ceratium lineatum" = "C.lin.", 
+  #                             "Chaetoceros convolutus" = "C.con.",
+  #                             "Chaetoceros debilis" = "C.deb.",
+  #                             "Chaetoceros decipiens" = "C.dec.",
+  #                             "Chaetoceros laciniosus" = "C.lac.",
+  #                             "Chaetoceros radicans" = "C.rad.",
+  #                             "Chaetoceros seiracanthus" = "C.sei.",
+  #                             "Chaetoceros similis" = "C.sim.",
+  #                             "Chaetoceros socialis" = "C.soc.",
+  #                             "Dactyliosolen phuketensis" = "D.phu.",
+  #                             "Dactyliosolen fragilissimus" = "D.fra.",
+  #                             "Detonula pumila" = "D.pum.",
+  #                             "Eucampia zodiacus" = "E.zod.",
+  #                             "Leptocylindrus danicus" = "L.dan.",
+  #                             "Navicula" = "Nav.",
+  #                             "Guinardia delicatula" = "G.del.",
+  #                             "Gymnodinium" = "Gymn",
+  #                             "Scrippsiella precaria" = "S.prec",
+  #                             "Protoperidinium" = "Pro",
+  #                             "Protoperidinium steinii" = "Pro.s",
+  #                             "Prorocentrum micans" = "P.mic.",
+  #                             "Pseudo-nitzschia seriata" = "P.n.s.",
+  #                             "Pseudo-nitzschia" = "P.n.",
+  #                             "Pterosperma" = "Pter.",
+  #                             "Dinophysis acuta" = "D.acu.",
+  #                             "Skeletonema marinoi large" = "S.mar.L",
+  #                             "Skeletonema marinoi small" = "S.mar.S",
+  #                             "Thalassiosira rotula" = "T.rot.",
+  #                             "Teleaulax acuta" = "T.acu.")) +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 28),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.03, 0.30),
+        legend.direction = "vertical",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.height = unit(2.5, "cm"))
 ```
 
 

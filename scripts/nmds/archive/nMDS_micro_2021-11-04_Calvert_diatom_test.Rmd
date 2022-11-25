@@ -28,62 +28,103 @@ library(RColorBrewer)
 #Upload data from my master data standardization sheet
 micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
 
-#Master sheet is missing May 2020 data for QU39 and KC10...
+#Uploading size separated S.marinoi counts.
+sm_size <- read_csv(here("outputs", "s_mar_size.csv"))
+```
+
+```{r}
+#Removing Station QU39
+micro <- micro %>% 
+  filter(!site_id == "QU39")
+```
+
+```{r}
+micro_sm <- micro
+
+
+#Removing Skeletonema marinoi and replacing with size separated species
+micro <- micro %>% 
+  filter(!scientificName == "Skeletonema marinoi")
+
+micro <- rbind(micro, sm_size)
 
 ```
 
 ```{r}
-#Could try to limit cryptic species that influence stats. Leaving off for now.
+micro_sm <- micro_sm %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) 
 
-#Only species occurring in 25% of the samples - could try this.
 
-#Could also try removing samples that represent <1% of abundance (currently switched on)
 
+#Adding location instead of site ID.
 micro <- micro %>% 
-  filter(trophicStatus == "auto")
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) 
+```
 
-#Counting how many times each species is observed
-micro <- micro %>%
-  group_by(scientificName) %>%
-  mutate(num_occurrence = n())
 
-#removing species that have not been observed at least twice.
-micro <- micro %>%
-  filter(num_occurrence > 2)
+```{r}
+#Creating a list of distinct species and groups
+species_distinct <- micro %>% 
+  distinct(group, scientificName)
 
-#Removing cyanobacteria
+#Removing groups that are not well quantified or that I am not looking at
 micro <- micro %>% 
-  filter(!scientificName_accepted == "Cyanobacteria")
+  filter(!scientificName_accepted == "Cyanobacteria" &
+           !group == "Metazoa" &
+           !group == "Protozoa" &
+           !group == "Choanoflagellata" &
+           !group == "Ciliophora" &
+           !group == "Kinetoplastidea")
 
+
+micro_sm <- micro_sm %>% 
+  filter(!scientificName_accepted == "Cyanobacteria" &
+           !group == "Metazoa" &
+           !group == "Protozoa" &
+           !group == "Choanoflagellata" &
+           !group == "Ciliophora" &
+           !group == "Kinetoplastidea")
+
+
+```
+
+```{r}
+#Trying to look at only species present in 10%.
+
+#Determining total number of samples - 50.
+sample_num <- micro %>% 
+  distinct(date, site_id)
+
+#Determining species that are present in > 10% of samples.
+species_10 <- micro %>% 
+  group_by(scientificName) %>% 
+  summarise(n_obs = n()) %>%
+  ungroup() %>% 
+  mutate(perc_obs = n_obs/50) %>% 
+  filter(perc_obs >= 0.10)
+
+#Creating a list of species in > 10% of samples.
+species_10_list <- species_10$scientificName
+
+#Removing species that are not present in > 10% of samples.
+micro <- micro %>% 
+  filter(scientificName %in% species_10_list)
+
+```
+
+```{r}
+#Creating separate sheets for just diatoms and dinoflagellates
 micro <- micro %>% 
   filter(class == "Bacillariophyceae")
 
-
-#Method where I removed species not observed more than once resulted in 2420 records. Here I am trying a more convservative method where I remove any species that do not exceed 1% of abundance in any of the samples. The result is 1829 records - far fewer. Need to do a literature review here to see what is most appropriate, but I think this method is probably more focused.
-# micro_1perc <- micro %>% 
-#   group_by(date, site_id) %>% 
-#   mutate(abund_sum = sum(species_sum)) %>% 
-#   ungroup
-# 
-# micro_1perc <- micro_1perc %>% 
-#   mutate(abund_rel = species_sum/abund_sum*100)
-# 
-# less_1perc <- micro_1perc %>% 
-#   group_by(scientificName) %>% 
-#   summarize(max = max(abund_rel)) %>% 
-#   ungroup() %>% 
-#   filter(max < 1)
-# 
-# sp_rem <- less_1perc$scientificName
-# 
-# micro_1perc <- micro %>%
-#   filter(!(scientificName %in% sp_rem))
-# 
-# micro <- micro_1perc
-
-#Result of analysis is pretty comparable. Lit review to determine best method.
-
 ```
+
 
 ```{r}
 
@@ -119,12 +160,9 @@ micro_piv <- micro_piv %>%
 species <- micro_piv[, 7:ncol(micro_piv)]
 
 #Creating relative abundance matrix
-transform_rel <- decostand(species, method = "total")
+transform <- decostand(species, method = "total")
   
-#Log10 transformation +1 (as per Mahara)
-transform <- log10(species + 1)
-
-transform_rel <- sqrt(transform_rel)
+transform <- sqrt(transform)
 ```
 
 ```{r}
@@ -148,7 +186,7 @@ rownames(transform_hc) <- labs_list
 dis <- vegdist(transform_hc, method = "bray")
 
 #Applying average linkage hierarchical clustering
-cluster.average <- hclust(dis, "average")
+cluster.average <- hclust(dis, "ward.D2")
 
 ```
 
@@ -224,7 +262,7 @@ names(site_color) <- color_list$.
 
 ```{r}
 #Plotting dendrogram - saving for incorporation later.
-p_dend <- ggplot() +
+ggplot() +
  geom_segment(data = dendrogram_segments, 
  aes(x = x, y = y, xend = xend, yend = yend)) +
  geom_segment(data = dendrogram_ends, aes(x = x, y = y.x, xend = xend,
@@ -236,7 +274,7 @@ p_dend <- ggplot() +
  # geom_rect(data = rect, aes(xmin = X1-.3, xmax = X2+.3, ymin = 0, ymax = ymax),
  #            color = "black", fill = NA, size = 0.8) +
  scale_color_manual(values = site_color) +
- scale_y_reverse(limits = c(0.6, -0.3)) +
+ scale_y_reverse(limits = c(1.2, -0.3)) +
  coord_flip() + 
  theme_bw() + 
  theme(legend.position = "none",
@@ -247,7 +285,7 @@ p_dend <- ggplot() +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
  
-ggsave(here("figures_rev2", "hc_average_clusters_diatoms.png"), p_dend,
+ggsave(here("figures_good", "a_test.png"),
        width = 6, height = 12, dpi = 300)
 ```
 
@@ -1367,7 +1405,6 @@ micro %>%
   ggplot(aes(x = date, y = species_sum, fill = site_id)) + 
   geom_point(pch = 21, size = 3)
 ```
-
 
 
 

@@ -123,11 +123,16 @@ micro_all <- micro_all %>%
   group_by(scientificName) %>% 
   mutate(max = max(perc),
          max_abund = max(species_sum)) %>% 
-  ungroup() 
+  ungroup()
+```
 
 
+```{r}
 micro_all_gt10_perc <- micro_all %>% 
-  mutate(scientificName2 = ifelse(max < 0.25, "Other", scientificName))
+  mutate(scientificName2 = ifelse(max < 0.25 & group == "Bacillariophyta",
+                                  "Other diatom", scientificName)) %>% 
+  mutate(scientificName2 = ifelse(max < 0.25 & !group == "Bacillariophyta",
+                                  "Other flagellate", scientificName2))
 ```
 
 
@@ -141,7 +146,7 @@ micro_all_gt10_perc2 <- micro_all_gt10_perc %>%
 micro_all_c <- micro_all_gt10_perc2  
 
 colourCount_c = length(unique(micro_all_c$scientificName2))
-getPalette_c = colorRampPalette(brewer.pal(11, "Paired"))
+getPalette_c = colorRampPalette(brewer.pal(12, "Paired"))
 ```
 
 ```{r}
@@ -159,7 +164,8 @@ spec_ord <- c("Biddulphiales",
               "Hillea",
               "Teleaulax",
               "Phaeocystis pouchetii",
-              "Other")
+              "Other diatom",
+              "Other flagellate")
 
 #20%
 # spec_ord <- c("Biddulphiales",
@@ -206,15 +212,6 @@ micro_all_chl <- micro_all_c %>%
 micro_all_chl <- arrange(mutate(micro_all_chl,
                          location = factor(location, levels = order_loc)))
 ```
-```{r}
-ann_text <- data.frame(species_sum = 30 , month_surv = 5.5 ,lab = "F",
-                       location = factor(F, levels = c("F","C","S")))
-p + geom_text(data = ann_text,label = "Text")
-```
-
-
-
-
 ```{r}
 coeff <- 2
 

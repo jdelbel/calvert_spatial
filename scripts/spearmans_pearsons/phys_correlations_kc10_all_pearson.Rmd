@@ -705,6 +705,32 @@ riv_w_j %>%
 ggsave(here("figures_good", "KC10_wind_year_box.png"),
         width = 16, height = 4, dpi = 300)
 ```
+```{r}
+coeff <- 100
+
+riv_w_j <- riv_w_j %>% 
+  mutate(abund = exp_count/100000)
+
+riv_w_j %>% 
+  filter(!is.na(abund)) %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = Wan_b1), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+  geom_line(aes(y = Bel_b1), size = 1, color = "red") +
+  geom_point(aes(y = abund*coeff), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  scale_y_continuous(name = "Discharge",
+                     sec.axis = sec_axis(~./coeff,
+                                         name = "Diat. Abund.")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+
+test <- riv_w_j %>% 
+  filter(!is.na(abund)) 
+```
 
 
 
