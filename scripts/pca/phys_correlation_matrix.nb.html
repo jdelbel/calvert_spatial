@@ -1753,279 +1753,63 @@ pre code {
 <p>Running PCA and cluster analysis on environmental variables.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0xvYWRpbmcgcGFja2FnZXNcbmxpYnJhcnkodGlkeXZlcnNlKVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0xvYWRpbmcgcGFja2FnZXNcbmxpYnJhcnkodGlkeXZlcnNlKVxubGlicmFyeShyZWFkeGwpXG5saWJyYXJ5KGhlcmUpXG5saWJyYXJ5KHZlZ2FuKVxubGlicmFyeShhZGVzcGF0aWFsKVxubGlicmFyeShnZ29yZClcbmxpYnJhcnkoZnV6enlTaW0pXG5cbiNGcm9tIGh0dHBzOi8vcnN0dWRpby1wdWJzLXN0YXRpYy5zMy5hbWF6b25hd3MuY29tLzY5NDAxNl9lMmQ1M2Q2NTg1OGQ0YTE5ODU2MTZmYTM4NTVkMjM3Zi5odG1sIzFfUGFja2FnZXNfbmVlZGVkXG5cbiNGb3IgcGxvdHRpbmcgd2l0aCBnZ3Bsb3QyXG5cbmxpYnJhcnkoQmlvZGl2ZXJzaXR5UilcbmxpYnJhcnkoZ2dzY2kpXG5saWJyYXJ5KGdncmVwZWwpXG5saWJyYXJ5KGdnZm9yY2UpXG5cbmxpYnJhcnkocGF0Y2h3b3JrKVxuXG5saWJyYXJ5KGNsdXN0ZXIpXG5saWJyYXJ5KGdnZGVuZHJvKVxuXG5saWJyYXJ5KFJDb2xvckJyZXdlcilcblxubGlicmFyeShpbmRpY3NwZWNpZXMpXG5cbmxpYnJhcnkoZmFjdG9leHRyYSlcblxubGlicmFyeShnZ2NvcnJwbG90KSAjQ29ycmVsYXRpb24gcGxvdHNcblxubGlicmFyeSh6b28pXG5gYGAifQ== -->
 <pre class="r"><code>#Loading packages
-library(tidyverse)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRdGlkeXZlcnNlkiB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41UmVnaXN0ZXJlZCBTMyBtZXRob2RzIG92ZXJ3cml0dGVuIGJ5ICdkYnBseXInOlxuICBtZXRob2QgICAgICAgICBmcm9tXG4gIHByaW50LnRibF9sYXp5ICAgICBcbiAgcHJpbnQudGJsX3NxbCAgICAgIFxuLS0gQXR0YWNoaW5nIHBhY2thZ2VzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB0aWR5dmVyc2UgMS4zLjEgLS1cbnYgZ2dwbG90MiAzLjMuNSAgICAgdiBwdXJyciAgIDAuMy40XG52IHRpYmJsZSAgMy4xLjQgICAgIHYgZHBseXIgICAxLjAuN1xudiB0aWR5ciAgIDEuMS4zICAgICB2IHN0cmluZ3IgMS40LjBcbnYgcmVhZHIgICAyLjAuMSAgICAgdiBmb3JjYXRzIDAuNS4xXG5wYWNrYWdlIJFnZ3Bsb3QykiB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41cGFja2FnZSCRdGliYmxlkiB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41cGFja2FnZSCRdGlkeXKSIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVwYWNrYWdlIJFyZWFkcpIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNXBhY2thZ2UgkWRwbHlykiB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41cGFja2FnZSCRc3RyaW5ncpIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuM3BhY2thZ2UgkWZvcmNhdHOSIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjUtLSBDb25mbGljdHMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZV9jb25mbGljdHMoKSAtLVxueCBkcGx5cjo6ZmlsdGVyKCkgbWFza3Mgc3RhdHM6OmZpbHRlcigpXG54IGRwbHlyOjpsYWcoKSAgICBtYXNrcyBzdGF0czo6bGFnKClcbiJ9 -->
-<pre><code>package 㤼㸱tidyverse㤼㸲 was built under R version 4.0.5Registered S3 methods overwritten by &#39;dbplyr&#39;:
-  method         from
-  print.tbl_lazy     
-  print.tbl_sql      
--- Attaching packages --------------------------------------------------------------------------- tidyverse 1.3.1 --
-v ggplot2 3.3.5     v purrr   0.3.4
-v tibble  3.1.4     v dplyr   1.0.7
-v tidyr   1.1.3     v stringr 1.4.0
-v readr   2.0.1     v forcats 0.5.1
-package 㤼㸱ggplot2㤼㸲 was built under R version 4.0.5package 㤼㸱tibble㤼㸲 was built under R version 4.0.5package 㤼㸱tidyr㤼㸲 was built under R version 4.0.5package 㤼㸱readr㤼㸲 was built under R version 4.0.5package 㤼㸱dplyr㤼㸲 was built under R version 4.0.5package 㤼㸱stringr㤼㸲 was built under R version 4.0.3package 㤼㸱forcats㤼㸲 was built under R version 4.0.5-- Conflicts ------------------------------------------------------------------------------ tidyverse_conflicts() --
-x dplyr::filter() masks stats::filter()
-x dplyr::lag()    masks stats::lag()</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShyZWFkeGwpXG5gYGAifQ== -->
-<pre class="r"><code>library(readxl)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFyZWFkeGzjpLzjuLIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuM1xuIn0= -->
-<pre><code>package 㤼㸱readxl㤼㸲 was built under R version 4.0.3</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShoZXJlKVxuYGBgIn0= -->
-<pre class="r"><code>library(here)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRaGVyZZIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNGhlcmUoKSBzdGFydHMgYXQgQzovVXNlcnMvanVzdGluLmJlbGx1ei9Eb2N1bWVudHMvUi9jYWx2ZXJ0X3NwYXRpYWxcbiJ9 -->
-<pre><code>package 㤼㸱here㤼㸲 was built under R version 4.0.4here() starts at C:/Users/justin.belluz/Documents/R/calvert_spatial</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh2ZWdhbilcbmBgYCJ9 -->
-<pre class="r"><code>library(vegan)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRdmVnYW6SIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVMb2FkaW5nIHJlcXVpcmVkIHBhY2thZ2U6IHBlcm11dGVcbkxvYWRpbmcgcmVxdWlyZWQgcGFja2FnZTogbGF0dGljZVxuVGhpcyBpcyB2ZWdhbiAyLjUtN1xuIn0= -->
-<pre><code>package 㤼㸱vegan㤼㸲 was built under R version 4.0.5Loading required package: permute
-Loading required package: lattice
-This is vegan 2.5-7</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShhZGVzcGF0aWFsKVxuYGBgIn0= -->
-<pre class="r"><code>library(adespatial)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRYWRlc3BhdGlhbJIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNVJlZ2lzdGVyZWQgUzMgbWV0aG9kcyBvdmVyd3JpdHRlbiBieSAnYWRlZ3JhcGhpY3MnOlxuICBtZXRob2QgICAgICAgICBmcm9tXG4gIGJpcGxvdC5kdWRpICAgIGFkZTRcbiAga3Bsb3QuZm91Y2FydCAgYWRlNFxuICBrcGxvdC5tY29hICAgICBhZGU0XG4gIGtwbG90Lm1mYSAgICAgIGFkZTRcbiAga3Bsb3QucHRhICAgICAgYWRlNFxuICBrcGxvdC5zZXBhbiAgICBhZGU0XG4gIGtwbG90LnN0YXRpcyAgIGFkZTRcbiAgc2NhdHRlci5jb2EgICAgYWRlNFxuICBzY2F0dGVyLmR1ZGkgICBhZGU0XG4gIHNjYXR0ZXIubmlwYWxzIGFkZTRcbiAgc2NhdHRlci5wY28gICAgYWRlNFxuICBzY29yZS5hY20gICAgICBhZGU0XG4gIHNjb3JlLm1peCAgICAgIGFkZTRcbiAgc2NvcmUucGNhICAgICAgYWRlNFxuICBzY3JlZXBsb3QuZHVkaSBhZGU0XG5SZWdpc3RlcmVkIFMzIG1ldGhvZCBvdmVyd3JpdHRlbiBieSAnc3BkZXAnOlxuICBtZXRob2QgICBmcm9tXG4gIHBsb3QubXN0IGFwZSBcblJlZ2lzdGVyZWQgUzMgbWV0aG9kcyBvdmVyd3JpdHRlbiBieSAnYWRlc3BhdGlhbCc6XG4gIG1ldGhvZCAgICAgICAgICAgICBmcm9tICAgICAgIFxuICBwbG90Lm11bHRpc3BhdGkgICAgYWRlZ3JhcGhpY3NcbiAgcHJpbnQubXVsdGlzcGF0aSAgIGFkZTQgICAgICAgXG4gIHN1bW1hcnkubXVsdGlzcGF0aSBhZGU0ICAgICAgIFxuIn0= -->
-<pre><code>package 㤼㸱adespatial㤼㸲 was built under R version 4.0.5Registered S3 methods overwritten by &#39;adegraphics&#39;:
-  method         from
-  biplot.dudi    ade4
-  kplot.foucart  ade4
-  kplot.mcoa     ade4
-  kplot.mfa      ade4
-  kplot.pta      ade4
-  kplot.sepan    ade4
-  kplot.statis   ade4
-  scatter.coa    ade4
-  scatter.dudi   ade4
-  scatter.nipals ade4
-  scatter.pco    ade4
-  score.acm      ade4
-  score.mix      ade4
-  score.pca      ade4
-  screeplot.dudi ade4
-Registered S3 method overwritten by &#39;spdep&#39;:
-  method   from
-  plot.mst ape 
-Registered S3 methods overwritten by &#39;adespatial&#39;:
-  method             from       
-  plot.multispati    adegraphics
-  print.multispati   ade4       
-  summary.multispati ade4       </code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ29yZClcbmBgYCJ9 -->
-<pre class="r"><code>library(ggord)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ29yZOOkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41XG4ifQ== -->
-<pre><code>package 㤼㸱ggord㤼㸲 was built under R version 4.0.5</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShmdXp6eVNpbSlcbmBgYCJ9 -->
-<pre class="r"><code>library(fuzzySim)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFmdXp6eVNpbeOkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41XG5BdHRhY2hpbmcgcGFja2FnZTog46S847ixZnV6enlTaW3jpLzjuLJcblxuVGhlIGZvbGxvd2luZyBvYmplY3QgaXMgbWFza2VkIGZyb20g46S847ixcGFja2FnZTpwdXJycuOkvOO4sjpcblxuICAgIHRyYW5zcG9zZVxuIn0= -->
-<pre><code>package 㤼㸱fuzzySim㤼㸲 was built under R version 4.0.5
-Attaching package: 㤼㸱fuzzySim㤼㸲
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
 
-The following object is masked from 㤼㸱package:purrr㤼㸲:
-
-    transpose</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0Zyb20gaHR0cHM6Ly9yc3R1ZGlvLXB1YnMtc3RhdGljLnMzLmFtYXpvbmF3cy5jb20vNjk0MDE2X2UyZDUzZDY1ODU4ZDRhMTk4NTYxNmZhMzg1NWQyMzdmLmh0bWwjMV9QYWNrYWdlc19uZWVkZWRcblxuI0ZvciBwbG90dGluZyB3aXRoIGdncGxvdDJcblxubGlicmFyeShCaW9kaXZlcnNpdHlSKVxuYGBgIn0= -->
-<pre class="r"><code>#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
+#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
 
 #For plotting with ggplot2
 
-library(BiodiversityR)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFCaW9kaXZlcnNpdHlS46S847iyIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVMb2FkaW5nIHJlcXVpcmVkIHBhY2thZ2U6IHRjbHRrXG5SZWdpc3RlcmVkIFMzIG1ldGhvZCBvdmVyd3JpdHRlbiBieSAnaHRtbHdpZGdldHMnOlxuICBtZXRob2QgICAgICAgICAgIGZyb20gICAgICAgICBcbiAgcHJpbnQuaHRtbHdpZGdldCB0b29sczpyc3R1ZGlvXG5SZWdpc3RlcmVkIFMzIG1ldGhvZCBvdmVyd3JpdHRlbiBieSAnZGF0YS50YWJsZSc6XG4gIG1ldGhvZCAgICAgICAgICAgZnJvbVxuICBwcmludC5kYXRhLnRhYmxlICAgICBcbkJpb2RpdmVyc2l0eVIgMi4xMy0xOiBVc2UgY29tbWFuZCBCaW9kaXZlcnNpdHlSR1VJKCkgdG8gbGF1bmNoIHRoZSBHcmFwaGljYWwgVXNlciBJbnRlcmZhY2U7IFxudG8gc2VlIGNoYW5nZXMgdXNlIEJpb2RpdmVyc2l0eVJHVUkoY2hhbmdlTG9nPVRSVUUsIGJhY2t3YXJkLmNvbXBhdGliaWxpdHkubWVzc2FnZXM9VFJVRSlcbiJ9 -->
-<pre><code>package 㤼㸱BiodiversityR㤼㸲 was built under R version 4.0.5Loading required package: tcltk
-Registered S3 method overwritten by &#39;htmlwidgets&#39;:
-  method           from         
-  print.htmlwidget tools:rstudio
-Registered S3 method overwritten by &#39;data.table&#39;:
-  method           from
-  print.data.table     
-BiodiversityR 2.13-1: Use command BiodiversityRGUI() to launch the Graphical User Interface; 
-to see changes use BiodiversityRGUI(changeLog=TRUE, backward.compatibility.messages=TRUE)</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ3NjaSlcbmBgYCJ9 -->
-<pre class="r"><code>library(ggsci)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ3NjaeOkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC4zXG4ifQ== -->
-<pre><code>package 㤼㸱ggsci㤼㸲 was built under R version 4.0.3</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ3JlcGVsKVxuYGBgIn0= -->
-<pre class="r"><code>library(ggrepel)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ3JlcGVs46S847iyIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVcbiJ9 -->
-<pre><code>package 㤼㸱ggrepel㤼㸲 was built under R version 4.0.5</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ2ZvcmNlKVxuYGBgIn0= -->
-<pre class="r"><code>library(ggforce)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ2ZvcmNl46S847iyIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVcbiJ9 -->
-<pre><code>package 㤼㸱ggforce㤼㸲 was built under R version 4.0.5</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShwYXRjaHdvcmspXG5gYGAifQ== -->
-<pre class="r"><code>library(patchwork)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFwYXRjaHdvcmvjpLzjuLIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNVxuIn0= -->
-<pre><code>package 㤼㸱patchwork㤼㸲 was built under R version 4.0.5</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShjbHVzdGVyKVxubGlicmFyeShnZ2RlbmRybylcbmBgYCJ9 -->
-<pre class="r"><code>library(cluster)
-library(ggdendro)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ2RlbmRyb+OkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41XG4ifQ== -->
-<pre><code>package 㤼㸱ggdendro㤼㸲 was built under R version 4.0.5</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShSQ29sb3JCcmV3ZXIpXG5cbmxpYnJhcnkoaW5kaWNzcGVjaWVzKVxuYGBgIn0= -->
-<pre class="r"><code>library(RColorBrewer)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
 
-library(indicspecies)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFpbmRpY3NwZWNpZXPjpLzjuLIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNVxuIn0= -->
-<pre><code>package 㤼㸱indicspecies㤼㸲 was built under R version 4.0.5</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShmYWN0b2V4dHJhKVxuYGBgIn0= -->
-<pre class="r"><code>library(factoextra)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRZmFjdG9leHRyYZIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNVdlbGNvbWUhIFdhbnQgdG8gbGVhcm4gbW9yZT8gU2VlIHR3byBmYWN0b2V4dHJhLXJlbGF0ZWQgYm9va3MgYXQgaHR0cHM6Ly9nb28uZ2wvdmUzV0JhXG4ifQ== -->
-<pre><code>package 㤼㸱factoextra㤼㸲 was built under R version 4.0.5Welcome! Want to learn more? See two factoextra-related books at https://goo.gl/ve3WBa</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ2NvcnJwbG90KSAjQ29ycmVsYXRpb24gcGxvdHNcbmBgYCJ9 -->
-<pre class="r"><code>library(ggcorrplot) #Correlation plots</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ2NvcnJwbG9046S847iyIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjRcbiJ9 -->
-<pre><code>package 㤼㸱ggcorrplot㤼㸲 was built under R version 4.0.4</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh6b28pXG5gYGAifQ== -->
-<pre class="r"><code>library(zoo)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5BdHRhY2hpbmcgcGFja2FnZTog46S847ixem9v46S847iyXG5cblRoZSBmb2xsb3dpbmcgb2JqZWN0cyBhcmUgbWFza2VkIGZyb20g46S847ixcGFja2FnZTpiYXNl46S847iyOlxuXG4gICAgYXMuRGF0ZSwgYXMuRGF0ZS5udW1lcmljXG4ifQ== -->
-<pre><code>
-Attaching package: 㤼㸱zoo㤼㸲
+library(patchwork)
 
-The following objects are masked from 㤼㸱package:base㤼㸲:
+library(cluster)
+library(ggdendro)
 
-    as.Date, as.Date.numeric</code></pre>
-<!-- rnb-output-end -->
+library(RColorBrewer)
+
+library(indicspecies)
+
+library(factoextra)
+
+library(ggcorrplot) #Correlation plots
+
+library(zoo)</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZGluZyBkYXRhc2hlZXQgd2l0aCBwaHlzaWNhbCwgbnV0cmllbnRzLCBjaGxvcm9waHlsbCwgbWljcm9zY29weSBhbmQgY2hlbXRheCBkYXRhLlxuZGF0YSA8LSByZWFkX2NzdihoZXJlKFwib3V0cHV0c1wiLCBcImN0ZF9tZXJnZV8yMDIxLTExLTA0X2NoZW0uY3N2XCIpKVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZGluZyBkYXRhc2hlZXQgd2l0aCBwaHlzaWNhbCwgbnV0cmllbnRzLCBjaGxvcm9waHlsbCwgbWljcm9zY29weSBhbmQgY2hlbXRheCBkYXRhLlxuZGF0YSA8LSByZWFkX2NzdihoZXJlKFwib3V0cHV0c1wiLCBcImN0ZF9tZXJnZV8yMDIxLTExLTA0X2NoZW0uY3N2XCIpKVxuXG5jaGwgPC0gcmVhZF9jc3YoaGVyZShcIm91dHB1dHNcIiwgXCJ0Y2hsYV9jYWxpYnJhdGlvbl8yMDIyLTExLTE1LmNzdlwiKSlcblxuZGF0YSA8LSBkYXRhICU+JSBcbiAgbGVmdF9qb2luKGNobClcblxucml2IDwtIHJlYWRfY3N2KGhlcmUoXCJmaWxlc1wiLCBcInJpdmVyLmNzdlwiKSlcblxucml2X2IgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwicml2X2JlbGxhXzQuY3N2XCIpKSBcblxuZXRoZWxfd2luZCA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJldGhlbF93aW5kLmNzdlwiKSlcblxubGtfd2luZCA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJ3aW5kX2xvb2tvdXQuY3N2XCIpKSBcblxubGtfcGFyIDwtIHJlYWRfY3N2KGhlcmUoXCJmaWxlc1wiLCBcImxvb2tvdXRfcGFyLmNzdlwiKSlcbmBgYCJ9 -->
 <pre class="r"><code>#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
-data &lt;- read_csv(here(&quot;outputs&quot;, &quot;ctd_merge_2021-11-04_chem.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjYgQ29sdW1uczogMTY3XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICAgICgxKTogc2l0ZV9pZFxuZGJsICAoMTY1KTogbW9udGgsIG1vbnRoX3N1cnYsIGxhdCwgbG9uZywgdGVtcF9kbSwgc2FsX2RtLCBOMl9kbSwgZGVsdGFfcmhvX2RtLCB0dXJiX2RtLCBkZXBfMjZfZG0sIG5vMl9kbSwgc2lvMi4uLlxuZGF0ZSAgICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 66 Columns: 167
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr    (1): site_id
-dbl  (165): month, month_surv, lat, long, temp_dm, sal_dm, N2_dm, delta_rho_dm, turb_dm, dep_26_dm, no2_dm, sio2...
-date   (1): date
+data &lt;- read_csv(here(&quot;outputs&quot;, &quot;ctd_merge_2021-11-04_chem.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2hsIDwtIHJlYWRfY3N2KGhlcmUoXCJvdXRwdXRzXCIsIFwidGNobGFfY2FsaWJyYXRpb25fMjAyMi0xMS0xNS5jc3ZcIikpXG5gYGAifQ== -->
-<pre class="r"><code>chl &lt;- read_csv(here(&quot;outputs&quot;, &quot;tchla_calibration_2022-11-15.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODAgQ29sdW1uczogNFxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDIpOiBzaXRlX2lkLCBsb2NhdGlvblxuZGJsICAoMSk6IHRjaGxhXG5kYXRlICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 80 Columns: 4
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (2): site_id, location
-dbl  (1): tchla
-date (1): date
+chl &lt;- read_csv(here(&quot;outputs&quot;, &quot;tchla_calibration_2022-11-15.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGF0YSA8LSBkYXRhICU+JSBcbiAgbGVmdF9qb2luKGNobClcbmBgYCJ9 -->
-<pre class="r"><code>data &lt;- data %&gt;% 
-  left_join(chl)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiSm9pbmluZywgYnkgPSBjKFwiZGF0ZVwiLCBcInNpdGVfaWRcIilcbiJ9 -->
-<pre><code>Joining, by = c(&quot;date&quot;, &quot;site_id&quot;)</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucml2IDwtIHJlYWRfY3N2KGhlcmUoXCJmaWxlc1wiLCBcInJpdmVyLmNzdlwiKSlcbmBgYCJ9 -->
-<pre class="r"><code>riv &lt;- read_csv(here(&quot;files&quot;, &quot;river.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzY2MTggQ29sdW1uczogNVxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDIpOiBJRCwgU1lNXG5kYmwgICgyKTogUEFSQU0sIFZhbHVlXG5kYXRlICgxKTogRGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 36618 Columns: 5
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (2): ID, SYM
-dbl  (2): PARAM, Value
-date (1): Date
+data &lt;- data %&gt;% 
+  left_join(chl)
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucml2X2IgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwicml2X2JlbGxhXzQuY3N2XCIpKSBcbmBgYCJ9 -->
-<pre class="r"><code>riv_b &lt;- read_csv(here(&quot;files&quot;, &quot;riv_bella_4.csv&quot;)) </code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjQwMCBDb2x1bW5zOiA1XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICgzKTogSUQsIERhdGUsIFNZTVxuZGJsICgyKTogUEFSQU0sIFZhbHVlXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
-<pre><code>Rows: 6400 Columns: 5
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr (3): ID, Date, SYM
-dbl (2): PARAM, Value
+riv &lt;- read_csv(here(&quot;files&quot;, &quot;river.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZXRoZWxfd2luZCA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJldGhlbF93aW5kLmNzdlwiKSlcbmBgYCJ9 -->
-<pre class="r"><code>ethel_wind &lt;- read_csv(here(&quot;files&quot;, &quot;ethel_wind.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODE1OTUgQ29sdW1uczogMTZcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICgzKTogbWVhc3VyZW1lbnRUaW1lLCBtb250aCwgd2F0ZXJZZWFyXG5kYmwgKDExKTogeWVhciwgV2luZFNwZF9RTCwgV2luZFNwZF9VUUwsIFdpbmRTcGRfQXZnLCBXaW5kU3BkX01pbiwgV2luZFNwZF9NYXgsIFdpbmRTcGRfU3RkLCBXaW5kRGlyX1FMLCBXaW5kRGlyLi4uXG5sZ2wgICgyKTogV2luZFNwZF9RQywgV2luZERpcl9RQ1xuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 81595 Columns: 16
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (3): measurementTime, month, waterYear
-dbl (11): year, WindSpd_QL, WindSpd_UQL, WindSpd_Avg, WindSpd_Min, WindSpd_Max, WindSpd_Std, WindDir_QL, WindDir...
-lgl  (2): WindSpd_QC, WindDir_QC
+riv_b &lt;- read_csv(here(&quot;files&quot;, &quot;riv_bella_4.csv&quot;)) 
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGtfd2luZCA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJ3aW5kX2xvb2tvdXQuY3N2XCIpKSBcbmBgYCJ9 -->
-<pre class="r"><code>lk_wind &lt;- read_csv(here(&quot;files&quot;, &quot;wind_lookout.csv&quot;)) </code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODg1NjIgQ29sdW1uczogMTZcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICgzKTogbWVhc3VyZW1lbnRUaW1lLCBtb250aCwgd2F0ZXJZZWFyXG5kYmwgKDExKTogeWVhciwgV2luZFNwZF9RTCwgV2luZFNwZF9VUUwsIFdpbmRTcGRfQXZnLCBXaW5kU3BkX01pbiwgV2luZFNwZF9NYXgsIFdpbmRTcGRfU3RkLCBXaW5kRGlyX1FMLCBXaW5kRGlyLi4uXG5sZ2wgICgyKTogV2luZFNwZF9RQywgV2luZERpcl9RQ1xuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
-<pre><code>Rows: 88562 Columns: 16
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr  (3): measurementTime, month, waterYear
-dbl (11): year, WindSpd_QL, WindSpd_UQL, WindSpd_Avg, WindSpd_Min, WindSpd_Max, WindSpd_Std, WindDir_QL, WindDir...
-lgl  (2): WindSpd_QC, WindDir_QC
+ethel_wind &lt;- read_csv(here(&quot;files&quot;, &quot;ethel_wind.csv&quot;))
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGtfcGFyIDwtIHJlYWRfY3N2KGhlcmUoXCJmaWxlc1wiLCBcImxvb2tvdXRfcGFyLmNzdlwiKSlcbmBgYCJ9 -->
-<pre class="r"><code>lk_par &lt;- read_csv(here(&quot;files&quot;, &quot;lookout_par.csv&quot;))</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODg2MTUgQ29sdW1uczogMTJcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgKDUpOiBtZWFzdXJlbWVudFRpbWUsIG1vbnRoLCB3YXRlclllYXIsIDFob3VyU29sYXJfUUMsIDFob3VyUEFSX1FDXG5kYmwgKDcpOiB5ZWFyLCAxaG91clNvbGFyX1FMLCAxaG91clNvbGFyX1VRTCwgMWhvdXJTb2xhciwgMWhvdXJQQVJfUUwsIDFob3VyUEFSX1VRTCwgMWhvdXJQQVJcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
-<pre><code>Rows: 88615 Columns: 12
--- Column specification --------------------------------------------------------------------------------------------
-Delimiter: &quot;,&quot;
-chr (5): measurementTime, month, waterYear, 1hourSolar_QC, 1hourPAR_QC
-dbl (7): year, 1hourSolar_QL, 1hourSolar_UQL, 1hourSolar, 1hourPAR_QL, 1hourPAR_UQL, 1hourPAR
+lk_wind &lt;- read_csv(here(&quot;files&quot;, &quot;wind_lookout.csv&quot;)) 
 
-i Use `spec()` to retrieve the full column specification for this data.
-i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<!-- rnb-output-end -->
+lk_par &lt;- read_csv(here(&quot;files&quot;, &quot;lookout_par.csv&quot;))</code></pre>
+<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
