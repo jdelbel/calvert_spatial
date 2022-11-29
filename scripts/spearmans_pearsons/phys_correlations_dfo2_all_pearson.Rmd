@@ -21,9 +21,9 @@ library(gsw)
 #Upload data from my master data standardization sheet
 # micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
 
-micro <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv"))
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
 
-ctd <- read_csv(here("files", "kc10_ctd.csv"))
+ctd <- read_csv(here("outputs", "ctd_all_2022-11-25.csv"))
 
 chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
@@ -43,104 +43,10 @@ lk_par <- read_csv(here("files", "lookout_par.csv"))
 ```{r}
 #Removing QU39 
 micro <- micro %>% 
-  filter(!site_id == "QU39")
-```
-
-```{r}
-ctd <- ctd %>% 
-  select(date_time = `Measurement time`,
-         pres = `Pressure (dbar)`,
-         sal = `Salinity (PSU)`,
-         temp = `Temperature (deg C)`) %>% 
-  mutate(date = lubridate::date(date_time)) %>% 
-  relocate(date, .after = date_time)
+  filter(site_id == "QCS01")
 
 ctd <- ctd %>% 
-  group_by(date, pres) %>% 
-  summarise(temp = mean(temp),
-            sal = mean(sal)) %>% 
-  ungroup()
-
-```
-
-```{r}
-#Performing GSW calculations
-
-#Some CTD casts are missing coordinates that are required for GSW calculations. Fill the coordinates in using those from the Hakai Station Master - Latitude
-ctd <- ctd %>% 
-  mutate(latitude = 51.65064,
-         longitude = -127.9513)
-                              
-
-#Calculating absolute salinity
-SA <- gsw_SA_from_SP(ctd$sal, ctd$pres, ctd$longitude, ctd$latitude)
-
-#Converting absolute salinity output to a dataframe
-SA <- as.data.frame(SA)
-
-#Calculating conservative temperature
-CT <- gsw_CT_from_t(SA$SA, ctd$temp, ctd$pres)
-
-#Converting conservative temperature output to a dataframe
-CT <- as.data.frame(CT)
-
-#Calculating Density
-rho = gsw_rho(SA$SA, CT$CT, ctd$pres)
-
-#Converting Density to a dataframe
-rho <- as.data.frame(rho)
-
-#Calculating Brunt-Vaisala frequency
-bv <- gsw_Nsquared(SA$SA, CT$CT, ctd$pres)
-
-#Converting Brunt-Vaisala frequency to a dataframe
-bv <- bind_rows(bv)
-
-#Adding a row at the bottom of the Brunt-Vaisala dataframe to make the vector length equal to the other calculations
-bv <- bv %>% 
-  add_row(N2 = NA, p_mid = NA)
-
-#Binding calculations to ctd dataframe
-ctd <- cbind(ctd, SA, CT, rho, bv)
-```
-
-```{r}
-#Filter 2m data from the CTD datasheet
-ctd_2 <- ctd %>% 
-  filter(pres == 2) %>% 
-  select(date, rho_2 = rho)
-
-#filter 30m data
-ctd_30 <- ctd %>% 
-  filter(pres == 30) %>% 
-  select(date, rho_30 = rho)
-
-#joining 2m data to 3m data
-ctd_dd <- ctd_2 %>% 
-  left_join(ctd_30)
-
-#Calculating difference in density
-ctd_dd <- ctd_dd %>% 
-  mutate(delta_rho = rho_30 - rho_2) %>% 
-  select(date, delta_rho)
-
-ctd <- ctd %>% 
-  left_join(ctd_dd)
-```
-
-
-```{r}
-ctd <- ctd %>% 
-  filter(pres == 5)
-
-nuts <- nuts %>% 
-  filter(line_out_depth == 5) %>% 
-  select(date, no2_no3_um, po4, sio2)
-
-data <- ctd %>% 
-  left_join(nuts)
-
-
+  filter(site_id == "QCS01")
 ```
 
 
@@ -226,7 +132,7 @@ lk_da <- lk_wind2 %>%
   rename(date = date2) %>%
   mutate(w_b1 = rollmeanr(lag(dm_w, 1), k = 3, fill = NA),
          wd_b1 = rollmeanr(lag(dm_wd, 1), k = 3, fill = NA)) %>% 
-  select(date, lk_w = w_b1, lk_wd = wd_b1)
+  select(date, dm_w, lk_w = w_b1, lk_wd = wd_b1)
   
 ```
 
@@ -252,7 +158,7 @@ par <- par %>%
 ```
 
 ```{r}
-data <- data %>% 
+data <- ctd %>% 
   left_join(riv_w) %>% 
   left_join(riv_b) %>% 
   left_join(ew_da) %>% 
@@ -262,8 +168,13 @@ data <- data %>%
 
 ```{r}
 data_pca <- data %>% 
-  select(date, temp, sal, 
-         delta_rho, no2_no3_um, sio2, po4, 
+  select(date, 
+         temp = temp_dm, 
+         sal = sal_dm, 
+         delta_rho = delta_rho_dm,
+         no2_no3_um = no2_dm, 
+         sio2 = sio2_dm, 
+         po4 = po4_dm, 
          Wan_b1, 
          # Bel_b1,
          eth_w, eth_wd, 
@@ -473,14 +384,11 @@ ggplot()+
         legend.title.align = 0.5) +
         guides(fill = guide_colourbar(title.position = "right")) 
 
-ggsave(here("figures_good", "correlations_KC10_Full_year_Pearson.png"),
+ggsave(here("figures_good", "correlations_QCS01_Full_year_Pearson.png"),
        width = 12, height = 12, dpi = 300)
 
 # https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
 ```
-
-
-
 
 ```{r}
 sms <- data %>% 
@@ -610,7 +518,7 @@ f4 <- riv_w_j %>%
 
 fig <- f1 / f2 / f3 / f4
 
-ggsave(here("figures_good", "KC10_Wannock_dr_temp_TS.png"), fig,
+ggsave(here("figures_good", "QCS01_Wannock_dr_temp_TS.png"), fig,
         width = 16, height = 12, dpi = 300)
 ```
 
@@ -627,7 +535,7 @@ f1 <- riv_w_j %>%
   labs(x = "Wannock Dis. B10", y = "Salinity (5m)",) +
   labs(fill = "Month") +
   theme_bw() +
-  ggtitle("Channel (KC10)") + 
+  ggtitle("Fjord (DFO2)") + 
   theme(text = element_text(size = 25),
         axis.text = element_text(color = 'black'),
         axis.text.x = element_blank(),
@@ -641,8 +549,8 @@ f2 <- riv_w_j %>%
   scale_fill_brewer(palette = "RdYlBu") +
   geom_smooth(method = 'lm', color = "black") +
   ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 10,
-                   label.x = 0, label.y = 10) +
-  lims(y = c(0, 10)) +
+                   label.x = 0, label.y = 4) +
+  lims(y = c(0, 5)) +
   labs(x = "Wannock Dis. B10", y = "\u394\u3C1",) +
   labs(fill = "Month") +
   theme_bw() +
@@ -652,31 +560,12 @@ f2 <- riv_w_j %>%
 
 fig <- f1 / f2 + plot_layout(guides = "collect")
 
-ggsave(here("figures_good", "KC10_Wannock_sal_DRho.png"), fig,
+ggsave(here("figures_good", "QCS01_Wannock_sal_DRho.png"), fig,
         width = 9, height = 12, dpi = 300)
 ```
-```{r}
-coeff_p <- 10
 
-riv_w_j %>%
-  ggplot(aes(x = yday)) +
-  geom_area(aes(y = par_b1), size = 1, color = "orange", fill = "orange", alpha = 0.5) +
-  geom_point(aes(y = abund/coeff_p), size = 4, pch = 21, fill = "darkgreen",
-             color = "black", stroke = 2) +
-  geom_point(aes(y = tchla/coeff_p), size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "Solar",
-                     sec.axis = sec_axis(~.*coeff_p,
-                                         name = "Diat. Abund.")) +
-  facet_grid(. ~ year) +
-  theme_bw() +
-  theme(text = element_text(size = 28),
-        axis.text = element_text(color = 'black'),
-        axis.text.x = element_blank(),
-        axis.title.x = element_blank())
 
-ggsave(here("figures_good", "KC10_par_dr_temp_TS.png"),
-        width = 16, height = 4, dpi = 300)
-```
+
 
 ```{r}
 coeff_p <- 10
@@ -736,11 +625,74 @@ fw2 <- riv_w_j %>%
 fig_pw <- fp1/fw1/fw2
 
 
-ggsave(here("figures_good", "KC10_wind_par_TS.png"), fig_pw,
+ggsave(here("figures_good", "QCS01_wind_par_TS.png"), fig_pw,
         width = 16, height = 12, dpi = 300)
 ```
 
+```{r}
+coeff_p <- 10
 
+fp1 <- riv_w_j %>%
+  filter(!is.na(abund)) %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = par_b1), size = 1, color = "orange", fill = "orange", alpha = 0.5) +
+  geom_point(aes(y = abund/coeff_p), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  geom_point(aes(y = tchla/coeff_p), size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "Solar",
+                     sec.axis = sec_axis(~.*coeff_p,
+                                         name = "Diat. Abund.")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+
+coeff_ws <- 1
+
+fw1 <- riv_w_j %>%
+  filter(!is.na(abund)) %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = lk_w), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+  geom_point(aes(y = abund*coeff_ws), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  geom_point(aes(y = tchla*coeff_ws), size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "Wind^3",
+                     sec.axis = sec_axis(~./coeff_ws,
+                                         name = "Diat. Abund.")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+
+ coeff_wd <- 10
+
+fw2 <- riv_w_j %>%
+  filter(!is.na(abund)) %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = lk_wd), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+  geom_point(aes(y = abund*coeff_wd), size = 4, pch = 21, fill = "darkgreen",
+             color = "black", stroke = 2) +
+  geom_point(aes(y = tchla*coeff_wd), size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "Wind^3",
+                     sec.axis = sec_axis(~./coeff_wd,
+                                         name = "Diat. Abund.")) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+
+fig_pw <- fp1/fw1/fw2
+
+
+ggsave(here("figures_good", "QCS01_wind_par_TS_ds.png"), fig_pw,
+        width = 16, height = 12, dpi = 300)
+```
 
 
 ```{r}

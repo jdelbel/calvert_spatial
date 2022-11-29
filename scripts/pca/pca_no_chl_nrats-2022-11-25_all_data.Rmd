@@ -59,8 +59,9 @@ data <- data %>%
 
 ```{r}
 #selecting data I am going to use with the PCA - I think a case could be made to only include sio@ as this is what comes out as a driver in RDA and also, they all point in the same direction and have the same strength in PCA biplot.
-data_pca <- data %>% 
-  select(date, month, month_surv, site_id, temp = temp_dm, sal = sal_dm, 
+data_pca <- data %>%
+  mutate(month = lubridate::month(date)) %>% 
+  select(date, month, site_id, temp = temp_dm, sal = sal_dm, 
          drho = delta_rho_dm, no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm,
          secchi = secchi_depth, tchla)
 

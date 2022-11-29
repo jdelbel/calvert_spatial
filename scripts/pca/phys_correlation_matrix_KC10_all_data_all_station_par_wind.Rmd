@@ -286,7 +286,7 @@ data <- data %>%
 data_pca <- data %>% 
   select(date, temp, sal, 
          delta_rho, no2_no3_um, sio2, po4, 
-         Wan_b1)
+         Wan_b1, par_b1, lk_w, lk_wd)
 
 data_pca <- data_pca %>%
   drop_na()
@@ -374,10 +374,12 @@ f_c <- ggcorrplot(cor_all,
   lab_size = 4.5,
   outline.color = "black") +
   scale_x_discrete(labels = c("S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10",
+                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
+                        "lk_w", "lk_wd",
                         "TChla", "Diat.")) +
   scale_y_discrete(labels = c("T", "S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10",
+                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
+                        "lk_w", "lk_wd",
                         "TChla", "Diat.")) +
   # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Channel") +
@@ -408,10 +410,9 @@ data_short <- data_short %>%
 data_short <- data_short %>% 
   select(date, site_id, temp = temp_dm, sal = sal_dm, 
          delta_rho = delta_rho_dm, no2_dm, sio2 = sio2_dm, po4 = po4_dm, 
-         Wan_b1)
+         Wan_b1, par_b1, lk_w, lk_wd)
 
-data_short <- data_short %>%
-  drop_na()
+
 ```
 
 ```{r}
@@ -441,6 +442,9 @@ cor_exp_s <- chl_corr_s %>%
 ```{r}
 data_short <- data_short %>% 
   left_join(cor_exp_s)
+
+data_short <- data_short %>%
+  drop_na()
 
 ```
 
@@ -476,12 +480,13 @@ f_f <- ggcorrplot(cor_f,
   lab_size = 4.5,
   outline.color = "black") +
   scale_x_discrete(labels = c("S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10",
+                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
+                        "lk_w", "lk_wd",
                         "TChla", "Diat.")) +
   scale_y_discrete(labels = c("T", "S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10",
+                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
+                        "lk_w", "lk_wd",
                         "TChla", "Diat.")) +
-  # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Fjord") +
   theme_bw() +
   theme(text = element_text(size = 25),
@@ -503,10 +508,12 @@ f_s <- ggcorrplot(cor_s,
   lab_size = 4.5,
   outline.color = "black") +
   scale_x_discrete(labels = c("S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10",
+                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
+                        "lk_w", "lk_wd",
                         "TChla", "Diat.")) +
   scale_y_discrete(labels = c("T", "S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10",
+                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
+                        "lk_w", "lk_wd",
                         "TChla", "Diat.")) +
   # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Shelf") +
@@ -523,7 +530,7 @@ f_s <- ggcorrplot(cor_s,
 ```{r}
 fig <- f_f + f_c + f_s
 
-ggsave(here("figures_good", "corr_all_station_p05.png"), fig,
+ggsave(here("figures_good", "corr_all_station_all_data_p05_par_wind.png"), fig,
        width = 14, height = 6, dpi = 300)
 ```
 

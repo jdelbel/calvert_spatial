@@ -682,28 +682,28 @@ ctd_merge <- ctd_merge %>%
 #It's actually less - 59 - Why? One reason could be chlorophyll data, which I incorporated and may have had missing data. Incorporate here and see. 8 Chlorophyll samples missing - this explains the disparity. Should be good to go.
 
 #Exporting as a csv to pull into other analysis.
-write_csv(ctd_merge_ds, here("outputs", "ctd_merge_2022-03-16_het.csv"))
-
-#Exporting as a csv to pull into other analysis.
-write_csv(micro, here("outputs", "micro_all_2022-07-29.csv"))
-
-#Exporting non-downscaled kc10 and QU39 dataset.
-write_csv(micro_kc10, here("outputs", "micro_kc10_2022-03-16_het.csv"))
-
-#Exporting downscaled kc10 and QU39 dataset.
-write_csv(micro_kc10_ds, here("outputs", "micro_kc10_ds_2022-03-16_het.csv"))
-
-#Exporting as a csv to pull into other analysis.
-write_csv(cil_ds, here("outputs", "ciliate_master_2022-03-16_het.csv"))
-
-#Exporting as a csv to pull into other analysis.
-write_csv(dino_het_ds, here("outputs", "dino-het_master_2022-03-16_het.csv"))
-
-#Exporting as a csv to pull into other analysis.
-write_csv(fec_ds, here("outputs", "fecal_master_2022-03-16_het.csv"))
-
-#Exporting as a csv to pull into other analysis.
-write_csv(chem_2, here("outputs", "chemtax_master_2022-03-16_het.csv"))
+write_csv(ctd_merge, here("outputs", "ctd_all_2022-11-25.csv"))
+# 
+# #Exporting as a csv to pull into other analysis.
+write_csv(micro, here("outputs", "micro_all_2022-11-25.csv"))
+# 
+# #Exporting non-downscaled kc10 and QU39 dataset.
+# write_csv(micro_kc10, here("outputs", "micro_kc10_2022-03-16_het.csv"))
+# 
+# #Exporting downscaled kc10 and QU39 dataset.
+# write_csv(micro_kc10_ds, here("outputs", "micro_kc10_ds_2022-03-16_het.csv"))
+# 
+# #Exporting as a csv to pull into other analysis.
+# write_csv(cil_ds, here("outputs", "ciliate_master_2022-03-16_het.csv"))
+# 
+# #Exporting as a csv to pull into other analysis.
+# write_csv(dino_het_ds, here("outputs", "dino-het_master_2022-03-16_het.csv"))
+# 
+# #Exporting as a csv to pull into other analysis.
+# write_csv(fec_ds, here("outputs", "fecal_master_2022-03-16_het.csv"))
+# 
+# #Exporting as a csv to pull into other analysis.
+# write_csv(chem_2, here("outputs", "chemtax_master_2022-03-16_het.csv"))
 ```
 
 ```{r}

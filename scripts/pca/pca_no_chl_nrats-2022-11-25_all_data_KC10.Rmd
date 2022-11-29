@@ -53,16 +53,17 @@ data <- data %>%
 
 #Removing QU39 for this worksheet
 data <- data %>% 
-  filter(!site_id == "QU39")
+  filter(site_id == "KC10")
 ```
 
 
 ```{r}
 #selecting data I am going to use with the PCA - I think a case could be made to only include sio@ as this is what comes out as a driver in RDA and also, they all point in the same direction and have the same strength in PCA biplot.
-data_pca <- data %>% 
-  select(date, month, month_surv, site_id, temp = temp_dm, sal = sal_dm, 
+data_pca <- data %>%
+  mutate(month = lubridate::month(date)) %>% 
+  select(date, month, site_id, temp = temp_dm, sal = sal_dm, 
          drho = delta_rho_dm, no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm,
-         secchi = secchi_depth, tchla)
+         secchi = secchi_depth)
 
 #Changing site_id to location 
 data_pca <- data_pca %>% 
@@ -89,7 +90,7 @@ data_pca <- data_pca %>%
 # data_pca[data_pca == Inf] <- 0
 
 #Pulling out explanatory variables - not inlcuding ratio
-expl <- data_pca[, 6:10]
+expl <- data_pca[, 5:9]
 ```
 
 
@@ -215,7 +216,7 @@ legend("topright", legend = c(levels(as.factor(data_pca$site_id))),
 
 #Extracting site locations
 sites_loc_pca <- sites.long(p_pca, env.data = expl)
-meta_pca <- data_pca[,1:5]
+meta_pca <- data_pca[,1:4]
 sites_loc_pca <- cbind(meta_pca, sites_loc_pca)
 head(sites_loc_pca)
 sites_loc_pca <- sites_loc_pca %>% 
@@ -233,6 +234,7 @@ axis.long_pca
 # env_loc_pca <- as.data.frame(pca$biplot[,1:2])
 vscores <- as.data.frame(pca$CA$v)
 ```
+
 ```{r}
 #Order locations from fjord to shelf
 order_loc <- c("F", "C", "S")
@@ -259,7 +261,7 @@ ggplot() +
   geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
   scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
   scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
-  geom_point(data = sites_loc_pca, aes(x = axis1, y = axis2, fill = as.factor(month_surv),
+  geom_point(data = sites_loc_pca, aes(x = axis1, y = axis2, fill = as.factor(month),
                                    shape = location, stroke = 2), 
              size = 7, color = "black", alpha = 0.9) +
   scale_fill_brewer(palette = "RdYlBu") + 
@@ -285,8 +287,8 @@ ggplot() +
                   size = 9,
                   fontface = "bold",
                   color = "black") +
-  labs(x = "PCA1 (49%)",
-       y = "PCA2 (25%)") +
+  labs(x = "PCA1 (47%)",
+       y = "PCA2 (33%)") +
   # xlim(-0.75, 0.8) +
   # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
   #                                  digits = 3), "%)", sep = ""),
@@ -307,7 +309,7 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Month", shape = "Station")
 
-ggsave(here("figures_good", "pca_2020-11-08_only_no3.png"),
+ggsave(here("figures_good", "pca_2020-11-25_only_no3_all_data.png"),
        width = 10, height = 7, dpi = 300)
 ```
 
