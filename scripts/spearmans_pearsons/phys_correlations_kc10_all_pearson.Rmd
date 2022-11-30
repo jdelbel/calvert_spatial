@@ -660,7 +660,8 @@ coeff_p <- 10
 
 riv_w_j %>%
   ggplot(aes(x = yday)) +
-  geom_area(aes(y = par_b1), size = 1, color = "orange", fill = "orange", alpha = 0.5) +
+  geom_area(aes(y = par_b1), size = 0, fill = "orange", alpha = 0.3) +
+  geom_smooth(aes(y = par_b1), span = 0.1, color = "orange", size = 2) +
   geom_point(aes(y = abund/coeff_p), size = 4, pch = 21, fill = "darkgreen",
              color = "black", stroke = 2) +
   geom_point(aes(y = tchla/coeff_p), size = 1.5, pch = 8, color = "red", stroke = 1) +
@@ -683,7 +684,10 @@ coeff_p <- 10
 
 fp1 <- riv_w_j %>%
   ggplot(aes(x = yday)) +
-  geom_area(aes(y = par_b1), size = 1, color = "orange", fill = "orange", alpha = 0.5) +
+  # geom_area(aes(y = par_b1), size = 1, color = "orange", fill = "orange", alpha = 0.5) +
+  geom_area(aes(y = par_b1), size = 0, fill = "orange", alpha = 0.3) +
+  geom_smooth(aes(y = par_b1), span = 0.1, color = "orange", size = 2, se = F) +
+  # geom_point(data = subset(riv_w_j, !is.na(abund)), aes(y = par_b1)) +
   geom_point(aes(y = abund/coeff_p), size = 4, pch = 21, fill = "darkgreen",
              color = "black", stroke = 2) +
   geom_point(aes(y = tchla/coeff_p), size = 1.5, pch = 8, color = "red", stroke = 1) +
@@ -701,7 +705,9 @@ coeff_ws <- 100
 
 fw1 <- riv_w_j %>%
   ggplot(aes(x = yday)) +
-  geom_area(aes(y = lk_w^3), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+  # geom_area(aes(y = lk_w^3), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+  geom_area(aes(y = lk_w^3), size = 0, fill = "blue", alpha = 0.3) +
+  geom_smooth(aes(y = lk_w^3), span = 0.1, color = "blue", size = 2, se = F) +
   geom_point(aes(y = abund*coeff_ws), size = 4, pch = 21, fill = "darkgreen",
              color = "black", stroke = 2) +
   geom_point(aes(y = tchla*coeff_ws), size = 1.5, pch = 8, color = "red", stroke = 1) +
@@ -719,7 +725,9 @@ fw1 <- riv_w_j %>%
 
 fw2 <- riv_w_j %>%
   ggplot(aes(x = yday)) +
-  geom_area(aes(y = lk_wd), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+  # geom_area(aes(y = lk_wd), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+  geom_area(aes(y = lk_wd), size = 0, fill = "purple", alpha = 0.3) +
+  geom_smooth(aes(y = lk_wd), span = 0.1, color = "purple", size = 2, se = F) +
   geom_point(aes(y = abund*coeff_wd), size = 4, pch = 21, fill = "darkgreen",
              color = "black", stroke = 2) +
   geom_point(aes(y = tchla*coeff_wd), size = 1.5, pch = 8, color = "red", stroke = 1) +
