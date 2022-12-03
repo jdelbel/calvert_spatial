@@ -38,15 +38,17 @@ ethel_wind <- read_csv(here("files", "ethel_wind.csv"))
 lk_wind <- read_csv(here("files", "wind_lookout.csv"))
 
 lk_par <- read_csv(here("files", "lookout_par.csv"))
+
+rain_et <- read_csv(here("files", "ethel_rain.csv"))
 ```
 
 ```{r}
 #Removing QU39 
 micro <- micro %>% 
-  filter(site_id == "QCS01")
+  filter(site_id == "DFO2")
 
 ctd <- ctd %>% 
-  filter(site_id == "QCS01")
+  filter(site_id == "DFO2")
 ```
 
 
@@ -137,6 +139,25 @@ lk_da <- lk_wind2 %>%
 ```
 
 ```{r}
+e_r <- rain_et %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, rain = `24hourRain`) %>% 
+  filter(year > 2017 & year < 2022)
+
+e_r2 <- e_r %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_rain = mean(rain)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(rain_b1 = rollmeanr(lag(dm_rain, 1), k = 3, fill = NA)) %>% 
+  select(date, rain = rain_b1)
+```
+
+```{r}
 par <- lk_par %>%
   filter(`1hourPAR_UQL` == 2) %>% 
   mutate(date = lubridate::mdy_hm(measurementTime),
@@ -163,7 +184,8 @@ data <- ctd %>%
   left_join(riv_b) %>% 
   left_join(ew_da) %>% 
   left_join(lk_da) %>% 
-  left_join(par)
+  left_join(par) %>% 
+  left_join(e_r2)
 ```
 
 ```{r}
@@ -179,7 +201,8 @@ data_pca <- data %>%
          # Bel_b1,
          eth_w, eth_wd, 
          lk_w, lk_wd,
-         par_b1)
+         par_b1,
+         rain)
 
 
 data_pca <- data_pca %>%
@@ -262,7 +285,7 @@ cor_exp <- rbind(s_sum, d_sum, c_sum, chl_corr, pn, pns, hill,
 
 ```{r}
 data_pca_long <- data_pca %>% 
-  pivot_longer(cols = c(temp:par_b1), names_to = "name", values_to = "vals")
+  pivot_longer(cols = c(temp:rain), names_to = "name", values_to = "vals")
 ```
 
 
@@ -310,7 +333,8 @@ driver_loc <- c("temp",
                 "lk_w",
                 "lk_wd",
                 "Wan_b1",
-                "Bel_b1")
+                "Bel_b1",
+                "rain")
 
 phy_loc <- c("Diatom sum",
              # "Skeletonema marinoi large",
@@ -384,7 +408,7 @@ ggplot()+
         legend.title.align = 0.5) +
         guides(fill = guide_colourbar(title.position = "right")) 
 
-ggsave(here("figures_good", "correlations_QCS01_Full_year_Pearson.png"),
+ggsave(here("figures_good", "correlations_QCS01_Full_year_Pearson_RAIN.png"),
        width = 12, height = 12, dpi = 300)
 
 # https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
@@ -415,6 +439,7 @@ tchla <- data %>%
   select(date, tchla = exp_count) %>% 
   distinct(date, tchla)
 
+
 riv_w_j <- riv_w %>% 
     mutate(year = lubridate::year(date),
            yday = lubridate::yday(date)) %>% 
@@ -430,6 +455,7 @@ riv_w_j <- riv_w_j %>%
   left_join(riv_b_j) %>% 
   left_join(par) %>% 
   left_join(lk_da) %>% 
+  left_join(e_r2) %>% 
   left_join(smd) %>% 
   left_join(smn) %>% 
   left_join(smsi) %>%
@@ -448,7 +474,6 @@ riv_w_j <- riv_w_j %>%
 f1 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
   geom_area(aes(y = Wan_b1), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
-  geom_line(aes(y = Bel_b1), size = 1, color = "red") +
   geom_point(aes(y = abund*coeff), size = 4, pch = 21, fill = "darkgreen",
              color = "black", stroke = 2) +
   geom_point(aes(y = tchla*coeff), size = 1.5, pch = 8, color = "red", stroke = 1) +
@@ -462,15 +487,15 @@ f1 <- riv_w_j %>%
         axis.text.x = element_blank(),
         axis.title.x = element_blank())
 
-coeff_dr <- 1
+coeff_rain <- 6
 
 f2 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
-  geom_area(aes(y = dr), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
-  geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
+  geom_area(aes(y = rain), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
+  geom_point(aes(y = abund*coeff_rain), size = 4, pch = 21, fill = "darkgreen",
              color = "black", stroke = 2) +
   scale_y_continuous(name = "\u394\u3C1",
-                     sec.axis = sec_axis(~./coeff_dr,
+                     sec.axis = sec_axis(~./coeff_rain,
                                          name = "Diat. Abund.")) +
   facet_grid(. ~ year) +
   theme_bw() +
@@ -481,12 +506,15 @@ f2 <- riv_w_j %>%
         strip.background = element_blank(),
         strip.text.x = element_blank())
 
+
+coeff_dr <- 1
+
 f3 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
-  geom_area(aes(y = temp), size = 1, color = "red", fill = "red", alpha = 0.5) +
+  geom_area(aes(y = dr), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
   geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
              color = "black", stroke = 2) +
-  scale_y_continuous(name = "Temp",
+  scale_y_continuous(name = "\u394\u3C1",
                      sec.axis = sec_axis(~./coeff_dr,
                                          name = "Diat. Abund.")) +
   facet_grid(. ~ year) +
@@ -518,7 +546,7 @@ f4 <- riv_w_j %>%
 
 fig <- f1 / f2 / f3 / f4
 
-ggsave(here("figures_good", "QCS01_Wannock_dr_temp_TS.png"), fig,
+ggsave(here("figures_good", "DFO2_Wannock_dr_rain_TS.png"), fig,
         width = 16, height = 12, dpi = 300)
 ```
 
