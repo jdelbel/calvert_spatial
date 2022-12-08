@@ -65,6 +65,8 @@ ethel_wind <- read_csv(here("files", "ethel_wind.csv"))
 lk_wind <- read_csv(here("files", "wind_lookout.csv"))
 
 lk_par <- read_csv(here("files", "lookout_par.csv"))
+
+ws844 <- read_csv(here("files", "ws844.csv"))
 ```
 
 ```{r}
@@ -274,19 +276,43 @@ par <- par %>%
 ```
 
 ```{r}
+ws844_2 <- ws844 %>%
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, lev = PLS_Lvl_Avg, rain = `24hourRain`) %>% 
+  filter(year > 2017 & year < 2022)
+
+ws844_2 <- ws844_2 %>%
+  mutate(lev_b1 = rollmeanr(lag(lev, 1), k = 10, fill = NA),
+         rain_b1 = rollmeanr(lag(rain, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+ws844_2 <- ws844_2 %>% 
+  select(date, lev, rain, lev_b1, rain_b1)
+```
+
+```{r}
 data <- data %>% 
   left_join(riv_w) %>% 
   left_join(riv_b) %>% 
   left_join(ew_da) %>% 
   left_join(lk_da) %>% 
-  left_join(par)
+  left_join(par) %>% 
+  left_join(ws844_2)
 ```
 
 ```{r}
 data_pca <- data %>% 
   select(date, temp, sal, 
          delta_rho, no2_no3_um, sio2, po4, 
-         Wan_b1, par_b1, lk_w, lk_wd)
+         Wan_b1, 
+         # Bel_b1,
+         # eth_w, eth_wd, 
+         lk_w, lk_wd,
+         par_b1,
+         lev, rain, lev_b1, rain_b1)
 
 data_pca <- data_pca %>%
   drop_na()
@@ -371,20 +397,43 @@ f_c <- ggcorrplot(cor_all,
   lab = TRUE,
   # title = "Channel",
   insig = "blank",
-  lab_size = 4.5,
+  lab_size = 2.5,
   outline.color = "black") +
-  scale_x_discrete(labels = c("S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
-                        "lk_w", "lk_wd",
-                        "TChla", "Diat.")) +
-  scale_y_discrete(labels = c("T", "S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
-                        "lk_w", "lk_wd",
-                        "TChla", "Diat.")) +
+  scale_x_discrete(labels = c("S", 
+                              "\u394\u3C1", 
+                              "NO\u2083\u207B+NO\u2082\u207B", 
+                              "SiO\u2082\u207B", 
+                              "PO\u2084\u207B", 
+                              "Riv_B10", 
+                              "lk_w", 
+                              "lk_wd",
+                              "par_b1",
+                              "lev",
+                              "rain",
+                              "lev_b1",
+                              "rain_b1",
+                              "TChla",
+                              "Diat.")) +
+  scale_y_discrete(labels = c("T", 
+                              "S", 
+                              "\u394\u3C1", 
+                              "NO\u2083\u207B+NO\u2082\u207B", 
+                              "SiO\u2082\u207B", 
+                              "PO\u2084\u207B", 
+                              "Riv_B10", 
+                              "lk_w", 
+                              "lk_wd",
+                              "par_b1",
+                              "lev",
+                              "rain",
+                              "lev_b1",
+                              "rain_b1",
+                              "TChla",
+                              "Diat.")) +
   # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Channel") +
   theme_bw() +
-  theme(text = element_text(size = 25),
+  theme(text = element_text(size = 20),
         axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2, color = "black"),
         axis.text.y = element_blank(),
         axis.title.y = element_blank(),
@@ -392,9 +441,12 @@ f_c <- ggcorrplot(cor_all,
         plot.title = element_text(margin = margin(t = 40,b = -30)),
         legend.position = "none")
 
-# ggsave(here("figures_good", "corr_kc10_full_year2.png"),
+# ggsave(here("figures_good", "corr_kc10_full_year2_844_rain.png"),
 #        width = 8, height = 8, dpi = 300)
 ```
+
+
+
 
 ```{r}
 
@@ -403,14 +455,16 @@ data_short <- data_short %>%
   left_join(riv_b) %>% 
   left_join(ew_da) %>% 
   left_join(lk_da) %>% 
-  left_join(par)
+  left_join(par) %>% 
+  left_join(ws844_2)
 ```
 
 ```{r}
 data_short <- data_short %>% 
   select(date, site_id, temp = temp_dm, sal = sal_dm, 
          delta_rho = delta_rho_dm, no2_dm, sio2 = sio2_dm, po4 = po4_dm, 
-         Wan_b1, par_b1, lk_w, lk_wd)
+         Wan_b1, par_b1, lk_w, lk_wd,
+         lev, rain, lev_b1, rain_b1)
 
 
 ```
@@ -477,19 +531,42 @@ f_f <- ggcorrplot(cor_f,
   lab = TRUE,
   # title = "Channel",
   insig = "blank",
-  lab_size = 4.5,
+  lab_size = 2.5,
   outline.color = "black") +
-  scale_x_discrete(labels = c("S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
-                        "lk_w", "lk_wd",
-                        "TChla", "Diat.")) +
-  scale_y_discrete(labels = c("T", "S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
-                        "lk_w", "lk_wd",
-                        "TChla", "Diat.")) +
+scale_x_discrete(labels = c("S", 
+                              "\u394\u3C1", 
+                              "NO\u2083\u207B+NO\u2082\u207B", 
+                              "SiO\u2082\u207B", 
+                              "PO\u2084\u207B", 
+                              "Riv_B10", 
+                              "lk_w", 
+                              "lk_wd",
+                              "par_b1",
+                              "lev",
+                              "rain",
+                              "lev_b1",
+                              "rain_b1",
+                              "TChla",
+                              "Diat.")) +
+  scale_y_discrete(labels = c("T", 
+                              "S", 
+                              "\u394\u3C1", 
+                              "NO\u2083\u207B+NO\u2082\u207B", 
+                              "SiO\u2082\u207B", 
+                              "PO\u2084\u207B", 
+                              "Riv_B10", 
+                              "lk_w", 
+                              "lk_wd",
+                              "par_b1",
+                              "lev",
+                              "rain",
+                              "lev_b1",
+                              "rain_b1",
+                              "TChla",
+                              "Diat.")) +
   ggtitle("Fjord") +
   theme_bw() +
-  theme(text = element_text(size = 25),
+  theme(text = element_text(size = 20),
         axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2, color = "black"),
         axis.text.y = element_text(angle = 0, color = "black"),
         axis.title.y = element_blank(),
@@ -505,20 +582,43 @@ f_s <- ggcorrplot(cor_s,
   lab = TRUE,
   # title = "Channel",
   insig = "blank",
-  lab_size = 4.5,
+  lab_size = 2.5,
   outline.color = "black") +
-  scale_x_discrete(labels = c("S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
-                        "lk_w", "lk_wd",
-                        "TChla", "Diat.")) +
-  scale_y_discrete(labels = c("T", "S", "\u394\u3C1", "NO\u2083\u207B+NO\u2082\u207B",
-                        "SiO\u2082\u207B", "PO\u2084\u207B", "Riv_B10", "par_b1",
-                        "lk_w", "lk_wd",
-                        "TChla", "Diat.")) +
+scale_x_discrete(labels = c("S", 
+                              "\u394\u3C1", 
+                              "NO\u2083\u207B+NO\u2082\u207B", 
+                              "SiO\u2082\u207B", 
+                              "PO\u2084\u207B", 
+                              "Riv_B10", 
+                              "lk_w", 
+                              "lk_wd",
+                              "par_b1",
+                              "lev",
+                              "rain",
+                              "lev_b1",
+                              "rain_b1",
+                              "TChla",
+                              "Diat.")) +
+  scale_y_discrete(labels = c("T", 
+                              "S", 
+                              "\u394\u3C1", 
+                              "NO\u2083\u207B+NO\u2082\u207B", 
+                              "SiO\u2082\u207B", 
+                              "PO\u2084\u207B", 
+                              "Riv_B10", 
+                              "lk_w", 
+                              "lk_wd",
+                              "par_b1",
+                              "lev",
+                              "rain",
+                              "lev_b1",
+                              "rain_b1",
+                              "TChla",
+                              "Diat.")) +
   # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Shelf") +
   theme_bw() +
-  theme(text = element_text(size = 25),
+  theme(text = element_text(size = 20),
         axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2, color = "black"),
         axis.text.y = element_blank(),
         axis.title.y = element_blank(),

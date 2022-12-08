@@ -15,6 +15,7 @@ library(ggpubr)
 library(broom)
 library(zoo)
 library(gsw)
+library(gridtext)
 ```
 
 ```{r}
@@ -38,6 +39,8 @@ ethel_wind <- read_csv(here("files", "ethel_wind.csv"))
 lk_wind <- read_csv(here("files", "wind_lookout.csv"))
 
 lk_par <- read_csv(here("files", "lookout_par.csv"))
+
+ws844 <- read_csv(here("files", "ws844.csv"))
 ```
 
 ```{r}
@@ -252,12 +255,33 @@ par <- par %>%
 ```
 
 ```{r}
+ws844_2 <- ws844 %>%
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, lev = PLS_Lvl_Avg, rain = `24hourRain`) %>% 
+  filter(year > 2017 & year < 2022)
+
+ws844_2 <- ws844_2 %>%
+  mutate(lev_b1 = rollmeanr(lag(lev, 1), k = 10, fill = NA),
+         rain_b1 = rollmeanr(lag(rain, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+ws844_2 <- ws844_2 %>% 
+  select(date, lev, rain, lev_b1, rain_b1)
+```
+
+
+
+```{r}
 data <- data %>% 
   left_join(riv_w) %>% 
   left_join(riv_b) %>% 
   left_join(ew_da) %>% 
   left_join(lk_da) %>% 
-  left_join(par)
+  left_join(par) %>% 
+  left_join(ws844_2)
 ```
 
 ```{r}
@@ -269,8 +293,10 @@ data_pca <- data %>%
          eth_w, eth_wd, 
          lk_w, lk_wd,
          par_b1)
+```
 
 
+```{r}
 data_pca <- data_pca %>%
   drop_na()
 ```
@@ -400,6 +426,12 @@ driver_loc <- c("temp",
                 "lk_wd",
                 "Wan_b1",
                 "Bel_b1")
+                
+                
+                # "lev",
+                # "rain",
+                # "lev_b1",
+                # "rain_b1")
 
 phy_loc <- c("Diatom sum",
              # "Skeletonema marinoi large",
@@ -522,262 +554,473 @@ riv_w_j <- riv_w_j %>%
   left_join(riv_b_j) %>% 
   left_join(par) %>% 
   left_join(lk_da) %>% 
+  left_join(ws844_2) %>% 
   left_join(smd) %>% 
   left_join(smn) %>% 
   left_join(smsi) %>%
-  left_join(smt) %>% 
   left_join(tchla)
 
 ```
 
 
 ```{r}
-coeff <- 100
+# coeff <- 50
+# 
+# riv_w_j <- riv_w_j %>% 
+#   mutate(abund = exp_count/100000)
+# 
+# f1 <- riv_w_j %>% 
+#   ggplot(aes(x = yday)) +
+#   geom_area(aes(y = Wan_b1), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+#   geom_line(aes(y = Bel_b1), size = 1, color = "red") +
+#   geom_point(aes(y = abund*coeff), size = 4, pch = 21, fill = "darkgreen",
+#              color = "black", stroke = 2) +
+#   geom_point(aes(y = tchla*coeff), size = 1.5, pch = 8, color = "red", stroke = 1) +
+#   scale_y_continuous(name = "Discharge",
+#                      # limits = c(0, 3500),
+#                      sec.axis = sec_axis(~./coeff,
+#                                          name = "Abund.")) +
+#   facet_grid(. ~ year) +
+#   theme_bw() +
+#   theme(text = element_text(size = 28),
+#         axis.text = element_text(color = 'black'),
+#         axis.text.x = element_blank(),
+#         axis.title.x = element_blank())
+# 
+# coeff_dr <- 0.5
+# 
+# 
+# f2 <- riv_w_j %>% 
+#   ggplot(aes(x = yday)) +
+#   geom_area(aes(y = dr), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
+#   geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
+#              color = "black", stroke = 2) +
+#   # geom_point(aes(y = tchla*coeff_dr), size = 1.5, pch = 8, color = "red", stroke = 1) +
+#   scale_y_continuous(name = "\u394\u3C1",
+#                      # limits = c(0, 35),
+#                      sec.axis = sec_axis(~./coeff_dr,
+#                                          name = "Abund.")) +
+#   facet_grid(. ~ year) +
+#   theme_bw() +
+#   theme(text = element_text(size = 28),
+#         axis.text = element_text(color = 'black'),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.x = element_blank())
+# 
+# coeff_p <- 10
+# 
+# f3 <- riv_w_j %>%
+#   ggplot(aes(x = yday)) +
+#   geom_area(aes(y = par_b1), size = 0, fill = "orange", alpha = 0.3) +
+#   geom_smooth(aes(y = par_b1), span = 0.1, color = "orange", size = 2) +
+#   geom_point(aes(y = abund/coeff_p), size = 4, pch = 21, fill = "darkgreen",
+#              color = "black", stroke = 2) +
+#   # geom_point(aes(y = tchla/coeff_p), size = 1.5, pch = 8, color = "red", stroke = 1) +
+#   scale_y_continuous(name = "PAR",
+#                      # limits = c(0, 3.5),
+#                      sec.axis = sec_axis(~.*coeff_p,
+#                                          name = "Abund.")) +
+#   facet_grid(. ~ year) +
+#   theme_bw() +
+#   theme(text = element_text(size = 28),
+#         axis.text = element_text(color = 'black'),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.x = element_blank())
+# 
+# coeff_ws <- 75
+# 
+# f4 <- riv_w_j %>%
+#   ggplot(aes(x = yday)) +
+#   # geom_area(aes(y = lk_w^3), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+#   geom_area(aes(y = lk_w^3), size = 0, fill = "blue", alpha = 0.3) +
+#   geom_smooth(aes(y = lk_w^3), span = 0.1, color = "blue", size = 2, se = F) +
+#   geom_point(aes(y = abund*coeff_ws), size = 4, pch = 21, fill = "darkgreen",
+#              color = "black", stroke = 2) +
+#   # geom_point(aes(y = tchla*coeff_ws), size = 1.5, pch = 8, color = "red", stroke = 1) +
+#   scale_y_continuous(name = "Wind^3",
+#                      # limits = c(0, 3500),
+#                      sec.axis = sec_axis(~./coeff_ws,
+#                                          name = "Abund.")) +
+#   facet_grid(. ~ year) +
+#   theme_bw() +
+#   theme(text = element_text(size = 28),
+#         axis.text = element_text(color = 'black'),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.x = element_blank())
+# 
+#  coeff_wd <- 10
+# 
+# f5 <- riv_w_j %>%
+#   ggplot(aes(x = yday)) +
+#   # geom_area(aes(y = lk_wd), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+#   geom_area(aes(y = lk_wd), size = 0, fill = "purple", alpha = 0.3) +
+#   geom_smooth(aes(y = lk_wd), span = 0.1, color = "purple", size = 2, se = F) +
+#   geom_point(aes(y = abund*coeff_wd), size = 4, pch = 21, fill = "darkgreen",
+#              color = "black", stroke = 2) +
+#   # geom_point(aes(y = tchla*coeff_wd), size = 1.5, pch = 8, color = "red", stroke = 1) +
+#   scale_y_continuous(name = "WDir.",
+#                      limits = c(0, 350),
+#                      sec.axis = sec_axis(~./coeff_wd,
+#                                          name = "Abund.")) +
+#   facet_grid(. ~ year) +
+#   theme_bw() +
+#   theme(text = element_text(size = 28),
+#         axis.text = element_text(color = 'black'),
+#         axis.title.x = element_blank(),
+#         axis.text.x = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.x = element_blank())
+# 
+# coeff_n <- 1.5
+# 
+# f6 <- riv_w_j %>% 
+#   ggplot(aes(x = yday)) +
+#   geom_area(aes(y = sio2), size = 1, color = "deepskyblue", fill = "deepskyblue",
+#             alpha = 0.5) +
+#   geom_point(aes(y = abund*coeff_n), size = 4, pch = 21, fill = "darkgreen",
+#              color = "black", stroke = 2) +
+#   # geom_point(aes(y = tchla/coeff_n), size = 1.5, pch = 8, color = "red", stroke = 1) +
+#   scale_y_continuous(name = "SiO\u2082\u207B",
+#                      # limits = c(0, 37),
+#                      sec.axis = sec_axis(~./coeff_n,
+#                                          name = "Abund.")) +
+#   facet_grid(. ~ year) +
+#   theme_bw() +
+#   theme(text = element_text(size = 28),
+#         axis.text = element_text(color = 'black'),
+#         axis.title.x = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.x = element_blank())
+# 
+# fig <- f1 / f2 / f3 / f4 / f5 / f6
+# 
+# ggsave(here("figures_good", "KC10_multiple.png"), fig,
+#         width = 16, height = 14, dpi = 300)
 
-riv_w_j <- riv_w_j %>% 
-  mutate(abund = exp_count/100000)
 
-f1 <- riv_w_j %>% 
-  ggplot(aes(x = yday)) +
-  geom_area(aes(y = Wan_b1), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
-  geom_line(aes(y = Bel_b1), size = 1, color = "red") +
-  geom_point(aes(y = abund*coeff), size = 4, pch = 21, fill = "darkgreen",
-             color = "black", stroke = 2) +
-  geom_point(aes(y = tchla*coeff), size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "Discharge",
-                     limits = c(0, 3500),
-                     sec.axis = sec_axis(~./coeff,
-                                         name = "Abund.")) +
-  facet_grid(. ~ year) +
-  theme_bw() +
-  theme(text = element_text(size = 28),
-        axis.text = element_text(color = 'black'),
-        axis.text.x = element_blank(),
-        axis.title.x = element_blank())
-
-coeff_dr <- 1
-
-f2 <- riv_w_j %>% 
-  ggplot(aes(x = yday)) +
-  geom_area(aes(y = dr), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
-  geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
-             color = "black", stroke = 2) +
-  scale_y_continuous(name = "\u394\u3C1",
-                     limits = c(0, 35),
-                     sec.axis = sec_axis(~./coeff_dr,
-                                         name = "Abund.")) +
-  facet_grid(. ~ year) +
-  theme_bw() +
-  theme(text = element_text(size = 28),
-        axis.text = element_text(color = 'black'),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank())
-
-coeff_p <- 10
-
-f3 <- riv_w_j %>%
-  ggplot(aes(x = yday)) +
-  geom_area(aes(y = par_b1), size = 0, fill = "orange", alpha = 0.3) +
-  geom_smooth(aes(y = par_b1), span = 0.1, color = "orange", size = 2) +
-  geom_point(aes(y = abund/coeff_p), size = 4, pch = 21, fill = "darkgreen",
-             color = "black", stroke = 2) +
-  geom_point(aes(y = tchla/coeff_p), size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "PAR",
-                     limits = c(0, 3.5),
-                     sec.axis = sec_axis(~.*coeff_p,
-                                         name = "Abund.")) +
-  facet_grid(. ~ year) +
-  theme_bw() +
-  theme(text = element_text(size = 28),
-        axis.text = element_text(color = 'black'),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank())
-
-coeff_ws <- 100
-
-f4 <- riv_w_j %>%
-  ggplot(aes(x = yday)) +
-  # geom_area(aes(y = lk_w^3), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
-  geom_area(aes(y = lk_w^3), size = 0, fill = "blue", alpha = 0.3) +
-  geom_smooth(aes(y = lk_w^3), span = 0.1, color = "blue", size = 2, se = F) +
-  geom_point(aes(y = abund*coeff_ws), size = 4, pch = 21, fill = "darkgreen",
-             color = "black", stroke = 2) +
-  geom_point(aes(y = tchla*coeff_ws), size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "Wind^3",
-                     limits = c(0, 3500),
-                     sec.axis = sec_axis(~./coeff_ws,
-                                         name = "Abund.")) +
-  facet_grid(. ~ year) +
-  theme_bw() +
-  theme(text = element_text(size = 28),
-        axis.text = element_text(color = 'black'),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank())
-
- coeff_wd <- 10
-
-f5 <- riv_w_j %>%
-  ggplot(aes(x = yday)) +
-  # geom_area(aes(y = lk_wd), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
-  geom_area(aes(y = lk_wd), size = 0, fill = "purple", alpha = 0.3) +
-  geom_smooth(aes(y = lk_wd), span = 0.1, color = "purple", size = 2, se = F) +
-  geom_point(aes(y = abund*coeff_wd), size = 4, pch = 21, fill = "darkgreen",
-             color = "black", stroke = 2) +
-  geom_point(aes(y = tchla*coeff_wd), size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "WDir.",
-                     limits = c(0, 350),
-                     sec.axis = sec_axis(~./coeff_wd,
-                                         name = "Abund.")) +
-  facet_grid(. ~ year) +
-  theme_bw() +
-  theme(text = element_text(size = 28),
-        axis.text = element_text(color = 'black'),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank())
-
-
-f6 <- riv_w_j %>% 
-  ggplot(aes(x = yday)) +
-  geom_area(aes(y = sio2), size = 1, color = "deepskyblue", fill = "deepskyblue",
-            alpha = 0.5) +
-  geom_point(aes(y = abund*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
-             color = "black", stroke = 2) +
-  scale_y_continuous(name = "SiO\u2082\u207B",
-                     limits = c(0, 37),
-                     sec.axis = sec_axis(~./coeff_dr,
-                                         name = "Abund.")) +
-  facet_grid(. ~ year) +
-  theme_bw() +
-  theme(text = element_text(size = 28),
-        axis.text = element_text(color = 'black'),
-        axis.title.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.x = element_blank())
-
-fig <- f1 / f2 / f3 / f4 / f5 / f6
-
-ggsave(here("figures_good", "KC10_multiple.png"), fig,
-        width = 16, height = 14, dpi = 300)
+#Need to figure out scales... TChla is not consistent.
 ```
 
 ```{r}
-coeff <- 100
-
 riv_w_j <- riv_w_j %>% 
   mutate(abund = exp_count/100000)
 
-f1 <- riv_w_j %>% 
+test <- riv_w_j %>% 
+  filter(!is.na(abund))
+```
+
+
+```{r}
+ylim.prim_r <- c(0, 1250)   # in this example, precipitation
+ylim.sec_r <- c(0, 25)    # in this example, temperature
+
+ABUND_r <- test$abund #needed for coherent normalisation
+TCHLA_r <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_r = lm(b_r ~ . + 0, 
+   tibble::tribble(
+     ~a_r, ~s_r,  ~b_r,
+      1,  (ylim.sec_r[1] - mean(ABUND_r))/sd(ABUND_r),  ylim.prim_r[1],
+      1,  (ylim.sec_r[2] - mean(ABUND_r))/sd(ABUND_r), ylim.prim_r[2]))
+
+a_r <- fit_r$coefficients['a_r']
+s_r <- fit_r$coefficients['s_r']
+
+fit2_r = lm(b1_r ~ . + 0, 
+   tibble::tribble(
+     ~a1_r, ~s1_r,  ~b1_r,
+      1,  (ylim.sec_r[1] - mean(TCHLA_r))/sd(TCHLA_r),  ylim.prim_r[1],
+      1,  (ylim.sec_r[2] - mean(TCHLA_r))/sd(TCHLA_r), ylim.prim_r[2]))
+
+a1_r <- fit2_r$coefficients['a1_r']
+s1_r <- fit2_r$coefficients['s1_r']
+
+f_r <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
   geom_area(aes(y = Wan_b1), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
-  geom_line(aes(y = Bel_b1), size = 1, color = "red") +
-  geom_point(aes(y = tchla*coeff), size = 4, pch = 21, fill = "darkgreen",
+  geom_point(aes(y = (a_r + ((abund - mean(ABUND_r))/sd(ABUND_r)) * s_r)),
+             size = 4, pch = 21, fill = "darkgreen", 
              color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_r + ((tchla - mean(TCHLA_r))/sd(TCHLA_r)) * s1_r)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
   scale_y_continuous(name = "Discharge",
-                     sec.axis = sec_axis(~./coeff,
-                                         name = "Abund.")) +
+                     limits = ylim.prim_r,
+                     sec.axis = sec_axis(~ (. - a_r) / s_r * sd(ABUND_r) + mean(ABUND_r),
+                                         name = ""),) +
   facet_grid(. ~ year) +
   theme_bw() +
   theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
         axis.text.x = element_blank(),
         axis.title.x = element_blank())
+```
 
-coeff_dr <- 1
 
-f2 <- riv_w_j %>% 
+
+
+
+```{r}
+ylim.prim_d <- c(0, 9)   # in this example, precipitation
+ylim.sec_d <- c(0, 25)    # in this example, temperature
+
+ABUND_d <- test$abund #needed for coherent normalisation
+TCHLA_d <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_d = lm(b_d ~ . + 0, 
+   tibble::tribble(
+     ~a_d, ~s_d,  ~b_d,
+      1,  (ylim.sec_d[1] - mean(ABUND_d))/sd(ABUND_d),  ylim.prim_d[1],
+      1,  (ylim.sec_d[2] - mean(ABUND_d))/sd(ABUND_d), ylim.prim_d[2]))
+
+a_d <- fit_d$coefficients['a_d']
+s_d <- fit_d$coefficients['s_d']
+
+fit2_d = lm(b1_d ~ . + 0, 
+   tibble::tribble(
+     ~a1_d, ~s1_d,  ~b1_d,
+      1,  (ylim.sec_d[1] - mean(TCHLA_d))/sd(TCHLA_d),  ylim.prim_d[1],
+      1,  (ylim.sec_d[2] - mean(TCHLA_d))/sd(TCHLA_d), ylim.prim_d[2]))
+
+a1_d <- fit2_d$coefficients['a1_d']
+s1_d <- fit2_d$coefficients['s1_d']
+
+f_d <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
-  geom_area(aes(y = dr), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
-  geom_point(aes(y = tchla*coeff_dr), size = 4, pch = 21, fill = "darkgreen",
+  geom_area(aes(y = dr),  size = 1, color = "purple", fill = "purple", alpha = 0.5) +
+  geom_point(aes(y = (a_d + ((abund - mean(ABUND_d))/sd(ABUND_d)) * s_d)),
+             size = 4, pch = 21, fill = "darkgreen", 
              color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_d + ((tchla - mean(TCHLA_d))/sd(TCHLA_d)) * s1_d)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
   scale_y_continuous(name = "\u394\u3C1",
-                     sec.axis = sec_axis(~./coeff_dr,
-                                         name = "Abund.")) +
+                     limits = ylim.prim_d,
+                     sec.axis = sec_axis(~ (. - a_d) / s_d * sd(ABUND_d) + mean(ABUND_d),
+                                         name = ""),) +
   facet_grid(. ~ year) +
   theme_bw() +
   theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
-        axis.title.x = element_blank(),
         axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
         strip.background = element_blank(),
         strip.text.x = element_blank())
+```
 
-coeff_p <- 10
+```{r}
+ylim.prim_p <- c(0, 2.5)   # in this example, precipitation
+ylim.sec_p <- c(0, 25)    # in this example, temperature
 
-f3 <- riv_w_j %>%
+ABUND_p <- test$abund #needed for coherent normalisation
+TCHLA_p <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_p = lm(b_p ~ . + 0, 
+   tibble::tribble(
+     ~a_p, ~s_p,  ~b_p,
+      1,  (ylim.sec_p[1] - mean(ABUND_p))/sd(ABUND_p),  ylim.prim_p[1],
+      1,  (ylim.sec_p[2] - mean(ABUND_p))/sd(ABUND_p), ylim.prim_p[2]))
+
+a_p <- fit_p$coefficients['a_p']
+s_p <- fit_p$coefficients['s_p']
+
+fit2_p = lm(b1_p ~ . + 0, 
+   tibble::tribble(
+     ~a1_p, ~s1_p,  ~b1_p,
+      1,  (ylim.sec_p[1] - mean(TCHLA_p))/sd(TCHLA_p),  ylim.prim_p[1],
+      1,  (ylim.sec_p[2] - mean(TCHLA_p))/sd(TCHLA_p), ylim.prim_p[2]))
+
+a1_p <- fit2_p$coefficients['a1_p']
+s1_p <- fit2_p$coefficients['s1_p']
+
+f3 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
   geom_area(aes(y = par_b1), size = 0, fill = "orange", alpha = 0.3) +
-  geom_smooth(aes(y = par_b1), span = 0.1, color = "orange", size = 2) +
-  ylab("PAR") +
+  geom_smooth(aes(y = par_b1), span = 0.1, color = "orange", size = 2, se = F) +
+  geom_point(aes(y = (a_p + ((abund - mean(ABUND_p))/sd(ABUND_p)) * s_p)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_p + ((tchla - mean(TCHLA_p))/sd(TCHLA_p)) * s1_p)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "PAR",
+                     limits = ylim.prim_p,
+                     sec.axis = sec_axis(~ (. - a_p) / s_p * sd(ABUND_p) + mean(ABUND_p),
+                                         name = ""),) +
   facet_grid(. ~ year) +
   theme_bw() +
   theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
-        axis.title.x = element_blank(),
         axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
         strip.background = element_blank(),
         strip.text.x = element_blank())
+```
 
-coeff_ws <- 100
+```{r}
+ylim.prim_w <- c(0, 2000)   # in this example, precipitation
+ylim.sec_w <- c(0, 25)    # in this example, temperature
 
-f4 <- riv_w_j %>%
+ABUND_w <- test$abund #needed for coherent normalisation
+TCHLA_w <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_w = lm(b_w ~ . + 0, 
+   tibble::tribble(
+     ~a_w, ~s_w,  ~b_w,
+      1,  (ylim.sec_w[1] - mean(ABUND_w))/sd(ABUND_w),  ylim.prim_w[1],
+      1,  (ylim.sec_w[2] - mean(ABUND_w))/sd(ABUND_w), ylim.prim_w[2]))
+
+a_w <- fit_w$coefficients['a_w']
+s_w <- fit_w$coefficients['s_w']
+
+fit2_w = lm(b1_w ~ . + 0, 
+   tibble::tribble(
+     ~a1_w, ~s1_w,  ~b1_w,
+      1,  (ylim.sec_w[1] - mean(TCHLA_w))/sd(TCHLA_w),  ylim.prim_w[1],
+      1,  (ylim.sec_w[2] - mean(TCHLA_w))/sd(TCHLA_w), ylim.prim_w[2]))
+
+a1_w <- fit2_w$coefficients['a1_w']
+s1_w <- fit2_w$coefficients['s1_w']
+
+f4 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
-  # geom_area(aes(y = lk_w^3), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
   geom_area(aes(y = lk_w^3), size = 0, fill = "blue", alpha = 0.3) +
   geom_smooth(aes(y = lk_w^3), span = 0.1, color = "blue", size = 2, se = F) +
-  ylab("Wind^3") +
+  geom_point(aes(y = (a_w + ((abund - mean(ABUND_w))/sd(ABUND_w)) * s_w)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_w + ((tchla - mean(TCHLA_w))/sd(TCHLA_w)) * s1_w)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "Wind",
+                     limits = ylim.prim_w,
+                     sec.axis = sec_axis(~ (. - a_w) / s_w * sd(ABUND_w) + mean(ABUND_w),
+                                         name = "Abund./TChla"),) +
   facet_grid(. ~ year) +
   theme_bw() +
   theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
-        axis.title.x = element_blank(),
         axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
         strip.background = element_blank(),
         strip.text.x = element_blank())
+```
 
- coeff_wd <- 10
+```{r}
+ylim.prim_wd <- c(0, 360)   # in this example, precipitation
+ylim.sec_wd <- c(0, 25)    # in this example, temperature
 
-f5 <- riv_w_j %>%
+ABUND_wd <- test$abund #needed for coherent normalisation
+TCHLA_wd <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_wd = lm(b_wd ~ . + 0, 
+   tibble::tribble(
+     ~a_wd, ~s_wd,  ~b_wd,
+      1,  (ylim.sec_wd[1] - mean(ABUND_wd))/sd(ABUND_wd),  ylim.prim_wd[1],
+      1,  (ylim.sec_wd[2] - mean(ABUND_wd))/sd(ABUND_wd), ylim.prim_wd[2]))
+
+a_wd <- fit_wd$coefficients['a_wd']
+s_wd <- fit_wd$coefficients['s_wd']
+
+fit2_wd = lm(b1_wd ~ . + 0, 
+   tibble::tribble(
+     ~a1_wd, ~s1_wd,  ~b1_wd,
+      1,  (ylim.sec_wd[1] - mean(TCHLA_wd))/sd(TCHLA_wd),  ylim.prim_wd[1],
+      1,  (ylim.sec_wd[2] - mean(TCHLA_wd))/sd(TCHLA_wd), ylim.prim_wd[2]))
+
+a1_wd <- fit2_wd$coefficients['a1_wd']
+s1_wd <- fit2_wd$coefficients['s1_wd']
+
+f5 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
-  # geom_area(aes(y = lk_wd), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
   geom_area(aes(y = lk_wd), size = 0, fill = "purple", alpha = 0.3) +
   geom_smooth(aes(y = lk_wd), span = 0.1, color = "purple", size = 2, se = F) +
-  ylab("WDir.") +
+  geom_point(aes(y = (a_wd + ((abund - mean(ABUND_wd))/sd(ABUND_wd)) * s_wd)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_wd + ((tchla - mean(TCHLA_wd))/sd(TCHLA_wd)) * s1_wd)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "WDir.",
+                     limits = ylim.prim_wd,
+                     sec.axis = sec_axis(~ (. - a_wd) / s_wd * sd(ABUND_wd) + mean(ABUND_wd),
+                                         name = ""),) +
   facet_grid(. ~ year) +
   theme_bw() +
   theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
-        axis.title.x = element_blank(),
         axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
         strip.background = element_blank(),
         strip.text.x = element_blank())
+```
 
+```{r}
+ylim.prim_s <- c(0, 38)   # in this example, precipitation
+ylim.sec_s <- c(0, 25)    # in this example, temperature
+
+ABUND_s <- test$abund #needed for coherent normalisation
+TCHLA_s <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_s = lm(b_s ~ . + 0, 
+   tibble::tribble(
+     ~a_s, ~s_s,  ~b_s,
+      1,  (ylim.sec_s[1] - mean(ABUND_s))/sd(ABUND_s),  ylim.prim_s[1],
+      1,  (ylim.sec_s[2] - mean(ABUND_s))/sd(ABUND_s), ylim.prim_s[2]))
+
+a_s <- fit_s$coefficients['a_s']
+s_s <- fit_s$coefficients['s_s']
+
+fit2_s = lm(b1_s ~ . + 0, 
+   tibble::tribble(
+     ~a1_s, ~s1_s,  ~b1_s,
+      1,  (ylim.sec_s[1] - mean(TCHLA_s))/sd(TCHLA_s),  ylim.prim_s[1],
+      1,  (ylim.sec_s[2] - mean(TCHLA_s))/sd(TCHLA_s), ylim.prim_s[2]))
+
+a1_s <- fit2_s$coefficients['a1_s']
+s1_s <- fit2_s$coefficients['s1_s']
 
 f6 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
   geom_area(aes(y = sio2), size = 1, color = "deepskyblue", fill = "deepskyblue",
             alpha = 0.5) +
-  ylab("SiO\u2082\u207B") +
+  geom_point(aes(y = (a_s + ((abund - mean(ABUND_s))/sd(ABUND_s)) * s_s)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_s + ((tchla - mean(TCHLA_s))/sd(TCHLA_s)) * s1_s)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "SiO\u2082\u207B",
+                     limits = ylim.prim_s,
+                     sec.axis = sec_axis(~ (. - a_s) / s_s * sd(ABUND_s) + mean(ABUND_s),
+                                         name = ""),) +
   facet_grid(. ~ year) +
   theme_bw() +
   theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
+        # axis.text.x = element_blank(),
         axis.title.x = element_blank(),
         strip.background = element_blank(),
         strip.text.x = element_blank())
+```
 
-fig <- f1 / f2 / f3 / f4 / f5 / f6
+```{r}
+yright = richtext_grob("test", rot = -90)
+```
 
-ggsave(here("figures_good", "KC10_multiple2.png"), fig,
+```{r}
+fig2 <- (f_r / f_d / f3 / f4 / f5 / f6) 
+
+ggsave(here("figures_good", "KC10_multiple_aligned.png"), fig2,
         width = 16, height = 14, dpi = 300)
 ```
+
 
 
 
