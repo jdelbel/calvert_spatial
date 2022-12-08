@@ -147,6 +147,7 @@ data <- ctd %>%
 ```
 
 
+
 ```{r}
 riv <- riv %>%
   filter(PARAM == 1) %>% 
@@ -750,7 +751,7 @@ f_r <- riv_w_j %>%
              color = "black", stroke = 2) +
   geom_point(aes(y = (a1_r + ((tchla - mean(TCHLA_r))/sd(TCHLA_r)) * s1_r)),
              size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "Discharge",
+  scale_y_continuous(name = "Dis-Wan",
                      limits = ylim.prim_r,
                      sec.axis = sec_axis(~ (. - a_r) / s_r * sd(ABUND_r) + mean(ABUND_r),
                                          name = ""),) +
@@ -762,7 +763,53 @@ f_r <- riv_w_j %>%
         axis.title.x = element_blank())
 ```
 
+```{r}
+ylim.prim_ra <- c(0, 100)   # in this example, precipitation
+ylim.sec_ra <- c(0, 25)    # in this example, temperature
 
+ABUND_ra <- test$abund #needed for coherent normalisation
+TCHLA_ra <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_ra = lm(b_ra ~ . + 0, 
+   tibble::tribble(
+     ~a_ra, ~s_ra,  ~b_ra,
+      1,  (ylim.sec_ra[1] - mean(ABUND_ra))/sd(ABUND_ra),  ylim.prim_ra[1],
+      1,  (ylim.sec_ra[2] - mean(ABUND_ra))/sd(ABUND_ra), ylim.prim_ra[2]))
+
+a_ra <- fit_ra$coefficients['a_ra']
+s_ra <- fit_ra$coefficients['s_ra']
+
+fit2_ra = lm(b1_ra ~ . + 0, 
+   tibble::tribble(
+     ~a1_ra, ~s1_ra,  ~b1_ra,
+      1,  (ylim.sec_ra[1] - mean(TCHLA_ra))/sd(TCHLA_ra),  ylim.prim_ra[1],
+      1,  (ylim.sec_ra[2] - mean(TCHLA_ra))/sd(TCHLA_ra), ylim.prim_ra[2]))
+
+a1_ra <- fit2_ra$coefficients['a1_ra']
+s1_ra <- fit2_ra$coefficients['s1_ra']
+
+f_ra <- riv_w_j %>%
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = rain), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
+  geom_point(aes(y = (a_ra + ((abund - mean(ABUND_ra))/sd(ABUND_ra)) * s_ra)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_ra + ((tchla - mean(TCHLA_ra))/sd(TCHLA_ra)) * s1_ra)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "Rain-844",
+                     limits = ylim.prim_ra,
+                     sec.axis = sec_axis(~ (. - a_ra) / s_ra * sd(ABUND_ra) + mean(ABUND_ra),
+                                         name = ""),) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
 
 
 
@@ -849,7 +896,7 @@ f3 <- riv_w_j %>%
              color = "black", stroke = 2) +
   geom_point(aes(y = (a1_p + ((tchla - mean(TCHLA_p))/sd(TCHLA_p)) * s1_p)),
              size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "PAR",
+  scale_y_continuous(name = "PAR-LO",
                      limits = ylim.prim_p,
                      sec.axis = sec_axis(~ (. - a_p) / s_p * sd(ABUND_p) + mean(ABUND_p),
                                          name = ""),) +
@@ -898,7 +945,7 @@ f4 <- riv_w_j %>%
              color = "black", stroke = 2) +
   geom_point(aes(y = (a1_w + ((tchla - mean(TCHLA_w))/sd(TCHLA_w)) * s1_w)),
              size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "Wind",
+  scale_y_continuous(name = "Wind-LO",
                      limits = ylim.prim_w,
                      sec.axis = sec_axis(~ (. - a_w) / s_w * sd(ABUND_w) + mean(ABUND_w),
                                          name = "Abund./TChla"),) +
@@ -947,7 +994,7 @@ f5 <- riv_w_j %>%
              color = "black", stroke = 2) +
   geom_point(aes(y = (a1_wd + ((tchla - mean(TCHLA_wd))/sd(TCHLA_wd)) * s1_wd)),
              size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "WDir.",
+  scale_y_continuous(name = "WDir-LO",
                      limits = ylim.prim_wd,
                      sec.axis = sec_axis(~ (. - a_wd) / s_wd * sd(ABUND_wd) + mean(ABUND_wd),
                                          name = ""),) +
@@ -1011,17 +1058,22 @@ f6 <- riv_w_j %>%
 ```
 
 ```{r}
-yright = richtext_grob("test", rot = -90)
+# yright = richtext_grob("test", rot = -90)
 ```
 
 ```{r}
 fig2 <- (f_r / f_d / f3 / f4 / f5 / f6) 
 
-ggsave(here("figures_good", "KC10_multiple_aligned.png"), fig2,
+ggsave(here("figures_good", "KC10_multiple_aligned_lookout.png"), fig2,
         width = 16, height = 14, dpi = 300)
 ```
 
+```{r}
+fig3 <- f_r / f_ra / f_d / f3 / f4 / f5 / f6 
 
+ggsave(here("figures_timeseries", "KC10_multiple_aligned_lookout_rain_844.png"), fig3,
+        width = 16, height = 16, dpi = 300)
+```
 
 
 
