@@ -29,6 +29,8 @@ chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 micro <- micro %>% 
   filter(!site_id == "QU39")
 
+micro <- micro %>% 
+  filter(!scientificName == "Cyanobacteria")
 
 
 ```
@@ -96,22 +98,32 @@ test2 <- micro_all %>%
 ```
 
 ```{r}
-micro_all <- micro_all %>%
+micro_all_1 <- micro_all %>%
   group_by(date, location, genus) %>%
-  mutate(sum_count = sum(species_sum)) %>%
+  mutate(genus_sum = sum(count)) %>%
   ungroup() %>%
-  mutate(perc = species_sum/sum_count)
+  distinct(date, site_id, genus, genus_sum, .keep_all = T)
 
-micro_all <- micro_all %>%
-  group_by(scientificName) %>%
-  mutate(max = max(perc),
-         max_abund = max(species_sum)) %>%
+
+micro_all_2 <- micro_all_1 %>% 
+  group_by(date, site_id) %>% 
+  mutate(genus_all_sum = sum(genus_sum)) %>% 
+  ungroup() %>% 
+  mutate(perc = genus_sum/genus_all_sum)
+
+micro_all_3 <- micro_all_2 %>%
+  group_by(genus) %>%
+  mutate(max = max(perc)) %>%
   ungroup()
+
+test3 <- micro_all_3 %>% 
+  filter(max < 0.25) %>% 
+  distinct(genus, class, .keep_all = TRUE)
+
+test4 <- micro_all_3 %>% 
+  filter(max > 0.25) %>% 
+  distinct(genus, class, .keep_all = TRUE)
 ```
-
-
-
-
 
 ```{r}
 #Make a total diatom sum column for each date and then divide each species count by the total to derive a relative contribution
@@ -129,46 +141,69 @@ micro_all <- micro_all %>%
 #   ungroup()
 ```
 
+```{r}
+
+micro_all_4 <- micro_all_3 %>% 
+  mutate(genus = case_when(order == "Biddulphiales" ~ "Biddulphiales",
+                           class == "Dinophyceae" ~ "Dinophyceae",
+                              TRUE ~ as.character(genus))) 
+```
+
+
+
 
 ```{r}
-micro_all_gt10_perc <- micro_all %>% 
-  mutate(scientificName2 = ifelse(max < 0.25 & group == "Bacillariophyta",
-                                  "Other diatom", scientificName)) %>% 
-  mutate(scientificName2 = ifelse(max < 0.25 & !group == "Bacillariophyta",
-                                  "Other flagellate", scientificName2))
+micro_all_gt10_perc <- micro_all_4 %>% 
+  mutate(genus2 = ifelse(max < 0.40 & group == "Bacillariophyta",
+                                  "Other diatom", genus)) %>% 
+  mutate(genus2 = ifelse(max < 0.40 & !group == "Bacillariophyta",
+                                  "Other flagellate", genus2))
+```
+
+```{r}
+test6 <- micro_all_gt10_perc %>% 
+  filter(max > 0.25) %>% 
+  distinct(genus, class, .keep_all = TRUE)
 ```
 
 
 ```{r}
 micro_all_gt10_perc2 <- micro_all_gt10_perc %>% 
-  group_by(date, month_surv, location, scientificName2) %>% 
+  group_by(date, month_surv, location, genus2) %>% 
   summarise(species_sum = sum(species_sum)) %>% 
   ungroup()
 ```
 ```{r}
 micro_all_c <- micro_all_gt10_perc2  
 
-colourCount_c = length(unique(micro_all_c$scientificName2))
+colourCount_c = length(unique(micro_all_c$genus2))
 getPalette_c = colorRampPalette(brewer.pal(12, "Paired"))
 ```
 
+
 ```{r}
 spec_dist <- micro_all_c %>% 
-  distinct(scientificName2)
+  distinct(genus2)
 
 #25%
-spec_ord <- c("Biddulphiales", #
-              "Chaetoceros tenuissimus", #
-              "Pennales", #
-              "Pseudo-nitzschia seriata", #
-              "Rhizosolenia setigera", #
-              "Skeletonema marinoi", #
-              "Olisthodiscus", #
-              "Hillea", #
-              "Teleaulax", #
-              "Phaeocystis pouchetii", #
-              "Other diatom", #
-              "Other flagellate") #
+spec_ord <- c("Chaetoceros",
+              "Pseudo-nitzschia",
+              "Rhizosolenia",
+              "Skeletonema",
+              "Thalassiosira",
+              "Olisthodiscus",
+              "Hillea",
+              "Teleaulax",
+              "Phaeocystis",
+              "Other diatom",
+              "Other flagellate",
+              "NA")
+              
+              
+  
+  
+  
+
 
 #20%
 # spec_ord <- c("Biddulphiales",
@@ -204,7 +239,7 @@ spec_ord <- c("Biddulphiales", #
 #               "Phaeocystis pouchetii")
 
 micro_all_c <- arrange(mutate(micro_all_c,
-                         scientificName2 = factor(scientificName2,
+                         genus2 = factor(genus2,
                                                  levels = spec_ord)))
 ```
 
@@ -224,7 +259,7 @@ micro_all_chl %>%
   mutate(year = lubridate::year(date)) %>% 
   ggplot() + 
   geom_bar(aes(x = as.factor(month_surv), y = species_sum/100000, 
-           fill = scientificName2), stat = "identity", position = "stack",
+           fill = genus2), stat = "identity", position = "stack",
            color = "black") +
   scale_fill_manual(values = getPalette_c(colourCount_c)) +
   geom_line(aes(x = month_surv, y = tchla*coeff), size = 1.5) +
@@ -248,7 +283,7 @@ micro_all_chl %>%
   guides(fill = guide_legend(ncol = 4),
          color = "none")
 
-ggsave(here("figures_species_timeseries", "compositions_all_25_perc.png"),
+ggsave(here("figures_species_timeseries", "test.png"),
        width = 16, height = 10, dpi = 300)
 ```
 

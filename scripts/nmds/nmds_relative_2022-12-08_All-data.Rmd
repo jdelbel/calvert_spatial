@@ -770,10 +770,10 @@ inv_site_list_diat
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by station for all species
-# inv_month = multipatt(transform, month, func = "r.g",
+# inv_month = multipatt(transform_diat, month, func = "r.g",
 #                        control = how(nperm = 9999))
-
-#Looking at results of analysis
+# 
+# #Looking at results of analysis
 # summary(inv_month)
 ```
 
@@ -854,7 +854,7 @@ inv_year_sp <- data.table::as.data.table(inv_year$sign, keep.rownames = TRUE)
 
 inv_year_sp <- inv_year_sp %>% 
   filter(s.2018 == 1 | s.2019 == 1 | s.2020 == 1) %>% 
-  filter(p.value < 0.01) %>% 
+  filter(p.value < 0.05) %>% 
   # filter(!rn == "Skeletonema marinoi") %>% 
   arrange(rn)
 
@@ -864,15 +864,17 @@ inv_year_list
 ```
 
 ```{r}
-# inv_year_sp_dino <- data.table::as.data.table(inv_year_dino$sign, keep.rownames = TRUE)
-# 
-# inv_year_sp_dino <- inv_year_sp_dino %>% 
-#   filter(s.2018 == 1 | s.2019 == 1 | s.2020 == 1) %>% 
-#   filter(p.value < 0.05) %>% 
-#   # filter(!rn == "Skeletonema marinoi") %>% 
-#   arrange(rn)
-# 
-# inv_site_list_dino <- inv_year_sp_dino$rn
+inv_year_sp_dino <- data.table::as.data.table(inv_year_dino$sign, keep.rownames = TRUE)
+
+inv_year_sp_dino <- inv_year_sp_dino %>%
+  filter(s.2018 == 1 | s.2019 == 1 | s.2020 == 1) %>%
+  filter(p.value < 0.05) %>%
+  # filter(!rn == "Skeletonema marinoi") %>%
+  arrange(rn)
+
+inv_year_list_dino <- inv_year_sp_dino$rn
+
+inv_year_list_dino
 ```
 
 
@@ -889,44 +891,109 @@ micro <- arrange(mutate(micro,
 ```
 
 ```{r}
+# a <- c("Biddulphiales" = "green", #
+#        "Ceratium lineatum" = "purple",
+#        "Chaetoceros debilis" = "purple", #
+#        "Chaetoceros decipiens" = "blue", #Either S of S/C depending on analysis
+#        "Chaetoceros didymus" = "blue",
+#        "Chaetoceros laciniosus" = "blue", #
+#        "Chaetoceros radicans" = "blue", #
+#        "Chaetoceros seiracanthus" = "purple", #
+#        "Chaetoceros socialis" = "blue",
+#        "Dactyliosolen fragilissimus" = "blue", #
+#        "Dactyliosolen phuketensis" = "blue", #
+#        "Detonula pumila" = "blue", #
+#        "Dictyocha" = "blue",
+#        "Dinophysis acuta" = "red",
+#        "Eucampia zodiacus" = "blue", #
+#        "Guinardia delicatula" = "purple", #Either S of S/C depending on analysis
+#        "Leptocylindrus danicus" = "purple", #
+#        "Navicula" = "blue", #
+#        "Protoperidinium" = "blue",
+#        "Protoperidinium steinii" = "blue",
+#        "Pseudo-nitzschia seriata" = "blue", #
+#        "Pterosperma" = "purple",
+#        "Rhizosolenia setigera" = "blue", #
+#        "Skeletonema marinoi" = "red",
+#        "Teleaulax acuta" = "red",
+#        "Thalassiosira" = "blue",
+#        "Thalassiosira rotula" = "blue")
+       
+# test <- micro %>%   
+#   filter(scientificName %in% inv_site_list | 
+#          scientificName %in% inv_site_list_diat) %>% 
+#   distinct(scientificName)
 
 #Making a heatmap of the indicator species
 all_2 <- micro %>%   
-  filter(scientificName %in% inv_site_list) %>% 
+  filter(scientificName %in% inv_site_list | 
+         scientificName %in% inv_site_list_diat) %>% 
   ggplot(aes(x = as.factor(date), y = scientificName, fill = sqrt(perc_total))) +
   geom_tile(color = "black", size = 1) +
   facet_grid(group ~ location , scales = "free", space = "free") +
   scale_fill_distiller(palette = "Spectral", name = expression(sqrt("%"))) +
-  # scale_y_discrete(labels = c("Ceratium lineatum" = "C.lin.", 
-  #                             "Chaetoceros debilis" = "C.deb.",
-  #                             "Chaetoceros decipiens" = "C.dec.",
-  #                             "Chaetoceros radicans" = "C.rad.",
-  #                             "Chaetoceros seiracanthus" = "C.sei.",
-  #                             "Chaetoceros similis" = "C.sim.",
-  #                             "Chaetoceros socialis" = "C.soc.",
-  #                             "Dactyliosolen phuketensis" = "D.phu.",
-  #                             "Dactyliosolen fragilissimus" = "D.fra.",
-  #                             "Detonula pumila" = "D.pum.",
-  #                             "Eucampia zodiacus" = "E.zod.",
-  #                             "Leptocylindrus danicus" = "L.dan.",
-  #                             "Guinardia delicatula" = "G.del.",
-  #                             "Gymnodinium" = "Gymn",
-  #                             "Scrippsiella precaria" = "S.prec",
-  #                             "Protoperidinium" = "Pro",
-  #                             "Protoperidinium steinii" = "Pro.s",
-  #                             "Prorocentrum micans" = "P.mic.",
-  #                             "Pseudo-nitzschia seriata" = "P.n.s.",
-  #                             "Pterosperma" = "Pter.",
-  #                             "Dinophysis acuta" = "D.acu.",
-  #                             "Skeletonema marinoi large" = "S.mar.L",
-  #                             "Skeletonema marinoi small" = "S.mar.S",
-  #                             "Teleaulax acuta" = "T.acu.")) +
+  scale_y_discrete(labels = c("Biddulphiales" = "Bid.", #
+                              "Ceratium lineatum" = "C.lin.", #
+                              "Chaetoceros convolutus" = "C.con.",
+                              "Chaetoceros debilis" = "C.deb.", #
+                              "Chaetoceros decipiens" = "C.dec.", #
+                              "Chaetoceros laciniosus" = "C.lac.", #
+                              "Chaetoceros radicans" = "C.rad.", #
+                              "Chaetoceros seiracanthus" = "C.sei.", #
+                              "Chaetoceros similis" = "C.sim.",
+                              "Chaetoceros socialis" = "C.soc.", #
+                              "Chaetoceros didymus" = "C.did.", #
+                              "Dactyliosolen phuketensis" = "D.phu.", #
+                              "Dactyliosolen fragilissimus" = "D.fra.", #
+                              "Detonula pumila" = "D.pum.", #
+                              "Eucampia zodiacus" = "E.zod.", #
+                              "Leptocylindrus danicus" = "L.dan.", #
+                              "Navicula" = "Nav.", #
+                              "Guinardia delicatula" = "G.del.", #
+                              "Gymnodinium" = "Gymn",
+                              "Scrippsiella precaria" = "S.prec",
+                              "Protoperidinium" = "Pro", #
+                              "Protoperidinium steinii" = "Pro.s", #
+                              "Prorocentrum micans" = "P.mic.",
+                              "Pseudo-nitzschia seriata" = "P.n.s.", #
+                              "Pseudo-nitzschia" = "P.n.",
+                              "Pterosperma" = "Pter.", #
+                              "Dinophysis acuta" = "D.acu.", #
+                              "Skeletonema marinoi" = "S.mar.", #
+                              "Thalassiosira rotula" = "T.rot.", #
+                              "Thalassiosira" = "T.", #
+                              "Rhizosolenia setigera" = "R.s.", #
+                              "Teleaulax acuta" = "T.acu.",
+                              "Dictyocha" = "Dict.")) + #
   theme_bw() +
   theme(axis.title.x = element_blank(),
         strip.background = element_blank(),
         strip.text.y = element_blank(),
         # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
         axis.text.x = element_blank(),
+        # axis.text.y = element_text(color = c("darkgreen",
+        #                                      "darkviolet",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "darkviolet",
+        #                                      "darkviolet",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "red",
+        #                                      "blue",
+        #                                      "blue",
+        #                                      "purple",
+        #                                      "purple"
+        #                                      )),
         axis.title.y = element_blank(),
         text = element_text(size = 25),
         axis.text = element_text(colour = "black"),
@@ -945,78 +1012,78 @@ ggsave(here("figures_nmds", "indicator_all_rel.png"), all_2,
 ```
 
 ```{r}
-micro_sm <- micro %>%   
-  filter(scientificName == "Skeletonema marinoi small" | 
-           scientificName == "Skeletonema marinoi large") %>%
-  group_by(date, month_surv, location) %>% 
-  mutate(perc_total = sum(perc_total)) %>% 
-  ungroup() %>% 
-  distinct(date, perc_total, .keep_all = TRUE) %>% 
-  mutate(scientificName = "S.m.T",
-         group = "A")
-
-micro_comb <- rbind(micro, micro_sm)
-
-
-all_2 <- micro_comb %>%   
-  filter(scientificName %in% inv_site_list |
-           scientificName %in% inv_site_list_diat |
-           scientificName == "Skeletonema marinoi small" | 
-           scientificName == "S.m.T") %>% 
-  ggplot(aes(x = as.factor(date), y = scientificName, fill = sqrt(perc_total))) +
-  geom_tile(color = "black", size = 1) +
-  facet_grid(group ~ location , scales = "free", space = "free") +
-  scale_fill_distiller(palette = "Spectral", name = expression(sqrt("%"))) +
-  scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
-                              "Ceratium lineatum" = "C.lin.", 
-                              "Chaetoceros convolutus" = "C.con.",
-                              "Chaetoceros debilis" = "C.deb.",
-                              "Chaetoceros decipiens" = "C.dec.",
-                              "Chaetoceros laciniosus" = "C.lac.",
-                              "Chaetoceros radicans" = "C.rad.",
-                              "Chaetoceros seiracanthus" = "C.sei.",
-                              "Chaetoceros similis" = "C.sim.",
-                              "Chaetoceros socialis" = "C.soc.",
-                              "Dactyliosolen phuketensis" = "D.phu.",
-                              "Dactyliosolen fragilissimus" = "D.fra.",
-                              "Detonula pumila" = "D.pum.",
-                              "Eucampia zodiacus" = "E.zod.",
-                              "Leptocylindrus danicus" = "L.dan.",
-                              "Navicula" = "Nav.",
-                              "Guinardia delicatula" = "G.del.",
-                              "Gymnodinium" = "Gymn",
-                              "Scrippsiella precaria" = "S.prec",
-                              "Protoperidinium" = "Pro",
-                              "Protoperidinium steinii" = "Pro.s",
-                              "Prorocentrum micans" = "P.mic.",
-                              "Pseudo-nitzschia seriata" = "P.n.s.",
-                              "Pseudo-nitzschia" = "P.n.",
-                              "Pterosperma" = "Pter.",
-                              "Dinophysis acuta" = "D.acu.",
-                              "Skeletonema marinoi large" = "S.mar.L",
-                              "Skeletonema marinoi small" = "S.mar.S",
-                              "Thalassiosira rotula" = "T.rot.",
-                              "Teleaulax acuta" = "T.acu.")) +
-  theme_bw() +
-  theme(axis.title.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.y = element_blank(),
-        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        axis.text.x = element_blank(),
-        axis.title.y = element_blank(),
-        text = element_text(size = 28),
-        axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        # legend.position = c(0.03, 0.30),
-        legend.direction = "vertical",
-        axis.line = element_line(colour = "black"),
-        legend.background = element_blank(),
-        legend.key.height = unit(2.5, "cm"))
-
-ggsave(here("figures_good", "indicator_all_rel_2022-10-27_sm_sep_2.png"), all_2,
-        width = 16, height = 10, dpi = 300)
+# micro_sm <- micro %>%   
+#   filter(scientificName == "Skeletonema marinoi small" | 
+#            scientificName == "Skeletonema marinoi large") %>%
+#   group_by(date, month_surv, location) %>% 
+#   mutate(perc_total = sum(perc_total)) %>% 
+#   ungroup() %>% 
+#   distinct(date, perc_total, .keep_all = TRUE) %>% 
+#   mutate(scientificName = "S.m.T",
+#          group = "A")
+# 
+# micro_comb <- rbind(micro, micro_sm)
+# 
+# 
+# all_2 <- micro_comb %>%   
+#   filter(scientificName %in% inv_site_list |
+#            scientificName %in% inv_site_list_diat |
+#            scientificName == "Skeletonema marinoi small" | 
+#            scientificName == "S.m.T") %>% 
+#   ggplot(aes(x = as.factor(date), y = scientificName, fill = sqrt(perc_total))) +
+#   geom_tile(color = "black", size = 1) +
+#   facet_grid(group ~ location , scales = "free", space = "free") +
+#   scale_fill_distiller(palette = "Spectral", name = expression(sqrt("%"))) +
+#   scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
+#                               "Ceratium lineatum" = "C.lin.", 
+#                               "Chaetoceros convolutus" = "C.con.",
+#                               "Chaetoceros debilis" = "C.deb.",
+#                               "Chaetoceros decipiens" = "C.dec.",
+#                               "Chaetoceros laciniosus" = "C.lac.",
+#                               "Chaetoceros radicans" = "C.rad.",
+#                               "Chaetoceros seiracanthus" = "C.sei.",
+#                               "Chaetoceros similis" = "C.sim.",
+#                               "Chaetoceros socialis" = "C.soc.",
+#                               "Dactyliosolen phuketensis" = "D.phu.",
+#                               "Dactyliosolen fragilissimus" = "D.fra.",
+#                               "Detonula pumila" = "D.pum.",
+#                               "Eucampia zodiacus" = "E.zod.",
+#                               "Leptocylindrus danicus" = "L.dan.",
+#                               "Navicula" = "Nav.",
+#                               "Guinardia delicatula" = "G.del.",
+#                               "Gymnodinium" = "Gymn",
+#                               "Scrippsiella precaria" = "S.prec",
+#                               "Protoperidinium" = "Pro",
+#                               "Protoperidinium steinii" = "Pro.s",
+#                               "Prorocentrum micans" = "P.mic.",
+#                               "Pseudo-nitzschia seriata" = "P.n.s.",
+#                               "Pseudo-nitzschia" = "P.n.",
+#                               "Pterosperma" = "Pter.",
+#                               "Dinophysis acuta" = "D.acu.",
+#                               "Skeletonema marinoi large" = "S.mar.L",
+#                               "Skeletonema marinoi small" = "S.mar.S",
+#                               "Thalassiosira rotula" = "T.rot.",
+#                               "Teleaulax acuta" = "T.acu.")) +
+#   theme_bw() +
+#   theme(axis.title.x = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.y = element_blank(),
+#         # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+#         axis.text.x = element_blank(),
+#         axis.title.y = element_blank(),
+#         text = element_text(size = 28),
+#         axis.text = element_text(colour = "black"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         panel.background = element_blank(),
+#         # legend.position = c(0.03, 0.30),
+#         legend.direction = "vertical",
+#         axis.line = element_line(colour = "black"),
+#         legend.background = element_blank(),
+#         legend.key.height = unit(2.5, "cm"))
+# 
+# ggsave(here("figures_good", "indicator_all_rel_2022-10-27_sm_sep_2.png"), all_2,
+#         width = 16, height = 10, dpi = 300)
 ```
 
 
@@ -1208,7 +1275,7 @@ year <- micro %>%
         axis.line = element_blank())
  
 month <- micro %>%
-  ggplot(aes(x = as.factor(date), y = 1, fill = as.factor(month_surv))) +
+  ggplot(aes(x = as.factor(date), y = 1, fill = as.factor(month))) +
   geom_tile(color = "white", size = 0.3) +
   facet_grid(. ~ location , scales = "free_x", space = "free") +
   scale_fill_brewer(palette = "RdYlBu") +
@@ -1247,21 +1314,22 @@ month <- micro %>%
 #   plot_layout(heights = c(2, -0.06, 0.1, -0.1, 0.07), guides = "collect")
 
 panel <- all_2 / plot_spacer() / year / plot_spacer() / month + 
-  plot_layout(heights = c(2, -0.04, 0.1, -0.1, 0.06), guides = "collect")
+  plot_layout(heights = c(2, -0.07, 0.06, -0.09, 0.06), guides = "collect")
 
 # ggsave(here("figures_good", "indicator_comb_all.png"), panel,
 #         width = 16, height = 10, dpi = 300)
 
-ggsave(here("figures_good", "indicator_comb_all_2.png"), panel,
-        width = 16, height = 11, dpi = 300)
+ggsave(here("figures_nmds", "indicator_comb_all_2.png"), panel,
+        width = 16, height = 8, dpi = 300)
 ```
 
 ```{r}
-micro %>%   
-  filter(scientificName %in% inv_year_list) %>% 
+year <- micro %>% 
+  filter(scientificName %in% inv_year_list |
+           scientificName %in% inv_year_list_dino) %>% 
   ggplot(aes(x = as.factor(date), y = scientificName, fill = sqrt(perc_total))) +
   geom_tile(color = "black", size = 1) +
-  facet_grid(group ~ location , scales = "free", space = "free") +
+  facet_grid(. ~ location , scales = "free", space = "free") +
   scale_fill_distiller(palette = "Spectral", name = expression(sqrt("%"))) +
   # scale_y_discrete(labels = c("Biddulphiales" = "Bid.",
   #                             "Ceratium lineatum" = "C.lin.", 
@@ -1310,9 +1378,80 @@ micro %>%
         axis.line = element_line(colour = "black"),
         legend.background = element_blank(),
         legend.key.height = unit(2.5, "cm"))
+
+ggsave(here("figures_nmds", "test.png"),
+        width = 16, height = 8, dpi = 300)
 ```
 
+```{r}
+#Could add color bars for year and month.
+site <- micro %>%
+  mutate(year = lubridate::year(date)) %>%
+  ggplot(aes(x = as.factor(date), y = 1, fill = as.factor(location))) +
+  geom_tile() +
+  facet_grid(. ~ year , scales = "free_x", space = "free") +
+  scale_fill_brewer(palette = "Set1") +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        # legend.direction = "none",
+        # axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_blank())
+ 
+month_year <- micro %>%
+  ggplot(aes(x = as.factor(date), y = 1, fill = as.factor(month))) +
+  geom_tile(color = "white", size = 0.3) +
+  facet_grid(. ~ year , scales = "free_x", space = "free") +
+  scale_fill_brewer(palette = "RdYlBu") +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        # legend.direction = "none",
+        # axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_blank())
+```
 
+```{r}
+# panel <- all / plot_spacer() / year / plot_spacer() / month + 
+#   plot_layout(heights = c(2, -0.06, 0.1, -0.1, 0.07), guides = "collect")
+
+panel2 <- year / plot_spacer() / site / plot_spacer() / month_year + 
+  plot_layout(heights = c(2, -0.07, 0.06, -0.09, 0.06), guides = "collect")
+
+# ggsave(here("figures_good", "indicator_comb_all.png"), panel,
+#         width = 16, height = 10, dpi = 300)
+
+ggsave(here("figures_nmds", "test_year.png"), panel2,
+        width = 16, height = 8, dpi = 300)
+```
 
 
 
