@@ -276,8 +276,8 @@ expl <- micro_join[, 5:17]
 
 
 #Trying to remove variables that have high VIFS. Removed no2 and po4 because they had the highest VIFS. I also think silicate is important because of fjords trends. Doesn't really matter as sio2 should be representative of the other nutrients anyways - when I cut sio2 out, no2 vector was comparable.
-# expl <- expl %>% 
-#   select(-po4, -no2)
+expl <- expl %>%
+  select(-po4, -no2)
 
 ```
 

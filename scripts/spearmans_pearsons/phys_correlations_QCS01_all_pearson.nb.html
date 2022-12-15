@@ -1752,7 +1752,7 @@ pre code {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KHJlYWR4bClcbmxpYnJhcnkoaGVyZSlcbmxpYnJhcnkocGF0Y2h3b3JrKVxubGlicmFyeShSQ29sb3JCcmV3ZXIpXG5saWJyYXJ5KGdncHVicilcbmxpYnJhcnkoYnJvb20pXG5saWJyYXJ5KHpvbylcbmxpYnJhcnkoZ3N3KVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KHJlYWR4bClcbmxpYnJhcnkoaGVyZSlcbmxpYnJhcnkocGF0Y2h3b3JrKVxubGlicmFyeShSQ29sb3JCcmV3ZXIpXG5saWJyYXJ5KGdncHVicilcbmxpYnJhcnkoYnJvb20pXG5saWJyYXJ5KHpvbylcbmBgYCJ9 -->
 <pre class="r"><code>library(tidyverse)
 library(readxl)
 library(here)
@@ -1760,8 +1760,18 @@ library(patchwork)
 library(RColorBrewer)
 library(ggpubr)
 library(broom)
-library(zoo)
-library(gsw)</code></pre>
+library(zoo)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiXG5BdHRhY2hpbmcgcGFja2FnZTog46S847ixem9v46S847iyXG5cblRoZSBmb2xsb3dpbmcgb2JqZWN0cyBhcmUgbWFza2VkIGZyb20g46S847ixcGFja2FnZTpiYXNl46S847iyOlxuXG4gICAgYXMuRGF0ZSwgYXMuRGF0ZS5udW1lcmljXG4ifQ== -->
+<pre><code>
+Attaching package: 㤼㸱zoo㤼㸲
+
+The following objects are masked from 㤼㸱package:base㤼㸲:
+
+    as.Date, as.Date.numeric</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnc3cpXG5gYGAifQ== -->
+<pre class="r"><code>library(gsw)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
@@ -1773,11 +1783,11 @@ library(gsw)</code></pre>
 
 micro &lt;- read_csv(here(&quot;outputs&quot;, &quot;micro_all_2022-11-25.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzIzNiBDb2x1bW5zOiAyMFxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDE2KTogc2l0ZV9pZCwgdHJvcGhpY1N0YXR1cywgZ3JvdXAsIHNjaWVudGlmaWNOYW1lLCBvcmlnX25hbWUsIHNjaWVudGlmaWNOYW1lX2FjY2VwdGVkLCByYW5rLCBraW5nZG9tLCBwaHlsdW0uLi5cbmRibCAgICgzKTogQXBoaWFJRCwgY291bnQsIHNwZWNpZXNfc3VtXG5kYXRlICAoMSk6IGRhdGVcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzIzNiBDb2x1bW5zOiAyMFxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDE2KTogc2l0ZV9pZCwgdHJvcGhpY1N0YXR1cywgZ3JvdXAsIHNjaWVudGlmaWNOYW1lLCBvcmlnX25hbWUsIHNjaWVudGlmaWNOYW1lX2FjY2VwdGVkLCByYW5rLCBraW5nZG9tLCAuLi5cbmRibCAgICgzKTogQXBoaWFJRCwgY291bnQsIHNwZWNpZXNfc3VtXG5kYXRlICAoMSk6IGRhdGVcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
 <pre><code>Rows: 3236 Columns: 20
--- Column specification -----------------------------------------------------------------------------------------------
+-- Column specification -----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
-chr  (16): site_id, trophicStatus, group, scientificName, orig_name, scientificName_accepted, rank, kingdom, phylum...
+chr  (16): site_id, trophicStatus, group, scientificName, orig_name, scientificName_accepted, rank, kingdom, ...
 dbl   (3): AphiaID, count, species_sum
 date  (1): date
 
@@ -1787,12 +1797,12 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY3RkIDwtIHJlYWRfY3N2KGhlcmUoXCJvdXRwdXRzXCIsIFwiY3RkX2FsbF8yMDIyLTExLTI1LmNzdlwiKSlcbmBgYCJ9 -->
 <pre class="r"><code>ctd &lt;- read_csv(here(&quot;outputs&quot;, &quot;ctd_all_2022-11-25.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODMgQ29sdW1uczogMTYwXG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICAgICgxKTogc2l0ZV9pZFxuZGJsICAoMTU4KTogbGF0LCBsb25nLCB0ZW1wX2RtLCBzYWxfZG0sIE4yX2RtLCBkZWx0YV9yaG9fZG0sIHR1cmJfZG0sIGZsdV9kbSwgZGVwXzI2X2RtLCBubzJfZG0sIHNpbzJfZG0sIHBvNF9kbSwgcy4uLlxuZGF0ZSAgICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODMgQ29sdW1uczogMTYwXG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICAgICgxKTogc2l0ZV9pZFxuZGJsICAoMTU4KTogbGF0LCBsb25nLCB0ZW1wX2RtLCBzYWxfZG0sIE4yX2RtLCBkZWx0YV9yaG9fZG0sIHR1cmJfZG0sIGZsdV9kbSwgZGVwXzI2X2RtLCBubzJfZG0sIHNpbzJfZG0sIHBvNC4uLlxuZGF0ZSAgICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
 <pre><code>Rows: 83 Columns: 160
--- Column specification -----------------------------------------------------------------------------------------------
+-- Column specification -----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr    (1): site_id
-dbl  (158): lat, long, temp_dm, sal_dm, N2_dm, delta_rho_dm, turb_dm, flu_dm, dep_26_dm, no2_dm, sio2_dm, po4_dm, s...
+dbl  (158): lat, long, temp_dm, sal_dm, N2_dm, delta_rho_dm, turb_dm, flu_dm, dep_26_dm, no2_dm, sio2_dm, po4...
 date   (1): date
 
 i Use `spec()` to retrieve the full column specification for this data.
@@ -1801,9 +1811,9 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY2hsIDwtIHJlYWRfY3N2KGhlcmUoXCJvdXRwdXRzXCIsIFwidGNobGFfY2FsaWJyYXRpb25fMjAyMi0xMS0xNS5jc3ZcIikpXG5gYGAifQ== -->
 <pre class="r"><code>chl &lt;- read_csv(here(&quot;outputs&quot;, &quot;tchla_calibration_2022-11-15.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODAgQ29sdW1uczogNFxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDIpOiBzaXRlX2lkLCBsb2NhdGlvblxuZGJsICAoMSk6IHRjaGxhXG5kYXRlICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODAgQ29sdW1uczogNFxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDIpOiBzaXRlX2lkLCBsb2NhdGlvblxuZGJsICAoMSk6IHRjaGxhXG5kYXRlICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
 <pre><code>Rows: 80 Columns: 4
--- Column specification -----------------------------------------------------------------------------------------------
+-- Column specification -----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr  (2): site_id, location
 dbl  (1): tchla
@@ -1815,13 +1825,13 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubnV0cyA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJrYzEwX251dHMuY3N2XCIpKVxuYGBgIn0= -->
 <pre class="r"><code>nuts &lt;- read_csv(here(&quot;files&quot;, &quot;kc10_nuts.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzg2IENvbHVtbnM6IDY1XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICAoMTQpOiB3b3JrX2FyZWEsIG9yZ2FuaXphdGlvbiwgcHJvamVjdCwgc3VydmV5LCBzaXRlX2lkLCBoYWthaV9pZCwgc291cmNlLCBmaWx0ZXJfdHlwZSwgbGFiX3RlY2huaWNpYW4sIG5vMl9uby4uLlxuZGJsICAoMTMpOiBldmVudF9waywgcm4sIHNhbXBsaW5nX2JvdXQsIGxhdCwgbG9uZywgZ2F0aGVyX2xhdCwgZ2F0aGVyX2xvbmcsIGxpbmVfb3V0X2RlcHRoLCBwcmVzc3VyZV90cmFuc2R1Y2VyX2RlcC4uLlxubGdsICAoMzQpOiBhY3Rpb24sIGlzX3JlcGxpY2F0ZSwgcHJvamVjdF9zcGVjaWZpY19pZCwgY29sbGVjdGlvbl9tZXRob2QsIGZpbHRlcmVkLCBpbnN0YWxsZWQsIG5oNF8sIG5vMl9ubzNfdWdsLCB0cC4uLlxuZHR0bSAgKDMpOiBjb2xsZWN0ZWQsIHByZXNlcnZlZCwgYW5hbHl6ZWRcbmRhdGUgICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzg2IENvbHVtbnM6IDY1XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICAoMTQpOiB3b3JrX2FyZWEsIG9yZ2FuaXphdGlvbiwgcHJvamVjdCwgc3VydmV5LCBzaXRlX2lkLCBoYWthaV9pZCwgc291cmNlLCBmaWx0ZXJfdHlwZSwgbGFiX3RlY2huaWNpYW4sIC4uLlxuZGJsICAoMTMpOiBldmVudF9waywgcm4sIHNhbXBsaW5nX2JvdXQsIGxhdCwgbG9uZywgZ2F0aGVyX2xhdCwgZ2F0aGVyX2xvbmcsIGxpbmVfb3V0X2RlcHRoLCBwcmVzc3VyZV90cmFuc2R1Yy4uLlxubGdsICAoMzQpOiBhY3Rpb24sIGlzX3JlcGxpY2F0ZSwgcHJvamVjdF9zcGVjaWZpY19pZCwgY29sbGVjdGlvbl9tZXRob2QsIGZpbHRlcmVkLCBpbnN0YWxsZWQsIG5oNF8sIG5vMl9ubzNfdS4uLlxuZHR0bSAgKDMpOiBjb2xsZWN0ZWQsIHByZXNlcnZlZCwgYW5hbHl6ZWRcbmRhdGUgICgxKTogZGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
 <pre><code>Rows: 386 Columns: 65
--- Column specification -----------------------------------------------------------------------------------------------
+-- Column specification -----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
-chr  (14): work_area, organization, project, survey, site_id, hakai_id, source, filter_type, lab_technician, no2_no...
-dbl  (13): event_pk, rn, sampling_bout, lat, long, gather_lat, gather_long, line_out_depth, pressure_transducer_dep...
-lgl  (34): action, is_replicate, project_specific_id, collection_method, filtered, installed, nh4_, no2_no3_ugl, tp...
+chr  (14): work_area, organization, project, survey, site_id, hakai_id, source, filter_type, lab_technician, ...
+dbl  (13): event_pk, rn, sampling_bout, lat, long, gather_lat, gather_long, line_out_depth, pressure_transduc...
+lgl  (34): action, is_replicate, project_specific_id, collection_method, filtered, installed, nh4_, no2_no3_u...
 dttm  (3): collected, preserved, analyzed
 date  (1): date
 
@@ -1831,9 +1841,9 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucml2IDwtIHJlYWRfY3N2KGhlcmUoXCJmaWxlc1wiLCBcInJpdmVyLmNzdlwiKSkgXG5gYGAifQ== -->
 <pre class="r"><code>riv &lt;- read_csv(here(&quot;files&quot;, &quot;river.csv&quot;)) </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzY2MTggQ29sdW1uczogNVxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDIpOiBJRCwgU1lNXG5kYmwgICgyKTogUEFSQU0sIFZhbHVlXG5kYXRlICgxKTogRGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzY2MTggQ29sdW1uczogNVxuLS0gQ29sdW1uIHNwZWNpZmljYXRpb24gLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDIpOiBJRCwgU1lNXG5kYmwgICgyKTogUEFSQU0sIFZhbHVlXG5kYXRlICgxKTogRGF0ZVxuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
 <pre><code>Rows: 36618 Columns: 5
--- Column specification -----------------------------------------------------------------------------------------------
+-- Column specification -----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr  (2): ID, SYM
 dbl  (2): PARAM, Value
@@ -1845,9 +1855,9 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucml2X2IgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwicml2X2JlbGxhXzQuY3N2XCIpKVxuYGBgIn0= -->
 <pre class="r"><code>riv_b &lt;- read_csv(here(&quot;files&quot;, &quot;riv_bella_4.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjQwMCBDb2x1bW5zOiA1XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICgzKTogSUQsIERhdGUsIFNZTVxuZGJsICgyKTogUEFSQU0sIFZhbHVlXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNjQwMCBDb2x1bW5zOiA1XG4tLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICgzKTogSUQsIERhdGUsIFNZTVxuZGJsICgyKTogUEFSQU0sIFZhbHVlXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
 <pre><code>Rows: 6400 Columns: 5
--- Column specification -----------------------------------------------------------------------------------------------
+-- Column specification -----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr (3): ID, Date, SYM
 dbl (2): PARAM, Value
@@ -1858,12 +1868,12 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZXRoZWxfd2luZCA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJldGhlbF93aW5kLmNzdlwiKSlcbmBgYCJ9 -->
 <pre class="r"><code>ethel_wind &lt;- read_csv(here(&quot;files&quot;, &quot;ethel_wind.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODE1OTUgQ29sdW1uczogMTZcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICgzKTogbWVhc3VyZW1lbnRUaW1lLCBtb250aCwgd2F0ZXJZZWFyXG5kYmwgKDExKTogeWVhciwgV2luZFNwZF9RTCwgV2luZFNwZF9VUUwsIFdpbmRTcGRfQXZnLCBXaW5kU3BkX01pbiwgV2luZFNwZF9NYXgsIFdpbmRTcGRfU3RkLCBXaW5kRGlyX1FMLCBXaW5kRGlyX1VRLi4uXG5sZ2wgICgyKTogV2luZFNwZF9RQywgV2luZERpcl9RQ1xuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODE1OTUgQ29sdW1uczogMTZcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICgzKTogbWVhc3VyZW1lbnRUaW1lLCBtb250aCwgd2F0ZXJZZWFyXG5kYmwgKDExKTogeWVhciwgV2luZFNwZF9RTCwgV2luZFNwZF9VUUwsIFdpbmRTcGRfQXZnLCBXaW5kU3BkX01pbiwgV2luZFNwZF9NYXgsIFdpbmRTcGRfU3RkLCBXaW5kRGlyX1FMLCBXaW5kLi4uXG5sZ2wgICgyKTogV2luZFNwZF9RQywgV2luZERpcl9RQ1xuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
 <pre><code>Rows: 81595 Columns: 16
--- Column specification -----------------------------------------------------------------------------------------------
+-- Column specification -----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr  (3): measurementTime, month, waterYear
-dbl (11): year, WindSpd_QL, WindSpd_UQL, WindSpd_Avg, WindSpd_Min, WindSpd_Max, WindSpd_Std, WindDir_QL, WindDir_UQ...
+dbl (11): year, WindSpd_QL, WindSpd_UQL, WindSpd_Avg, WindSpd_Min, WindSpd_Max, WindSpd_Std, WindDir_QL, Wind...
 lgl  (2): WindSpd_QC, WindDir_QC
 
 i Use `spec()` to retrieve the full column specification for this data.
@@ -1872,12 +1882,12 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGtfd2luZCA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJ3aW5kX2xvb2tvdXQuY3N2XCIpKVxuYGBgIn0= -->
 <pre class="r"><code>lk_wind &lt;- read_csv(here(&quot;files&quot;, &quot;wind_lookout.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODg1NjIgQ29sdW1uczogMTZcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICgzKTogbWVhc3VyZW1lbnRUaW1lLCBtb250aCwgd2F0ZXJZZWFyXG5kYmwgKDExKTogeWVhciwgV2luZFNwZF9RTCwgV2luZFNwZF9VUUwsIFdpbmRTcGRfQXZnLCBXaW5kU3BkX01pbiwgV2luZFNwZF9NYXgsIFdpbmRTcGRfU3RkLCBXaW5kRGlyX1FMLCBXaW5kRGlyX1VRLi4uXG5sZ2wgICgyKTogV2luZFNwZF9RQywgV2luZERpcl9RQ1xuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODg1NjIgQ29sdW1uczogMTZcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICgzKTogbWVhc3VyZW1lbnRUaW1lLCBtb250aCwgd2F0ZXJZZWFyXG5kYmwgKDExKTogeWVhciwgV2luZFNwZF9RTCwgV2luZFNwZF9VUUwsIFdpbmRTcGRfQXZnLCBXaW5kU3BkX01pbiwgV2luZFNwZF9NYXgsIFdpbmRTcGRfU3RkLCBXaW5kRGlyX1FMLCBXaW5kLi4uXG5sZ2wgICgyKTogV2luZFNwZF9RQywgV2luZERpcl9RQ1xuXG5pIFVzZSBgc3BlYygpYCB0byByZXRyaWV2ZSB0aGUgZnVsbCBjb2x1bW4gc3BlY2lmaWNhdGlvbiBmb3IgdGhpcyBkYXRhLlxuaSBTcGVjaWZ5IHRoZSBjb2x1bW4gdHlwZXMgb3Igc2V0IGBzaG93X2NvbF90eXBlcyA9IEZBTFNFYCB0byBxdWlldCB0aGlzIG1lc3NhZ2UuXG4ifQ== -->
 <pre><code>Rows: 88562 Columns: 16
--- Column specification -----------------------------------------------------------------------------------------------
+-- Column specification -----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr  (3): measurementTime, month, waterYear
-dbl (11): year, WindSpd_QL, WindSpd_UQL, WindSpd_Avg, WindSpd_Min, WindSpd_Max, WindSpd_Std, WindDir_QL, WindDir_UQ...
+dbl (11): year, WindSpd_QL, WindSpd_UQL, WindSpd_Avg, WindSpd_Min, WindSpd_Max, WindSpd_Std, WindDir_QL, Wind...
 lgl  (2): WindSpd_QC, WindDir_QC
 
 i Use `spec()` to retrieve the full column specification for this data.
@@ -1886,9 +1896,9 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGtfcGFyIDwtIHJlYWRfY3N2KGhlcmUoXCJmaWxlc1wiLCBcImxvb2tvdXRfcGFyLmNzdlwiKSlcbmBgYCJ9 -->
 <pre class="r"><code>lk_par &lt;- read_csv(here(&quot;files&quot;, &quot;lookout_par.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODg2MTUgQ29sdW1uczogMTJcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgKDUpOiBtZWFzdXJlbWVudFRpbWUsIG1vbnRoLCB3YXRlclllYXIsIDFob3VyU29sYXJfUUMsIDFob3VyUEFSX1FDXG5kYmwgKDcpOiB5ZWFyLCAxaG91clNvbGFyX1FMLCAxaG91clNvbGFyX1VRTCwgMWhvdXJTb2xhciwgMWhvdXJQQVJfUUwsIDFob3VyUEFSX1VRTCwgMWhvdXJQQVJcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODg2MTUgQ29sdW1uczogMTJcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgKDUpOiBtZWFzdXJlbWVudFRpbWUsIG1vbnRoLCB3YXRlclllYXIsIDFob3VyU29sYXJfUUMsIDFob3VyUEFSX1FDXG5kYmwgKDcpOiB5ZWFyLCAxaG91clNvbGFyX1FMLCAxaG91clNvbGFyX1VRTCwgMWhvdXJTb2xhciwgMWhvdXJQQVJfUUwsIDFob3VyUEFSX1VRTCwgMWhvdXJQQVJcblxuaSBVc2UgYHNwZWMoKWAgdG8gcmV0cmlldmUgdGhlIGZ1bGwgY29sdW1uIHNwZWNpZmljYXRpb24gZm9yIHRoaXMgZGF0YS5cbmkgU3BlY2lmeSB0aGUgY29sdW1uIHR5cGVzIG9yIHNldCBgc2hvd19jb2xfdHlwZXMgPSBGQUxTRWAgdG8gcXVpZXQgdGhpcyBtZXNzYWdlLlxuIn0= -->
 <pre><code>Rows: 88615 Columns: 12
--- Column specification -----------------------------------------------------------------------------------------------
+-- Column specification -----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr (5): measurementTime, month, waterYear, 1hourSolar_QC, 1hourPAR_QC
 dbl (7): year, 1hourSolar_QL, 1hourSolar_UQL, 1hourSolar, 1hourPAR_QL, 1hourPAR_UQL, 1hourPAR
@@ -1899,12 +1909,12 @@ i Specify the column types or set `show_col_types = FALSE` to quiet this message
 <!-- rnb-source-begin eyJkYXRhIjoiYGBgclxud3M4NDQgPC0gcmVhZF9jc3YoaGVyZShcImZpbGVzXCIsIFwid3M4NDQuY3N2XCIpKVxuYGBgIn0= -->
 <pre class="r"><code>ws844 &lt;- read_csv(here(&quot;files&quot;, &quot;ws844.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNzIyMzMgQ29sdW1uczogMTZcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICg1KTogbWVhc3VyZW1lbnRUaW1lLCBtb250aCwgd2F0ZXJZZWFyLCBQTFNfTHZsX1FDLCAyNGhvdXJSYWluX1FDXG5kYmwgKDExKTogeWVhciwgUExTX0x2bF9RTCwgUExTX0x2bF9VUUwsIFBMU19MdmwsIFBMU19MdmxfTWVkLCBQTFNfTHZsX0F2ZywgUExTX0x2bF9NaW4sIFBMU19MdmxfTWF4LCAyNGhvdXJSYWluX1FMLi4uXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogNzIyMzMgQ29sdW1uczogMTZcbi0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tXG5EZWxpbWl0ZXI6IFwiLFwiXG5jaHIgICg1KTogbWVhc3VyZW1lbnRUaW1lLCBtb250aCwgd2F0ZXJZZWFyLCBQTFNfTHZsX1FDLCAyNGhvdXJSYWluX1FDXG5kYmwgKDExKTogeWVhciwgUExTX0x2bF9RTCwgUExTX0x2bF9VUUwsIFBMU19MdmwsIFBMU19MdmxfTWVkLCBQTFNfTHZsX0F2ZywgUExTX0x2bF9NaW4sIFBMU19MdmxfTWF4LCAyNGhvdXJSLi4uXG5cbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
 <pre><code>Rows: 72233 Columns: 16
--- Column specification -----------------------------------------------------------------------------------------------
+-- Column specification -----------------------------------------------------------------------------------------
 Delimiter: &quot;,&quot;
 chr  (5): measurementTime, month, waterYear, PLS_Lvl_QC, 24hourRain_QC
-dbl (11): year, PLS_Lvl_QL, PLS_Lvl_UQL, PLS_Lvl, PLS_Lvl_Med, PLS_Lvl_Avg, PLS_Lvl_Min, PLS_Lvl_Max, 24hourRain_QL...
+dbl (11): year, PLS_Lvl_QL, PLS_Lvl_UQL, PLS_Lvl, PLS_Lvl_Med, PLS_Lvl_Avg, PLS_Lvl_Min, PLS_Lvl_Max, 24hourR...
 
 i Use `spec()` to retrieve the full column specification for this data.
 i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
@@ -2235,38 +2245,38 @@ head(data_nest)</code></pre>
 <pre class="r"><code>
 str(head(slice(data_nest, 1)))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiZ3JvdXBlZF9kZiBbNiB4IDNdIChTMzogZ3JvdXBlZF9kZi90YmxfZGYvdGJsL2RhdGEuZnJhbWUpXG4gJCBuYW1lICAgICAgICAgIDogY2hyIFsxOjZdIFwiZGVsdGFfcmhvXCIgXCJkZWx0YV9yaG9cIiBcImRlbHRhX3Job1wiIFwiZGVsdGFfcmhvXCIgLi4uXG4gJCBzY2llbnRpZmljTmFtZTogY2hyIFsxOjZdIFwiY3J5cHRvIHN1bVwiIFwiRGlhdG9tIHN1bVwiIFwiSGlsbGVhXCIgXCJQc2V1ZG8tbml0enNjaGlhXCIgLi4uXG4gJCBkYXRhICAgICAgICAgIDpMaXN0IG9mIDZcbiAgLi4kIDogdGliYmxlIFsxOCB4IDRdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiAuLiQgZGF0ZSAgICAgOiBQT1NJWGN0WzE6MThdLCBmb3JtYXQ6IFwiMjAxOC0wMS0xMFwiIFwiMjAxOC0wMy0yNFwiIFwiMjAxOC0wNC0yMlwiIFwiMjAxOC0wNS0yOVwiIC4uLlxuICAuLiAuLiQgdmFscyAgICAgOiBudW0gWzE6MThdIDAuMTk5IDAuNDQgMC4zNDIgMC43MDIgMS42NjYgLi4uXG4gIC4uIC4uJCBzaXRlX2lkICA6IGNociBbMToxOF0gXCJRQ1MwMVwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgXCJRQ1MwMVwiIC4uLlxuICAuLiAuLiQgZXhwX2NvdW50OiBudW0gWzE6MThdIDQ3MjUwIDk3MjI1IDEwMDAwMCAyNTY2NzQgNDAyNTAgLi4uXG4gIC4uJCA6IHRpYmJsZSBbMTggeCA0XSAoUzM6IHRibF9kZi90YmwvZGF0YS5mcmFtZSlcbiAgLi4gLi4kIGRhdGUgICAgIDogUE9TSVhjdFsxOjE4XSwgZm9ybWF0OiBcIjIwMTgtMDEtMTBcIiBcIjIwMTgtMDMtMjRcIiBcIjIwMTgtMDQtMjJcIiBcIjIwMTgtMDUtMjlcIiAuLi5cbiAgLi4gLi4kIHZhbHMgICAgIDogbnVtIFsxOjE4XSAwLjE5OSAwLjQ0IDAuMzQyIDAuNzAyIDEuNjY2IC4uLlxuICAuLiAuLiQgc2l0ZV9pZCAgOiBjaHIgWzE6MThdIFwiUUNTMDFcIiBcIlFDUzAxXCIgXCJRQ1MwMVwiIFwiUUNTMDFcIiAuLi5cbiAgLi4gLi4kIGV4cF9jb3VudDogbnVtIFsxOjE4XSA1NTIwIDQ3NjIyIDc1MjYxIDc1OTg5IDUwNzM2NCAuLi5cbiAgLi4kIDogdGliYmxlIFsxOCB4IDRdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiAuLiQgZGF0ZSAgICAgOiBQT1NJWGN0WzE6MThdLCBmb3JtYXQ6IFwiMjAxOC0wMS0xMFwiIFwiMjAxOC0wMy0yNFwiIFwiMjAxOC0wNC0yMlwiIFwiMjAxOC0wNS0yOVwiIC4uLlxuICAuLiAuLiQgdmFscyAgICAgOiBudW0gWzE6MThdIDAuMTk5IDAuNDQgMC4zNDIgMC43MDIgMS42NjYgLi4uXG4gIC4uIC4uJCBzaXRlX2lkICA6IGNociBbMToxOF0gXCJRQ1MwMVwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgXCJRQ1MwMVwiIC4uLlxuICAuLiAuLiQgZXhwX2NvdW50OiBudW0gWzE6MThdIDM4NTAwIDQyNzc5IDY1MDAwIDE5ODMzOSAyNjI1MCAuLi5cbiAgLi4kIDogdGliYmxlIFsxOCB4IDRdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiAuLiQgZGF0ZSAgICAgOiBQT1NJWGN0WzE6MThdLCBmb3JtYXQ6IFwiMjAxOC0wMS0xMFwiIFwiMjAxOC0wMy0yNFwiIFwiMjAxOC0wNC0yMlwiIFwiMjAxOC0wNS0yOVwiIC4uLlxuICAuLiAuLiQgdmFscyAgICAgOiBudW0gWzE6MThdIDAuMTk5IDAuNDQgMC4zNDIgMC43MDIgMS42NjYgLi4uXG4gIC4uIC4uJCBzaXRlX2lkICA6IGNociBbMToxOF0gXCJRQ1MwMVwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgXCJRQ1MwMVwiIC4uLlxuICAuLiAuLiQgZXhwX2NvdW50OiBudW0gWzE6MThdIDIwMCAxNDggMTQwNiAyNDAzIDc5MjAgLi4uXG4gIC4uJCA6IHRpYmJsZSBbMTcgeCA0XSAoUzM6IHRibF9kZi90YmwvZGF0YS5mcmFtZSlcbiAgLi4gLi4kIGRhdGUgICAgIDogUE9TSVhjdFsxOjE3XSwgZm9ybWF0OiBcIjIwMTgtMDEtMTBcIiBcIjIwMTgtMDQtMjJcIiBcIjIwMTgtMDUtMjlcIiBcIjIwMTgtMDctMTRcIiAuLi5cbiAgLi4gLi4kIHZhbHMgICAgIDogbnVtIFsxOjE3XSAwLjE5OSAwLjM0MiAwLjcwMiAxLjY2NiAxLjQ3MSAuLi5cbiAgLi4gLi4kIHNpdGVfaWQgIDogY2hyIFsxOjE3XSBcIlFDUzAxXCIgXCJRQ1MwMVwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgLi4uXG4gIC4uIC4uJCBleHBfY291bnQ6IG51bSBbMToxN10gNDAgMTAzNiA1MzQgNDAzMiAxNzQyNCAuLi5cbiAgLi4kIDogdGliYmxlIFsxOCB4IDRdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiAuLiQgZGF0ZSAgICAgOiBQT1NJWGN0WzE6MThdLCBmb3JtYXQ6IFwiMjAxOC0wMS0xMFwiIFwiMjAxOC0wMy0yNFwiIFwiMjAxOC0wNC0yMlwiIFwiMjAxOC0wNS0yOVwiIC4uLlxuICAuLiAuLiQgdmFscyAgICAgOiBudW0gWzE6MThdIDAuMTk5IDAuNDQgMC4zNDIgMC43MDIgMS42NjYgLi4uXG4gIC4uIC4uJCBzaXRlX2lkICA6IGNociBbMToxOF0gXCJRQ1MwMVwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgXCJRQ1MwMVwiIC4uLlxuICAuLiAuLiQgZXhwX2NvdW50OiBudW0gWzE6MThdIDYwMCA5NDcyIDIzNjcxIDQzMzc0IDM2NTMwNCAuLi5cbiAtIGF0dHIoKiwgXCJncm91cHNcIik9IHRpYmJsZSBbNiB4IDNdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiQgbmFtZSAgICAgICAgICA6IGNociBbMTo2XSBcImRlbHRhX3Job1wiIFwiZGVsdGFfcmhvXCIgXCJkZWx0YV9yaG9cIiBcImRlbHRhX3Job1wiIC4uLlxuICAuLiQgc2NpZW50aWZpY05hbWU6IGNociBbMTo2XSBcImNyeXB0byBzdW1cIiBcIkRpYXRvbSBzdW1cIiBcIkhpbGxlYVwiIFwiUHNldWRvLW5pdHpzY2hpYVwiIC4uLlxuICAuLiQgLnJvd3MgICAgICAgICA6IGxpc3Q8aW50PiBbMTo2XSBcbiAgLi4gLi4kIDogaW50IDFcbiAgLi4gLi4kIDogaW50IDJcbiAgLi4gLi4kIDogaW50IDNcbiAgLi4gLi4kIDogaW50IDRcbiAgLi4gLi4kIDogaW50IDVcbiAgLi4gLi4kIDogaW50IDZcbiAgLi4gLi5AIHB0eXBlOiBpbnQoMCkgXG4gIC4uLSBhdHRyKCosIFwiLmRyb3BcIik9IGxvZ2kgVFJVRVxuIn0= -->
+<!-- rnb-output-begin eyJkYXRhIjoiZ3JvdXBlZF9kZiBbNiB4IDNdIChTMzogZ3JvdXBlZF9kZi90YmxfZGYvdGJsL2RhdGEuZnJhbWUpXG4gJCBuYW1lICAgICAgICAgIDogY2hyIFsxOjZdIFwiZGVsdGFfcmhvXCIgXCJkZWx0YV9yaG9cIiBcImRlbHRhX3Job1wiIFwiZGVsdGFfcmhvXCIgLi4uXG4gJCBzY2llbnRpZmljTmFtZTogY2hyIFsxOjZdIFwiY3J5cHRvIHN1bVwiIFwiRGlhdG9tIHN1bVwiIFwiSGlsbGVhXCIgXCJQc2V1ZG8tbml0enNjaGlhXCIgLi4uXG4gJCBkYXRhICAgICAgICAgIDpMaXN0IG9mIDZcbiAgLi4kIDogdGliYmxlIFsxOCB4IDRdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiAuLiQgZGF0ZSAgICAgOiBQT1NJWGN0WzE6MThdLCBmb3JtYXQ6IFwiMjAxOC0wMS0xMFwiIFwiMjAxOC0wMy0yNFwiIFwiMjAxOC0wNC0yMlwiIC4uLlxuICAuLiAuLiQgdmFscyAgICAgOiBudW0gWzE6MThdIDAuMTk5IDAuNDQgMC4zNDIgMC43MDIgMS42NjYgLi4uXG4gIC4uIC4uJCBzaXRlX2lkICA6IGNociBbMToxOF0gXCJRQ1MwMVwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgXCJRQ1MwMVwiIC4uLlxuICAuLiAuLiQgZXhwX2NvdW50OiBudW0gWzE6MThdIDQ3MjUwIDk3MjI1IDEwMDAwMCAyNTY2NzQgNDAyNTAgLi4uXG4gIC4uJCA6IHRpYmJsZSBbMTggeCA0XSAoUzM6IHRibF9kZi90YmwvZGF0YS5mcmFtZSlcbiAgLi4gLi4kIGRhdGUgICAgIDogUE9TSVhjdFsxOjE4XSwgZm9ybWF0OiBcIjIwMTgtMDEtMTBcIiBcIjIwMTgtMDMtMjRcIiBcIjIwMTgtMDQtMjJcIiAuLi5cbiAgLi4gLi4kIHZhbHMgICAgIDogbnVtIFsxOjE4XSAwLjE5OSAwLjQ0IDAuMzQyIDAuNzAyIDEuNjY2IC4uLlxuICAuLiAuLiQgc2l0ZV9pZCAgOiBjaHIgWzE6MThdIFwiUUNTMDFcIiBcIlFDUzAxXCIgXCJRQ1MwMVwiIFwiUUNTMDFcIiAuLi5cbiAgLi4gLi4kIGV4cF9jb3VudDogbnVtIFsxOjE4XSA1NTIwIDQ3NjIyIDc1MjYxIDc1OTg5IDUwNzM2NCAuLi5cbiAgLi4kIDogdGliYmxlIFsxOCB4IDRdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiAuLiQgZGF0ZSAgICAgOiBQT1NJWGN0WzE6MThdLCBmb3JtYXQ6IFwiMjAxOC0wMS0xMFwiIFwiMjAxOC0wMy0yNFwiIFwiMjAxOC0wNC0yMlwiIC4uLlxuICAuLiAuLiQgdmFscyAgICAgOiBudW0gWzE6MThdIDAuMTk5IDAuNDQgMC4zNDIgMC43MDIgMS42NjYgLi4uXG4gIC4uIC4uJCBzaXRlX2lkICA6IGNociBbMToxOF0gXCJRQ1MwMVwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgXCJRQ1MwMVwiIC4uLlxuICAuLiAuLiQgZXhwX2NvdW50OiBudW0gWzE6MThdIDM4NTAwIDQyNzc5IDY1MDAwIDE5ODMzOSAyNjI1MCAuLi5cbiAgLi4kIDogdGliYmxlIFsxOCB4IDRdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiAuLiQgZGF0ZSAgICAgOiBQT1NJWGN0WzE6MThdLCBmb3JtYXQ6IFwiMjAxOC0wMS0xMFwiIFwiMjAxOC0wMy0yNFwiIFwiMjAxOC0wNC0yMlwiIC4uLlxuICAuLiAuLiQgdmFscyAgICAgOiBudW0gWzE6MThdIDAuMTk5IDAuNDQgMC4zNDIgMC43MDIgMS42NjYgLi4uXG4gIC4uIC4uJCBzaXRlX2lkICA6IGNociBbMToxOF0gXCJRQ1MwMVwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgXCJRQ1MwMVwiIC4uLlxuICAuLiAuLiQgZXhwX2NvdW50OiBudW0gWzE6MThdIDIwMCAxNDggMTQwNiAyNDAzIDc5MjAgLi4uXG4gIC4uJCA6IHRpYmJsZSBbMTcgeCA0XSAoUzM6IHRibF9kZi90YmwvZGF0YS5mcmFtZSlcbiAgLi4gLi4kIGRhdGUgICAgIDogUE9TSVhjdFsxOjE3XSwgZm9ybWF0OiBcIjIwMTgtMDEtMTBcIiBcIjIwMTgtMDQtMjJcIiBcIjIwMTgtMDUtMjlcIiAuLi5cbiAgLi4gLi4kIHZhbHMgICAgIDogbnVtIFsxOjE3XSAwLjE5OSAwLjM0MiAwLjcwMiAxLjY2NiAxLjQ3MSAuLi5cbiAgLi4gLi4kIHNpdGVfaWQgIDogY2hyIFsxOjE3XSBcIlFDUzAxXCIgXCJRQ1MwMVwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgLi4uXG4gIC4uIC4uJCBleHBfY291bnQ6IG51bSBbMToxN10gNDAgMTAzNiA1MzQgNDAzMiAxNzQyNCAuLi5cbiAgLi4kIDogdGliYmxlIFsxOCB4IDRdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiAuLiQgZGF0ZSAgICAgOiBQT1NJWGN0WzE6MThdLCBmb3JtYXQ6IFwiMjAxOC0wMS0xMFwiIFwiMjAxOC0wMy0yNFwiIFwiMjAxOC0wNC0yMlwiIC4uLlxuICAuLiAuLiQgdmFscyAgICAgOiBudW0gWzE6MThdIDAuMTk5IDAuNDQgMC4zNDIgMC43MDIgMS42NjYgLi4uXG4gIC4uIC4uJCBzaXRlX2lkICA6IGNociBbMToxOF0gXCJRQ1MwMVwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgXCJRQ1MwMVwiIC4uLlxuICAuLiAuLiQgZXhwX2NvdW50OiBudW0gWzE6MThdIDYwMCA5NDcyIDIzNjcxIDQzMzc0IDM2NTMwNCAuLi5cbiAtIGF0dHIoKiwgXCJncm91cHNcIik9IHRpYmJsZSBbNiB4IDNdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiQgbmFtZSAgICAgICAgICA6IGNociBbMTo2XSBcImRlbHRhX3Job1wiIFwiZGVsdGFfcmhvXCIgXCJkZWx0YV9yaG9cIiBcImRlbHRhX3Job1wiIC4uLlxuICAuLiQgc2NpZW50aWZpY05hbWU6IGNociBbMTo2XSBcImNyeXB0byBzdW1cIiBcIkRpYXRvbSBzdW1cIiBcIkhpbGxlYVwiIFwiUHNldWRvLW5pdHpzY2hpYVwiIC4uLlxuICAuLiQgLnJvd3MgICAgICAgICA6IGxpc3Q8aW50PiBbMTo2XSBcbiAgLi4gLi4kIDogaW50IDFcbiAgLi4gLi4kIDogaW50IDJcbiAgLi4gLi4kIDogaW50IDNcbiAgLi4gLi4kIDogaW50IDRcbiAgLi4gLi4kIDogaW50IDVcbiAgLi4gLi4kIDogaW50IDZcbiAgLi4gLi5AIHB0eXBlOiBpbnQoMCkgXG4gIC4uLSBhdHRyKCosIFwiLmRyb3BcIik9IGxvZ2kgVFJVRVxuIn0= -->
 <pre><code>grouped_df [6 x 3] (S3: grouped_df/tbl_df/tbl/data.frame)
  $ name          : chr [1:6] &quot;delta_rho&quot; &quot;delta_rho&quot; &quot;delta_rho&quot; &quot;delta_rho&quot; ...
  $ scientificName: chr [1:6] &quot;crypto sum&quot; &quot;Diatom sum&quot; &quot;Hillea&quot; &quot;Pseudo-nitzschia&quot; ...
  $ data          :List of 6
   ..$ : tibble [18 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : POSIXct[1:18], format: &quot;2018-01-10&quot; &quot;2018-03-24&quot; &quot;2018-04-22&quot; &quot;2018-05-29&quot; ...
+  .. ..$ date     : POSIXct[1:18], format: &quot;2018-01-10&quot; &quot;2018-03-24&quot; &quot;2018-04-22&quot; ...
   .. ..$ vals     : num [1:18] 0.199 0.44 0.342 0.702 1.666 ...
   .. ..$ site_id  : chr [1:18] &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; ...
   .. ..$ exp_count: num [1:18] 47250 97225 100000 256674 40250 ...
   ..$ : tibble [18 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : POSIXct[1:18], format: &quot;2018-01-10&quot; &quot;2018-03-24&quot; &quot;2018-04-22&quot; &quot;2018-05-29&quot; ...
+  .. ..$ date     : POSIXct[1:18], format: &quot;2018-01-10&quot; &quot;2018-03-24&quot; &quot;2018-04-22&quot; ...
   .. ..$ vals     : num [1:18] 0.199 0.44 0.342 0.702 1.666 ...
   .. ..$ site_id  : chr [1:18] &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; ...
   .. ..$ exp_count: num [1:18] 5520 47622 75261 75989 507364 ...
   ..$ : tibble [18 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : POSIXct[1:18], format: &quot;2018-01-10&quot; &quot;2018-03-24&quot; &quot;2018-04-22&quot; &quot;2018-05-29&quot; ...
+  .. ..$ date     : POSIXct[1:18], format: &quot;2018-01-10&quot; &quot;2018-03-24&quot; &quot;2018-04-22&quot; ...
   .. ..$ vals     : num [1:18] 0.199 0.44 0.342 0.702 1.666 ...
   .. ..$ site_id  : chr [1:18] &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; ...
   .. ..$ exp_count: num [1:18] 38500 42779 65000 198339 26250 ...
   ..$ : tibble [18 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : POSIXct[1:18], format: &quot;2018-01-10&quot; &quot;2018-03-24&quot; &quot;2018-04-22&quot; &quot;2018-05-29&quot; ...
+  .. ..$ date     : POSIXct[1:18], format: &quot;2018-01-10&quot; &quot;2018-03-24&quot; &quot;2018-04-22&quot; ...
   .. ..$ vals     : num [1:18] 0.199 0.44 0.342 0.702 1.666 ...
   .. ..$ site_id  : chr [1:18] &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; ...
   .. ..$ exp_count: num [1:18] 200 148 1406 2403 7920 ...
   ..$ : tibble [17 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : POSIXct[1:17], format: &quot;2018-01-10&quot; &quot;2018-04-22&quot; &quot;2018-05-29&quot; &quot;2018-07-14&quot; ...
+  .. ..$ date     : POSIXct[1:17], format: &quot;2018-01-10&quot; &quot;2018-04-22&quot; &quot;2018-05-29&quot; ...
   .. ..$ vals     : num [1:17] 0.199 0.342 0.702 1.666 1.471 ...
   .. ..$ site_id  : chr [1:17] &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; ...
   .. ..$ exp_count: num [1:17] 40 1036 534 4032 17424 ...
   ..$ : tibble [18 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : POSIXct[1:18], format: &quot;2018-01-10&quot; &quot;2018-03-24&quot; &quot;2018-04-22&quot; &quot;2018-05-29&quot; ...
+  .. ..$ date     : POSIXct[1:18], format: &quot;2018-01-10&quot; &quot;2018-03-24&quot; &quot;2018-04-22&quot; ...
   .. ..$ vals     : num [1:18] 0.199 0.44 0.342 0.702 1.666 ...
   .. ..$ site_id  : chr [1:18] &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; &quot;QCS01&quot; ...
   .. ..$ exp_count: num [1:18] 600 9472 23671 43374 365304 ...

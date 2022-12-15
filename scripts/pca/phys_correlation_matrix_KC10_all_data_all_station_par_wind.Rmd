@@ -13,38 +13,25 @@ library(vegan)
 library(adespatial)
 library(ggord)
 library(fuzzySim)
-
-#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
-
-#For plotting with ggplot2
-
 library(BiodiversityR)
 library(ggsci)
 library(ggrepel)
 library(ggforce)
-
 library(patchwork)
-
 library(cluster)
 library(ggdendro)
-
 library(RColorBrewer)
-
 library(indicspecies)
-
 library(factoextra)
-
-library(ggcorrplot) #Correlation plots
-
+library(ggcorrplot)
 library(zoo)
-
 library(gsw)
 ```
 
 
 ```{r}
 #Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
-micro <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv"))
+# micro <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv"))
 
 data_short <- read_csv(here("outputs", "ctd_all_2022-11-25.csv"))
 
@@ -52,9 +39,9 @@ micro_short <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
 
 ctd <- read_csv(here("files", "kc10_ctd.csv"))
 
-chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+# chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
-nuts <- read_csv(here("files", "kc10_nuts.csv"))
+# nuts <- read_csv(here("files", "kc10_nuts.csv"))
 
 riv <- read_csv(here("files", "river.csv")) 
 
@@ -311,8 +298,7 @@ data_pca <- data %>%
          # Bel_b1,
          # eth_w, eth_wd, 
          lk_w, lk_wd,
-         par_b1,
-         lev, rain, lev_b1, rain_b1)
+         par_b1)
 
 data_pca <- data_pca %>%
   drop_na()
@@ -344,7 +330,7 @@ cor_exp <- chl_corr %>%
   left_join(d_sum)
 ```
 ```{r}
-data <- data_pca %>% 
+data_pca <- data_pca %>% 
   left_join(cor_exp) %>% 
   select(-site_id)
 ```

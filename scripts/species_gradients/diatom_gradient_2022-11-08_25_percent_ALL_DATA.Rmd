@@ -89,15 +89,11 @@ micro_all <- micro_all %>%
 ```
 
 
-```{r}
-test2 <- micro_all %>% 
-  filter(is.na(genus)) %>% 
-  distinct(scientificName, .keep_all = T)
-```
+
 
 ```{r}
 micro_all <- micro_all %>%
-  group_by(date, location, genus) %>%
+  group_by(date, location) %>%
   mutate(sum_count = sum(species_sum)) %>%
   ungroup() %>%
   mutate(perc = species_sum/sum_count)
@@ -252,6 +248,62 @@ ggsave(here("figures_species_timeseries", "compositions_all_25_perc.png"),
        width = 16, height = 10, dpi = 300)
 ```
 
+
+```{r}
+#I want to plot diversity rather than TChla here.
+
+#Calculate diversity.
+
+micro_div <- micro %>%
+  # filter(group == "Bacillariophyta") %>% 
+  select(date, site_id, scientificName, species_sum) %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+div <- micro_div[,3:ncol(micro_div)]
+
+div <- diversity(div, "shannon")
+
+micro_meta <- micro_div[, 1:2]
+
+div_full <- cbind(micro_meta, div)
+
+micro_all_chl <- micro_all_chl %>% 
+  left_join(div_full)
+```
+```{r}
+coeff <- 10
+
+micro_all_chl %>%   
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot() + 
+  geom_bar(aes(x = as.factor(month_surv), y = species_sum/100000, 
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = getPalette_c(colourCount_c)) +
+  geom_line(aes(x = month_surv, y = div*coeff), size = 1.5) +
+  geom_point(aes(x = as.factor(month_surv), y = div*coeff), size = 2.5, pch = 21,
+             stroke = 2, fill = "black") +
+  scale_y_continuous(name = "Phyto. Abundance (10^5 cells L)",
+                     sec.axis = sec_axis(~ . /coeff, name = "H'")) +
+  scale_color_manual(values = c("black", "green"))+
+  facet_grid(location ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4),
+         color = "none")
+
+ggsave(here("figures_species_timeseries", "compositions_all_25_perc_diversity.png"),
+       width = 16, height = 10, dpi = 300)
+```
 
 
 
