@@ -178,18 +178,18 @@ data_corr <- data_corr %>%
 ```
 
 ```{r}
-data_corr_na <- data_corr %>%
-  drop_na()
+# data_corr_na <- data_corr %>%
+#   drop_na()
 
-data_corr_fjord <- data_corr_na %>% 
+data_corr_fjord <- data_corr %>% 
   filter(site_id == "DFO2") %>% 
   select(-site_id)
 
-data_corr_channel <- data_corr_na %>% 
+data_corr_channel <- data_corr %>% 
   filter(site_id == "KC10") %>% 
   select(-site_id)
 
-data_corr_shelf <- data_corr_na %>% 
+data_corr_shelf <- data_corr %>% 
   filter(site_id == "QCS01") %>% 
   select(-site_id) 
 ```
@@ -199,26 +199,26 @@ data_corr_shelf <- data_corr_na %>%
 corr_fjord <- data_corr_fjord %>% 
   select(temp:diat.)
 #Making correlation matrix
-corr_fjord <- round(cor(corr_fjord, method = "spearman"), 2)
+corr_fjord <- round(cor(na.omit(corr_fjord), method = "spearman"), 2)
 
 #Making significance' matrix
-p.mat_fjord <- cor_pmat(corr_fjord)
+p.mat_fjord <- cor_pmat(corr_fjord, method = "spearman")
 
 corr_channel <- data_corr_channel %>% 
   select(temp:diat.)
 #Making correlation matrix
-corr_channel <- round(cor(corr_channel, method = "spearman"), 2)
+corr_channel <- round(cor(na.omit(corr_channel), method = "spearman"), 2)
 
 #Making significance' matrix
-p.mat_channel <- cor_pmat(corr_channel)
+p.mat_channel <- cor_pmat(corr_channel, method = "spearman")
 
 corr_shelf <- data_corr_shelf %>% 
   select(temp:diat.)
 #Making correlation matrix
-corr_shelf <- round(cor(corr_shelf, method = "spearman"), 2)
+corr_shelf <- round(cor(na.omit(corr_shelf), method = "spearman"), 2)
 
 #Making significance' matrix
-p.mat_shelf <- cor_pmat(corr_shelf)
+p.mat_shelf <- cor_pmat(corr_shelf, method = "spearman")
 
 ```
 
@@ -378,7 +378,7 @@ fig_shelf <- ggcorrplot(corr_shelf,
 ```{r}
 fig_corrs <- fig_fjord + fig_channel + fig_shelf
 
-ggsave(here("figures_correlogram", "correlation_panel_spearman.png"), fig_corrs,
+ggsave(here("figures_correlogram", "correlation_panel_spearman2.png"), fig_corrs,
        width = 16, height = 7, dpi = 300)
 ```
 
