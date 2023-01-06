@@ -41,26 +41,6 @@ micro <- micro %>%
 ```
 
 ```{r}
-# micro_sm <- micro
-
-
-#Removing Skeletonema marinoi and replacing with size separated species
-# micro <- micro %>% 
-#   filter(!scientificName == "Skeletonema marinoi")
-# 
-# micro <- rbind(micro, sm_size)
-
-```
-
-```{r}
-# micro_sm <- micro_sm %>% 
-#     mutate(location = case_when(site_id == "DFO2" ~ "F",
-#                               site_id == "KC10" ~ "C",
-#                               site_id == "QCS01" ~ "S",
-#                               TRUE ~ as.character(site_id))) 
-
-
-
 #Adding location instead of site ID.
 micro <- micro %>% 
     mutate(location = case_when(site_id == "DFO2" ~ "F",
@@ -84,72 +64,56 @@ micro <- micro %>%
            !group == "Ciliophora" &
            !group == "Kinetoplastidea")
 
+```
 
-# micro_sm <- micro_sm %>% 
-#   filter(!scientificName_accepted == "Cyanobacteria" &
-#            !group == "Metazoa" &
-#            !group == "Protozoa" &
-#            !group == "Choanoflagellata" &
-#            !group == "Ciliophora" &
-#            !group == "Kinetoplastidea")
 
+```{r}
+# #For the site wide comparison, I want only where data were collected at all stations.
+# 
+# 
+# #Determining total number of samples - deriving when a sample was collected at each station
+# sample_num <- micro %>% 
+#   distinct(date, site_id)
+# 
+# #Adding year and month to the sample records
+# sample_num <-  sample_num %>% 
+#   mutate(year = lubridate::year(date),
+#          month = lubridate::month(date))
+# 
+# #Pushing the sampling month to following month when data collected at one station was collected at the end of the month.
+# sample_num <- sample_num %>% 
+#   mutate(month_surv = case_when(date == "2019-08-29" ~ 9,
+#                                 date == "2020-04-30" ~ 5,
+#                                 TRUE ~ as.numeric (month)))
+# 
+# 
+# #Pulling out the sampling dates for each station so I can join them and filter out data where data wasn't collected at each station
+# sample_num_s <- sample_num %>% 
+#   filter(site_id == "QCS01") %>% 
+#   select(date_s = date, year, month_surv)
+# 
+# sample_num_c <- sample_num %>% 
+#   filter(site_id == "KC10") %>% 
+#   select(date_c = date, year, month_surv)
+# 
+# sample_num_f <- sample_num %>% 
+#   filter(site_id == "DFO2") %>% 
+#   select(date_f = date, year, month_surv)
+# 
+# #Joining data to see where data was collected at each station for each transect/survey
+# sample_compare <- sample_num_s %>% 
+#   full_join(sample_num_c) %>% 
+#   full_join(sample_num_f) %>% 
+#   filter(!is.na(date_s))
+# 
+# #Pulling out the dates of sample collection for each station where data was collected at all stations on the survey/transect.
+# shelf_list <- sample_compare$date_s
+# channel_list <- sample_compare$date_c
+# fjord_list <- sample_compare$date_f
 
 ```
 
 ```{r}
-#I think for the site wide comparison, I need to only have months where data were collected at all stations.
-#QCS01 - 2019-08-31
-#KC10 - 2020-04-30
-
-#Determining total number of samples - 50.
-sample_num <- micro %>% 
-  distinct(date, site_id)
-
-sample_num <-  sample_num %>% 
-  mutate(year = lubridate::year(date),
-         month = lubridate::month(date))
-
-sample_num <- sample_num %>% 
-  mutate(month_surv = case_when(date == "2019-08-29" ~ 9,
-                                date == "2020-04-30" ~ 5,
-                                TRUE ~ as.numeric (month)))
-
-sample_num_s <- sample_num %>% 
-  filter(site_id == "QCS01") %>% 
-  select(date_s = date, year, month_surv)
-
-sample_num_c <- sample_num %>% 
-  filter(site_id == "KC10") %>% 
-  select(date_c = date, year, month_surv)
-
-sample_num_f <- sample_num %>% 
-  filter(site_id == "DFO2") %>% 
-  select(date_f = date, year, month_surv)
-
-sample_compare <- sample_num_s %>% 
-  left_join(sample_num_c) %>% 
-  left_join(sample_num_f)
-
-shelf_list <- sample_compare$date_s
-channel_list <- sample_compare$date_c
-fjord_list <- sample_compare$date_f
-
-#This sample is troublesome
-# test <- micro %>% 
-#   filter(date == "2020-11-04")
-
-#Or I just scrap that plot and use a similar one to Du et al.
-
-#What about trying hierarchical clustering again - done this so many freaking times, but could try again with all data included.
-```
-
-```{r}
-#Trying to look at only species present in 10%.
-
-#Determining total number of samples - 50.
-sample_num <- micro %>% 
-  distinct(date, site_id)
-
 #Determining species that are present in > 10% of samples.
 species_10 <- micro %>% 
   group_by(scientificName) %>% 
@@ -168,14 +132,12 @@ micro <- micro %>%
 ```
 
 ```{r}
-#Subsetting data to only have matching stations
-micro_2 <- micro %>% 
-  filter(date %in% shelf_list | date %in% channel_list &
-           date %in% fjord_list)
+#Subsetting data to where only data was collected across the transect for each survey
+# micro2 <- micro %>% 
+#   filter(date %in% shelf_list |
+#            date %in% channel_list |
+#            date %in% fjord_list)
 ```
-
-
-
 
 ```{r}
 micro <- micro %>% 
@@ -250,6 +212,12 @@ species_diat <- micro_piv_diat[, 5:ncol(micro_piv_diat)]
 #Dinoflagellates
 species_dino <- micro_piv_dino[, 5:ncol(micro_piv_dino)]
 
+# transform <- species
+# 
+# transform_diat <- species_diat
+# 
+# transform_dino <- species_dino
+
 #Creating relative abundance matrix 
 transform <- decostand(species, method = "total")
 
@@ -266,6 +234,7 @@ transform_diat <- sqrt(transform_diat)
 #Dinoflagellates
 transform_dino <- sqrt(transform_dino)
 ```
+
 
 ```{r}
 #Setting up for ANOSIM and Indicator tests
@@ -288,6 +257,7 @@ ano_site_diat
 
 ano_site_dino = anosim(transform_dino, loc, distance = "bray", permutations = 9999)
 ano_site_dino
+
 ```
 
 ```{r}
@@ -303,14 +273,14 @@ ano_site_dino
 
 
 ```{r}
-ano_year = anosim(transform, year, distance = "bray", permutations = 9999)
-ano_year
-
-ano_year_diat = anosim(transform_diat, year, distance = "bray", permutations = 9999)
-ano_year_diat
-
-ano_year_dino = anosim(transform_dino, year, distance = "bray", permutations = 9999)
-ano_year_dino
+# ano_year = anosim(transform, year, distance = "bray", permutations = 9999)
+# ano_year
+# 
+# ano_year_diat = anosim(transform_diat, year, distance = "bray", permutations = 9999)
+# ano_year_diat
+# 
+# ano_year_dino = anosim(transform_dino, year, distance = "bray", permutations = 9999)
+# ano_year_dino
 
 ```
 
@@ -318,7 +288,7 @@ ano_year_dino
 set.seed(123)
 
 #Running nmds all species
-nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+nmds <-  metaMDS(transform, distance = "bray", autotransform = F,
                          k = 2, trymax = 100) 
 
 #Show results including stress 
@@ -333,7 +303,7 @@ stressplot(nmds)
 set.seed(123)
 
 #Running nmds diatoms
-nmds_diat <-  metaMDS(transform_diat, distance = "bray", autotransform = FALSE,
+nmds_diat <-  metaMDS(transform_diat, distance = "bray", autotransform = F,
                          k = 2, trymax = 100) 
 
 #Show results including stress 
@@ -347,7 +317,7 @@ stressplot(nmds_diat)
 set.seed(123)
 
 #Running nmds dinoflagellates
-nmds_dino <-  metaMDS(transform_dino, distance = "bray", autotransform = FALSE,
+nmds_dino <-  metaMDS(transform_dino, distance = "bray", autotransform = F,
                          k = 2, trymax = 100) 
 
 #Show results including stress 
@@ -497,10 +467,10 @@ f1 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
   scale_fill_brewer(palette = "RdYlBu") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
-  geom_segment(data = spp.scrs2,
-               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
-               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
-               size = 1.2, alpha = 0.7) +
+  # geom_segment(data = spp.scrs2,
+  #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+  #              arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+  #              size = 1.2, alpha = 0.7) +
   # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
   #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
   ggrepel::geom_text_repel(data = spp.scrs2, aes(x = NMDS1, y = NMDS2, 
@@ -538,10 +508,10 @@ f2 <- ggplot(data = data.scores, aes(x = NMDS1, y = NMDS2)) +
   scale_fill_brewer(palette = "Dark2") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
-  geom_segment(data = spp.scrs2,
-               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
-               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
-               size = 1.2, alpha = 0.7) +
+  # geom_segment(data = spp.scrs2,
+  #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+  #              arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+  #              size = 1.2, alpha = 0.7) +
   # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
   #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
   ggrepel::geom_text_repel(data = spp.scrs2, aes(x = NMDS1, y = NMDS2, 
@@ -579,10 +549,10 @@ f3 <- ggplot(data = data.scores_diat, aes(x = NMDS1, y = NMDS2)) +
   scale_fill_brewer(palette = "RdYlBu") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
-  geom_segment(data = spp.scrs2_diat,
-               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
-               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
-               size = 1.2, alpha = 0.7) +
+  # geom_segment(data = spp.scrs2_diat,
+  #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+  #              arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+  #              size = 1.2, alpha = 0.7) +
   # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
   #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
   ggrepel::geom_text_repel(data = spp.scrs2_diat, aes(x = NMDS1, y = NMDS2, 
@@ -620,10 +590,10 @@ f4 <- ggplot(data = data.scores_diat, aes(x = NMDS1, y = NMDS2)) +
   scale_fill_brewer(palette = "Dark2") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
-  geom_segment(data = spp.scrs2_diat,
-               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
-               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
-               size = 1.2, alpha = 0.7) +
+  # geom_segment(data = spp.scrs2_diat,
+  #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+  #              arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+  #              size = 1.2, alpha = 0.7) +
   # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
   #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
   ggrepel::geom_text_repel(data = spp.scrs2_diat, aes(x = NMDS1, y = NMDS2, 
@@ -661,10 +631,10 @@ f5 <- ggplot(data = data.scores_dino, aes(x = NMDS1, y = NMDS2)) +
   scale_fill_brewer(palette = "RdYlBu") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
-  geom_segment(data = spp.scrs2_dino,
-               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
-               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
-               size = 1.2, alpha = 0.7) +
+  # geom_segment(data = spp.scrs2_dino,
+  #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+  #              arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+  #              size = 1.2, alpha = 0.7) +
   # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
   #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
   ggrepel::geom_text_repel(data = spp.scrs2_dino, aes(x = NMDS1, y = NMDS2, 
@@ -706,10 +676,10 @@ f6 <- ggplot(data = data.scores_dino, aes(x = NMDS1, y = NMDS2)) +
   scale_fill_brewer(palette = "Dark2") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
-  geom_segment(data = spp.scrs2_dino,
-               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
-               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
-               size = 1.2, alpha = 0.7) +
+  # geom_segment(data = spp.scrs2_dino,
+  #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+  #              arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+  #              size = 1.2, alpha = 0.7) +
   # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
   #            fontface = "bold", label = row.names(spp.scrs2), size = 7) + 
   ggrepel::geom_text_repel(data = spp.scrs2_dino, aes(x = NMDS1, y = NMDS2, 
@@ -748,7 +718,7 @@ f6 <- ggplot(data = data.scores_dino, aes(x = NMDS1, y = NMDS2)) +
 
 fig <- f1 + f3 + f5 + f2 + f4 + f6 
 
-ggsave(here("figures_nmds", "nmds_relative_all_data.png"), fig,
+ggsave(here("figures_nmds", "wtf.png"), fig,
        width = 16, height = 10, dpi = 300)
 ```
 

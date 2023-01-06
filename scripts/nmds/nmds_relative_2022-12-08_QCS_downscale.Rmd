@@ -145,11 +145,6 @@ fjord_list <- sample_compare$date_f
 
 ```{r}
 #Trying to look at only species present in 10%.
-
-#Determining total number of samples - 50.
-sample_num <- micro %>% 
-  distinct(date, site_id)
-
 #Determining species that are present in > 10% of samples.
 species_10 <- micro %>% 
   group_by(scientificName) %>% 
@@ -169,13 +164,11 @@ micro <- micro %>%
 
 ```{r}
 #Subsetting data to only have matching stations
-micro_2 <- micro %>% 
-  filter(date %in% shelf_list | date %in% channel_list &
+micro2 <- micro %>% 
+  filter(date %in% shelf_list |
+           date %in% channel_list |
            date %in% fjord_list)
 ```
-
-
-
 
 ```{r}
 micro <- micro %>% 
@@ -258,13 +251,13 @@ transform_diat <- decostand(species_diat, method = "total")
 transform_dino <- decostand(species_dino, method = "total")
 
 #Performing square root transformation
-transform <- sqrt(transform)
-
-#Diatoms
-transform_diat <- sqrt(transform_diat)
-
-#Dinoflagellates
-transform_dino <- sqrt(transform_dino)
+# transform <- sqrt(transform)
+# 
+# #Diatoms
+# transform_diat <- sqrt(transform_diat)
+# 
+# #Dinoflagellates
+# transform_dino <- sqrt(transform_dino)
 ```
 
 ```{r}
@@ -303,14 +296,14 @@ ano_site_dino
 
 
 ```{r}
-ano_year = anosim(transform, year, distance = "bray", permutations = 9999)
-ano_year
-
-ano_year_diat = anosim(transform_diat, year, distance = "bray", permutations = 9999)
-ano_year_diat
-
-ano_year_dino = anosim(transform_dino, year, distance = "bray", permutations = 9999)
-ano_year_dino
+# ano_year = anosim(transform, year, distance = "bray", permutations = 9999)
+# ano_year
+# 
+# ano_year_diat = anosim(transform_diat, year, distance = "bray", permutations = 9999)
+# ano_year_diat
+# 
+# ano_year_dino = anosim(transform_dino, year, distance = "bray", permutations = 9999)
+# ano_year_dino
 
 ```
 
@@ -318,7 +311,7 @@ ano_year_dino
 set.seed(123)
 
 #Running nmds all species
-nmds <-  metaMDS(transform, distance = "bray", autotransform = FALSE,
+nmds <-  metaMDS(transform, distance = "bray", autotransform = T,
                          k = 2, trymax = 100) 
 
 #Show results including stress 
@@ -333,7 +326,7 @@ stressplot(nmds)
 set.seed(123)
 
 #Running nmds diatoms
-nmds_diat <-  metaMDS(transform_diat, distance = "bray", autotransform = FALSE,
+nmds_diat <-  metaMDS(transform_diat, distance = "bray", autotransform = T,
                          k = 2, trymax = 100) 
 
 #Show results including stress 
@@ -347,7 +340,7 @@ stressplot(nmds_diat)
 set.seed(123)
 
 #Running nmds dinoflagellates
-nmds_dino <-  metaMDS(transform_dino, distance = "bray", autotransform = FALSE,
+nmds_dino <-  metaMDS(transform_dino, distance = "bray", autotransform = T,
                          k = 2, trymax = 100) 
 
 #Show results including stress 
@@ -748,7 +741,7 @@ f6 <- ggplot(data = data.scores_dino, aes(x = NMDS1, y = NMDS2)) +
 
 fig <- f1 + f3 + f5 + f2 + f4 + f6 
 
-ggsave(here("figures_nmds", "nmds_relative_all_data.png"), fig,
+ggsave(here("figures_nmds", "nmds_relative_all_data_test.png"), fig,
        width = 16, height = 10, dpi = 300)
 ```
 

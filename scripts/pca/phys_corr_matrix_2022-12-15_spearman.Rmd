@@ -202,7 +202,7 @@ corr_fjord <- data_corr_fjord %>%
 corr_fjord <- round(cor(na.omit(corr_fjord), method = "spearman"), 2)
 
 #Making significance' matrix
-p.mat_fjord <- cor_pmat(corr_fjord, method = "spearman")
+p.mat_fjord <- cor_pmat(corr_fjord, method = "spearman", exact = FALSE)
 
 corr_channel <- data_corr_channel %>% 
   select(temp:diat.)
@@ -210,7 +210,7 @@ corr_channel <- data_corr_channel %>%
 corr_channel <- round(cor(na.omit(corr_channel), method = "spearman"), 2)
 
 #Making significance' matrix
-p.mat_channel <- cor_pmat(corr_channel, method = "spearman")
+p.mat_channel <- cor_pmat(corr_channel, method = "spearman", exact = FALSE)
 
 corr_shelf <- data_corr_shelf %>% 
   select(temp:diat.)
@@ -218,7 +218,7 @@ corr_shelf <- data_corr_shelf %>%
 corr_shelf <- round(cor(na.omit(corr_shelf), method = "spearman"), 2)
 
 #Making significance' matrix
-p.mat_shelf <- cor_pmat(corr_shelf, method = "spearman")
+p.mat_shelf <- cor_pmat(corr_shelf, method = "spearman", exact = FALSE)
 
 ```
 
