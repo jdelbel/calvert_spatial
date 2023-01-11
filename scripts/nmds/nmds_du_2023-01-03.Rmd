@@ -239,6 +239,8 @@ transform_dino <- sqrt(transform_dino)
 ```{r}
 #Setting up for ANOSIM and Indicator tests
 
+#!!!THESE PROBABLY ARE ONLY CORRECT FOR MICRO_PIV, WON'T LINE UP FOR OTHERS!!!!
+
 #separating treatments for ANOSMIM and indicator
 loc <- micro_piv$location
 month <- micro_piv$month
