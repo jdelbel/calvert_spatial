@@ -45,6 +45,21 @@ lk_par <- read_csv(here("files", "lookout_par.csv"))
 rain_et <- read_csv(here("files", "ethel_rain.csv"))
 ```
 
+
+```{r}
+#Uploading discharge data from Kwakshua stations
+ 
+
+d626 <- read_csv(here("files_kwak_discharge", "2013-2019_Discharge626_5min.csv"))
+
+d693 <- read_csv(here("files_kwak_discharge", "2013-2019_Discharge693_5min.csv"))
+
+
+```
+
+
+
+
 ```{r}
 #Removing QU39 
 micro <- micro %>% 

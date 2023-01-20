@@ -1,0 +1,1018 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(here)
+library(patchwork)
+library(RColorBrewer)
+library(ggpubr)
+library(broom)
+library(zoo)
+library(gsw)
+```
+
+```{r}
+#Upload data from my master data standardization sheet
+# micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+
+ctd <- read_csv(here("outputs", "ctd_all_2022-11-25.csv"))
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+nuts <- read_csv(here("files", "kc10_nuts.csv"))
+
+riv <- read_csv(here("files", "river.csv")) 
+
+riv_b <- read_csv(here("files", "riv_bella_4.csv"))
+
+ethel_wind <- read_csv(here("files", "ethel_wind.csv"))
+
+lk_wind <- read_csv(here("files", "wind_lookout.csv"))
+
+lk_par <- read_csv(here("files", "lookout_par.csv"))
+
+# eth_par <- read_csv(here("files", "eth_par.csv"))
+
+
+rain_et <- read_csv(here("files", "ethel_rain.csv"))
+```
+
+
+```{r}
+#Uploading discharge data from Kwakshua stations
+ 
+
+# d626 <- read_csv(here("files_kwak_discharge", "2013-2019_Discharge626_5min.csv"))
+# 
+# d693 <- read_csv(here("files_kwak_discharge", "2013-2019_Discharge693_5min.csv"))
+
+d844 <- read_csv(here("files_kwak_discharge", "2013-2019_Discharge844_5min.csv"))
+```
+
+```{r}
+#Removing QU39 
+micro <- micro %>% 
+  filter(site_id == "DFO2")
+
+ctd <- ctd %>% 
+  filter(site_id == "DFO2")
+```
+
+
+```{r}
+riv <- riv %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+riv_w <- riv %>%
+  mutate(Wan_b1_10 = rollmeanr(lag(dis, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+riv_w <- riv_w %>% 
+  select(date, Wan = dis, Wan_b1_10)
+```
+
+```{r}
+ethel_wind2 <- ethel_wind %>%
+  filter(WindSpd_UQL == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+  filter(year > 2017 & year < 2022)
+
+ew_da <- ethel_wind2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_w = mean(WindSpd_Avg),
+            dm_wd = mean(WindDir_Avg)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(w_b1_3 = rollmeanr(lag(dm_w, 1), k = 3, fill = NA),
+         wd_b1_3 = rollmeanr(lag(dm_wd, 1), k = 3, fill = NA)) %>% 
+  select(date, dm_w, dm_wd, w_b1_3, wd_b1_3)
+
+# lk_wind2 <- lk_wind %>%
+#   filter(WindSpd_UQL == 2) %>% 
+#   mutate(date = lubridate::mdy_hm(measurementTime),
+#          year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          yday = lubridate::yday(date)) %>% 
+#   select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+#   filter(year > 2017 & year < 2022)
+# 
+# lk_da <- lk_wind2 %>% 
+#   mutate(date2 = lubridate::date(date)) %>% 
+#   group_by(date2) %>% 
+#   summarize(dm_w = mean(WindSpd_Avg),
+#             dm_wd = mean(WindDir_Avg)) %>% 
+#   ungroup() %>% 
+#   rename(date = date2) %>%
+#   mutate(w_b1 = rollmeanr(lag(dm_w, 1), k = 3, fill = NA),
+#          wd_b1 = rollmeanr(lag(dm_wd, 1), k = 3, fill = NA)) %>% 
+#   select(date, dm_w, lk_w = w_b1, lk_wd = wd_b1)
+  
+```
+
+```{r}
+# e_r <- rain_et %>% 
+#   mutate(date = lubridate::mdy_hm(measurementTime),
+#          year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          yday = lubridate::yday(date)) %>% 
+#   select(date, year, month, yday, rain = `24hourRain`) %>% 
+#   filter(year > 2017 & year < 2022)
+# 
+# e_r2 <- e_r %>% 
+#   mutate(date2 = lubridate::date(date)) %>% 
+#   group_by(date2) %>% 
+#   summarize(dm_rain = mean(rain)) %>% 
+#   ungroup() %>% 
+#   rename(date = date2) %>%
+#   mutate(rain_b1 = rollmeanr(lag(dm_rain, 1), k = 3, fill = NA)) %>% 
+#   select(date, rain = rain_b1)
+```
+
+```{r}
+par <- lk_par %>%
+  filter(`1hourPAR_UQL` == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, par = `1hourPAR`) %>% 
+  filter(year > 2017 & year < 2022)
+
+par <- par %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_par = mean(par)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(par_b1_3 = rollmeanr(lag(dm_par, 1), k = 3, fill = NA)) %>% 
+  select(date, dm_par, par_b1_3)
+
+# eth_par <- eth_par %>%
+#   filter(`1hourPAR_UQL` == 2) %>% 
+#   mutate(date = lubridate::mdy_hm(measurementTime),
+#          year = lubridate::year(date),
+#          month = lubridate::month(date),
+#          yday = lubridate::yday(date)) %>% 
+#   select(date, year, month, yday, par = `1hourPAR`) %>% 
+#   filter(year > 2017 & year < 2022)
+# 
+# eth_par <- eth_par %>% 
+#   mutate(date2 = lubridate::date(date)) %>% 
+#   group_by(date2) %>% 
+#   summarize(dm_par = mean(par)) %>% 
+#   ungroup() %>% 
+#   rename(date = date2) %>%
+#   mutate(par_b1 = rollmeanr(lag(dm_par, 1), k = 3, fill = NA)) %>% 
+#   select(date, par_b1)
+  
+```
+
+```{r}
+d844_dm <- d844 %>% 
+  mutate(date = lubridate::date(Datetime)) %>% 
+  select(date, Qrate) %>% 
+  group_by(date) %>% 
+  summarise(dm_qrate = mean(Qrate)) %>% 
+  ungroup() %>% 
+  filter(date > "2018-01-01")
+
+
+```
+
+
+
+```{r}
+data <- ctd %>% 
+  left_join(riv_w) %>% 
+  # left_join(riv_b) %>% 
+  left_join(ew_da) %>% 
+  # left_join(lk_da) %>% 
+  left_join(par) %>% 
+  left_join(d844_dm)
+```
+
+```{r}
+data_pca <- data %>% 
+  select(date, 
+         temp = temp_dm, 
+         sal = sal_dm, 
+         delta_rho = delta_rho_dm,
+         no2_no3_um = no2_dm, 
+         sio2 = sio2_dm, 
+         po4 = po4_dm, 
+         Wan, Wan_b1_10,
+         dm_w, dm_wd, w_b1_3, wd_b1_3,
+         dm_par, par_b1_3,
+         dm_qrate)
+```
+
+```{r}
+#Dinoflagellate species known to feed on diatoms
+#Gonyaulax (skeletonema)
+#Gymnodinium (skel + chain diatoms)
+#Gyrodinium (diatom chains)
+#Prorocentrum(skel)
+#Protoperidinium (medium to large diatoms and dinoflagellates - 30-80%)
+#Scrippsiella trochoideas (Skel)
+#Oligotrichea (ciliate)
+#Myrionecta rubra (cryptophytes)
+#Dinophysis (Cryptophytes)
+#Tintinnina (Ciliate)
+#Fecal
+
+#Things to correlate against 
+#TChla
+#S.mar (small)
+#S.mar (large)
+#S.mar (total)
+#diatom abundance 
+#Cryptophyte abundance
+
+#First do the summarizing and filtering for each grouping I want correlated against.
+s_sum <- micro %>% 
+  filter(scientificName == "Skeletonema marinoi") %>% 
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+#No correlations found for any site. 
+pns <- micro %>%
+  filter(scientificName == "Pseudo-nitzschia seriata") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+pn <- micro %>%
+  filter(scientificName == "Pseudo-nitzschia") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+hill <- micro %>%
+  filter(scientificName == "Hillea") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+tel <- micro %>%
+  filter(scientificName == "Teleaulax") %>%
+  select(date, site_id, scientificName, exp_count = species_sum)
+
+d_sum <- micro %>% 
+  filter(group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(exp_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(scientificName = "Diatom sum") %>% 
+  relocate(scientificName, .before = exp_count)
+
+c_sum <- micro %>% 
+  filter(group == "Cryptophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(exp_count = sum(species_sum)) %>% 
+  ungroup() %>% 
+  mutate(scientificName = "crypto sum") %>% 
+  relocate(scientificName, .before = exp_count)
+
+chl_corr <- chl %>% 
+  select(date, site_id, exp_count = tchla) %>% 
+  mutate(scientificName = "TChla") %>% 
+  relocate(scientificName, .before = exp_count)
+```
+
+
+```{r}
+cor_exp <- rbind(s_sum, d_sum, c_sum, chl_corr, pn, pns, hill,
+                 tel)
+```
+
+```{r}
+data_pca_long <- data_pca %>% 
+  pivot_longer(cols = c(temp:dm_qrate), names_to = "name", values_to = "vals")
+```
+
+
+```{r}
+data <- data_pca_long %>% 
+  left_join(cor_exp)
+
+```
+
+
+```{r}
+# data_nest <- data %>% 
+#   group_by(name, scientificName) %>%
+#   nest()
+# 
+# head(data_nest)
+# 
+# str(head(slice(data_nest, 1)))
+# 
+# cor_fun <- function(df) cor.test(df$vals,
+#                                  df$exp_count,
+#                                  method = "spearman") %>% tidy()
+# 
+# data_nest <- mutate(data_nest, model = map(data, cor_fun))
+# 
+# corr_pr <- select(data_nest, -data) %>% unnest()
+# 
+# corr_pr
+# 
+# corr_pr <- mutate(corr_pr, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+```
+
+```{r}
+# Order locations from fjord to shelf
+# driver_loc <- c("temp",
+#                 "sal",
+#                 "delta_rho",
+#                 "no2_no3_um",
+#                 "sio2",
+#                 "po4",
+#                 # "secchi",
+#                 "par_b1",
+#                 "eth_w",
+#                 "eth_wd",
+#                 "lk_w",
+#                 "lk_wd",
+#                 "Wan_b1",
+#                 "Bel_b1",
+#                 "rain")
+
+# phy_loc <- c("Diatom sum",
+#              # "Skeletonema marinoi large",
+#              # "Skeletonema marinoi small",
+#              "Skeletonema marinoi",
+#              "Pseudo-nitzschia",
+#              "Pseudo-nitzschia seriata",
+#              "crypto sum",
+#              "Hillea",
+#              "Teleaulax",
+#              "TChla")
+# 
+# #Chemtax - Specify order of phyto groups for figures
+# corr_pr <- arrange(mutate(corr_pr,
+#                          name = factor(name, levels = driver_loc)))
+# 
+# corr_pr <- arrange(mutate(corr_pr,
+#                          scientificName = factor(scientificName,
+#                                                  levels = phy_loc)))
+
+```
+
+
+
+
+```{r}
+# ggplot()+
+#   geom_tile(data = corr_pr,
+#             aes(scientificName, name, fill = estimate),
+#             size = 1,
+#             colour = "white")+
+#   geom_tile(data = filter(corr_pr, sig == "Sig."),
+#             aes(scientificName, name),
+#             size = 1.5,
+#             colour = "black",
+#             fill = "transparent") +
+#   geom_text(data = corr_pr,
+#             aes(scientificName, name, label = round(estimate, 2), 
+#                 fontface = ifelse(sig == "Sig.", "bold", "plain")),
+#             size = 7) +
+#   scale_x_discrete(labels = c("crypto sum" = "Cryp.", 
+#                               "Diatom sum" = "Diat.",
+#                               "Skeletonema marinoi large" = "S.mar.L",
+#                               "Skeletonema marinoi small" = "S.mar.S",
+#                               "Skeletonema marinoi" = "S.mar.",
+#                               "Pseudo-nitzschia seriata" = "P.n.s",
+#                               "Pseudo-nitzschia" = "P.n.",
+#                               "Hillea" = "Hill.",
+#                               "Teleaulax" = "Tel.",
+#                               "Phaeocystis pouchetii" = "P.p.")) +
+#   scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+#                        midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+#                        name = "Spearman Correlation") +
+#   theme_bw() +
+#   theme(text = element_text(size = 30),
+#         axis.title.x = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.y = element_blank(),
+#         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+#         axis.title.y = element_blank(),
+#         axis.text = element_text(colour = "black"),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(),
+#         panel.background = element_blank(),
+#         # legend.position = c(0.03, 0.30),
+#         legend.direction = "vertical",
+#         axis.line = element_line(colour = "black"),
+#         legend.background = element_blank(),
+#         legend.key.height = unit(2.5, "cm"),
+#         legend.title = element_text(size = 30, angle = -90),
+#         legend.title.align = 0.5) +
+#         guides(fill = guide_colourbar(title.position = "right")) 
+# 
+# ggsave(here("figures_correlogram", "test_2023-01-19.png"),
+#        width = 12, height = 12, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```
+
+```{r}
+sms <- data %>% 
+  filter(scientificName == "Diatom sum" & name == "sal")
+
+smd <- data %>% 
+  filter(scientificName == "Diatom sum" & name == "delta_rho") %>% 
+  select(date, dr = vals)
+
+smn <- data %>% 
+  filter(scientificName == "Diatom sum" & name == "no2_no3_um") %>% 
+  select(date, no2 = vals)
+
+smsi <- data %>% 
+  filter(scientificName == "Diatom sum" & name == "sio2") %>% 
+  select(date, sio2 = vals)
+
+smt <- data %>% 
+  filter(scientificName == "Diatom sum" & name == "temp") %>% 
+  select(date, temp = vals)
+
+tchla <- data %>% 
+  filter(scientificName == "TChla") %>% 
+  select(date, tchla = exp_count) %>% 
+  distinct(date, tchla)
+
+
+riv_w_j <- riv_w %>% 
+    mutate(year = lubridate::year(date),
+           yday = lubridate::yday(date)) %>% 
+  select(date, year, yday, Wan, Wan_b1_10)
+```
+
+
+```{r}
+riv_w_j <- riv_w_j %>% 
+  left_join(sms) %>% 
+  left_join(par) %>% 
+  left_join(ew_da) %>%
+  left_join(d844_dm) %>% 
+  left_join(smd) %>% 
+  left_join(smn) %>% 
+  left_join(smsi) %>%
+  left_join(smt) %>% 
+  left_join(tchla)
+
+```
+
+
+
+
+```{r}
+riv_w_j <- riv_w_j %>% 
+  mutate(abund = exp_count/100000) %>% 
+  mutate(wind_cube = dm_w^3)
+
+test <- riv_w_j %>% 
+  filter(!is.na(abund))
+```
+
+
+```{r}
+ylim.prim_r <- c(0, 1250)   # in this example, precipitation
+ylim.sec_r <- c(0, 25)    # in this example, temperature
+
+ABUND_r <- test$abund #needed for coherent normalisation
+TCHLA_r <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_r = lm(b_r ~ . + 0, 
+   tibble::tribble(
+     ~a_r, ~s_r,  ~b_r,
+      1,  (ylim.sec_r[1] - mean(ABUND_r))/sd(ABUND_r),  ylim.prim_r[1],
+      1,  (ylim.sec_r[2] - mean(ABUND_r))/sd(ABUND_r), ylim.prim_r[2]))
+
+a_r <- fit_r$coefficients['a_r']
+s_r <- fit_r$coefficients['s_r']
+
+fit2_r = lm(b1_r ~ . + 0, 
+   tibble::tribble(
+     ~a1_r, ~s1_r,  ~b1_r,
+      1,  (ylim.sec_r[1] - mean(TCHLA_r))/sd(TCHLA_r),  ylim.prim_r[1],
+      1,  (ylim.sec_r[2] - mean(TCHLA_r))/sd(TCHLA_r), ylim.prim_r[2]))
+
+a1_r <- fit2_r$coefficients['a1_r']
+s1_r <- fit2_r$coefficients['s1_r']
+
+f_wannock <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = Wan), size = 1, color = "blue", fill = "blue", alpha = 0.5) +
+  geom_point(aes(y = (a_r + ((abund - mean(ABUND_r))/sd(ABUND_r)) * s_r)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_r + ((tchla - mean(TCHLA_r))/sd(TCHLA_r)) * s1_r)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "Dis-Wan",
+                     limits = ylim.prim_r,
+                     sec.axis = sec_axis(~ (. - a_r) / s_r * sd(ABUND_r) + mean(ABUND_r),
+                                         name = ""),) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+```
+
+
+
+```{r}
+ylim.prim_ra <- c(0, 5)   # in this example, precipitation
+ylim.sec_ra <- c(0, 25)    # in this example, temperature
+
+ABUND_ra <- test$abund #needed for coherent normalisation
+TCHLA_ra <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_ra = lm(b_ra ~ . + 0, 
+   tibble::tribble(
+     ~a_ra, ~s_ra,  ~b_ra,
+      1,  (ylim.sec_ra[1] - mean(ABUND_ra))/sd(ABUND_ra),  ylim.prim_ra[1],
+      1,  (ylim.sec_ra[2] - mean(ABUND_ra))/sd(ABUND_ra), ylim.prim_ra[2]))
+
+a_ra <- fit_ra$coefficients['a_ra']
+s_ra <- fit_ra$coefficients['s_ra']
+
+fit2_ra = lm(b1_ra ~ . + 0, 
+   tibble::tribble(
+     ~a1_ra, ~s1_ra,  ~b1_ra,
+      1,  (ylim.sec_ra[1] - mean(TCHLA_ra))/sd(TCHLA_ra),  ylim.prim_ra[1],
+      1,  (ylim.sec_ra[2] - mean(TCHLA_ra))/sd(TCHLA_ra), ylim.prim_ra[2]))
+
+a1_ra <- fit2_ra$coefficients['a1_ra']
+s1_ra <- fit2_ra$coefficients['s1_ra']
+
+f_ra <- riv_w_j %>%
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = dm_qrate), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
+  geom_point(aes(y = (a_ra + ((abund - mean(ABUND_ra))/sd(ABUND_ra)) * s_ra)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_ra + ((tchla - mean(TCHLA_ra))/sd(TCHLA_ra)) * s1_ra)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "Dis-844",
+                     limits = ylim.prim_ra,
+                     sec.axis = sec_axis(~ (. - a_ra) / s_ra * sd(ABUND_ra) + mean(ABUND_ra),
+                                         name = ""),) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+
+
+```{r}
+ylim.prim_d <- c(0, 15)   # in this example, precipitation
+ylim.sec_d <- c(0, 25)    # in this example, temperature
+
+ABUND_d <- test$abund #needed for coherent normalisation
+TCHLA_d <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_d = lm(b_d ~ . + 0, 
+   tibble::tribble(
+     ~a_d, ~s_d,  ~b_d,
+      1,  (ylim.sec_d[1] - mean(ABUND_d))/sd(ABUND_d),  ylim.prim_d[1],
+      1,  (ylim.sec_d[2] - mean(ABUND_d))/sd(ABUND_d), ylim.prim_d[2]))
+
+a_d <- fit_d$coefficients['a_d']
+s_d <- fit_d$coefficients['s_d']
+
+fit2_d = lm(b1_d ~ . + 0, 
+   tibble::tribble(
+     ~a1_d, ~s1_d,  ~b1_d,
+      1,  (ylim.sec_d[1] - mean(TCHLA_d))/sd(TCHLA_d),  ylim.prim_d[1],
+      1,  (ylim.sec_d[2] - mean(TCHLA_d))/sd(TCHLA_d), ylim.prim_d[2]))
+
+a1_d <- fit2_d$coefficients['a1_d']
+s1_d <- fit2_d$coefficients['s1_d']
+
+f_d <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = dr),  size = 1, color = "purple", fill = "purple", alpha = 0.5) +
+  geom_point(aes(y = (a_d + ((abund - mean(ABUND_d))/sd(ABUND_d)) * s_d)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_d + ((tchla - mean(TCHLA_d))/sd(TCHLA_d)) * s1_d)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "\u394\u3C1",
+                     limits = ylim.prim_d,
+                     sec.axis = sec_axis(~ (. - a_d) / s_d * sd(ABUND_d) + mean(ABUND_d),
+                                         name = ""),) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+ylim.prim_p <- c(0, 2.5)   # in this example, precipitation
+ylim.sec_p <- c(0, 25)    # in this example, temperature
+
+ABUND_p <- test$abund #needed for coherent normalisation
+TCHLA_p <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_p = lm(b_p ~ . + 0, 
+   tibble::tribble(
+     ~a_p, ~s_p,  ~b_p,
+      1,  (ylim.sec_p[1] - mean(ABUND_p))/sd(ABUND_p),  ylim.prim_p[1],
+      1,  (ylim.sec_p[2] - mean(ABUND_p))/sd(ABUND_p), ylim.prim_p[2]))
+
+a_p <- fit_p$coefficients['a_p']
+s_p <- fit_p$coefficients['s_p']
+
+fit2_p = lm(b1_p ~ . + 0, 
+   tibble::tribble(
+     ~a1_p, ~s1_p,  ~b1_p,
+      1,  (ylim.sec_p[1] - mean(TCHLA_p))/sd(TCHLA_p),  ylim.prim_p[1],
+      1,  (ylim.sec_p[2] - mean(TCHLA_p))/sd(TCHLA_p), ylim.prim_p[2]))
+
+a1_p <- fit2_p$coefficients['a1_p']
+s1_p <- fit2_p$coefficients['s1_p']
+
+f3 <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = dm_par), size = 0, fill = "orange", alpha = 0.3) +
+  geom_smooth(aes(y = dm_par), span = 0.1, color = "orange", size = 2, se = F) +
+  geom_point(aes(y = (a_p + ((abund - mean(ABUND_p))/sd(ABUND_p)) * s_p)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_p + ((tchla - mean(TCHLA_p))/sd(TCHLA_p)) * s1_p)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "PAR-LO",
+                     limits = ylim.prim_p,
+                     sec.axis = sec_axis(~ (. - a_p) / s_p * sd(ABUND_p) + mean(ABUND_p),
+                                         name = ""),) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+
+```{r}
+# test3 <- test2 %>% 
+#   left_join(tchla) %>% 
+#   left_join(riv)
+# 
+# ylim.prim_w <- c(0, 750)   # in this example, precipitation
+# ylim.sec_w <- c(0, 25)    # in this example, temperature
+# 
+# test3 %>%
+#   mutate(yday = lubridate::yday(date),
+#          year = lubridate::year(date)) %>%
+#   filter(year < 2021 & yday < 100) %>% 
+#   ggplot(aes(x = yday)) +
+#   geom_smooth(aes(y = wind_cube), span = 0.3, color = "blue", size = 2, se = F) +
+#   facet_grid(. ~ year) +
+#   geom_point(aes(y = wind_cube, fill = dm_wd), pch = 21, size = 3) +
+#   geom_point(aes(y = tchla*100), size = 1.5, pch = 8, color = "red", stroke = 1) +
+#   scale_fill_gradient2(
+#     low = "red",
+#     mid = "white",
+#     high = "blue",
+#     midpoint = 180) +
+#   theme_bw() +
+#   theme(text = element_text(size = 28),
+#         axis.text = element_text(color = 'black'),
+#         axis.text.x = element_blank(),
+#         axis.title.x = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.x = element_blank())
+# 
+# test3 %>%
+#   mutate(yday = lubridate::yday(date),
+#          year = lubridate::year(date)) %>%
+#   filter(year < 2021 & yday < 100) %>% 
+#   ggplot(aes(x = yday)) +
+#   geom_smooth(aes(y = dis), span = 0.3, color = "blue", size = 2, se = F) +
+#   facet_grid(. ~ year) +
+#   geom_point(aes(y = dis), pch = 21, size = 3) +
+#   geom_point(aes(y = tchla*100), size = 1.5, pch = 8, color = "red", stroke = 1) +
+#   scale_fill_gradient2(
+#     low = "red",
+#     mid = "white",
+#     high = "blue",
+#     midpoint = 180) +
+#   theme_bw() +
+#   theme(text = element_text(size = 28),
+#         axis.text = element_text(color = 'black'),
+#         axis.text.x = element_blank(),
+#         axis.title.x = element_blank(),
+#         strip.background = element_blank(),
+#         strip.text.x = element_blank())
+# 
+#   # scale_y_continuous(name = "Wind",
+#   #                    limits = ylim.prim_w,
+#   #                    sec.axis = sec_axis(~ (. - a_w) / s_w * sd(ABUND_w) + mean(ABUND_w),
+#   #                                        name = "Abund./TChla"),) 
+#   
+#   # geom_area(aes(y = wind_cube), size = 0, fill = "blue", alpha = 0.3) +
+#   
+
+```
+```{r}
+
+ylim.prim_w <- c(0, 1300)   # in this example, precipitation
+ylim.sec_w <- c(0, 25)    # in this example, temperature
+
+ABUND_w <- test$abund #needed for coherent normalisation
+TCHLA_w <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_w = lm(b_w ~ . + 0, 
+   tibble::tribble(
+     ~a_w, ~s_w,  ~b_w,
+      1,  (ylim.sec_w[1] - mean(ABUND_w))/sd(ABUND_w),  ylim.prim_w[1],
+      1,  (ylim.sec_w[2] - mean(ABUND_w))/sd(ABUND_w), ylim.prim_w[2]))
+
+a_w <- fit_w$coefficients['a_w']
+s_w <- fit_w$coefficients['s_w']
+
+fit2_w = lm(b1_w ~ . + 0, 
+   tibble::tribble(
+     ~a1_w, ~s1_w,  ~b1_w,
+      1,  (ylim.sec_w[1] - mean(TCHLA_w))/sd(TCHLA_w),  ylim.prim_w[1],
+      1,  (ylim.sec_w[2] - mean(TCHLA_w))/sd(TCHLA_w), ylim.prim_w[2]))
+
+a1_w <- fit2_w$coefficients['a1_w']
+s1_w <- fit2_w$coefficients['s1_w']
+
+f4 <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = wind_cube), size = 0, fill = "blue", alpha = 0.7) +
+  # geom_smooth(aes(y = wind_cube), span = 0.01, color = "blue", size = 2, se = F) +
+  geom_point(aes(y = (a_w + ((abund - mean(ABUND_w))/sd(ABUND_w)) * s_w)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_w + ((tchla - mean(TCHLA_w))/sd(TCHLA_w)) * s1_w)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "Wind-LO",
+                     limits = ylim.prim_w,
+                     sec.axis = sec_axis(~ (. - a_w) / s_w * sd(ABUND_w) + mean(ABUND_w),
+                                         name = "Abund./TChla"),) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+ylim.prim_wd <- c(0, 360)   # in this example, precipitation
+ylim.sec_wd <- c(0, 25)    # in this example, temperature
+
+ABUND_wd <- test$abund #needed for coherent normalisation
+TCHLA_wd <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_wd = lm(b_wd ~ . + 0, 
+   tibble::tribble(
+     ~a_wd, ~s_wd,  ~b_wd,
+      1,  (ylim.sec_wd[1] - mean(ABUND_wd))/sd(ABUND_wd),  ylim.prim_wd[1],
+      1,  (ylim.sec_wd[2] - mean(ABUND_wd))/sd(ABUND_wd), ylim.prim_wd[2]))
+
+a_wd <- fit_wd$coefficients['a_wd']
+s_wd <- fit_wd$coefficients['s_wd']
+
+fit2_wd = lm(b1_wd ~ . + 0, 
+   tibble::tribble(
+     ~a1_wd, ~s1_wd,  ~b1_wd,
+      1,  (ylim.sec_wd[1] - mean(TCHLA_wd))/sd(TCHLA_wd),  ylim.prim_wd[1],
+      1,  (ylim.sec_wd[2] - mean(TCHLA_wd))/sd(TCHLA_wd), ylim.prim_wd[2]))
+
+a1_wd <- fit2_wd$coefficients['a1_wd']
+s1_wd <- fit2_wd$coefficients['s1_wd']
+
+f5 <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = dm_wd), size = 0, fill = "purple", alpha = 0.3) +
+  geom_smooth(aes(y = dm_wd), span = 0.01, color = "purple", size = 2, se = F) +
+  geom_point(aes(y = (a_wd + ((abund - mean(ABUND_wd))/sd(ABUND_wd)) * s_wd)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_wd + ((tchla - mean(TCHLA_wd))/sd(TCHLA_wd)) * s1_wd)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "WDir-LO.",
+                     limits = ylim.prim_wd,
+                     sec.axis = sec_axis(~ (. - a_wd) / s_wd * sd(ABUND_wd) + mean(ABUND_wd),
+                                         name = ""),) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+ylim.prim_s <- c(0, 38)   # in this example, precipitation
+ylim.sec_s <- c(0, 25)    # in this example, temperature
+
+ABUND_s <- test$abund #needed for coherent normalisation
+TCHLA_s <- test$tchla
+
+# This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
+fit_s = lm(b_s ~ . + 0, 
+   tibble::tribble(
+     ~a_s, ~s_s,  ~b_s,
+      1,  (ylim.sec_s[1] - mean(ABUND_s))/sd(ABUND_s),  ylim.prim_s[1],
+      1,  (ylim.sec_s[2] - mean(ABUND_s))/sd(ABUND_s), ylim.prim_s[2]))
+
+a_s <- fit_s$coefficients['a_s']
+s_s <- fit_s$coefficients['s_s']
+
+fit2_s = lm(b1_s ~ . + 0, 
+   tibble::tribble(
+     ~a1_s, ~s1_s,  ~b1_s,
+      1,  (ylim.sec_s[1] - mean(TCHLA_s))/sd(TCHLA_s),  ylim.prim_s[1],
+      1,  (ylim.sec_s[2] - mean(TCHLA_s))/sd(TCHLA_s), ylim.prim_s[2]))
+
+a1_s <- fit2_s$coefficients['a1_s']
+s1_s <- fit2_s$coefficients['s1_s']
+
+f6 <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = sio2), size = 1, color = "deepskyblue", fill = "deepskyblue",
+            alpha = 0.5) +
+  geom_point(aes(y = (a_s + ((abund - mean(ABUND_s))/sd(ABUND_s)) * s_s)),
+             size = 4, pch = 21, fill = "darkgreen", 
+             color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_s + ((tchla - mean(TCHLA_s))/sd(TCHLA_s)) * s1_s)),
+             size = 1.5, pch = 8, color = "red", stroke = 1) +
+  scale_y_continuous(name = "SiO\u2082\u207B",
+                     limits = ylim.prim_s,
+                     sec.axis = sec_axis(~ (. - a_s) / s_s * sd(ABUND_s) + mean(ABUND_s),
+                                         name = ""),) +
+  facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        # axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+# yright = richtext_grob("test", rot = -90)
+```
+
+```{r}
+# fig2 <- (f_r / f_d / f3 / f4 / f5 / f6) 
+# 
+# ggsave(here("figures_timeseries", "DFO2_multiple_aligned_lookout.png"), fig2,
+#         width = 16, height = 14, dpi = 300)
+```
+
+```{r}
+fig3 <- f_wannock / f_ra / f_d / f3 / f4 / f5 / f6 
+
+ggsave(here("figures_timeseries", "DFO2_multiple_aligned_lookout_844_ethel_2023-01-19.png"), fig3,
+        width = 16, height = 16, dpi = 300)
+```
+
+```{r}
+#Testing wind speed averages for Wolfe et al. period
+wind_avg <- riv_w_j %>% 
+  select(date, year, wind_cube, dm_wd) %>% 
+  filter((date > "2018-01-01" & date < "2018-03-15") |
+           (date > "2019-01-01" & date < "2019-03-15") |
+           (date > "2020-01-01" & date < "2020-03-15")) %>% 
+  group_by(year) %>% 
+  summarise(mean_wind_cube = mean(wind_cube)) %>% 
+  ungroup()
+
+riv_w_j <- riv_w_j %>% 
+  mutate(wind_vect = wind_cube * sin(dm_wd)) 
+
+wind_vect_avg <- riv_w_j %>% 
+  select(date, year, wind_vect) %>% 
+  filter((date > "2018-01-01" & date < "2018-03-15") |
+           (date > "2019-01-01" & date < "2019-03-15") |
+           (date > "2020-01-01" & date < "2020-03-15")) %>% 
+  group_by(year) %>% 
+  summarise(mean_wind_vect = mean(wind_vect)) %>% 
+  ungroup()
+
+solar_avg <- riv_w_j %>% 
+  select(date, year, dm_par) %>% 
+  filter((date > "2018-01-01" & date < "2018-03-15") |
+           (date > "2019-01-01" & date < "2019-03-15") |
+           (date > "2020-01-01" & date < "2020-03-15")) %>% 
+  group_by(year) %>% 
+  summarise(mean_par = mean(dm_par)) %>% 
+  ungroup()
+
+dis_wan_march_avg <- riv_w_j %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  select(date, year, month, Wan) %>% 
+  filter(month == 3) %>% 
+  group_by(year) %>% 
+  summarise(dis_wan_march = mean(Wan)) %>% 
+  ungroup()
+
+dis_wan_m_a_avg <- riv_w_j %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  select(date, year, month, Wan) %>% 
+  filter(month > 2 & month < 5) %>% 
+  group_by(year) %>% 
+  summarise(dis_wan_m_a = mean(Wan)) %>% 
+  ungroup()
+```
+
+```{r}
+#In single plot I would like wind vector, wind speed cubed and solar?
+bloom_plot <- riv_w_j %>% 
+  mutate(month = lubridate::month(date)) %>%
+  filter(month < 4)
+
+bloom_plot %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = dm_par), size = 0.1, color = "black", fill = "yellow",
+            alpha = 0.5) +
+  geom_area(aes(y = wind_cube/1000), size = 1, color = "deepskyblue", fill = "deepskyblue",
+            alpha = 0.6) +
+  geom_line(aes(y = wind_vect/1000), size = 1) +
+  geom_line(aes(y = Wan/500), size = 1, color = "blue") +
+  geom_point(aes(y = tchla/10), color = "red", pch = 8, stroke = 1, size = 3) +
+  facet_grid(year ~ .) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        # axis.text.x = element_blank(),
+        # axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_timeseries", "bloom_plot.png"), 
+        width = 16, height = 12, dpi = 300)
+
+```
+```{r}
+bloom_plot %>% 
+  ggplot(aes(x = yday)) +
+  geom_area(aes(y = dm_par), size = 0.1, color = "black", fill = "yellow",
+            alpha = 0.5) +
+  geom_area(aes(y = wind_cube/800), size = 1, color = "deepskyblue", fill = "deepskyblue",
+            alpha = 0.6) +
+  geom_line(aes(y = wind_vect/800), size = 1) +
+  geom_line(aes(y = Wan/500), size = 1, color = "blue") +
+  geom_point(aes(y = tchla/10), color = "red", pch = 8, stroke = 1, size = 3) +
+  facet_grid(year ~ .) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        # axis.text.x = element_blank(),
+        # axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_timeseries", "bloom_plot_scale_wolfe.png"), 
+        width = 16, height = 12, dpi = 300)
+```
+
+
+
+
+
