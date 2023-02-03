@@ -247,6 +247,11 @@ micro_all_chl %>%
 ggsave(here("figures_species_timeseries", "compositions_all_25_perc.png"),
        width = 16, height = 10, dpi = 300)
 ```
+```{r}
+test <- micro_all %>% 
+  filter(location == "C" & month == 4 & year == 2020)
+```
+
 
 
 ```{r}

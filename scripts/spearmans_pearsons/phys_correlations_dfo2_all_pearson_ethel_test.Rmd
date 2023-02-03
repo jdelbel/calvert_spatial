@@ -42,7 +42,7 @@ lk_par <- read_csv(here("files", "lookout_par.csv"))
 # eth_par <- read_csv(here("files", "eth_par.csv"))
 
 
-rain_et <- read_csv(here("files", "ethel_rain.csv"))
+ws844 <- read_csv(here("files", "ws844.csv"))
 ```
 
 
@@ -128,22 +128,30 @@ ew_da <- ethel_wind2 %>%
 ```
 
 ```{r}
-# e_r <- rain_et %>% 
-#   mutate(date = lubridate::mdy_hm(measurementTime),
-#          year = lubridate::year(date),
-#          month = lubridate::month(date),
-#          yday = lubridate::yday(date)) %>% 
-#   select(date, year, month, yday, rain = `24hourRain`) %>% 
-#   filter(year > 2017 & year < 2022)
-# 
-# e_r2 <- e_r %>% 
-#   mutate(date2 = lubridate::date(date)) %>% 
-#   group_by(date2) %>% 
-#   summarize(dm_rain = mean(rain)) %>% 
-#   ungroup() %>% 
-#   rename(date = date2) %>%
-#   mutate(rain_b1 = rollmeanr(lag(dm_rain, 1), k = 3, fill = NA)) %>% 
-#   select(date, rain = rain_b1)
+ws844_2 <- ws844 %>%
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         date2 = lubridate::date(date),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date = date2, year, month, yday, lev = PLS_Lvl_Avg, rain = `24hourRain`) %>% 
+  filter(year > 2017 & year < 2022)
+```
+
+
+```{r}
+ws844_dm_rain <- ws844_2 %>% 
+  group_by(date) %>% 
+  summarise(dm_rain = mean(rain)) %>% 
+  ungroup()
+
+ws844_2 <- ws844_2 %>%
+  mutate(lev_b1 = rollmeanr(lag(lev, 1), k = 10, fill = NA),
+         rain_b1 = rollmeanr(lag(rain, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+ws844_2 <- ws844_2 %>% 
+  select(date, lev, rain, lev_b1, rain_b1)
 ```
 
 ```{r}
@@ -206,7 +214,8 @@ data <- ctd %>%
   left_join(ew_da) %>% 
   # left_join(lk_da) %>% 
   left_join(par) %>% 
-  left_join(d844_dm)
+  left_join(d844_dm) %>% 
+  left_join(ws844_dm_rain)
 ```
 
 ```{r}
@@ -221,7 +230,8 @@ data_pca <- data %>%
          Wan, Wan_b1_10,
          dm_w, dm_wd, w_b1_3, wd_b1_3,
          dm_par, par_b1_3,
-         dm_qrate)
+         dm_qrate, 
+         dm_rain)
 ```
 
 ```{r}
@@ -298,7 +308,7 @@ cor_exp <- rbind(s_sum, d_sum, c_sum, chl_corr, pn, pns, hill,
 
 ```{r}
 data_pca_long <- data_pca %>% 
-  pivot_longer(cols = c(temp:dm_qrate), names_to = "name", values_to = "vals")
+  pivot_longer(cols = c(temp:dm_rain), names_to = "name", values_to = "vals")
 ```
 
 
@@ -465,7 +475,8 @@ riv_w_j <- riv_w_j %>%
   left_join(sms) %>% 
   left_join(par) %>% 
   left_join(ew_da) %>%
-  left_join(d844_dm) %>% 
+  left_join(d844_dm) %>%
+  left_join(ws844_dm_rain) %>% 
   left_join(smd) %>% 
   left_join(smn) %>% 
   left_join(smsi) %>%
@@ -536,7 +547,7 @@ f_wannock <- riv_w_j %>%
 
 
 ```{r}
-ylim.prim_ra <- c(0, 5)   # in this example, precipitation
+ylim.prim_ra <- c(0, 100)   # in this example, precipitation
 ylim.sec_ra <- c(0, 25)    # in this example, temperature
 
 ABUND_ra <- test$abund #needed for coherent normalisation
@@ -563,13 +574,13 @@ s1_ra <- fit2_ra$coefficients['s1_ra']
 
 f_ra <- riv_w_j %>%
   ggplot(aes(x = yday)) +
-  geom_area(aes(y = dm_qrate), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
+  geom_area(aes(y = dm_rain), size = 1, color = "purple", fill = "purple", alpha = 0.5) +
   geom_point(aes(y = (a_ra + ((abund - mean(ABUND_ra))/sd(ABUND_ra)) * s_ra)),
              size = 4, pch = 21, fill = "darkgreen", 
              color = "black", stroke = 2) +
   geom_point(aes(y = (a1_ra + ((tchla - mean(TCHLA_ra))/sd(TCHLA_ra)) * s1_ra)),
              size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "Dis-844",
+  scale_y_continuous(name = "Rain-844",
                      limits = ylim.prim_ra,
                      sec.axis = sec_axis(~ (. - a_ra) / s_ra * sd(ABUND_ra) + mean(ABUND_ra),
                                          name = ""),) +
@@ -661,7 +672,7 @@ s1_p <- fit2_p$coefficients['s1_p']
 
 f3 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
-  geom_area(aes(y = dm_par), size = 0, fill = "orange", alpha = 0.3) +
+  geom_area(aes(y = dm_par), size = 0, fill = "orange", alpha = 0.8) +
   geom_smooth(aes(y = dm_par), span = 0.1, color = "orange", size = 2, se = F) +
   geom_point(aes(y = (a_p + ((abund - mean(ABUND_p))/sd(ABUND_p)) * s_p)),
              size = 4, pch = 21, fill = "darkgreen", 
@@ -780,7 +791,7 @@ f4 <- riv_w_j %>%
              color = "black", stroke = 2) +
   geom_point(aes(y = (a1_w + ((tchla - mean(TCHLA_w))/sd(TCHLA_w)) * s1_w)),
              size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "Wind-LO",
+  scale_y_continuous(name = "Wind-Eth",
                      limits = ylim.prim_w,
                      sec.axis = sec_axis(~ (. - a_w) / s_w * sd(ABUND_w) + mean(ABUND_w),
                                          name = "Abund./TChla"),) +
@@ -795,7 +806,15 @@ f4 <- riv_w_j %>%
 ```
 
 ```{r}
-ylim.prim_wd <- c(0, 360)   # in this example, precipitation
+riv_w_j <- riv_w_j %>% 
+  mutate(wind_vect = wind_cube * sin(dm_wd)) %>% 
+  mutate(wind_vect2 = wind_vect/800) %>% 
+  mutate(wind_u = wind_cube * cos(dm_wd)) %>% 
+  mutate(wind_u2 = wind_u/800)
+
+
+
+ylim.prim_wd <- c(-1.5, +1.5)   # in this example, precipitation
 ylim.sec_wd <- c(0, 25)    # in this example, temperature
 
 ABUND_wd <- test$abund #needed for coherent normalisation
@@ -822,14 +841,15 @@ s1_wd <- fit2_wd$coefficients['s1_wd']
 
 f5 <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
-  geom_area(aes(y = dm_wd), size = 0, fill = "purple", alpha = 0.3) +
-  geom_smooth(aes(y = dm_wd), span = 0.01, color = "purple", size = 2, se = F) +
+  geom_line(aes(y = wind_vect2), size = 2.5, color = "black") +
+  geom_line(aes(y = wind_u2), size = 1, color = "red") +
+  # geom_smooth(aes(y = wind_vect2), span = 0.01, color = "purple", size = 2, se = F) +
   geom_point(aes(y = (a_wd + ((abund - mean(ABUND_wd))/sd(ABUND_wd)) * s_wd)),
              size = 4, pch = 21, fill = "darkgreen", 
              color = "black", stroke = 2) +
   geom_point(aes(y = (a1_wd + ((tchla - mean(TCHLA_wd))/sd(TCHLA_wd)) * s1_wd)),
              size = 1.5, pch = 8, color = "red", stroke = 1) +
-  scale_y_continuous(name = "WDir-LO.",
+  scale_y_continuous(name = "WDir-Eth.",
                      limits = ylim.prim_wd,
                      sec.axis = sec_axis(~ (. - a_wd) / s_wd * sd(ABUND_wd) + mean(ABUND_wd),
                                          name = ""),) +
@@ -904,11 +924,85 @@ f6 <- riv_w_j %>%
 ```
 
 ```{r}
-fig3 <- f_wannock / f_ra / f_d / f3 / f4 / f5 / f6 
+fig3 <- f_wannock / f_ra / f_d / f3 / f5 / f6 
 
-ggsave(here("figures_timeseries", "DFO2_multiple_aligned_lookout_844_ethel_2023-01-19.png"), fig3,
+ggsave(here("figures_timeseries", "DFO2_multiple_aligned_lookout_844rain_ethel_2023-01-19_WV.png"), fig3,
         width = 16, height = 16, dpi = 300)
 ```
+
+```{r}
+t1 <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_point(aes(y = wind_vect2, fill = as.factor(year), color = as.factor(year))) +
+  geom_line(aes(y = wind_vect2, color = as.factor(year))) +
+  # geom_area(aes(y = wind_vect2), size = 0, fill = "purple", alpha = 0.3) +
+  # geom_smooth(aes(y = wind_vect2, color = as.factor(year)),
+  #             span = 0.05, size = 2, se = F) +
+  # facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_timeseries", "DFO2_vect_test.png"),
+        width = 16, height = 5, dpi = 300)
+```
+```{r}
+t2 <- riv_w_j %>% 
+  ggplot(aes(x = yday)) +
+  geom_point(aes(y = Wan, fill = as.factor(year), color = as.factor(year))) +
+  geom_line(aes(y = Wan, color = as.factor(year))) +
+  # geom_area(aes(y = wind_vect2), size = 0, fill = "purple", alpha = 0.3) +
+  # geom_smooth(aes(y = wind_vect2, color = as.factor(year)),
+  #             span = 0.05, size = 2, se = F) +
+  # facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_timeseries", "DFO2_discharge_test.png"),
+        width = 16, height = 5, dpi = 300)
+```
+```{r}
+t3 <- riv_w_j %>% 
+  filter(!is.na(tchla)) %>% 
+  ggplot(aes(x = yday)) +
+  geom_point(aes(y = tchla, fill = as.factor(year), color = as.factor(year))) +
+  geom_line(aes(y = tchla, color = as.factor(year))) +
+  # geom_area(aes(y = wind_vect2), size = 0, fill = "purple", alpha = 0.3) +
+  # geom_smooth(aes(y = wind_vect2, color = as.factor(year)),
+  #             span = 0.05, size = 2, se = F) +
+  # facet_grid(. ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_timeseries", "DFO2_tchla_test.png"),
+        width = 16, height = 5, dpi = 300)
+```
+
+
+```{r}
+tf <- t3 / t2 / t1 
+
+ggsave(here("figures_timeseries", "test_panel.png"), tf,
+        width = 16, height = 12, dpi = 300)
+```
+
+ggsave(here("figures_timeseries", "DFO2_multiple_aligned_lookout_844rain_ethel_2023-01-19_WV.png"), fig3,
+        width = 16, height = 16, dpi = 300)
+
 
 ```{r}
 #Testing wind speed averages for Wolfe et al. period
