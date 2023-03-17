@@ -865,6 +865,13 @@ pheatmap::pheatmap(hc_rel, clustering_distance_rows = drows, cluster_cols = F,
                    cutree_rows = 5,
                    color = colorRampPalette(c("white", "red"))(50))
 ```
+```{r}
+micro %>% 
+  filter(scientificName == "Navicula") %>% 
+  ggplot(aes(x = date, y = species_sum, color = site_id)) + 
+  geom_line() +
+  geom_point()
+```
 
 
 

@@ -68,14 +68,14 @@ species_distinct <- micro %>%
 
 #Removing groups that are not well quantified or that I am not looking at
 micro <- micro %>% 
-  filter(!scientificName_accepted == "Cyanobacteria" &
+  filter(!scientificName_accepted == "Cyanobacteria" & 
            !group == "Metazoa" &
            !group == "Protozoa" &
            !group == "Choanoflagellata" &
            !group == "Ciliophora" &
            !group == "Kinetoplastidea")
 
-micro <- micro %>% 
+micro <- micro %>%
   filter(trophicStatus == "auto")
 
 
@@ -91,7 +91,7 @@ species_10 <- micro %>%
   group_by(scientificName) %>%
   summarise(n_obs = n()) %>%
   ungroup() %>%
-  mutate(perc_obs = n_obs/50) %>%
+  mutate(perc_obs = n_obs/78) %>%
   filter(perc_obs >= 0.10)
 
 #Creating a list of species that were not in 10% of the samples
@@ -293,7 +293,7 @@ micro_join <- micro_join %>%
 #Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
 resp <- micro_join[, 15:ncol(micro_join)]
 
-resp <- log1p(resp)
+# resp <- log1p(resp)
 
 # resp <- decostand(resp, method = "total")
 
@@ -475,20 +475,20 @@ sp_bf <- subset(sp_loc, rownames(sp_loc) %in% sel)
 
 
 ```{r}
-row.names(sp_bf) <- c("P.n.s",
-                      "R.s.",
-                      "Thal.",
-                      "Hill.",
-                      "Tel.",
-                      "S.m.",
-                      "P.n.",
-                      "P.ori.",
-                      "P.pou.",
-                      "C.soc.",
-                      "T.acu.",
-                      "T.amp.",
-                      "C.cin",
-                      "Pter.")
+# row.names(sp_bf) <- c("P.n.s",
+#                       "R.s.",
+#                       "Thal.",
+#                       "Hill.",
+#                       "Tel.",
+#                       "S.m.",
+#                       "P.n.",
+#                       "P.ori.",
+#                       "P.pou.",
+#                       "C.soc.",
+#                       "T.acu.",
+#                       "T.amp.",
+#                       "C.cin",
+#                       "Pter.")
                       
   
   
@@ -543,12 +543,12 @@ micro_1 <- ggplot() +
                 arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
                               type = "closed"),
                 linetype = 1, size = 1.4, colour = "Red", alpha = 0.7) +
-  geom_segment(data = sp_bf, aes(x = 0, y = 0, xend = RDA1*2,
-                                       yend = RDA2*2),
+  geom_segment(data = sp_bf, aes(x = 0, y = 0, xend = RDA1,
+                                       yend = RDA2),
                  arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
                                type = "closed"),
                linetype = 1, size = 1.4, colour = "grey", alpha = 0.7) +
-  geom_text_repel(data = sp_bf, aes(RDA1*2, RDA2*2, 
+  geom_text_repel(data = sp_bf, aes(RDA1, RDA2, 
                                            label = row.names(sp_bf)),
                   # box.padding = unit(0.5, 'lines'),
                   # point.padding = NA,
@@ -611,12 +611,12 @@ micro_2 <- ggplot() +
                 arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
                               type = "closed"),
                 linetype = 1, size = 1.4, colour = "Red", alpha = 0.7) +
-  geom_segment(data = sp_bf, aes(x = 0, y = 0, xend = RDA1*2,
-                                       yend = RDA2*2),
+  geom_segment(data = sp_bf, aes(x = 0, y = 0, xend = RDA1,
+                                       yend = RDA2),
                  arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
                                type = "closed"),
                linetype = 1, size = 1.4, colour = "grey", alpha = 0.7) +
-  geom_text_repel(data = sp_bf, aes(RDA1*2, RDA2*2, 
+  geom_text_repel(data = sp_bf, aes(RDA1, RDA2, 
                                            label = row.names(sp_bf)),
                   # box.padding = unit(0.5, 'lines'),
                   # point.padding = NA,
@@ -669,7 +669,7 @@ micro_2 <- ggplot() +
 
 micro_comb <- micro_1 + micro_2
 
-ggsave(here("figures_rda", "rda_scale-micro_comb_riv_wind2_all_data.png"), micro_comb,
+ggsave(here("figures_rda", "rda_2023-02-28.png"), micro_comb,
         width = 16, height = 8, dpi = 300)
 ```
 

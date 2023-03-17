@@ -105,6 +105,11 @@ micro_all <- micro_all %>%
   ungroup()
 ```
 
+```{r}
+#Looking at DFO2 2018 Other diatoms
+dfo2 <- micro_all %>% 
+  filter(site_id == "DFO2" & year == 2018 & (month == 4))
+```
 
 
 

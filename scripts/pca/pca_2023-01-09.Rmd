@@ -10,28 +10,15 @@ library(tidyverse)
 library(readxl)
 library(here)
 library(vegan)
-library(adespatial)
-library(ggord)
-library(fuzzySim)
-
-#From https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html#1_Packages_needed
-
-#For plotting with ggplot2
-
 library(BiodiversityR)
 library(ggsci)
 library(ggrepel)
 library(ggforce)
-
 library(patchwork)
-
 library(cluster)
 library(ggdendro)
-
 library(RColorBrewer)
-
 library(indicspecies)
-
 library(factoextra)
 ```
 
@@ -483,8 +470,15 @@ clust <- cutree(cluster.average, k = k)
 clust.df <- data.frame(label = rownames(hc),
                                    cluster = factor(clust))
 
-# write_csv(clust.df, here("outputs", "clusters_micro_6.csv"))
+# write_csv(clust.df, here("outputs", "pca_clusters_2023-02-01.csv"))
 ```
+
+```{r}
+#I want to export the clusters so that I can work with them in indicator analysis.
+
+```
+
+
 
 ```{r}
 # extract dendrogram segment data for plotting
@@ -815,6 +809,68 @@ data_clust_long %>%
 ```
 ```{r}
 
+
+hd <- 
+  data_clust_long %>% 
+  filter(parameters == "drho") %>% 
+  ggplot(aes(x = as.factor(cluster), y = values)) +
+  geom_boxplot(aes(fill = as.factor(cluster))) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(y = bquote(Delta*rho[30-3] ~ "(kg"~ m^-3*")")) +
+  theme_bw() +
+  theme(
+        axis.text = element_text(color = "black"),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 28))
+
+hn <- 
+  data_clust_long %>% 
+  filter(parameters == "no2") %>% 
+  ggplot(aes(x = as.factor(cluster), y = values)) +
+  geom_boxplot(aes(fill = as.factor(cluster))) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(y = "NO\u2083\u207B+NO\u2082\u207B\u0020\u0028\u00B5mol\u0020L\u207B\u00B9\u0029",
+       x = "Cluster") +
+  theme_bw() +
+  theme(
+        # axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(color = "black"),
+        # axis.text.x = element_blank(),
+        # axis.title.x = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 28))
+  
+ht <- 
+  data_clust_long %>% 
+  filter(parameters == "temp") %>% 
+  ggplot(aes(x = as.factor(cluster), y = values)) +
+  geom_boxplot(aes(fill = as.factor(cluster))) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(y = "Temp (°C)") +
+  theme_bw() +
+  theme(
+        # axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(color = "black"),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "none",
+        text = element_text(size = 28))
+
+```
+
+```{r}
+fig_panel <- (p1 + ht) / (p2 + hd) / (p3 + hn)
+
+ggsave(here("figures_pca", "pca_box.png"), fig_panel,
+       width = 15, height = 16, dpi = 300)
+```
+
+
+
+```{r}
+
 dcl <- data_clust_long %>% 
   distinct(date, site_id, .keep_all = T) %>% 
   select(date, site_id, month, cluster) %>% 
@@ -885,6 +941,10 @@ micro <- micro %>%
 ```
 
 ```{r}
+micro_n <- micro %>% 
+  distinct(date, site_id)
+
+
 #Determining species that are present in > 10% of samples.
 species_10 <- micro %>% 
   group_by(scientificName) %>% 
@@ -912,11 +972,11 @@ micro <- micro %>%
 
 ```{r}
 #Creating separate sheets for just diatoms and dinoflagellates
-micro_diat <- micro %>% 
-  filter(class == "Bacillariophyceae")
-
-micro_dino <- micro %>% 
-  filter(class == "Dinophyceae")
+# micro_diat <- micro %>% 
+#   filter(class == "Bacillariophyceae")
+# 
+# micro_dino <- micro %>% 
+#   filter(class == "Dinophyceae")
 ```
 
 ```{r}
@@ -926,11 +986,11 @@ micro_dino <- micro %>%
 micro_piv <- micro %>% 
   select(date, month, location, scientificName, species_sum)
 
-micro_piv_diat <- micro_diat %>% 
-  select(date, month, location, scientificName, species_sum)
-
-micro_piv_dino <- micro_dino %>% 
-  select(date, month, location, scientificName, species_sum)
+# micro_piv_diat <- micro_diat %>% 
+#   select(date, month, location, scientificName, species_sum)
+# 
+# micro_piv_dino <- micro_dino %>% 
+#   select(date, month, location, scientificName, species_sum)
 
 #pivoting wider so species are columns. 
 micro_piv <- micro_piv %>% 
@@ -938,14 +998,14 @@ micro_piv <- micro_piv %>%
   mutate_if(is.numeric, ~ replace_na(., 0))
 
 #Diatoms
-micro_piv_diat <- micro_piv_diat %>% 
-  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
-  mutate_if(is.numeric, ~ replace_na(., 0))
-
-#Dinoflagellates
-micro_piv_dino <- micro_piv_dino %>% 
-  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
-  mutate_if(is.numeric, ~ replace_na(., 0))
+# micro_piv_diat <- micro_piv_diat %>% 
+#   pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+#   mutate_if(is.numeric, ~ replace_na(., 0))
+# 
+# #Dinoflagellates
+# micro_piv_dino <- micro_piv_dino %>% 
+#   pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+#   mutate_if(is.numeric, ~ replace_na(., 0))
 
 
 #Adding year to wide format for plotting
@@ -954,14 +1014,14 @@ micro_piv <- micro_piv %>%
   relocate(year, .before = month)
 
 #Diatoms
-micro_piv_diat <- micro_piv_diat %>% 
-  mutate(year = lubridate::year(date)) %>% 
-  relocate(year, .before = month)
-
-#Dinoflaggelates
-micro_piv_dino <- micro_piv_dino %>% 
-  mutate(year = lubridate::year(date)) %>% 
-  relocate(year, .before = month)
+# micro_piv_diat <- micro_piv_diat %>% 
+#   mutate(year = lubridate::year(date)) %>% 
+#   relocate(year, .before = month)
+# 
+# #Dinoflaggelates
+# micro_piv_dino <- micro_piv_dino %>% 
+#   mutate(year = lubridate::year(date)) %>% 
+#   relocate(year, .before = month)
 ```
 
 ```{r}
@@ -1002,48 +1062,51 @@ no_clust_ctd <- data %>%
 # %>% 
 #   filter(!is.na(cluster))
 
-micro_piv_diat <- micro_piv_diat %>% 
+micro_piv_clust <- micro_piv %>% 
   left_join(data_clust_2) %>% 
   relocate(cluster, .after = location) %>% 
   filter(!is.na(cluster))
 
-micro_piv_dino <- micro_piv_dino %>% 
-  left_join(data_clust_2) %>% 
-  relocate(cluster, .after = location) %>% 
-  filter(!is.na(cluster))
+# micro_piv_dino <- micro_piv_dino %>% 
+#   left_join(data_clust_2) %>% 
+#   relocate(cluster, .after = location) %>% 
+#   filter(!is.na(cluster))
 ```
 
 
 ```{r}
 #Pulling out species counts for transform and input into clustering and NMDS
-species <- micro_piv[, 6:ncol(micro_piv)]
+species <- micro_piv_clust[, 6:ncol(micro_piv_clust)]
 
 #Diatoms
-species_diat <- micro_piv_diat[, 6:ncol(micro_piv_diat)]
+# species_diat <- micro_piv_diat[, 6:ncol(micro_piv_diat)]
 
 #Dinoflagellates
-species_dino <- micro_piv_dino[, 6:ncol(micro_piv_dino)]
+# species_dino <- micro_piv_dino[, 6:ncol(micro_piv_dino)]
 
-transform <- species
+transform <- log1p(species)
 
-transform_diat <- species_diat
+# transform <- decostand(species, method = "total")
+# 
+# transform <- sqrt(transform)
+```
 
-transform_dino <- species_dino
 
+```{r}
 #Creating relative abundance matrix 
-transform <- decostand(species, method = "total")
-
-transform_diat <- decostand(species_diat, method = "total")
-
-transform_dino <- decostand(species_dino, method = "total")
-
-transform <- sqrt(transform)
-
-#Diatoms
-transform_diat <- sqrt(transform_diat)
-
-#Dinoflagellates
-transform_dino <- sqrt(transform_dino)
+# transform <- decostand(species, method = "total")
+# 
+# transform_diat <- decostand(species_diat, method = "total")
+# 
+# transform_dino <- decostand(species_dino, method = "total")
+# 
+# transform <- sqrt(transform)
+# 
+# #Diatoms
+# transform_diat <- sqrt(transform_diat)
+# 
+# #Dinoflagellates
+# transform_dino <- sqrt(transform_dino)
 
 #Performing square root transformation
 # transform <- log10(transform + 1)
@@ -1056,9 +1119,10 @@ transform_dino <- sqrt(transform_dino)
 ```
 
 ```{r}
-clust <- micro_piv$cluster
-clust_diat <- micro_piv_diat$cluster
-clust_dino <- micro_piv_dino$cluster
+clust <- micro_piv_clust$cluster
+
+# clust_diat <- micro_piv_diat$cluster
+# clust_dino <- micro_piv_dino$cluster
 
 ```
 
@@ -1068,12 +1132,12 @@ clust_dino <- micro_piv_dino$cluster
 # By Station
 ano_clust = anosim(transform, clust, distance = "bray", permutations = 9999)
 ano_clust
-
-ano_clust_diat = anosim(transform_diat, clust, distance = "bray", permutations = 9999)
-ano_clust_diat
-
-ano_clust_dino = anosim(transform_dino, clust, distance = "bray", permutations = 9999)
-ano_clust_dino
+# 
+# ano_clust_diat = anosim(transform_diat, clust, distance = "bray", permutations = 9999)
+# ano_clust_diat
+# 
+# ano_clust_dino = anosim(transform_dino, clust, distance = "bray", permutations = 9999)
+# ano_clust_dino
 
 ```
 
@@ -1081,7 +1145,7 @@ ano_clust_dino
 ```{r}
 #Not working...
 
-inv_clust = multipatt(transform_diat, clust, func = "r.g",
+inv_clust = multipatt(transform, clust, func = "r.g", duleg = T,
                        control = how(nperm = 9999))
 
 summary(inv_clust)
