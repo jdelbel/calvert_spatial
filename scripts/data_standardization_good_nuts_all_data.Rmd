@@ -334,6 +334,20 @@ ctd_dd <- ctd_dd %>%
   select(cast_pk, delta_rho)
 ```
 
+```{r}
+#Trying FWI calculation
+fwi <- ctd %>%
+  select(cast_pk, date, station, pres, sal) %>%
+  group_by(cast_pk) %>%
+  filter(sal < 32.07 & pres > 2) %>%
+  ungroup() %>%
+  mutate(fwc_1 = ((32.07 - sal)/32.07)) %>%
+  group_by(cast_pk) %>%
+  mutate(fwc = sum(fwc_1)) %>%
+  ungroup() %>%
+  distinct(cast_pk, fwc)
+
+```
 
 ```{r}
 #Merging delta_rho and the corrected turbidity back into the ctd workbook here
@@ -362,31 +376,6 @@ ctd_calvert %>%
 
 ```
 
-
-```{r}
-#Trying FWI calculation
-# fwi <- ctd %>% 
-#   select(cast_pk, date, station, pres, sal) %>% 
-#   group_by(cast_pk) %>% 
-#   filter(sal < 30.1 & pres > 2) %>% 
-#   ungroup() %>% 
-#   mutate(fwc_1 = ((30.1 - sal)/30.1)) %>% 
-#   group_by(cast_pk) %>% 
-#   mutate(fwc = sum(fwc_1)) %>% 
-#   ungroup() %>% 
-#   distinct(cast_pk, fwc, .keep_all = TRUE)
-# 
-# test <- ctd %>% 
-#   filter(station == "QCS01")
-# 
-# test2 <- fwi %>% 
-#   filter(station == "KC10")
-```
-
-
-
-
-
 ```{r}
 #Selecting the pertinent columns for analysis - much easier to assess merging/joining with fewer columns
 
@@ -398,6 +387,9 @@ ctd_5 <- ctd %>%
   select(cast_pk, date, date_long, site_id = station, Latitude, Longitude, pres, 
          temp, sal, N2, delta_rho, turb_cor, flu = `Fluorometry Chlorophyll (ug/L)`,
          dep_26)
+
+ctd_5 <- ctd_5 %>% 
+  left_join(fwi)
 
 #Limited years to those being used for analysis
 ctd_5 <- ctd_5 %>% 
@@ -428,7 +420,7 @@ dup_ctd <- dup_ctd %>%
   mutate(time_diff = as.numeric(date_long - lag(date_long), units = "hours"))
 
 ctd_dm <- ctd_5 %>% 
-  select(date, site_id, temp:dep_26) %>% 
+  select(date, site_id, temp:fwc) %>% 
   group_by(date, site_id) %>% 
   summarise(temp_dm = mean(temp),
             sal_dm = mean(sal),
@@ -436,7 +428,8 @@ ctd_dm <- ctd_5 %>%
             delta_rho_dm = mean(delta_rho),
             turb_dm = mean(turb_cor),
             flu_dm = mean(flu),
-            dep_26_dm = mean(dep_26)) %>% 
+            dep_26_dm = mean(dep_26), 
+            fwc_dm = mean(fwc)) %>% 
   ungroup()
 
 lat_long <- ctd_5 %>% 
@@ -682,7 +675,7 @@ ctd_merge <- ctd_merge %>%
 #It's actually less - 59 - Why? One reason could be chlorophyll data, which I incorporated and may have had missing data. Incorporate here and see. 8 Chlorophyll samples missing - this explains the disparity. Should be good to go.
 
 #Exporting as a csv to pull into other analysis.
-write_csv(ctd_merge, here("outputs", "ctd_all_2022-11-25.csv"))
+write_csv(ctd_merge, here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
 # 
 # #Exporting as a csv to pull into other analysis.
 write_csv(micro, here("outputs", "micro_all_2022-11-25.csv"))

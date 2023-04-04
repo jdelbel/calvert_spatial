@@ -12,6 +12,7 @@ library(patchwork)
 library(RColorBrewer)
 library(ggpubr)
 library(broom)
+library(vegan)
 
 ```
 
@@ -26,11 +27,109 @@ chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
 ```{r}
 #Remove QU39
-micro <- micro %>% 
-  filter(!site_id == "QU39")
+micro <- micro %>%
+  filter(!site_id == "QU39") %>% 
+  filter(!scientificName_accepted == "Cyanobacteria")
 
+species <- micro %>% 
+  distinct(scientificName)
 
+species_f <- micro %>% 
+  filter(site_id == "DFO2") %>% 
+  distinct(scientificName) %>% 
+  mutate(F = 1)
 
+species_c <- micro %>% 
+  filter(site_id == "KC10") %>% 
+  distinct(scientificName) %>% 
+  mutate(C = 1)
+
+species_s <- micro %>% 
+  filter(site_id == "QCS01") %>% 
+  distinct(scientificName) %>% 
+  mutate(S = 1)
+
+p_a <- species_f %>% 
+  full_join(species_c) %>% 
+  full_join(species_s) %>% 
+  mutate_if(is.numeric, ~ replace_na(., 0))
+
+group_name <- micro %>% 
+  distinct(group, scientificName)
+
+p_a <- p_a %>% 
+  left_join(group_name)
+
+p_a_long <- p_a %>% 
+  pivot_longer(c(F:S), names_to = "location", values_to = "p_a")
+```
+
+```{r}
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+p_a_long <- arrange(mutate(p_a_long,
+                         location = factor(location, levels = order_loc)))
+
+p_a_long %>%
+  filter(group == "Bacillariophyta") %>% 
+  ggplot(aes(y = fct_rev(scientificName), x = location, fill = as.factor(p_a))) +
+  geom_tile(color = "black", size = 1, alpha = 0.5) +
+  scale_fill_manual(values = c("white", "blue")) +
+  labs(y = "Diatoms") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        axis.title.x = element_blank(),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) 
+
+ggsave(here("figures_species_timeseries", "presence_absence_diatoms.png"),
+       width = 5, height = 16, dpi = 300)
+```
+```{r}
+p_a_long %>%
+  filter(group == "Dinoflagellata") %>% 
+  ggplot(aes(y = fct_rev(scientificName), x = location, fill = as.factor(p_a))) +
+  geom_tile(color = "black", size = 1, alpha = 0.5) +
+  scale_fill_manual(values = c("white", "blue")) +
+  labs(y = "Dinoflagellates") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        axis.title.x = element_blank(),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) 
+
+ggsave(here("figures_species_timeseries", "presence_absence_dino.png"),
+       width = 5, height = 10, dpi = 300)
+```
+```{r}
+p_a_long %>%
+  filter(!group == "Dinoflagellata" & !group == "Bacillariophyta") %>% 
+  ggplot(aes(y = fct_rev(scientificName), x = location, fill = as.factor(p_a))) +
+  geom_tile(color = "black", size = 1, alpha = 0.5) +
+  scale_fill_manual(values = c("white", "blue")) +
+  labs(y = "Other") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        axis.title.x = element_blank(),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) 
+
+ggsave(here("figures_species_timeseries", "presence_absence_other.png"),
+       width = 5, height = 10, dpi = 300)
 ```
 
 ```{r}
@@ -314,7 +413,49 @@ micro_all_chl %>%
 ggsave(here("figures_species_timeseries", "compositions_all_25_perc_diversity.png"),
        width = 16, height = 10, dpi = 300)
 ```
+```{r}
+div_stat <- div_full %>% 
+  group_by(site_id) %>% 
+  summarise(mean_div = mean(div)) %>% 
+  ungroup()
+```
 
+```{r}
+write_csv(div_full, here("outputs", "diversity.csv"))
+```
+
+
+
+
+```{r}
+species_all <- micro %>% 
+  distinct(scientificName)
+
+species_met <- micro %>% 
+  filter(group == "Metazoa") %>% 
+  distinct(scientificName)
+
+species_pro <- micro %>% 
+  filter(group == "Protozoa") %>% 
+  distinct(scientificName)
+
+species_cil <- micro %>% 
+  filter(group == "Ciliophora") %>% 
+  distinct(scientificName)
+
+species_kin <- micro %>% 
+  filter(group == "Kinetoplastidea") %>% 
+  distinct(scientificName)
+
+# micro <- micro %>% 
+#   filter(
+#            !scientificName_accepted == "Cyanobacteria" &
+#            !group == "Metazoa" &
+#            !group == "Protozoa" &
+#            !group == "Choanoflagellata" &
+#            !group == "Ciliophora" &
+#            !group == "Kinetoplastidea")
+```
 
 
 

@@ -815,13 +815,13 @@ f_ra <- riv_w_j %>%
 
 ```{r}
 ylim.prim_d <- c(0, 9)   # in this example, precipitation
-ylim.sec_d <- c(0, 25)    # in this example, temperature
+ylim.sec_d <- c(0, 10)    # in this example, temperature
 
 ABUND_d <- test$abund #needed for coherent normalisation
 TCHLA_d <- test$tchla
 
 # This is quite hacky, but it works if you want to set a boundary for the secondary y-axis
-fit_d = lm(b_d ~ . + 0, 
+fit_d = lm(b_d ~ . + 0,
    tibble::tribble(
      ~a_d, ~s_d,  ~b_d,
       1,  (ylim.sec_d[1] - mean(ABUND_d))/sd(ABUND_d),  ylim.prim_d[1],
@@ -839,14 +839,15 @@ fit2_d = lm(b1_d ~ . + 0,
 a1_d <- fit2_d$coefficients['a1_d']
 s1_d <- fit2_d$coefficients['s1_d']
 
-f_d <- riv_w_j %>% 
+f_dr <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
   geom_area(aes(y = dr),  size = 1, color = "purple", fill = "purple", alpha = 0.5) +
-  geom_point(aes(y = (a_d + ((abund - mean(ABUND_d))/sd(ABUND_d)) * s_d)),
+  # geom_point(aes(y = (a_d + ((abund - mean(ABUND_d))/sd(ABUND_d)) * s_d)),
+  #            size = 4, pch = 21, fill = "darkgreen", 
+  #            color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_d + ((tchla - mean(TCHLA_d))/sd(TCHLA_d)) * s1_d)),
              size = 4, pch = 21, fill = "darkgreen", 
              color = "black", stroke = 2) +
-  geom_point(aes(y = (a1_d + ((tchla - mean(TCHLA_d))/sd(TCHLA_d)) * s1_d)),
-             size = 1.5, pch = 8, color = "red", stroke = 1) +
   scale_y_continuous(name = "\u394\u3C1",
                      limits = ylim.prim_d,
                      sec.axis = sec_axis(~ (. - a_d) / s_d * sd(ABUND_d) + mean(ABUND_d),
@@ -863,7 +864,7 @@ f_d <- riv_w_j %>%
 
 ```{r}
 ylim.prim_p <- c(0, 2.5)   # in this example, precipitation
-ylim.sec_p <- c(0, 25)    # in this example, temperature
+ylim.sec_p <- c(0, 10)    # in this example, temperature
 
 ABUND_p <- test$abund #needed for coherent normalisation
 TCHLA_p <- test$tchla
@@ -887,15 +888,16 @@ fit2_p = lm(b1_p ~ . + 0,
 a1_p <- fit2_p$coefficients['a1_p']
 s1_p <- fit2_p$coefficients['s1_p']
 
-f3 <- riv_w_j %>% 
+f_par <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
   geom_area(aes(y = par_b1), size = 0, fill = "orange", alpha = 0.3) +
   geom_smooth(aes(y = par_b1), span = 0.1, color = "orange", size = 2, se = F) +
-  geom_point(aes(y = (a_p + ((abund - mean(ABUND_p))/sd(ABUND_p)) * s_p)),
+  # geom_point(aes(y = (a_p + ((abund - mean(ABUND_p))/sd(ABUND_p)) * s_p)),
+  #            size = 4, pch = 21, fill = "darkgreen", 
+  #            color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_p + ((tchla - mean(TCHLA_p))/sd(TCHLA_p)) * s1_p)),
              size = 4, pch = 21, fill = "darkgreen", 
              color = "black", stroke = 2) +
-  geom_point(aes(y = (a1_p + ((tchla - mean(TCHLA_p))/sd(TCHLA_p)) * s1_p)),
-             size = 1.5, pch = 8, color = "red", stroke = 1) +
   scale_y_continuous(name = "PAR-LO",
                      limits = ylim.prim_p,
                      sec.axis = sec_axis(~ (. - a_p) / s_p * sd(ABUND_p) + mean(ABUND_p),
@@ -912,7 +914,7 @@ f3 <- riv_w_j %>%
 
 ```{r}
 ylim.prim_w <- c(0, 2000)   # in this example, precipitation
-ylim.sec_w <- c(0, 25)    # in this example, temperature
+ylim.sec_w <- c(0, 10)    # in this example, temperature
 
 ABUND_w <- test$abund #needed for coherent normalisation
 TCHLA_w <- test$tchla
@@ -936,19 +938,20 @@ fit2_w = lm(b1_w ~ . + 0,
 a1_w <- fit2_w$coefficients['a1_w']
 s1_w <- fit2_w$coefficients['s1_w']
 
-f4 <- riv_w_j %>% 
+f_wind <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
   geom_area(aes(y = lk_w^3), size = 0, fill = "blue", alpha = 0.3) +
   geom_smooth(aes(y = lk_w^3), span = 0.1, color = "blue", size = 2, se = F) +
-  geom_point(aes(y = (a_w + ((abund - mean(ABUND_w))/sd(ABUND_w)) * s_w)),
+  # geom_point(aes(y = (a_w + ((abund - mean(ABUND_w))/sd(ABUND_w)) * s_w)),
+  #            size = 4, pch = 21, fill = "darkgreen", 
+  #            color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_w + ((tchla - mean(TCHLA_w))/sd(TCHLA_w)) * s1_w)),
              size = 4, pch = 21, fill = "darkgreen", 
              color = "black", stroke = 2) +
-  geom_point(aes(y = (a1_w + ((tchla - mean(TCHLA_w))/sd(TCHLA_w)) * s1_w)),
-             size = 1.5, pch = 8, color = "red", stroke = 1) +
   scale_y_continuous(name = "Wind-LO",
                      limits = ylim.prim_w,
                      sec.axis = sec_axis(~ (. - a_w) / s_w * sd(ABUND_w) + mean(ABUND_w),
-                                         name = "Abund./TChla"),) +
+                                         name = ""),) +
   facet_grid(. ~ year) +
   theme_bw() +
   theme(text = element_text(size = 28),
@@ -961,7 +964,7 @@ f4 <- riv_w_j %>%
 
 ```{r}
 ylim.prim_wd <- c(0, 360)   # in this example, precipitation
-ylim.sec_wd <- c(0, 25)    # in this example, temperature
+ylim.sec_wd <- c(0, 10)    # in this example, temperature
 
 ABUND_wd <- test$abund #needed for coherent normalisation
 TCHLA_wd <- test$tchla
@@ -985,19 +988,20 @@ fit2_wd = lm(b1_wd ~ . + 0,
 a1_wd <- fit2_wd$coefficients['a1_wd']
 s1_wd <- fit2_wd$coefficients['s1_wd']
 
-f5 <- riv_w_j %>% 
+f_wd <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
   geom_area(aes(y = lk_wd), size = 0, fill = "purple", alpha = 0.3) +
   geom_smooth(aes(y = lk_wd), span = 0.1, color = "purple", size = 2, se = F) +
-  geom_point(aes(y = (a_wd + ((abund - mean(ABUND_wd))/sd(ABUND_wd)) * s_wd)),
+  # geom_point(aes(y = (a_wd + ((abund - mean(ABUND_wd))/sd(ABUND_wd)) * s_wd)),
+  #            size = 4, pch = 21, fill = "darkgreen", 
+  #            color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_wd + ((tchla - mean(TCHLA_wd))/sd(TCHLA_wd)) * s1_wd)),
              size = 4, pch = 21, fill = "darkgreen", 
              color = "black", stroke = 2) +
-  geom_point(aes(y = (a1_wd + ((tchla - mean(TCHLA_wd))/sd(TCHLA_wd)) * s1_wd)),
-             size = 1.5, pch = 8, color = "red", stroke = 1) +
   scale_y_continuous(name = "WDir-LO",
                      limits = ylim.prim_wd,
                      sec.axis = sec_axis(~ (. - a_wd) / s_wd * sd(ABUND_wd) + mean(ABUND_wd),
-                                         name = ""),) +
+                                         name = "TChla (ug/L)"),) +
   facet_grid(. ~ year) +
   theme_bw() +
   theme(text = element_text(size = 28),
@@ -1010,7 +1014,7 @@ f5 <- riv_w_j %>%
 
 ```{r}
 ylim.prim_s <- c(0, 38)   # in this example, precipitation
-ylim.sec_s <- c(0, 25)    # in this example, temperature
+ylim.sec_s <- c(0, 10)    # in this example, temperature
 
 ABUND_s <- test$abund #needed for coherent normalisation
 TCHLA_s <- test$tchla
@@ -1034,15 +1038,16 @@ fit2_s = lm(b1_s ~ . + 0,
 a1_s <- fit2_s$coefficients['a1_s']
 s1_s <- fit2_s$coefficients['s1_s']
 
-f6 <- riv_w_j %>% 
+f_sil <- riv_w_j %>% 
   ggplot(aes(x = yday)) +
   geom_area(aes(y = sio2), size = 1, color = "deepskyblue", fill = "deepskyblue",
             alpha = 0.5) +
-  geom_point(aes(y = (a_s + ((abund - mean(ABUND_s))/sd(ABUND_s)) * s_s)),
+  # geom_point(aes(y = (a_s + ((abund - mean(ABUND_s))/sd(ABUND_s)) * s_s)),
+  #            size = 4, pch = 21, fill = "darkgreen", 
+  #            color = "black", stroke = 2) +
+  geom_point(aes(y = (a1_s + ((tchla - mean(TCHLA_s))/sd(TCHLA_s)) * s1_s)),
              size = 4, pch = 21, fill = "darkgreen", 
              color = "black", stroke = 2) +
-  geom_point(aes(y = (a1_s + ((tchla - mean(TCHLA_s))/sd(TCHLA_s)) * s1_s)),
-             size = 1.5, pch = 8, color = "red", stroke = 1) +
   scale_y_continuous(name = "SiO\u2082\u207B",
                      limits = ylim.prim_s,
                      sec.axis = sec_axis(~ (. - a_s) / s_s * sd(ABUND_s) + mean(ABUND_s),
@@ -1062,9 +1067,9 @@ f6 <- riv_w_j %>%
 ```
 
 ```{r}
-fig2 <- (f_r / f_d / f3 / f4 / f5 / f6) 
+fig2 <- (f_par / f_wind / f_wd / f_dr / f_sil) 
 
-ggsave(here("figures_good", "KC10_multiple_aligned_lookout.png"), fig2,
+ggsave(here("figures_timeseries", "KC10_2023-03-20.png"), fig2,
         width = 16, height = 14, dpi = 300)
 ```
 

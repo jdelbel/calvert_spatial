@@ -77,8 +77,6 @@ micro <- micro %>%
 
 micro <- micro %>%
   filter(trophicStatus == "auto")
-
-
 ```
 
 ```{r}
@@ -312,7 +310,7 @@ expl <- micro_join[, 3:13]
 
 #Trying to remove variables that have high VIFS. Removed no2 and po4 because they had the highest VIFS. I also think silicate is important because of fjords trends. Doesn't really matter as sio2 should be representative of the other nutrients anyways - when I cut sio2 out, no2 vector was comparable.
 expl <- expl %>%
-  select(-po4, -no2)
+  select(-po4, -sio2)
 
 ```
 
@@ -375,7 +373,7 @@ sel.osR2_adj$anova
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif <- subset(expl, select = c(temp, sio2, secchi, Wan_b1))
+env.signif <- subset(expl, select = c(temp, no2, secchi, Wan_b1))
 
 #RDA using significant variables
 rda.signif <- rda(resp.hell ~ . ,data = env.signif)
@@ -423,8 +421,8 @@ sel <- goeveg::ordiselect(resp, rda.signif, fitlim = 0.10)
 sel
 
 #Can also cut species out based on abundance
-# sel2 <- goeveg::ordiselect(resp, rda.signif, ablim = 0.20, fitlim = 0.10)
-# sel2
+sel2 <- goeveg::ordiselect(resp, rda.signif, ablim = 0.20, fitlim = 0.10)
+sel2
 
 ```
 ```{r}
@@ -441,12 +439,32 @@ meta <- meta %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date))
 
+meta <- meta %>%
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 12 ~ "autumn",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+meta <- meta %>%
+  mutate(year = lubridate::year(date)) %>%  
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
+                           TRUE ~ as.numeric(year)))
+
 #Order locations from fjord to shelf
 order_loc <- c("F", "C", "S")
 
 #Chemtax - Specify order of phyto groups for figures
 meta <- arrange(mutate(meta,
                          location = factor(location, levels = order_loc)))
+
+#Order locations from fjord to shelf
+order_loc_seas <- c("winter", "spring", "summer", "autumn")
+
+#Chemtax - Specify order of phyto groups for figures
+meta <- arrange(mutate(meta,
+                         season = factor(season, levels = order_loc_seas)))
 ```
 
 
@@ -470,25 +488,20 @@ env_loc <-  as.data.frame(rda.sign.sum$biplot[,1:2])
 
 sp_loc <-  as.data.frame(rda.sign.sum$species[,1:2])
 
-sp_bf <- subset(sp_loc, rownames(sp_loc) %in% sel)
+sp_bf <- subset(sp_loc, rownames(sp_loc) %in% sel2)
 ```
 
 
 ```{r}
-# row.names(sp_bf) <- c("P.n.s",
-#                       "R.s.",
-#                       "Thal.",
-#                       "Hill.",
-#                       "Tel.",
-#                       "S.m.",
-#                       "P.n.",
-#                       "P.ori.",
-#                       "P.pou.",
-#                       "C.soc.",
-#                       "T.acu.",
-#                       "T.amp.",
-#                       "C.cin",
-#                       "Pter.")
+row.names(sp_bf) <- c("P.n.s",
+                      "Thal.",
+                      "Hill.",
+                      "Tel.",
+                      "S.m.",
+                      "P.pou.",
+                      "C.soc.",
+                      "C.cin.",
+                      "Pter.")
                       
   
   
@@ -528,16 +541,23 @@ sp_bf <- subset(sp_loc, rownames(sp_loc) %in% sel)
 ```{r}
 #Plotting RDS scaling 2
 
+row.names(env_loc) <- c("T",
+                        "NO\u2083\u207B+NO\u2082\u207B ",
+                        "Secchi",
+                        "Riv.")
+
+
+
 micro_1 <- ggplot() + 
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
   geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
   scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
   scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
   geom_point(data = sites_loc, aes(x = axis1, y = axis2,
-                                   fill = as.factor(month),
+                                   fill = as.factor(season),
                                    shape = location), 
-             size = 8, color = "black", stroke = 1.5) +
-  scale_fill_brewer(palette = "RdYlBu") + 
+             size = 8, color = "black", stroke = 1.5, alpha = 0.8) +
+  scale_fill_brewer(palette = "Spectral") + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) +
   geom_segment(data = env_loc, aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
                 arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
@@ -547,8 +567,8 @@ micro_1 <- ggplot() +
                                        yend = RDA2),
                  arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
                                type = "closed"),
-               linetype = 1, size = 1.4, colour = "grey", alpha = 0.7) +
-  geom_text_repel(data = sp_bf, aes(RDA1, RDA2, 
+               linetype = 1, size = 1.4, colour = "black", alpha = 0.7) +
+  geom_text_repel(data = sp_bf, aes(RDA1, RDA2,
                                            label = row.names(sp_bf)),
                   # box.padding = unit(0.5, 'lines'),
                   # point.padding = NA,
@@ -559,9 +579,9 @@ micro_1 <- ggplot() +
                   arrow = arrow(length = unit(0.01, 'npc')),
                   # nudge_y = 0.2,
                   # nudge_x = -0.2,
-                  force = 3,
+                  force = 2,
                   max.iter = 3e3,
-                  size = 8) +
+                  size = 5) +
   geom_text_repel(data = env_loc , aes(RDA1, RDA2, label = row.names(env_loc)),
                  # box.padding = unit(0.8, 'lines'),
                   # point.padding = NA,
@@ -586,7 +606,7 @@ micro_1 <- ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = c(0.14, 0.29),
+        # legend.position = c(0.14, 0.29),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         axis.title = element_text(face = "bold", colour = "black"),
         axis.text = element_text(colour= "black", face = "bold"),
@@ -594,7 +614,7 @@ micro_1 <- ggplot() +
         plot.title = element_text(hjust = 0.5, face = "bold"),
         text = element_text(size = 28)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  labs(fill = "Month", shape = "Station")
+  labs(fill = "Season", shape = "Station")
 
 micro_2 <- ggplot() + 
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
@@ -604,7 +624,7 @@ micro_2 <- ggplot() +
   geom_point(data = sites_loc, aes(x = axis1, y = axis2,
                                    fill = as.factor(year),
                                    shape = location), 
-             size = 8, color = "black", stroke = 1.5) +
+             size = 8, color = "black", stroke = 1.5, alpha = 0.8) +
   scale_fill_brewer(palette = "Dark2") + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) +
   geom_segment(data = env_loc, aes(x = 0, y = 0, xend = RDA1, yend = RDA2), 
@@ -615,7 +635,7 @@ micro_2 <- ggplot() +
                                        yend = RDA2),
                  arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
                                type = "closed"),
-               linetype = 1, size = 1.4, colour = "grey", alpha = 0.7) +
+               linetype = 1, size = 1.4, colour = "black", alpha = 0.7) +
   geom_text_repel(data = sp_bf, aes(RDA1, RDA2, 
                                            label = row.names(sp_bf)),
                   # box.padding = unit(0.5, 'lines'),
@@ -624,12 +644,12 @@ micro_2 <- ggplot() +
                   segment.color = 'black',
                   segment.size = 0.5,
                   segment.alpha = 0.7,
-                  arrow = arrow(length = unit(0.01, 'npc')),
+                  # arrow = arrow(length = unit(0.01, 'npc')),
                   # nudge_y = 0.2,
                   # nudge_x = -0.2,
-                  force = 3,
+                  force = 1,
                   max.iter = 3e3,
-                  size = 8) +
+                  size = 5) +
   geom_text_repel(data = env_loc , aes(RDA1, RDA2, label = row.names(env_loc)),
                  # box.padding = unit(0.8, 'lines'),
                   # point.padding = NA,
@@ -654,7 +674,7 @@ micro_2 <- ggplot() +
         panel.border = element_rect(fill = NA, colour = "black"), 
         legend.title = element_text(face = "bold", colour = "black"), 
         legend.text = element_text(colour = "black"),
-        legend.position = c(0.14, 0.22),
+        # legend.position = c(0.14, 0.22),
         legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
         axis.title = element_text(face = "bold", colour = "black"),
         axis.text = element_text(colour= "black", face = "bold"),
@@ -669,8 +689,8 @@ micro_2 <- ggplot() +
 
 micro_comb <- micro_1 + micro_2
 
-ggsave(here("figures_rda", "rda_2023-02-28.png"), micro_comb,
-        width = 16, height = 8, dpi = 300)
+ggsave(here("figures_rda", "rda_2023-03-20.png"), micro_comb,
+        width = 16, height = 7, dpi = 300)
 ```
 
 #Working with chemtax data

@@ -74,13 +74,14 @@ species_distinct <- micro %>%
 #            !group == "Kinetoplastidea")
 
 micro <- micro %>% 
-  filter(
-           !scientificName_accepted == "Cyanobacteria" &
-           !group == "Metazoa" &
-           !group == "Protozoa" &
-           !group == "Choanoflagellata" &
-           !group == "Ciliophora" &
-           !group == "Kinetoplastidea")
+  filter(!scientificName_accepted == "Cyanobacteria") 
+           # 
+           # &
+           # !group == "Metazoa" &
+           # !group == "Protozoa" &
+           # !group == "Choanoflagellata" &
+           # !group == "Ciliophora" &
+           # !group == "Kinetoplastidea")
 ```
 
 ```{r}
@@ -150,35 +151,6 @@ t_rel <- decostand(species, method = "total")
 ```
 
 ```{r}
-cor_all <- round(cor(species), 2)
-p.mat_all <- cor_pmat(species)
-
-ggcorrplot(cor_all,
-  p.mat = p.mat_all,
-  hc.order = TRUE,
-  method = "circle",
-  type = "lower",
-  sig.level = 0.05,
-  # title = "Channel",
-  insig = "blank",
-  lab_size = 2.5,
-  outline.color = "white") 
-
-ggsave(here("figures_nmds", "corrplot_species.png"),
-       width = 16, height = 16, dpi = 300)
-```
-
-```{r}
-#Interesting, but really pulled by outliers.
-
-lares::corr_cross(species, # name of dataset
-  max_pvalue = 0.01, # display only significant correlations (at 5% level)
-  top = 20 # display top 10 couples of variables (by correlation coefficient)
-)
-```
-
-
-```{r}
 #Making separate sheets to performed clustering on.
 hc_abund <- t_abund
 
@@ -191,8 +163,6 @@ labs_list <- micro_piv$sample_name
 rownames(hc_abund) <- labs_list
 rownames(hc_rel) <- labs_list
 ```
-
-
 ```{r}
 #method to assess
 m <- c("average", "single","complete","ward")
@@ -233,7 +203,7 @@ plot(clust_ward_abund, which.plots = 2, cex=0.5)
 
 ```{r}
 # Enhanced hierarchical clustering, cut in 3 groups
-fviz_dend(clust_ward_abund, cex = 0.5, k = 4, color_labels_by_k = TRUE)
+fviz_dend(clust_ward_abund, cex = 0.5, h = 0.38, color_labels_by_k = TRUE)
 ```
 
 
@@ -269,13 +239,13 @@ fviz_gap_stat(gap_stat)
 #This step sets clusters.
 
 # Abundance data
-k_abund <- 5
-clust_abund <- cutree(clust_ward_abund, k = k_abund)
-
-clust_df_abund <- data.frame(label = rownames(hc_abund),
-                                   cluster = factor(clust_abund))
+# k_abund <- 5
+# clust_abund <- cutree(clust_ward_abund, k = k_abund)
+# 
+# clust_df_abund <- data.frame(label = rownames(hc_abund),
+#                                    cluster = factor(clust_abund))
 # #Relative data
-k_rel <- 5
+k_rel <- 6
 clust_rel <- cutree(clust_ward_rel, k = k_rel)
 
 clust_df_rel <- data.frame(label = rownames(hc_rel),
@@ -286,11 +256,11 @@ clust_df_rel <- data.frame(label = rownames(hc_rel),
 #Trying cutting at line 
 
 # Abundance data
-# k_abund <- 0.6
-# clust_abund <- cutree(clust_ward_abund, h = k_abund)
-# #
-# clust_df_abund <- data.frame(label = rownames(hc_abund),
-#                                    cluster = factor(clust_abund))
+k_abund <- 0.38
+clust_abund <- cutree(clust_ward_abund, h = k_abund)
+#
+clust_df_abund <- data.frame(label = rownames(hc_abund),
+                                   cluster = factor(clust_abund))
 # #Relative data
 # k_rel <- 0.6
 # clust_rel <- cutree(clust_ward_rel, h = k_rel)
@@ -398,7 +368,7 @@ ggplot() +
                                   ymax = ymax_abund),
             color = "black", fill = NA, size = 0.8) +
  scale_color_manual(values = site_color_abund) +
- scale_y_reverse(limits = c(2.5, -1)) +
+ scale_y_reverse(limits = c(0.6, -0.5)) +
  coord_flip() +
  theme_bw() +
  theme(legend.position = "none",
@@ -458,7 +428,7 @@ ggplot() +
                                   ymax = ymax_rel),
             color = "black", fill = NA, size = 0.8) +
  scale_color_manual(values = site_color_rel) +
- scale_y_reverse(limits = c(4, -1)) +
+ scale_y_reverse(limits = c(1, -1)) +
  coord_flip() +
  theme_bw() +
  theme(legend.position = "none",
@@ -931,7 +901,7 @@ f2 <- ggplot(data = data.scores_rel, aes(x = NMDS1, y = NMDS2)) +
 
 fig <- f1 + f2
 
-ggsave(here("figures_nmds", "nmds_2023-03-21.png"), fig,
+ggsave(here("figures_nmds", "A2023-03-31.png"), fig,
        width = 16, height = 5, dpi = 300)
 ```
 
@@ -1253,6 +1223,16 @@ ggsave(here("figures_nmds", "test.png"), panel,
         width = 16, height = 8, dpi = 300)
 ```
 
+```{r}
+test <- micro %>% 
+  distinct(scientificName)
+
+micro %>% 
+  filter(scientificName == "Dactyliosolen phuketensis") %>% 
+  ggplot(aes(x = date, y = species_sum, color = site_id)) + 
+  geom_point() +
+  geom_line()
+```
 
 
 

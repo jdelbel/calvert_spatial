@@ -20,18 +20,116 @@ library(ggdendro)
 library(RColorBrewer)
 library(indicspecies)
 library(factoextra)
+library(zoo)
 ```
 
 
 ```{r}
 #Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
-data <- read_csv(here("outputs", "ctd_all_2022-11-25.csv"))
+data <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
 
 chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
 
 data <- data %>% 
   left_join(chl)
+
+riv <- read_csv(here("files", "river.csv")) 
+
+lk_wind <- read_csv(here("files", "wind_lookout.csv"))
+
+lk_par <- read_csv(here("files", "lookout_par.csv"))
+
+up <- read_csv(here("files", "upwell.csv"))
+
+div <- (read_csv(here("outputs", "diversity.csv")))
+
 ```
+
+```{r}
+riv <- riv %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+riv_w <- riv %>%
+  mutate(Wan_b1 = rollmeanr(lag(dis, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+riv_w <- riv_w %>% 
+  select(date, Wan_b1)
+```
+
+```{r}
+lk_wind2 <- lk_wind %>%
+  filter(WindSpd_UQL == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+  filter(year > 2017 & year < 2022)
+
+lk_da <- lk_wind2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_w = mean(WindSpd_Avg),
+            dm_wd = mean(WindDir_Avg)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(w_b1 = rollmeanr(lag(dm_w, 1), k = 3, fill = NA),
+         wd_b1 = rollmeanr(lag(dm_wd, 1), k = 3, fill = NA)) %>% 
+  select(date, lk_w = w_b1, lk_wd = wd_b1)
+  
+```
+
+```{r}
+par <- lk_par %>%
+  filter(`1hourPAR_UQL` == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, par = `1hourPAR`) %>% 
+  filter(year > 2017 & year < 2022)
+
+par <- par %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_par = mean(par)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(par_b1 = rollmeanr(lag(dm_par, 1), k = 3, fill = NA)) %>% 
+  select(date, par_b1)
+  
+```
+
+```{r}
+up_dm <- up %>% 
+  select(date = time, upwelling_index) %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_up = mean(upwelling_index)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(up_b1 = rollmeanr(lag(dm_up, 1), k = 3, fill = NA)) %>% 
+  select(date, up_b1)
+```
+
+
+
+
+```{r}
+data <- data %>% 
+  left_join(lk_da) %>% 
+  left_join(par) %>% 
+  left_join(riv_w) %>% 
+  left_join(chl) %>% 
+  left_join(up_dm)
+```
+
 
 ```{r}
 #This just ensures that there are no exact duplicates introduced through joining. There aren't here, but it must have occured in earlier versions and I am keeping it in-case I make changes in the future.
@@ -39,7 +137,7 @@ data <- data %>%
   distinct(date, site_id, .keep_all = TRUE)
 
 #Removing QU39 for this worksheet
-# data <- data %>% 
+# data <- data %>%
 #   filter(site_id == "KC10")
 ```
 
@@ -50,7 +148,9 @@ data_pca <- data %>%
   mutate(month = lubridate::month(date)) %>% 
   select(date, month, site_id, temp = temp_dm, sal = sal_dm, 
          drho = delta_rho_dm, no2 = no2_dm, sio2 = sio2_dm, po4 = po4_dm,
-         secchi = secchi_depth)
+         secchi = secchi_depth, fwc = fwc_dm)
+
+# lk_wd, par_b1, tchla, Wan_b1 
 
 #Changing site_id to location 
 data_pca <- data_pca %>% 
@@ -71,13 +171,13 @@ data_pca <- data_pca %>%
 data_pca <- data_pca %>%
   drop_na()
 
-data_pca <- data_pca %>% 
-  select(-sio2, -po4)
+# data_pca <- data_pca %>%
+#   select(-sio2, -po4)
 # 
 # data_pca[data_pca == Inf] <- 0
 
 #Pulling out explanatory variables - not inlcuding ratio
-expl <- data_pca[, 5:9]
+expl <- data_pca[, 5:12]
 ```
 
 
@@ -256,11 +356,11 @@ sites_loc_pca <- arrange(mutate(sites_loc_pca,
 
 # sp_loc_pca <-  as.data.frame(pca$species[,1:2])
 
-row.names(vscores) <- c("T",
-                        "S",
-                        "\u394\u3C1", 
-                        "NO\u2083\u207B+NO\u2082\u207B ",
-                        "Secchi")
+# row.names(vscores) <- c("T",
+#                         "S",
+#                         "\u394\u3C1", 
+#                         "NO\u2083\u207B+NO\u2082\u207B ",
+#                         "Secchi")
 
 
 ggplot() + 
@@ -268,7 +368,7 @@ ggplot() +
   geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
   scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
   scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
-  geom_point(data = sites_loc_pca, aes(x = axis1, y = axis2, fill = as.factor(season),
+  geom_point(data = sites_loc_pca, aes(x = axis1, y = axis2, fill = as.factor(year),
                                    shape = location, stroke = 1.5), 
              size = 7, color = "black", alpha = 0.9) +
   scale_fill_brewer(palette = "Spectral") + 
@@ -294,8 +394,8 @@ ggplot() +
                   size = 9,
                   fontface = "bold",
                   color = "black") +
-  labs(x = "PCA1 (47%)",
-       y = "PCA2 (33%)") +
+  labs(x = "PCA1 (48%)",
+       y = "PCA2 (21%)") +
   # xlim(-0.75, 0.8) +
   # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
   #                                  digits = 3), "%)", sep = ""),
@@ -316,7 +416,7 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Month", shape = "Station")
 
-ggsave(here("figures_pca", "pca_2023-01-09_only_no3_all_data.png"),
+ggsave(here("figures_pca", "pca_2023-03-27_all_data_2_fwc_KC10.png"),
        width = 10, height = 7, dpi = 300)
 ```
 
@@ -435,13 +535,13 @@ p2 <- ggplot() +
 
 fig <- p1/p2
 
-ggsave(here("figures_pca", "pca_year_2023-01-09.png"), fig,
+ggsave(here("figures_pca", "pca_year_2023-03-27_fwc.png"), fig,
        width = 10, height = 14, dpi = 300)
 ```
 
 
 ```{r}
-hc <- data_pca[, 6:10]
+hc <- expl
 
 # hc <- scale(hc)
 
@@ -580,7 +680,7 @@ ggplot() +
  geom_rect(data = rect, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0, ymax = ymax),
             color = "black", fill = NA, size = 0.8) +
  scale_color_manual(values = site_color) +
- scale_y_reverse(limits = c(100, -30)) +
+ scale_y_reverse(limits = c(20, -5)) +
  coord_flip() +
  theme_bw() +
  theme(legend.position = "none",
@@ -591,7 +691,7 @@ ggplot() +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
  
-ggsave(here("figures_pca", "ward_eucl_2022-10-31_only_no2.png"),
+ggsave(here("figures_pca", "ward_eucl_2023-03-27_fwc_4.png"),
        width = 6, height = 12, dpi = 300)
 ```
 
@@ -678,8 +778,8 @@ p1 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
                   max.iter = 3e3,
                   size = 8,
                   color = "black") +
-  labs(x = "PCA1 (47%)",
-       y = "PCA2 (33%)") +
+  labs(x = "PCA1 (54%)",
+       y = "PCA2 (29%)") +
   # xlim(-0.9, 1.1) +
   theme_bw() +
   theme(axis.title = element_text(face = "bold", colour = "black"),
@@ -726,8 +826,8 @@ p2 <- ggplot() +
                   max.iter = 3e3,
                   size = 8,
                   color = "black") +
-  labs(x = "PCA1 (47%)",
-       y = "PCA2 (33%)") +
+  labs(x = "PCA1 (54%)",
+       y = "PCA2 (29%)") +
   # xlim(-1.0, 1.3) +
   # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
   #                                  digits = 3), "%)", sep = ""),
@@ -783,8 +883,8 @@ p3 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
                   max.iter = 3e3,
                   size = 8,
                   color = "black") +
-  labs(x = "PCA1 (47%)",
-       y = "PCA2 (33%)") +
+  labs(x = "PCA1 (54%)",
+       y = "PCA2 (29%)") +
   # xlim(-0.9, 1.1) +
   theme_bw() +
   theme(axis.title = element_text(face = "bold", colour = "black"),
@@ -807,7 +907,7 @@ p3 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
 
 fig <- p1 / p2 / p3
  
-ggsave(here("figures_pca", "PCA_panel_2023-03-20.png"), fig,
+ggsave(here("figures_pca", "PCA_panel_2023-03-27_fwc_4.png"), fig,
        width = 8, height = 16, dpi = 300)
 ```
 
@@ -826,7 +926,7 @@ data_clust <- data_clust %>%
 ```
 ```{r}
 data_clust_long <- data_clust %>% 
-  pivot_longer(c(temp:secchi), names_to = "parameters", values_to = "values")
+  pivot_longer(c(temp:fwc), names_to = "parameters", values_to = "values")
 ```
 
 ```{r}
@@ -835,6 +935,8 @@ data_clust_long %>%
   geom_boxplot() +
   facet_wrap(~ parameters, scales = "free_y")
 ```
+
+
 ```{r}
 
 
@@ -891,7 +993,7 @@ ht <-
 ```{r}
 fig_panel <- (p1 + ht) / (p2 + hd) / (p3 + hn)
 
-ggsave(here("figures_pca", "pca_box.png"), fig_panel,
+ggsave(here("figures_pca", "pca_box_fwc_4.png"), fig_panel,
        width = 15, height = 16, dpi = 300)
 ```
 
@@ -942,12 +1044,16 @@ species_distinct <- micro %>%
 
 #Removing groups that are not well quantified or that I am not looking at
 micro <- micro %>% 
-  filter(!scientificName_accepted == "Cyanobacteria" &
-           !group == "Metazoa" &
-           !group == "Protozoa" &
-           !group == "Choanoflagellata" &
-           !group == "Ciliophora" &
-           !group == "Kinetoplastidea")
+  filter(!scientificName_accepted == "Cyanobacteria")
+         
+         
+         
+         # &
+         #   !group == "Metazoa" &
+         #   !group == "Protozoa" &
+         #   !group == "Choanoflagellata" &
+         #   !group == "Ciliophora" &
+         #   !group == "Kinetoplastidea")
 
 ```
 
@@ -1095,10 +1201,10 @@ species <- micro_piv_clust[, 6:ncol(micro_piv_clust)]
 #Dinoflagellates
 # species_dino <- micro_piv_dino[, 6:ncol(micro_piv_dino)]
 
-transform <- log1p(species)
+transform <- log10(species+1)
 
 # transform <- decostand(species, method = "total")
-# 
+
 # transform <- sqrt(transform)
 ```
 
@@ -1156,34 +1262,11 @@ ano_clust
 ```{r}
 #Not working...
 
-inv_clust = multipatt(transform, clust, func = "r.g", duleg = T,
+inv_clust = multipatt(transform, clust, func = "r.g", duleg = F,
                        control = how(nperm = 9999))
 
-summary(inv_clust)
-
-```
-
-```{r}
-#Not working...
-
-inv_clust_diat = multipatt(transform_diat, clust_diat, func = "r.g",
-                       control = how(nperm = 9999))
-
-summary(inv_clust_diat)
-
-```
-
-```{r}
-#Not working...
-
-inv_clust_dino = multipatt(transform_dino, clust, func = "r.g",
-                       control = how(nperm = 9999))
-
-summary(inv_clust_dino)
+summary(inv_clust, indvalcomp = TRUE)
 
 ```
 
 
-```{r}
-# https://towardsdatascience.com/common-mistakes-in-cluster-analysis-and-how-to-avoid-them-eb960116d773
-```
