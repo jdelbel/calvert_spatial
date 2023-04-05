@@ -490,7 +490,7 @@ spp.scrs2 <- spp.scrs2 %>%
 #This is the horizontal version of the month and year nMDS panel shown incorporated into a large panel later 
 
 ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores_abund, aes(fill = as.factor(month), shape = site),
+  geom_point(data = data.scores_abund, aes(fill = as.factor(clust_abund), shape = site),
              size = 7, stroke = 1.5) + 
   scale_fill_brewer(palette = "RdYlBu") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
@@ -534,270 +534,254 @@ ggsave(here("figures_nmds", "AAA_nmds_2023-04-04.png"),
        width = 8, height = 5, dpi = 300)
 ```
 
-
-
 ```{r}
 #Indicator species analysis
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by station for diatoms
-inv_clust_abund = multipatt(t_abund, clust_abund, func = "r.g", duleg = F,
+inv_clust_abund = multipatt(t_abund, clust_abund, func = "r.g", duleg = T,
                        control = how(nperm = 999))
 
 #Looking at results of analysis
 summary(inv_clust_abund)
 ```
 
-```{r}
-#Indicator species analysis
-# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
-
-#Indicators by station for diatoms
-inv_clust_rel = multipatt(t_rel, clust_rel, func = "r.g", duleg = T,
-                       control = how(nperm = 9999))
-
-#Looking at results of analysis
-summary(inv_clust_rel)
-```
 
 ```{r}
 
-inv_clust_rel_sp <- data.table::as.data.table(inv_clust_rel$sign, keep.rownames = TRUE)
-
-inv_clust_rel_sp <- inv_clust_rel_sp %>%
-  filter(s.1 == 1 | s.2 == 1 | s.3 == 1 | s.4) %>%
-  filter(p.value < 0.05) %>%
-  # filter(!rn == "Skeletonema marinoi") %>%
-  arrange(rn)
-
-inv_clust_rel_sp_list <- inv_clust_rel_sp$rn
-
-inv_clust_rel_sp_list
+# inv_clust_abund_sp <- data.table::as.data.table(inv_clust_abund$sign, keep.rownames = TRUE)
+# 
+# inv_clust_abund_sp <- inv_clust_abund_sp %>%
+#   filter(s.1 == 1 | s.2 == 1 | s.3 == 1 | s.4) %>%
+#   filter(p.value < 0.05) %>%
+#   # filter(!rn == "Skeletonema marinoi") %>%
+#   arrange(rn)
+# 
+# inv_clust_rel_sp_list <- inv_clust_rel_sp$rn
+# 
+# inv_clust_rel_sp_list
 
 ```
-
-
-
-
-
-```{r}
-#Indicator species analysis
-# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
-
-#Indicators by station for diatoms
-inv_clust_pca_rel = multipatt(t_rel, clust_pca, func = "r.g",
-                       control = how(nperm = 9999))
-
-#Looking at results of analysis
-summary(inv_clust_pca_rel)
-```
-
-
-
 
 ```{r}
 micro_piv %>% 
-  ggplot(aes(x = as.factor(year), fill = as.factor(clust_rel))) +
-  geom_bar( position = "stack")
+  ggplot(aes(x = as.factor(year), fill = as.factor(clust_abund))) +
+  geom_bar(position = "stack", color = "black")
+
+#This is actually super interesting - 2022 has a lot more of the "outlier" groups - I want to visualize to see how they compare...
 ```
 
 ```{r}
-drows = vegdist(hc_abund, method="bray", binary=FALSE, diag=FALSE, upper=FALSE, na.rm = FALSE)                 
+#Add cluster abundance to the micro sheet. 
+micro <- micro %>% 
+  left_join(clust_df_abund2) %>% 
+  rename(clust_abund = cluster) %>% 
+  relocate(clust_abund, .after = clust_pca)
+```
+```{r}
+micro_all <- micro %>%
+  group_by(date, location) %>%
+  mutate(sum_count = sum(species_sum)) %>%
+  ungroup() %>%
+  mutate(perc = species_sum/sum_count)
 
-dcols = vegdist(t(hc_), method="bray", binary=FALSE, diag=FALSE, upper=FALSE, na.rm = FALSE)                                               
+micro_all <- micro_all %>%
+  group_by(scientificName) %>%
+  mutate(max = max(perc),
+         max_abund = max(species_sum)) %>%
+  ungroup()
+```
 
-pheatmap::pheatmap(hc_rel, clustering_distance_rows = drows, cluster_cols = F,
-                   cutree_rows = 5,
-                   color = colorRampPalette(c("white", "red"))(50))
+```{r}
+micro_all_25 <- micro_all %>%
+  mutate(scientificName2 = ifelse(max < 0.30 & group == "Bacillariophyta",
+                                  "Other diatom", scientificName)) %>% 
+  mutate(scientificName2 = ifelse(max < 0.30 & !group == "Bacillariophyta",
+                                  "Other flagellate", scientificName2))
+```
+
+```{r}
+micro_all_25 <- micro_all_25 %>% 
+  group_by(sample_name, scientificName2) %>% 
+  summarise(species_sum = sum(species_sum)) %>% 
+  ungroup()
+```
+
+```{r}
+micro_all_c <- micro_all_25  
+
+colourCount_c = length(unique(micro_all_c$scientificName2))
+getPalette_c = colorRampPalette(brewer.pal(12, "Paired"))
+```
+
+```{r}
+# spec_dist <- micro_all_c %>% 
+#   distinct(scientificName2)
+# 
+# #25%
+spec_ord <- c("Biddulphiales", #
+              "Chaetoceros tenuissimus", #
+              "Pennales", #
+              "Pseudo-nitzschia seriata", #
+              "Rhizosolenia setigera", #
+              "Skeletonema marinoi", #
+              "Hillea", #
+              "Teleaulax", #
+              "Phaeocystis pouchetii", #
+              "Choanozoa",
+              "Parvicorbicula socialis",
+              "Other diatom", #
+              "Other flagellate") #
+
+#20%
+# spec_ord <- c("Biddulphiales",
+#               "Chaetoceros cinctus",
+#               "Chaetoceros tenuissimus",
+#               "Pseudo-nitzschia seriata",
+#               "Rhizosolenia setigera",
+#               "Skeletonema marinoi small",
+#               "Skeletonema marinoi large",
+#               "Olisthodiscus",
+#               "Hillea",
+#               "Teleaulax",
+#               "Phaeocystis pouchetii",
+#               "Pyramimonas orientalis",
+#               "Other")
+
+#10%
+# spec_ord <- c("Biddulphiales",
+#               "Chaetoceros cinctus",
+#               "Chaetoceros tenuissimus",
+#               "Pseudo-nitzschia",
+#               
+#               "Rhizosolenia setigera",
+#               "Skeletonema marinoi large",
+#               "Skeletonema marinoi small",
+#               "Thalassiosira nordenskioeldii",
+#               "Thalassiosira pacifica",
+#               "Olisthodiscus",
+#               "Hillea",
+#               "Teleaulax",
+#               "Pterosperma",
+#               "Pyramimonas orientalis",
+#               "Phaeocystis pouchetii")
+
+
+```
+
+```{r}
+plot_meta <- micro_all %>% 
+  select(sample_name, date, year, location) %>% 
+  distinct(sample_name, .keep_all = T)
+
+micro_all_c <- micro_all_c %>% 
+  left_join(plot_meta) %>% 
+  left_join(clust_df_abund2)
+
+micro_all_c<- micro_all_c %>%
+  mutate(month = lubridate::month(date)) %>% 
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "W",
+                            month >= 3 & month <= 5 ~ "Sp",
+                            month >= 6 & month <= 8 ~ "S",
+                            month >= 9 & month <= 12 ~ "A",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+micro_all_c <- micro_all_c %>%
+ 
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
+                           TRUE ~ as.numeric(year)))
+  
 ```
 
 ```{r}
 #Ordering the data in the order of the dendrogram from hierarchical clustering.
 
 #Creating a list with the order of the samples in the dendrogram.
-hc_order <- dendrogram_ends_rel$sample_name
+hc_order <- dendrogram_ends_abund$sample_name
 
 hc_order_exp <- as_tibble(hc_order)
 
-# write_csv(hc_order_exp, here("outputs", "hc_order.csv"))
-
-micro_heat <- micro %>% 
-  group_by(date, location) %>% 
-  mutate(sum = sum(species_sum)) %>% 
-  ungroup() %>% 
-  mutate(perc = species_sum/sum)
-
-test <- 
-
-micro_heat <- micro_heat %>% 
-  left_join(clust_rel_join)
-
 #Setting the order to the same as the clustering using the specified list
-micro_heat$sample_name <- factor(micro_heat$sample_name, levels = unique(hc_order))
+micro_all_c$sample_name <- factor(micro_all_c$sample_name, levels = unique(hc_order))
 
-#Setting order of species for figure organized by group (i.e diatoms) and then species alphabetical within.
-micro_heat$species_order <- factor(micro_heat$scientificName,
-                                   (unique(micro_heat$scientificName
-                                              [order(micro_heat$group,
-                                                     micro_heat$scientificName)])))
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
 
+#Chemtax - Specify order of phyto groups for figures
+micro_all_c <- arrange(mutate(micro_all_c,
+                         location = factor(location, levels = order_loc)))
 
+micro_all_c <- arrange(mutate(micro_all_c,
+                         scientificName2 = factor(scientificName2,
+                                                 levels = spec_ord)))
+#Order locations from fjord to shelf
+order_loc_seas <- c("W", "Sp", "S", "A")
+
+#Chemtax - Specify order of phyto groups for figures
+micro_all_c <- arrange(mutate(micro_all_c,
+                         season = factor(season, levels = order_loc_seas)))
 ```
 
-
-
-
 ```{r}
-all_2 <- micro_heat %>%   
-   filter(scientificName %in% inv_clust_rel_sp_list) %>%
-  ggplot(aes(x = sample_name, y = species_order, fill = perc)) +
-  geom_tile(color = "black", size = 1) +
-  facet_grid(. ~ clust_rel, scales = "free", space = "free") +
-  scale_fill_distiller(palette = "Spectral", name = expression(sqrt("%"))) +
- # scale_y_discrete(labels = c("Biddulphiales" = expression(Bid.^C), #
- #                              "Ceratium lineatum" = expression(C.lin.^CS), #
- #                              "Chaetoceros convolutus" = "C.con.",
- #                              "Chaetoceros debilis" = expression(C.deb.^CS), #
- #                              "Chaetoceros decipiens" = expression(C.dec.^S), #
- #                              "Chaetoceros laciniosus" = expression(C.lac.^S), #
- #                              "Chaetoceros radicans" = expression(C.rad.^S), #
- #                              "Chaetoceros seiracanthus" = "C.sei.", #
- #                              "Chaetoceros similis" = "C.sim.",
- #                              "Chaetoceros socialis" = "C.soc.", #
- #                              "Chaetoceros didymus" = "C.did.", #
- #                              "Corethron criophilum" = expression(C.cri.^18),
- #                              "Corythodinium" = expression(Cory.^20),
- #                              "Dactyliosolen phuketensis" = expression(F.phu.^S), #
- #                              "Dactyliosolen fragilissimus" = expression(F.fra.^S), #
- #                              "Detonula pumila" = expression(D.pum.^S), #
- #                              "Dinobryon" = expression(Dino.^"18+19"),
- #                              "Eucampia zodiacus" = "E.zod.", #
- #                              "Leptocylindrus danicus" = expression(L.dan.^S), #
- #                              "Navicula" = "Nav.", #
- #                              "Guinardia delicatula" = expression(G.del.^S), #
- #                              "Gymnodinium" = "Gymn",
- #                              "Katodinium" = expression(Kato.^20),
- #                              "Navicula" = expression(Nav.^19),
- #                              "Scrippsiella precaria" = "S.prec",
- #                              "Protoperidinium" = expression(Prot.^"S+18"), #
- #                              "Prorocentrum" = expression(Pror.^19), #
- #                              "Protoperidinium steinii" = "Pro.s", #
- #                              "Prorocentrum micans" = "P.mic.",
- #                              "Pseudo-nitzschia seriata" = expression(P.n.s^"S+19"), #
- #                              "Pseudo-nitzschia" = "P.n.",
- #                              "Pterosperma" = "Pter.", #
- #                              "Dinophysis acuta" = "D.acu.", #
- #                              "Skeletonema marinoi" = expression(S.mar.^F), #
- #                              "Thalassiosira rotula" = expression(T.rot.^S), #
- #                              "Thalassiosira" = "T.", #
- #                              "Rhizosolenia setigera" = expression(R.s.^S), #
- #                              "Teleaulax acuta" = expression(T.acu.^"18+20"),
- #                              "Dictyocha" = "Dict.")) + #
+cp <- micro_all_c %>%  
+  ggplot() + 
+  geom_bar(aes(x = sample_name, y = species_sum/100000, 
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  annotate("rect", xmin = 7.5, xmax = 13.5, ymin = 0, ymax = 34,
+           color = "black", fill = "blue", alpha = .1) +
+  annotate("text", x = 10.5, y = 33, size = 5, label = "1") +
+  annotate("rect", xmin = 34.5, xmax = 46.5, ymin = 0, ymax = 34,
+           color = "black", fill = "red", alpha = .1) +
+  annotate("text", x = 41, y = 33, size = 5, label = "2") +
+  annotate("rect", xmin = 3.5, xmax = 7.5, ymin = 0, ymax = 34,
+           color = "black", fill = "green", alpha = .1) +
+  annotate("text", x = 5.5, y = 33, size = 5, label = "3") +
+  annotate("rect", xmin = 47.5, xmax = 78.5, ymin = 0, ymax = 34,
+           color = "black", fill = "purple", alpha = .1) +
+  annotate("text", x = 65, y = 33, size = 5, label = "4") +
+  annotate("rect", xmin = 16.5, xmax = 33.5, ymin = 0, ymax = 34,
+           color = "black", fill = "cyan", alpha = .1) +
+  annotate("text", x = 25, y = 33, size = 5, label = "5") +
+  annotate("text", x = 34, y = 33, size = 5, label = "6") +
+  annotate("rect", xmin = 1.5, xmax = 3.5, ymin = 0, ymax = 34,
+           color = "black", fill = "pink", alpha = .1) +
+  annotate("text", x = 2.5, y = 33, size = 5, label = "7") +
+  annotate("text", x = 47, y = 33, size = 5, label = "8") +
+  annotate("text", x = 14, y = 33, size = 5, label = "9") +
+  annotate("text", x = 1, y = 33, size = 5, label = "10") +
+  annotate("text", x = 15, y = 32, size = 5, label = "11") +
+  annotate("text", x = 16, y = 31, size = 5, label = "12") +
+  geom_bar(aes(x = sample_name, y = species_sum/100000, 
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = getPalette_c(colourCount_c)) +
+  ylim(0, 34) +
   theme_bw() +
-  theme(axis.title.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.y = element_blank(),
-        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
         axis.text.x = element_blank(),
-        # axis.text.y = element_text(color = c("darkgreen",
-        #                                      "darkviolet",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "darkviolet",
-        #                                      "darkviolet",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "red",
-        #                                      "blue",
-        #                                      "blue",
-        #                                      "purple",
-        #                                      "purple"
-        #                                      )),
-        axis.title.y = element_blank(),
-        text = element_text(size = 25),
         axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        # legend.position = c(0.03, 0.30),
-        legend.direction = "vertical",
-        axis.line = element_line(colour = "black"),
-        legend.background = element_blank(),
-        legend.key.height = unit(2.5, "cm"))
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+        # strip.background.y = element_blank(),
+        # strip.text.y = element_blank()) +
+  guides(fill = guide_legend(ncol = 4),
+         color = "none")
+
+ggsave(here("figures_nmds", "AAA_clust_panel2.png"), cp,
+       width = 16, height = 8, dpi = 300)
 ```
 
 ```{r}
-location <- micro_heat %>%
-  mutate(year = lubridate::year(date)) %>%
+loc <- micro_all_c %>%
   ggplot(aes(x = sample_name, y = 1, shape = as.factor(location),
              fill = as.factor(year))) +
   geom_point(size = 3, stroke = 1.5) +
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
-  facet_grid(. ~ clust_rel, scales = "free", space = "free") +
   scale_fill_brewer(palette = "Dark2") +
-  theme(axis.title.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.y = element_blank(),
-        axis.text.y = element_blank(),
-        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        axis.text.x = element_blank(),
-        axis.title.y = element_blank(),
-        text = element_text(size = 25),
-        axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        strip.text.x = element_blank(),
-        legend.position = "none",
-        # legend.direction = "none",
-        # axis.line = element_line(colour = "black"),
-        legend.background = element_blank(),
-        axis.ticks = element_blank(),
-        panel.border = element_blank(),
-        axis.line = element_blank())
-
-#Could add color bars for year and month.
-year <- micro_heat %>%
-  mutate(year = lubridate::year(date)) %>%
-  ggplot(aes(x = sample_name, y = 1, fill = as.factor(year))) +
-  geom_tile() +
-  facet_grid(. ~ clust_rel, scales = "free", space = "free") +
-  scale_fill_brewer(palette = "Dark2") +
-  theme(axis.title.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.y = element_blank(),
-        axis.text.y = element_blank(),
-        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        axis.text.x = element_blank(),
-        axis.title.y = element_blank(),
-        text = element_text(size = 25),
-        axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        strip.text.x = element_blank(),
-        legend.position = "none",
-        # legend.direction = "none",
-        # axis.line = element_line(colour = "black"),
-        legend.background = element_blank(),
-        axis.ticks = element_blank(),
-        panel.border = element_blank(),
-        axis.line = element_blank())
- 
-month <- micro_heat %>%
-  ggplot(aes(x = sample_name, y = 1, fill = as.factor(month))) +
-  geom_tile(color = "white", size = 0.3) +
-  facet_grid(. ~ clust_rel, scales = "free", space = "free") +
-  scale_fill_brewer(palette = "RdYlBu") +
   theme(axis.title.x = element_blank(),
         strip.background = element_blank(),
         strip.text.y = element_blank(),
@@ -822,32 +806,46 @@ month <- micro_heat %>%
 
 
 ```{r}
-# panel <- all / plot_spacer() / year / plot_spacer() / month + 
-#   plot_layout(heights = c(2, -0.06, 0.1, -0.1, 0.07), guides = "collect")
+#Could add color bars for year and month.
+season <- micro_all_c %>%
+  ggplot(aes(x = sample_name, y = 1, fill = as.factor(season))) +
+  geom_tile(color = "white", size = 0.3) +
+  geom_text(aes(label = season), size = 2, color = "White") +
+  scale_fill_brewer(palette = "Spectral") +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        # legend.direction = "none",
+        # axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_blank())
+```
 
-# panel <- all_2 / plot_spacer() / year / plot_spacer() / month / plot_spacer() / location +
-#   plot_layout(heights = c(2, -0.07, 0.06, -0.09, 0.06, -0.09, 0.06), guides = "collect")
+```{r}
+panel <- cp / plot_spacer() / loc / plot_spacer() / season +
+  plot_layout(heights = c(2, -0.07, 0.06, -0.09, 0.06))
 
-panel <- all_2 / plot_spacer() / location / plot_spacer() / month +
-  plot_layout(heights = c(2, -0.07, 0.06, -0.09, 0.06), guides = "collect")
-
-# ggsave(here("figures_good", "indicator_comb_all.png"), panel,
-#         width = 16, height = 10, dpi = 300)
-
-ggsave(here("figures_nmds", "test.png"), panel,
+ggsave(here("figures_nmds", "AAA_test2.png"), panel,
         width = 16, height = 8, dpi = 300)
 ```
 
-```{r}
-test <- micro %>% 
-  distinct(scientificName)
 
-micro %>% 
-  filter(scientificName == "Dactyliosolen phuketensis") %>% 
-  ggplot(aes(x = date, y = species_sum, color = site_id)) + 
-  geom_point() +
-  geom_line()
-```
+
+
+
 
 
 
