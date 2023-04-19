@@ -23,6 +23,9 @@ micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
 #Uploading chl data that has been converted to TChla
 chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
+pca_clust <- read_csv(here("outputs", "pca_clusters_2023-04-18.csv"))
+
+data <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
 ```
 
 ```{r}
@@ -182,8 +185,8 @@ micro_all <- arrange(mutate(micro_all,
                          location = factor(location, levels = order_loc)))
 
 
-micro_all <- micro_all %>% 
-  filter(trophicStatus == "auto")
+# micro_all <- micro_all %>% 
+#   filter(trophicStatus == "auto")
 #I want to look at species that never contribute to more than a certain percentage to the total biomass
 ```
 
@@ -200,7 +203,7 @@ micro_all <- micro_all %>%
 micro_all <- micro_all %>%
   group_by(scientificName) %>%
   mutate(max = max(perc),
-         max_abund = max(species_sum)) %>%
+         max_abund = max(species_sum)) %>% 
   ungroup()
 ```
 
@@ -229,12 +232,17 @@ dfo2 <- micro_all %>%
 #   ungroup()
 ```
 
+```{r}
+test <- micro_all %>% 
+  distinct(scientificName, max, max_abund)
+```
+
 
 ```{r}
 micro_all_gt10_perc <- micro_all %>% 
-  mutate(scientificName2 = ifelse(max < 0.25 & group == "Bacillariophyta",
+  mutate(scientificName2 = ifelse(max_abund < 325000 & group == "Bacillariophyta",
                                   "Other diatom", scientificName)) %>% 
-  mutate(scientificName2 = ifelse(max < 0.25 & !group == "Bacillariophyta",
+  mutate(scientificName2 = ifelse(max < 0.325000 & !group == "Bacillariophyta",
                                   "Other flagellate", scientificName2))
 ```
 
@@ -249,26 +257,46 @@ micro_all_gt10_perc2 <- micro_all_gt10_perc %>%
 micro_all_c <- micro_all_gt10_perc2  
 
 colourCount_c = length(unique(micro_all_c$scientificName2))
-getPalette_c = colorRampPalette(brewer.pal(12, "Paired"))
+getPalette_c = colorRampPalette(brewer.pal(10, "Paired"))
 ```
 
 ```{r}
 spec_dist <- micro_all_c %>% 
   distinct(scientificName2)
+```
 
+
+```{r}
 #25%
 spec_ord <- c("Biddulphiales", #
               "Chaetoceros tenuissimus", #
-              "Pennales", #
+              # "Pennales", #
               "Pseudo-nitzschia seriata", #
-              "Rhizosolenia setigera", #
+              # "Rhizosolenia setigera", #
               "Skeletonema marinoi", #
-              "Olisthodiscus", #
+              # "Olisthodiscus", #
               "Hillea", #
               "Teleaulax", #
               "Phaeocystis pouchetii", #
+              "Parvicorbicula socialis",
               "Other diatom", #
               "Other flagellate") #
+
+
+
+
+# spec_ord <- c("Biddulphiales", #
+#               "Chaetoceros tenuissimus", #
+#               "Pennales", #
+#               "Pseudo-nitzschia seriata", #
+#               "Rhizosolenia setigera", #
+#               "Skeletonema marinoi", #
+#               "Olisthodiscus", #
+#               "Hillea", #
+#               "Teleaulax", #
+#               "Phaeocystis pouchetii", #
+#               "Other diatom", #
+#               "Other flagellate") #
 
 #20%
 # spec_ord <- c("Biddulphiales",
@@ -345,12 +373,61 @@ micro_all_chl %>%
         legend.title = element_blank(),
         strip.background.y = element_blank(),
         strip.text.y = element_blank()) +
-  guides(fill = guide_legend(ncol = 4),
+  guides(fill = guide_legend(nrow = 2),
          color = "none")
 
-ggsave(here("figures_species_timeseries", "compositions_all_25_perc.png"),
+ggsave(here("figures_species_timeseries", "compositions_all_10species.png"),
        width = 16, height = 10, dpi = 300)
 ```
+```{r}
+micro_all_chl2 <- micro_all_chl %>% 
+  unite(label, c(location, date), sep = "", remove = FALSE)
+
+micro_all_chl3 <- micro_all_chl2 %>% 
+  left_join(pca_clust)
+```
+
+
+
+```{r}
+coeff <- 2
+
+micro_all_chl3 %>%   
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot() + 
+  geom_point(aes(x = as.factor(month_surv), y = 34, color = as.factor(cluster)),
+             size = 6) +
+  geom_bar(aes(x = as.factor(month_surv), y = species_sum/100000, 
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = getPalette_c(colourCount_c)) +
+  geom_line(aes(x = month_surv, y = tchla*coeff), size = 1.5) +
+  geom_point(aes(x = month_surv, y = tchla*coeff), size = 2.5, pch = 21,
+             stroke = 2, fill = "black") +
+  scale_y_continuous(name = "Phyto. Abundance (10^5 cells L)",
+                     sec.axis = sec_axis(~ . /coeff, name = "TChla")) +
+  scale_color_brewer(palette = "Set1") +
+  # scale_color_manual(values = c("black", "green"))+
+  facet_grid(location ~ year) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(nrow = 2),
+         color = "none")
+
+ggsave(here("figures_species_timeseries", "test2.png"),
+       width = 16, height = 10, dpi = 300)
+```
+
+
+
 ```{r}
 test <- micro_all %>% 
   filter(location == "C" & month == 4 & year == 2020)
@@ -410,7 +487,7 @@ micro_all_chl %>%
   guides(fill = guide_legend(ncol = 4),
          color = "none")
 
-ggsave(here("figures_species_timeseries", "compositions_all_25_perc_diversity.png"),
+ggsave(here("figures_species_timeseries", "compositions_all_10species_diversity.png"),
        width = 16, height = 10, dpi = 300)
 ```
 ```{r}

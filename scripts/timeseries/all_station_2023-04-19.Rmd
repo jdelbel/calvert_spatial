@@ -1,0 +1,431 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+library(zoo)
+```
+
+
+```{r}
+#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
+data <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+#Upload microscopy abundance data in OBIS and long/tide format
+chem <- read_csv(here("files", "chemtax_2023-04-14.csv")) 
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+```
+
+```{r}
+
+#Adding location instead of site ID for interpretation of results
+chem <- chem %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+#Creating a unique location-date ID for each sample - makes labels for plotting by dendrogram more informative 
+chem <- chem %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
+
+chem <- chem %>% 
+  rename(cyan = Cyanobacteria, hapt = Hapto, GA = `Prasinophytes-3`,
+         cryp = Cryptophytes, dino = `Dinoflagellates-1`, dict = Dictyo, 
+         raph = Raphido,
+         diat = `Diatoms-1`)
+```
+
+```{r}
+#Here, only including 2019-2020
+chem <- chem %>% 
+  filter(date < "2021-01-01")
+
+chem_long <- chem %>% 
+  pivot_longer(c(cyan:diat), names_to = "group", values_to = "tchla")
+```
+
+```{r}
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+chem_long <- arrange(mutate(chem_long,
+                         location = factor(location, levels = order_loc)))
+
+
+#Chemtax - Specify order of phyto groups for figures
+chl <- arrange(mutate(chl,
+                         location = factor(location, levels = order_loc)))
+```
+
+```{r}
+#Setting plotting order phytoplankton groups
+
+#Order phytoplankton groups roughly from smallest to largest - create order list
+order_chem <- c("cyan", "hapt", "GA", "cryp",
+                   "dino", "raph", "dict", "diat")
+
+#Chemtax spring bloom - Specify order of phyto groups for figures
+chem_long <- arrange(mutate(chem_long,
+                                group = factor(group,
+                                levels = order_chem)))
+
+```
+
+```{r}
+#Set Color palette for plotting. Currently based on QU39 manuscript. Brewer has some good ones for R style.
+palette <- c("#ff8000", #1 - Diatoms (orange)
+             "#ff99c7", #2 - Dictyochophytes (pink)
+             "#4d6600", #3 - Raphidophytes (dark green)
+             "#ff0000", #4 - Dinoflagellates (Red)
+             "#ffff00", #5 - Cryptophytes (yellow)
+             "#00ff00", #6 - Chlorophyta (light green)
+             "#7d4dcc", #7 - Haptophytes (purple)
+             "#000000") #8 - Cyanobacteria (black)
+```
+
+```{r}
+chl <- chl %>% 
+  filter(date < "2019-01-01")
+
+chem_long <- chem_long %>% 
+  mutate(year = lubridate::year(date))
+```
+
+```{r}
+data_long <- data %>% 
+  select(date, site_id, temp = temp_dm, sal = sal_dm, dr = delta_rho_dm,
+         no2 = no2_dm) %>% 
+  pivot_longer(c(temp:no2), values_to = "val", names_to = "param")
+```
+
+```{r}
+f1 <- data_long %>% 
+  filter(date < "2021-01-01" & site_id == "DFO2" & param == "temp") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = date, y = val, color = as.factor(year))) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", stroke = 1.5, size = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  ylab("Temp. (°C)") +
+  ylim(6, 18) +
+  ggtitle("Fjord") +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(color = 'black')) +
+  guides(colour = guide_legend(show = FALSE))
+
+f2 <- data_long %>% 
+  filter(date < "2021-01-01" & site_id == "KC10" & param == "temp") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = date, y = val, color = as.factor(year))) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", stroke = 1.5, size = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  ylab("Temp (5m)") +
+  ylim(6, 18) +
+  ggtitle("Channel") +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(color = 'black')) +
+  guides(colour = guide_legend(show = FALSE))
+
+f3 <- data_long %>% 
+  filter(date < "2021-01-01" & site_id == "QCS01" & param == "temp") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = date, y = val, color = as.factor(year))) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", stroke = 1.5, size = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  ylab("Temp (5m)") +
+  ylim(6, 18) +
+  ggtitle("Shelf") +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(color = 'black')) +
+  guides(colour = guide_legend(show = FALSE))
+
+f4 <- data_long %>% 
+  filter(date < "2021-01-01" & site_id == "DFO2" & param == "sal") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = date, y = val, color = as.factor(year))) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", stroke = 1.5, size = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  ylab("Sal.") +
+  coord_cartesian(ylim = c(26.5, 32.5)) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(color = 'black')) +
+  guides(colour = guide_legend(show = FALSE))
+
+f5 <- data_long %>% 
+  filter(date < "2021-01-01" & site_id == "KC10" & param == "sal") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = date, y = val, color = as.factor(year))) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", stroke = 1.5, size = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  ylab("Sal 5m") +
+  coord_cartesian(ylim = c(26.5, 32.5)) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(color = 'black')) +
+  guides(colour = guide_legend(show = FALSE)) 
+
+f6 <- data_long %>% 
+  filter(date < "2021-01-01" & site_id == "QCS01" & param == "sal") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = date, y = val, color = as.factor(year))) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", stroke = 1.5, size = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  ylab("Sal 5m") +
+  coord_cartesian(ylim = c(26.5, 32.5)) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(color = 'black')) +
+  guides(colour = guide_legend(show = FALSE))
+
+f7 <- data_long %>% 
+  filter(date < "2021-01-01" & site_id == "DFO2" & param == "no2") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = date, y = val, color = as.factor(year))) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", stroke = 1.5, size = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  ylab("NO\u2083\u207B+NO\u2082\u207B\u0020\u0028\u00B5mol\u0020L\u207B\u00B9\u0029") +
+  ylim(0, 22) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(color = 'black')) +
+  guides(colour = guide_legend(show = FALSE))
+
+f8 <- data_long %>% 
+  filter(date < "2021-01-01" & site_id == "KC10" & param == "no2") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = date, y = val, color = as.factor(year))) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", stroke = 1.5, size = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  ylab("NO\u2083\u207B+NO\u2082\u207B\u0020\u0028\u00B5mol\u0020L\u207B\u00B9\u0029") +
+  ylim(0, 22) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(color = 'black')) +
+  guides(colour = guide_legend(show = FALSE))
+
+f9 <- data_long %>% 
+  filter(date < "2021-01-01" & site_id == "QCS01" & param == "no2") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = date, y = val, color = as.factor(year))) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", stroke = 1.5, size = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  ylab("NO\u2083\u207B+NO\u2082\u207B\u0020\u0028\u00B5mol\u0020L\u207B\u00B9\u0029") +
+  ylim(0, 22) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(legend.position = "none",
+        legend.title = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(color = 'black')) +
+  guides(colour = guide_legend(show = FALSE))
+```
+
+```{r}
+chem_f <- chem_long %>% 
+  filter(site_id == "DFO2")
+
+chl_f <- chl %>% 
+  filter(site_id == "DFO2")
+
+chem_c <- chem_long %>% 
+  filter(site_id == "KC10")
+
+chl_c <- chl %>% 
+  filter(site_id == "KC10")
+
+chem_s <- chem_long %>% 
+  filter(site_id == "QCS01")
+
+chl_s <- chl %>% 
+  filter(site_id == "QCS01")
+```
+
+
+```{r}
+f10 <- ggplot() +
+  geom_area(data = chem_f, aes(x = date, y = tchla, 
+           fill = fct_rev(group)), stat = "identity", position = "stack",
+           color = "black", width = 22) +
+  scale_fill_manual(values = palette,
+                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
+                               "Hapt", "Cyan")) +
+  geom_line(data = chl_f, aes(x = date, y = tchla),
+            color = "#1B9E77", size = 2) +
+  geom_point(data = chl_f, aes(x = date, y = tchla),
+             color = "#1B9E77", fill = "white", pch = 21, size = 2, stroke = 1.5) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  labs(y = bquote("Phy (TChl, mg" ~ m^-3*")")) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        # strip.text.y = element_blank()
+        ) +
+  guides(fill = guide_legend(nrow = 1),
+         color = "none")
+
+f11 <- ggplot() +
+  geom_area(data = chem_c, aes(x = date, y = tchla, 
+           fill = fct_rev(group)), stat = "identity", position = "stack",
+           color = "black", width = 22) +
+  scale_fill_manual(values = palette,
+                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
+                               "Hapt", "Cyan")) +
+  geom_line(data = chl_c, aes(x = date, y = tchla),
+            color = "#1B9E77", size = 2) +
+  geom_point(data = chl_c, aes(x = date, y = tchla),
+             color = "#1B9E77", fill = "white", pch = 21, size = 2, stroke = 1.5) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        # strip.text.y = element_blank()
+        ) +
+  guides(fill = guide_legend(nrow = 1),
+         color = "none")
+
+f12 <- ggplot() +
+  geom_area(data = chem_s, aes(x = date, y = tchla, 
+           fill = fct_rev(group)), stat = "identity", position = "stack",
+           color = "black", width = 22) +
+  scale_fill_manual(values = palette,
+                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
+                               "Hapt", "Cyan")) +
+  geom_line(data = chl_s, aes(x = date, y = tchla),
+            color = "#1B9E77", size = 2) +
+  geom_point(data = chl_s, aes(x = date, y = tchla),
+             color = "#1B9E77", fill = "white", pch = 21, size = 2, stroke = 1.5) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        # strip.text.y = element_blank()
+        ) +
+  guides(fill = guide_legend(nrow = 1),
+         color = "none")
+```
+
+```{r}
+brewer.pal(n=3,"Dark2")
+```
+
+```{r}
+fig <- (f1 + f2 + f3) / (f4 + f5 + f6) / (f7 + f8 + f9) / (f10 + f11 + f12) +
+  plot_layout(guides = "collect") & theme(legend.position = 'bottom')
+
+ggsave(here("figures_pca", "timeseries.png"), fig,
+       width = 16, height = 15, dpi = 300)
+```
+
+
+
+

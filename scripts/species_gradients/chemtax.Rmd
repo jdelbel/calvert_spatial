@@ -1,0 +1,176 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+library(indicspecies)
+library(fuzzySim)
+library(cluster)
+library(patchwork)
+library(vegan)
+library(RColorBrewer)
+library(ggcorrplot) 
+# library(clustsig)
+
+```
+
+```{r}
+#Upload data
+
+#Upload microscopy abundance data in OBIS and long/tide format
+chem <- read_csv(here("files", "chemtax_2023-04-14.csv")) 
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+```
+
+```{r}
+
+#Adding location instead of site ID for interpretation of results
+chem <- chem %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+#Creating a unique location-date ID for each sample - makes labels for plotting by dendrogram more informative 
+chem <- chem %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
+
+chem <- chem %>% 
+  rename(cyan = Cyanobacteria, hapt = Hapto, GA = `Prasinophytes-3`,
+         cryp = Cryptophytes, dino = `Dinoflagellates-1`, dict = Dictyo, 
+         raph = Raphido,
+         diat = `Diatoms-1`)
+
+
+
+```
+
+```{r}
+#Here, only including 2019-2020
+chem <- chem %>% 
+  filter(date < "2021-01-01")
+
+chem_long <- chem %>% 
+  pivot_longer(c(cyan:diat), names_to = "group", values_to = "tchla")
+```
+
+```{r}
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+chem_long <- arrange(mutate(chem_long,
+                         location = factor(location, levels = order_loc)))
+
+
+#Chemtax - Specify order of phyto groups for figures
+chl <- arrange(mutate(chl,
+                         location = factor(location, levels = order_loc)))
+```
+
+```{r}
+#Setting plotting order phytoplankton groups
+
+#Order phytoplankton groups roughly from smallest to largest - create order list
+order_chem <- c("cyan", "hapt", "GA", "cryp",
+                   "dino", "raph", "dict", "diat")
+
+#Chemtax spring bloom - Specify order of phyto groups for figures
+chem_long <- arrange(mutate(chem_long,
+                                group = factor(group,
+                                levels = order_chem)))
+
+```
+
+```{r}
+#Set Color palette for plotting. Currently based on QU39 manuscript. Brewer has some good ones for R style.
+palette <- c("#ff8000", #1 - Diatoms (orange)
+             "#ff99c7", #2 - Dictyochophytes (pink)
+             "#4d6600", #3 - Raphidophytes (dark green)
+             "#ff0000", #4 - Dinoflagellates (Red)
+             "#ffff00", #5 - Cryptophytes (yellow)
+             "#00ff00", #6 - Chlorophyta (light green)
+             "#7d4dcc", #7 - Haptophytes (purple)
+             "#000000") #8 - Cyanobacteria (black)
+```
+
+```{r}
+chl <- chl %>% 
+  filter(date < "2019-01-01")
+
+chem_long <- chem_long %>% 
+  mutate(year = lubridate::year(date))
+```
+
+
+
+```{r}
+  ggplot() + 
+  geom_bar(data = chem_long, aes(x = date, y = tchla, 
+           fill = fct_rev(group)), stat = "identity", position = "stack",
+           color = "black", width = 22) +
+  scale_fill_manual(values = palette,
+                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
+                               "Hapt", "Cyan")) +
+  geom_line(data = chl, aes(x = date, y = tchla), size = 1.5) +
+  geom_point(data = chl, aes(x = date, y = tchla), size = 2) +
+  facet_grid(location ~ .) +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        # strip.text.y = element_blank()
+        ) +
+  guides(fill = guide_legend(nrow = 1),
+         color = "none")
+
+ggsave(here("figures_species_timeseries", "chemtax.png"),
+       width = 14, height = 10, dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

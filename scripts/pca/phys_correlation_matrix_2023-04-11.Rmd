@@ -1,0 +1,254 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+library(ggcorrplot)
+library(zoo)
+library(gsw)
+```
+```{r}
+#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
+# micro <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv"))
+
+data <- read_csv(here("outputs", "ctd_wind_riv.csv"))
+
+```
+
+```{r}
+data_pca <- data %>% 
+  select(date, site_id, temp, sal, drho, no2, secchi, lk_wd, par_b1, Wan_b1, tchla)
+
+data_pca <- data_pca %>%
+  drop_na()
+```
+
+```{r}
+f <- data_pca %>% 
+  filter(site_id == "DFO2")
+
+f <- f %>% 
+  select(temp:tchla)
+
+c <- data_pca %>% 
+  filter(site_id == "KC10")
+
+c <- c %>% 
+  select(temp:tchla)
+
+s <- data_pca %>% 
+  filter(site_id == "QCS01")
+
+s <- s %>% 
+  select(temp:tchla)
+```
+
+```{r}
+#Making correlation matrix
+cor_f <- round(cor(f, method = "spearman"), 2)
+
+#Making significance' matrix
+p.mat_f <- cor_pmat(f, method = "spearman")
+
+#Making correlation matrix
+cor_c <- round(cor(c, method = "spearman"), 2)
+
+#Making significance' matrix
+p.mat_c <- cor_pmat(c, method = "spearman")
+
+#Making correlation matrix
+cor_s <- round(cor(s, method = "spearman"), 2)
+
+#Making significance' matrix
+p.mat_s <- cor_pmat(s, method = "spearman")
+
+```
+
+```{r}
+fig_f <- ggcorrplot(cor_f,
+  p.mat = p.mat_f,
+  method = "square",
+  type = "lower",
+  sig.level = 0.05,
+  lab = TRUE,
+  # title = "Channel",
+  insig = "blank",
+  lab_size = 2.5,
+  outline.color = "black") +
+  scale_x_discrete(labels = c("S",
+                              "\u394\u3C1",
+                              "NO\u2083\u207B+NO\u2082\u207B",
+                                "Secchi",
+                                "Wind. Dir.",
+                                "PAR",
+                                "Disch.",
+                                "TChla")) +
+  #                             "Riv_B10", 
+  #                             "lk_w", 
+  #                             "lk_wd",
+  #                             "par_b1",
+  #                             "lev",
+  #                             "rain",
+  #                             "lev_b1",
+  #                             "rain_b1",
+  #                             "TChla",
+  #                             "Diat.")) +
+  scale_y_discrete(labels = c("T",
+                                "S",
+                                "\u394\u3C1",
+                                "NO\u2083\u207B+NO\u2082\u207B",
+                                "Secchi",
+                                "Wind. Dir.",
+                                "PAR",
+                                "Disch.",
+                                "TChla")) +
+  # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
+  ggtitle("Fjord") +
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2, color = "black"),
+        # axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+
+# ggsave(here("figures_good", "corr_kc10_full_year2_844_rain.png"),
+#        width = 8, height = 8, dpi = 300)
+```
+```{r}
+fig_c <- ggcorrplot(cor_c,
+  p.mat = p.mat_c,
+  method = "square",
+  type = "lower",
+  sig.level = 0.05,
+  lab = TRUE,
+  # title = "Channel",
+  insig = "blank",
+  lab_size = 2.5,
+  outline.color = "black") +
+  scale_x_discrete(labels = c("S",
+                              "\u394\u3C1",
+                              "NO\u2083\u207B+NO\u2082\u207B",
+                                "Secchi",
+                                "Wind. Dir.",
+                                "PAR",
+                                "Disch.",
+                                "TChla")) +
+  #                             "Riv_B10", 
+  #                             "lk_w", 
+  #                             "lk_wd",
+  #                             "par_b1",
+  #                             "lev",
+  #                             "rain",
+  #                             "lev_b1",
+  #                             "rain_b1",
+  #                             "TChla",
+  #                             "Diat.")) +
+  scale_y_discrete(labels = c("T",
+                                "S",
+                                "\u394\u3C1",
+                                "NO\u2083\u207B+NO\u2082\u207B",
+                                "Secchi",
+                                "Wind. Dir.",
+                                "PAR",
+                                "Disch.",
+                                "TChla")) +
+  # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
+  ggtitle("Channel") +
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2, color = "black"),
+        # axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+
+# ggsave(here("figures_good", "corr_kc10_full_year2_844_rain.png"),
+#        width = 8, height = 8, dpi = 300)
+```
+
+```{r}
+fig_s <- ggcorrplot(cor_s,
+  p.mat = p.mat_c,
+  method = "circle",
+  type = "lower",
+  sig.level = 0.05,
+  lab = TRUE,
+  # title = "Channel",
+  insig = "blank",
+  lab_size = 2.5,
+  outline.color = "white") +
+  scale_x_discrete(labels = c("S",
+                              "\u394\u3C1",
+                              "NO\u2083\u207B+NO\u2082\u207B",
+                                "Secchi",
+                                "Wind. Dir.",
+                                "PAR",
+                                "Disch.",
+                                "TChla")) +
+  #                             "Riv_B10", 
+  #                             "lk_w", 
+  #                             "lk_wd",
+  #                             "par_b1",
+  #                             "lev",
+  #                             "rain",
+  #                             "lev_b1",
+  #                             "rain_b1",
+  #                             "TChla",
+  #                             "Diat.")) +
+  scale_y_discrete(labels = c("T",
+                                "S",
+                                "\u394\u3C1",
+                                "NO\u2083\u207B+NO\u2082\u207B",
+                                "Secchi",
+                                "Wind. Dir.",
+                                "PAR",
+                                "Disch.",
+                                "TChla")) +
+  # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
+  ggtitle("Shelf") +
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2, color = "black"),
+        # axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+
+# ggsave(here("figures_good", "corr_kc10_full_year2_844_rain.png"),
+#        width = 8, height = 8, dpi = 300)
+```
+
+
+
+```{r}
+fig <- fig_f + fig_c + fig_s
+
+ggsave(here("figures_pca", "corr_spearman.png"), fig,
+       width = 14, height = 6, dpi = 300)
+```
+
+

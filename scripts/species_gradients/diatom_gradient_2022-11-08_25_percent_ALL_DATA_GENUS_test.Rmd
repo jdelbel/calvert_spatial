@@ -84,9 +84,6 @@ order_loc <- c("F", "C", "S")
 micro_all <- arrange(mutate(micro_all,
                          location = factor(location, levels = order_loc)))
 
-
-micro_all <- micro_all %>% 
-  filter(trophicStatus == "auto")
 #I want to look at species that never contribute to more than a certain percentage to the total biomass
 ```
 
@@ -169,7 +166,7 @@ test6 <- micro_all_gt10_perc %>%
 
 ```{r}
 micro_all_gt10_perc2 <- micro_all_gt10_perc %>% 
-  group_by(date, month_surv, location, genus2) %>% 
+  group_by(date, month_surv, location, scientificName_accepted, genus2) %>% 
   summarise(species_sum = sum(species_sum)) %>% 
   ungroup()
 ```
@@ -183,7 +180,7 @@ getPalette_c = colorRampPalette(brewer.pal(12, "Paired"))
 
 ```{r}
 spec_dist <- micro_all_c %>% 
-  distinct(genus2)
+  distinct(scientificname_accepted, genus2)
 
 #25%
 spec_ord <- c("Chaetoceros",
