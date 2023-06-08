@@ -422,7 +422,7 @@ brewer.pal(n=3,"Dark2")
 fig <- (f1 + f2 + f3) / (f4 + f5 + f6) / (f7 + f8 + f9) / (f10 + f11 + f12) +
   plot_layout(guides = "collect") & theme(legend.position = 'bottom')
 
-ggsave(here("figures_pca", "timeseries.png"), fig,
+ggsave(here("figures_pca", "timeseries_phyto.png"), fig,
        width = 16, height = 15, dpi = 300)
 ```
 

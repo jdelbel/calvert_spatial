@@ -1,0 +1,115 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+library(zoo)
+```
+
+
+```{r}
+wan <- read_csv(here("files", "river.csv")) 
+
+bb <- read_csv(here("files", "Daily_flow_long_2018_2020_v2023_04_27.csv"))
+```
+
+```{r}
+wan_ds <- wan %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+# wan_avg <- wan_ds %>%
+#   mutate(Q_b1_10 = rollmeanr(lag(dis, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+wan_avg <- wan_ds %>% 
+  select(date, Q = dis) %>% 
+  mutate(Watershed_group = "Wan") %>% 
+  relocate(Watershed_group, .after = date)
+```
+
+```{r}
+bb_avg <- bb %>%
+  mutate(date = lubridate::date(Date)) %>% 
+  select(date, Watershed_group, Q)
+```
+
+```{r}
+riv <- rbind(wan_avg, bb_avg)
+```
+
+```{r}
+test <- riv %>%
+  group_by(date, Watershed_group) %>% 
+  mutate(Q_b1_10 = rollmeanr(lag(Q, 1), k = 10, fill = NA))
+```
+
+
+```{r}
+riv %>% 
+  ggplot(aes(x = date, y = Q, color = Watershed_group)) +
+  geom_line() +
+  theme_bw()
+
+ggsave(here("figures_river", "Q_compare.png"),
+       width = 16, height = 5, dpi = 300)
+```
+```{r}
+riv %>%
+  filter(Watershed_group == "Q_Total") %>%
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = Q, color = as.factor(year))) +
+  geom_line() +
+  theme_bw()
+
+ggsave(here("figures_river", "Q_total_compare.png"),
+       width = 16, height = 5, dpi = 300)
+```
+```{r}
+riv %>%
+  filter(Watershed_group == "Q_RA") %>%
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  ggplot(aes(x = yday, y = Q, color = as.factor(year))) +
+  geom_line() +
+  theme_bw()
+
+ggsave(here("figures_river", "Q_rain_compare.png"),
+       width = 16, height = 5, dpi = 300)
+```
+
+```{r}
+riv %>%
+  filter(Watershed_group == "Q_Total") %>%
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date),
+         month = lubridate::month(date)) %>% 
+  ggplot(aes(x = as.factor(month), y = Q, fill = as.factor(year))) +
+  geom_boxplot() + 
+  theme_bw()
+
+ggsave(here("figures_river", "Q_total_month.png"),
+       width = 16, height = 5, dpi = 300)
+```

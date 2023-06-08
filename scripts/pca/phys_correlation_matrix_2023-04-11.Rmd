@@ -31,16 +31,36 @@ library(gsw)
 #Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
 # micro <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv"))
 
+#From pca_2023-04-11_wind_par
 data <- read_csv(here("outputs", "ctd_wind_riv.csv"))
 
+bb <- read_csv(here("files", "Daily_flow_2018_2020_v2023_04_27.csv"))
+```
+
+```{r}
+bb_avg <- bb %>%
+  mutate(QT_b1 = rollmeanr(lag(Q_Total, 1), k = 10, fill = NA),
+         QGM_b1 = rollmeanr(lag(Q_GM, 1), k = 10, fill = NA),
+         QSM_b1 = rollmeanr(lag(Q_SM, 1), k = 10, fill = NA),
+         QRA_b1 = rollmeanr(lag(Q_RA, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+bb_dg <- bb_avg %>% 
+  select(date = Date, QT_b1:QRA_b1)
 ```
 
 ```{r}
 data_pca <- data %>% 
   select(date, site_id, temp, sal, drho, no2, secchi, lk_wd, par_b1, Wan_b1, tchla)
 
+data_pca <- data_pca %>% 
+  left_join(bb_dg)
+
 data_pca <- data_pca %>%
   drop_na()
+
+data_pca <- data_pca %>% 
+  relocate(tchla, .after = QRA_b1)
 ```
 
 ```{r}
@@ -87,7 +107,7 @@ p.mat_s <- cor_pmat(s, method = "spearman")
 ```{r}
 fig_f <- ggcorrplot(cor_f,
   p.mat = p.mat_f,
-  method = "square",
+  method = "circle",
   type = "lower",
   sig.level = 0.05,
   lab = TRUE,
@@ -101,7 +121,11 @@ fig_f <- ggcorrplot(cor_f,
                                 "Secchi",
                                 "Wind. Dir.",
                                 "PAR",
-                                "Disch.",
+                                "Wan.",
+                                "T",
+                                "GM",
+                                "SM",
+                                "R",
                                 "TChla")) +
   #                             "Riv_B10", 
   #                             "lk_w", 
@@ -120,7 +144,11 @@ fig_f <- ggcorrplot(cor_f,
                                 "Secchi",
                                 "Wind. Dir.",
                                 "PAR",
-                                "Disch.",
+                                "Wan.",
+                                "T",
+                                "GM",
+                                "SM",
+                                "R",
                                 "TChla")) +
   # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Fjord") +
@@ -139,7 +167,7 @@ fig_f <- ggcorrplot(cor_f,
 ```{r}
 fig_c <- ggcorrplot(cor_c,
   p.mat = p.mat_c,
-  method = "square",
+  method = "circle",
   type = "lower",
   sig.level = 0.05,
   lab = TRUE,
@@ -153,7 +181,11 @@ fig_c <- ggcorrplot(cor_c,
                                 "Secchi",
                                 "Wind. Dir.",
                                 "PAR",
-                                "Disch.",
+                                "Wan.",
+                                "T",
+                                "GM",
+                                "SM",
+                                "R",
                                 "TChla")) +
   #                             "Riv_B10", 
   #                             "lk_w", 
@@ -172,7 +204,11 @@ fig_c <- ggcorrplot(cor_c,
                                 "Secchi",
                                 "Wind. Dir.",
                                 "PAR",
-                                "Disch.",
+                                "Wan.",
+                                "T",
+                                "GM",
+                                "SM",
+                                "R",
                                 "TChla")) +
   # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Channel") +
@@ -199,14 +235,18 @@ fig_s <- ggcorrplot(cor_s,
   # title = "Channel",
   insig = "blank",
   lab_size = 2.5,
-  outline.color = "white") +
+  outline.color = "black") +
   scale_x_discrete(labels = c("S",
                               "\u394\u3C1",
                               "NO\u2083\u207B+NO\u2082\u207B",
                                 "Secchi",
                                 "Wind. Dir.",
                                 "PAR",
-                                "Disch.",
+                                "Wan.",
+                                "T",
+                                "GM",
+                                "SM",
+                                "R",
                                 "TChla")) +
   #                             "Riv_B10", 
   #                             "lk_w", 
@@ -225,7 +265,11 @@ fig_s <- ggcorrplot(cor_s,
                                 "Secchi",
                                 "Wind. Dir.",
                                 "PAR",
-                                "Disch.",
+                                "Wan.",
+                                "T",
+                                "GM",
+                                "SM",
+                                "R",
                                 "TChla")) +
   # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Shelf") +
@@ -247,7 +291,7 @@ fig_s <- ggcorrplot(cor_s,
 ```{r}
 fig <- fig_f + fig_c + fig_s
 
-ggsave(here("figures_pca", "corr_spearman.png"), fig,
+ggsave(here("figures_pca", "corr_spearman_bb_riv.png"), fig,
        width = 14, height = 6, dpi = 300)
 ```
 

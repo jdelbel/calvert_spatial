@@ -19,6 +19,7 @@ library(patchwork)
 library(vegan)
 library(RColorBrewer)
 library(ggcorrplot) 
+library(analogue)
 # library(clustsig)
 
 ```
@@ -84,8 +85,55 @@ micro <- micro %>%
            # !group == "Ciliophora" &
            # !group == "Kinetoplastidea")
 
-# micro <- micro %>% 
+ # micro <- micro %>% 
+ #   filter(!scientificName_accepted == "Hillea" & 
+ #            !scientificName_accepted == "Teleaulax")
+
+# micro <- micro %>%
 #   filter(group == "Bacillariophyta")
+```
+
+```{r}
+micro %>% 
+  filter(scientificName == "Leptocylindrus danicus") %>% 
+  ggplot(aes(x = date, y = species_sum, color = site_id)) +
+  geom_line() +
+  geom_point()
+```
+
+
+```{r}
+
+
+test <- micro %>%
+  filter(group == "Bacillariophyta") %>% 
+  group_by(site_id, scientificName) %>% 
+  summarise(median_diat = median(species_sum)) %>% 
+  ungroup() %>% 
+  group_by(site_id) %>% 
+  top_n(10)
+
+test2 <- micro %>%
+  filter(group == "Bacillariophyta") %>% 
+  group_by(site_id, scientificName) %>% 
+  summarise(num = n()) %>% 
+  ungroup() %>% 
+  group_by(site_id) %>% 
+  top_n(10)
+
+lepto <- micro %>%
+  filter(scientificName == "Leptocylindrus danicus") %>% 
+  group_by(site_id) %>% 
+  summarise(num = n(),
+            med = median(species_sum)) %>% 
+  ungroup()
+
+rhizo <- micro %>%
+  filter(scientificName == "Rhizosolenia setigera") %>% 
+  group_by(site_id) %>% 
+  summarise(num = n(),
+            med = median(species_sum)) %>% 
+  ungroup()
 ```
 
 ```{r}
@@ -113,6 +161,12 @@ micro <- micro %>%
 ```
 
 ```{r}
+# micro <- micro %>% 
+#   filter(group == "Bacillariophyta")
+```
+
+
+```{r}
 #Adding year and month to the microscopy dataset for analysis.
 
 micro <- micro %>% 
@@ -131,8 +185,8 @@ micro_piv <- micro %>%
 
 #pivoting wider so species are columns and samples are rows.
 micro_piv <- micro_piv %>% 
-  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
-  mutate_if(is.numeric, ~ replace_na(., 0))
+  pivot_wider(names_from = scientificName, 
+              values_from = species_sum, values_fill = 0) 
 
 ```
 
@@ -142,9 +196,12 @@ micro_piv <- micro_piv %>%
 species <- micro_piv[, 8:ncol(micro_piv)]
 
 #Transforming the abundance data
-t_abund <- species
-# t_abund <- decostand(species, "total")
+# t_abund <- species
 
+# t_abund <- tran(species, "rootroot")
+t_abund <- decostand(species, "total")
+# t_abund <- sqrt(t_abund)
+# t_abund <- scale(species)
 ```
 
 ```{r}
@@ -178,7 +235,7 @@ dis_abund <- vegdist(hc_abund, method = "bray")
 
 #Applying wards linkage method
 # clust_ward_abund <- agnes(dis_abund, method = "ward")
-clust_ward_abund <- hclust(dis_abund, method = "average")
+clust_ward_abund <- hclust(dis_abund, method = "complete")
 
 
 ```
@@ -187,9 +244,10 @@ clust_ward_abund <- hclust(dis_abund, method = "average")
 coph <- cophenetic(clust_ward_abund)
 cor(dis_abund, coph) 
 ```
+
 ```{r}
 # Enhanced hierarchical clustering, cut in 3 groups
-fviz_dend(clust_ward_abund, cex = 0.5, h = 0.60, color_labels_by_k = TRUE)
+fviz_dend(clust_ward_abund, cex = 0.5, h = 0.6, color_labels_by_k = TRUE)
 ```
 
 ```{r}
@@ -199,7 +257,7 @@ fviz_dend(clust_ward_abund, cex = 0.5, h = 0.60, color_labels_by_k = TRUE)
 
 fviz_nbclust(hc_abund, FUN = hcut, method = "wss")
 fviz_nbclust(hc_abund, FUN = hcut, method = "silhouette")
-gap_stat <- clusGap(hc_abund, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+gap_stat <- clusGap(hc_abund, FUN = hcut, nstart = 25, K.max = 20, B = 50)
 fviz_gap_stat(gap_stat)
 
 #In general, these approaches do not show many clusters - only 2. This bothers me as there is clearly more structure in the data.
@@ -210,7 +268,7 @@ fviz_gap_stat(gap_stat)
 #Trying cutting at line 
 
 # Abundance data
-k_abund <- 0.65
+k_abund <- 0.6
 clust_abund <- cutree(clust_ward_abund, h = k_abund)
 #
 clust_df_abund <- data.frame(label = rownames(hc_abund),
@@ -305,13 +363,13 @@ ggplot() +
  geom_text(data = dendrogram_ends_abund, aes(x = x, y = y.y, label = sample_name,
                                        color = as.factor(cluster),
            hjust = 1, angle = 90, size = 6)) +
-  geom_hline(yintercept = 0.60) +
+  # geom_hline(yintercept = 0.60) +
  # geom_rect(data = rect_abund, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0,
  #                                  ymax = ymax_abund),
  #            color = "black", fill = NA, size = 0.8) +
- # scale_color_manual(values = site_color_abund) +
+ scale_color_manual(values = site_color_abund) +
  # scale_y_reverse(limits = c(1, -0.5)) +
- ylim(-0.4, 1) +
+ ylim(-1, 1) +
   # coord_flip() +
  theme_bw() +
  theme(legend.position = "none",
@@ -324,7 +382,7 @@ ggplot() +
 
  
 
-ggsave(here("figures_nmds_new", "AAA_test_2023-04-04_60.png"),
+ggsave(here("figures_nmds_new", "sqrt_ra_diatoms.png"),
        width = 16, height = 12, dpi = 300)
 ```
 
@@ -456,7 +514,7 @@ spp.scrs2 <- cbind(spp.scrs, r2_df)
 #Pulling species with only r2 > 0.3 scores
 #All species
 spp.scrs2 <- spp.scrs2 %>%
-  filter(r2 >= 0.15)
+  filter(r2 >= 0.20)
 # 
 # #Diatoms
 # spp.scrs2_diat <- spp.scrs2_diat %>%
@@ -498,17 +556,17 @@ spp.scrs2 <- spp.scrs2 %>%
 #This is the horizontal version of the month and year nMDS panel shown incorporated into a large panel later 
 
 ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores_abund, aes(fill = as.factor(clust_abund), shape = site),
+  geom_point(data = data.scores_abund, aes(fill = as.factor(year), shape = site),
              size = 7, stroke = 1.5) + 
   scale_fill_brewer(palette = "Spectral") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
-  # geom_segment(data = spp.scrs2,
-  #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
-  #              arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
-  #              size = 1.2, alpha = 0.7) +
-  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
-  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) +
+  geom_segment(data = spp.scrs2,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+               size = 1.2, alpha = 0.7) +
+  geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+             fontface = "bold", label = row.names(spp.scrs2), size = 7) +
   # ggrepel::geom_text_repel(data = spp.scrs2, aes(x = NMDS1, y = NMDS2, 
   #                                          label = row.names(spp.scrs2)),
   #                 # box.padding = unit(0.5, 'lines'),
@@ -538,7 +596,7 @@ ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) +
   labs(fill = "Month", shape = "Station") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-ggsave(here("figures_nmds_new", "AAA_nmds_2023-04-04_60.png"),
+ggsave(here("figures_nmds_new", "NMDS_no_cryp_2023-04-28.png"),
        width = 8, height = 5, dpi = 300)
 ```
 
@@ -553,6 +611,7 @@ inv_clust_abund = multipatt(t_abund, clust_abund, func = "r.g", duleg = F,
 #Looking at results of analysis
 summary(inv_clust_abund)
 ```
+
 
 
 ```{r}
@@ -621,10 +680,8 @@ micro_all <- micro_all %>%
 
 ```{r}
 micro_all_gt10_perc <- micro_all %>% 
-  mutate(scientificName2 = ifelse(max_abund < 325000 & group == "Bacillariophyta",
-                                  "Other diatom", scientificName)) %>% 
-  mutate(scientificName2 = ifelse(max < 0.325000 & !group == "Bacillariophyta",
-                                  "Other flagellate", scientificName2))
+  mutate(scientificName2 = ifelse(max < 0.25,
+                                  "Other diatom", scientificName)) 
 ```
 
 
@@ -713,9 +770,9 @@ spec_ord <- c("Biddulphiales", #
 #               "Pyramimonas orientalis",
 #               "Phaeocystis pouchetii")
 
-micro_all_c <- arrange(mutate(micro_all_c,
-                         scientificName2 = factor(scientificName2,
-                                                 levels = spec_ord)))
+# micro_all_c <- arrange(mutate(micro_all_c,
+#                          scientificName2 = factor(scientificName2,
+#                                                  levels = spec_ord)))
 ```
 
 
@@ -765,9 +822,9 @@ order_loc <- c("F", "C", "S")
 micro_all_c <- arrange(mutate(micro_all_c,
                          location = factor(location, levels = order_loc)))
 
-micro_all_c <- arrange(mutate(micro_all_c,
-                         scientificName2 = factor(scientificName2,
-                                                 levels = spec_ord)))
+# micro_all_c <- arrange(mutate(micro_all_c,
+#                          scientificName2 = factor(scientificName2,
+#                                                  levels = spec_ord)))
 #Order locations from fjord to shelf
 order_loc_seas <- c("W", "Sp", "S", "A")
 
@@ -824,7 +881,7 @@ cp <- micro_all_c %>%
   guides(fill = guide_legend(ncol = 4),
          color = "none")
 
-ggsave(here("figures_nmds_new", "AAA_clust_panel2.png"), cp,
+ggsave(here("figures_nmds_new", "dendro_test.png"), cp,
        width = 16, height = 8, dpi = 300)
 ```
 
@@ -844,7 +901,7 @@ micro_all_c2 <- micro_all_c %>%
 micro_all_c %>%  
   ggplot() + 
   geom_bar(aes(y = sample_name, x = species_sum/100000, 
-           fill = scientificName2), stat = "identity", position = "stack",
+           fill = scientificName2), stat = "identity", position = "fill",
            color = "black", width = 1) +
   facet_grid(cluster ~ ., scales = "free_y", space = "free") +
   # annotate("rect", xmin = 7.5, xmax = 13.5, ymin = 0, ymax = 34,
@@ -886,7 +943,7 @@ micro_all_c %>%
   guides(fill = guide_legend(ncol = 4),
          color = "none")
 
-ggsave(here("figures_nmds_new", "test.png"),
+ggsave(here("figures_nmds_new", "test_vert_diat_abund.png"),
        width = 14, height = 16, dpi = 300)
 ```
 
@@ -1005,12 +1062,12 @@ test2 <- micro_all_c3 %>%
 f1 <- ggplot() +
   geom_col(data = micro_all_c3, 
            aes(x = as.factor(cluster), y = sum/100000, 
-           fill = scientificName2), position = "stack",
+           fill = scientificName2), position = "fill",
            color = "black") +
-  geom_text(data = test2, 
-            aes(x = as.factor(cluster), y = sum_tot/100000, label = n),
-            vjust = -1, size = 5) +
-  ylim(0, 28) +
+  # geom_text(data = test2, 
+  #           aes(x = as.factor(cluster), y = sum_tot/100000, label = n),
+  #           vjust = -1, size = 5) +
+  # ylim(0, 28) +
   scale_fill_manual(values = getPalette_c(colourCount_c)) +
   labs(x = "Cluster",
        y = "Abund. (10^5 cells L)") +
@@ -1068,7 +1125,7 @@ f4 <- micro_piv %>%
 
 fig <- f1 / f2 / f3 / f4
 
-ggsave(here("figures_nmds_new", "test.png"), fig,
+ggsave(here("figures_nmds_new", "test_diatom_RA.png"), fig,
         width = 8, height = 16, dpi = 300)
 ```
 

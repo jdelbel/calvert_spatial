@@ -19,6 +19,7 @@ library(patchwork)
 library(vegan)
 library(RColorBrewer)
 library(ggcorrplot) 
+library(analogue)
 # library(clustsig)
 
 ```
@@ -135,7 +136,7 @@ micro <- micro %>%
            # !group == "Ciliophora" &
            # !group == "Kinetoplastidea")
 
-# micro <- micro %>% 
+# micro <- micro %>%
 #   filter(group == "Bacillariophyta")
 ```
 
@@ -179,6 +180,9 @@ micro <- micro %>%
          month = lubridate::month(date)) %>% 
   relocate(year, .after = date) %>% 
   relocate(month, .after = year)
+
+micro <- micro %>% 
+  filter(month > 4 & month < 11)
 ```
 
 ```{r}
@@ -203,7 +207,7 @@ species <- micro_piv[, 8:ncol(micro_piv)]
 #Transforming the abundance data
 t_abund <- species
 # t_abund <- decostand(species, "total")
-
+t_abund <- tran(t_abund, "rootroot")
 ```
 
 ```{r}
@@ -237,7 +241,7 @@ dis_abund <- vegdist(hc_abund, method = "bray")
 
 #Applying wards linkage method
 # clust_ward_abund <- agnes(dis_abund, method = "ward")
-clust_ward_abund <- hclust(dis_abund, method = "average")
+clust_ward_abund <- hclust(dis_abund, method = "ward.D2")
 
 
 ```
@@ -248,7 +252,7 @@ cor(dis_abund, coph)
 ```
 ```{r}
 # Enhanced hierarchical clustering, cut in 3 groups
-fviz_dend(clust_ward_abund, cex = 0.5, k = 9, color_labels_by_k = TRUE)
+fviz_dend(clust_ward_abund, cex = 0.5, k = 5, color_labels_by_k = TRUE)
 ```
 
 ```{r}
@@ -269,8 +273,8 @@ fviz_gap_stat(gap_stat)
 #Trying cutting at line 
 
 # Abundance data
-k_abund <- 0.65
-clust_abund <- cutree(clust_ward_abund, h = k_abund)
+k_abund <- 5
+clust_abund <- cutree(clust_ward_abund, k = k_abund)
 #
 clust_df_abund <- data.frame(label = rownames(hc_abund),
                                    cluster = factor(clust_abund))
@@ -370,7 +374,7 @@ ggplot() +
  #            color = "black", fill = NA, size = 0.8) +
  # scale_color_manual(values = site_color_abund) +
  # scale_y_reverse(limits = c(1, -0.5)) +
- ylim(-0.4, 1) +
+ ylim(-0.8, 1.0) +
   # coord_flip() +
  theme_bw() +
  theme(legend.position = "none",
@@ -383,8 +387,8 @@ ggplot() +
 
  
 
-ggsave(here("figures_nmds_new", "AAA_test_2023-04-04_ds_65.png"),
-       width = 16, height = 12, dpi = 300)
+# ggsave(here("figures_nmds_new", "AAA_test_2023-04-04_ds_65.png"),
+#        width = 16, height = 12, dpi = 300)
 ```
 
 
@@ -836,7 +840,7 @@ micro_all_c <- arrange(mutate(micro_all_c,
 ```
 
 ```{r}
-cp <- micro_all_c %>%  
+micro_all_c %>%  
   ggplot() + 
   geom_bar(aes(x = sample_name, y = species_sum/100000, 
            fill = scientificName2), stat = "identity", position = "stack",

@@ -1291,4 +1291,3 @@ div_stat <- phy_clust_div %>%
   group_by(cluster) %>% 
   summarise(mean_div = mean(div))
 ```
-

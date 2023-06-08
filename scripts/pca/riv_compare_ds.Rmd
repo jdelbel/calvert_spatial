@@ -1,0 +1,217 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+library(zoo)
+```
+
+```{r}
+wan <- read_csv(here("files", "river.csv")) 
+
+bb <- read_csv(here("files", "Daily_flow_long_2018_2020_v2023_04_27.csv"))
+
+lk_wind <- read_csv(here("files", "wind_lookout.csv"))
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+co2 <- read_csv(here("files", "co2.csv"))
+```
+
+```{r}
+wan_ds <- wan %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, Q = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+wan_avg <- wan_ds %>%
+  mutate(Q_ds = rollmeanr(lag(Q, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+wan_avg <- wan_avg %>% 
+  select(date, Q, Q_ds) %>% 
+  mutate(Watershed_group = "Wan") %>% 
+  relocate(Watershed_group, .after = date)
+```
+
+```{r}
+co2_avg <- co2 %>%
+  select(measurementTime, year, sw_xCO2_QC, sw_xCO2) %>% 
+  mutate(date_time = lubridate::mdy_hm(measurementTime)) %>%
+  mutate(date = lubridate::date(date_time)) %>% 
+  filter(is.na(sw_xCO2_QC)) %>%
+  filter(!is.na(sw_xCO2)) %>% 
+  filter(year > 2017 & year < 2022) %>% 
+  group_by(date) %>% 
+  summarise(mean_co2 = mean(sw_xCO2)) %>%
+  ungroup()
+```
+
+```{r}
+bb_avg <- bb %>%
+  mutate(date = lubridate::date(Date)) %>% 
+  select(date, Watershed_group, Q)
+
+bb_sm <- bb_avg %>% 
+  filter(Watershed_group == "Q_SM") %>% 
+  mutate(Q_ds = rollmeanr(lag(Q, 1), k = 10, fill = NA))
+
+bb_gm <- bb_avg %>% 
+  filter(Watershed_group == "Q_GM") %>% 
+  mutate(Q_ds = rollmeanr(lag(Q, 1), k = 10, fill = NA))
+
+bb_ra <- bb_avg %>% 
+  filter(Watershed_group == "Q_RA") %>% 
+  mutate(Q_ds = rollmeanr(lag(Q, 1), k = 10, fill = NA))
+```
+
+```{r}
+riv <- rbind(wan_avg, bb_sm, bb_gm, bb_ra)
+```
+
+```{r}
+lk_wind2 <- lk_wind %>%
+  filter(WindSpd_UQL == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+  filter(year > 2017 & year < 2022)
+
+lk_dm <- lk_wind2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_w = mean(WindSpd_Avg),
+            dm_wd = mean(WindDir_Avg)) %>% 
+  ungroup() 
+```
+
+```{r}
+wind_fig <-
+  lk_dm %>% 
+  ggplot(aes(x = date2, y = dm_w^3, color = dm_wd)) +
+  geom_point(size = 2) +
+  geom_line(size = 2) +
+  scale_color_continuous(type = "viridis",
+                         guide_colourbar(title = "Dir. (°)",
+                                         barwidth = 0.5,
+                                         barheight = 10)) +
+  labs(y = bquote("Wind ("*m^3~s^-3*")")) +
+  # scale_colour_steps2()
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+# Order locations from fjord to shelf
+riv_loc <- c("Q_GM",
+             "Q_SM",
+             "Q_RA")
+
+riv <- arrange(mutate(riv, 
+                      Watershed_group = factor(Watershed_group,
+                                               levels = riv_loc)))
+
+riv_fig <- ggplot() +
+  geom_area(data = riv %>% filter(!Watershed_group == "Wan"),
+            aes(x = date, y = Q, fill = Watershed_group),
+            stat = "identity", position = "stack", color = "black", 
+            size = 0.5) +
+  geom_line(data = riv %>% filter(Watershed_group == "Wan"),
+            aes(x = date, y = Q), color = "white", size = 1) +
+  scale_fill_d3(labels = c('glacier', 'snow', 'rain')) +
+  labs(fill = NULL,
+       y = bquote(Dis. ~ "("~m^-3*~s^-1*")")) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+chl <- chl %>% 
+   add_row(date = as.Date("2020-01-01"), site_id = "QCS01",
+           tchla = NA, location = "S") %>% 
+   add_row(date = as.Date("2019-01-01"), site_id = "QCS01",
+           tchla = NA, location = "S")
+
+loc <- c("F",
+         "C",
+         "S")
+
+chl <- arrange(mutate(chl, 
+                      location = factor(location,
+                                               levels = loc)))
+
+chl_fig <- chl %>% 
+  ggplot(aes(x = date, y = tchla, color = location)) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", size = 2, stroke = 2) +
+  scale_color_jco() +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  labs(y = bquote("TChla (mg" ~ m^-3*")"),
+       color = NULL) +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+co2_fig <-
+  co2_avg %>% 
+  ggplot(aes(x = date, y = mean_co2)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  geom_area(alpha = 0.3) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  labs(y = "ρCO2 (ppm)") +
+  ylim(0, 900) +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+fig <- wind_fig / riv_fig / chl_fig / co2_fig
+
+ggsave(here("figures_river", "riv_co2_chl.png"), fig,
+       width = 16, height = 14, dpi = 300)
+```
+

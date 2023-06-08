@@ -1,0 +1,657 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Here I run RDA analysis on the 2018-2020 Microscopy data and then the 2019-2020 Chemtax data. I do this in the same notebook so I can combined the plots.
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(gsw)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(zoo)
+```
+
+```{r}
+#Upload data
+
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+
+ctd <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+nuts <- read_csv(here("files", "kc10_nuts.csv"))
+
+riv <- read_csv(here("files", "river.csv")) 
+
+riv_b <- read_csv(here("files", "riv_bella_4.csv"))
+
+ethel_wind <- read_csv(here("files", "ethel_wind.csv"))
+
+lk_wind <- read_csv(here("files", "wind_lookout.csv"))
+
+lk_par <- read_csv(here("files", "lookout_par.csv"))
+
+ws844 <- read_csv(here("files", "ws844.csv"))
+
+up <- read_csv(here("files", "upwell.csv"))
+
+div <- read_csv(here("outputs", "diversity.csv"))
+
+clust_bio <- read_csv(here("outputs", "bio_clust_full.csv"))
+
+clust_phys <- read_csv(here("outputs", "pca_clusters_2023-04-18.csv"))
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
+
+chem <- read_csv(here("files", "chemtax_2023-04-14.csv")) 
+
+bb <- read_csv(here("files", "Daily_flow_2018_2020_v2023_04_27.csv"))
+```
+
+
+```{r}
+#Removing species groups
+
+#Creating a list of distinct species and groups
+species_distinct <- micro %>% 
+  distinct(group, scientificName)
+
+#Removing groups that are not well quantified or that I am not looking at
+micro <- micro %>% 
+  filter(!scientificName_accepted == "Cyanobacteria")
+
+```
+
+```{r}
+#Determining total number of samples collected
+sample_num <- micro %>%
+  distinct(date, site_id)
+
+#Filtering out species that were not present in at least 10% of the samples
+species_10 <- micro %>%
+  group_by(scientificName) %>%
+  summarise(n_obs = n()) %>%
+  ungroup() %>%
+  mutate(perc_obs = n_obs/78) %>%
+  filter(perc_obs >= 0.10)
+
+#Creating a list of species that were not in 10% of the samples
+species_10_list <- species_10$scientificName
+
+#Removing species that were not in 10% of the samples.
+micro <- micro %>%
+  filter(scientificName %in% species_10_list)
+
+```
+
+```{r}
+micro <- micro %>% 
+  filter(group == "Dinoflagellata") 
+```
+
+
+```{r}
+#Pivoting data for RDA analysis
+
+#Selecting columns for pivot
+micro_piv <- micro %>%
+  mutate(month = lubridate::month(date)) %>% 
+  select(date, month, site_id, scientificName, species_sum)
+
+#performing pivot and making NA's 0's. 
+micro_piv <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum,
+              values_fill = 0) 
+```
+
+
+```{r}
+riv <- riv %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+riv_w <- riv %>%
+  mutate(Wan_b1 = rollmeanr(lag(dis, 1), k = 10, fill = NA),
+         Wan_b25 = rollmeanr(lag(dis, 25), k = 4, fill = NA),
+         Wan_b40 = rollmeanr(lag(dis, 40), k = 4, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+riv_w <- riv_w %>% 
+  select(date, Wan_b1, Wan_b25, Wan_b40)
+```
+
+```{r}
+riv_b <- riv_b %>% 
+  mutate(Date = lubridate::mdy(Date))
+
+riv_b <- riv_b %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+riv_b <- riv_b %>%
+  mutate(Bel_b1 = rollmeanr(lag(dis, 1), k = 5, fill = NA),
+         Bel_b5 = rollmeanr(lag(dis, 5), k = 4, fill = NA),
+         Bel_b10 = rollmeanr(lag(dis, 10), k = 4, fill = NA),
+         Bel_b25 = rollmeanr(lag(dis, 25), k = 4, fill = NA),
+         Bel_b40 = rollmeanr(lag(dis, 40), k = 4, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+riv_b <- riv_b %>% 
+  select(date, Bel_b1, Bel_b5, Bel_b10, Bel_b25, Bel_b40)
+```
+
+```{r}
+ethel_wind2 <- ethel_wind %>%
+  filter(WindSpd_UQL == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+  filter(year > 2017 & year < 2022)
+
+ew_da <- ethel_wind2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_w = mean(WindSpd_Avg),
+            dm_wd = mean(WindDir_Avg)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(w_b1 = rollmeanr(lag(dm_w, 1), k = 3, fill = NA),
+         wd_b1 = rollmeanr(lag(dm_wd, 1), k = 3, fill = NA)) %>% 
+  select(date, eth_w = w_b1, eth_wd = wd_b1)
+
+lk_wind2 <- lk_wind %>%
+  filter(WindSpd_UQL == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+  filter(year > 2017 & year < 2022)
+
+lk_da <- lk_wind2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_w = mean(WindSpd_Avg),
+            dm_wd = mean(WindDir_Avg)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(w_b1 = rollmeanr(lag(dm_w, 1), k = 3, fill = NA),
+         wd_b1 = rollmeanr(lag(dm_wd, 1), k = 3, fill = NA)) %>% 
+  select(date, lk_w = w_b1, lk_wd = wd_b1)
+  
+```
+
+```{r}
+par <- lk_par %>%
+  filter(`1hourPAR_UQL` == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, par = `1hourPAR`) %>% 
+  filter(year > 2017 & year < 2022)
+
+par <- par %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_par = mean(par)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(par_b1 = rollmeanr(lag(dm_par, 1), k = 3, fill = NA)) %>% 
+  select(date, par_b1)
+  
+```
+
+```{r}
+ws844_2 <- ws844 %>%
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, lev = PLS_Lvl_Avg, rain = `24hourRain`) %>% 
+  filter(year > 2017 & year < 2022)
+
+ws844_2 <- ws844_2 %>%
+  mutate(lev_b1 = rollmeanr(lag(lev, 1), k = 10, fill = NA),
+         rain_b1 = rollmeanr(lag(rain, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+ws844_2 <- ws844_2 %>% 
+  select(date, lev, rain, lev_b1, rain_b1)
+```
+
+```{r}
+up_dm <- up %>% 
+  select(date = time, upwelling_index) %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_up = mean(upwelling_index)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(up_b1 = rollmeanr(lag(dm_up, 1), k = 3, fill = NA)) %>% 
+  select(date, up_b1)
+```
+```{r}
+bb_avg <- bb %>%
+  mutate(QT_b1 = rollmeanr(lag(Q_Total, 1), k = 10, fill = NA),
+         QGM_b1 = rollmeanr(lag(Q_GM, 1), k = 10, fill = NA),
+         QSM_b1 = rollmeanr(lag(Q_SM, 1), k = 10, fill = NA),
+         QRA_b1 = rollmeanr(lag(Q_RA, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+bb_dg <- bb_avg %>% 
+  select(date = Date, QT_b1:QRA_b1)
+```
+
+```{r}
+data <- ctd %>% 
+  left_join(riv_w) %>% 
+  left_join(bb_dg) %>%
+  left_join(ew_da) %>% 
+  left_join(lk_da) %>% 
+  left_join(par) %>%
+  left_join(ws844_2) %>% 
+  left_join(up_dm) %>% 
+  left_join(div) %>% 
+  left_join(chl)
+```
+
+```{r}
+#Only taking the columns I want from the explanatory datasheet so I can join it with the microscopy data
+data <- data %>% 
+  select(date:site_id,
+         # cluster,
+         # div,
+         temp = temp_dm,
+         sal = sal_dm,
+         drho = delta_rho_dm,
+         # fwc = fwc_dm,
+         no2 = no2_dm,
+         sio2 = sio2_dm,
+         po4 = po4_dm,
+         secchi = secchi_depth,
+         Wan_b1,
+         QT_b1,
+         QGM_b1,
+         QSM_b1,
+         QRA_b1,
+         # eth_w, eth_wd, 
+         lk_w, lk_wd,
+         par_b1,
+         up_b1)
+
+micro_join <- data %>%
+  left_join(micro_piv)
+
+#removing NAs for analysis
+micro_join <- micro_join %>% 
+  drop_na()
+```
+
+```{r}
+clust_phys <- clust_phys %>% 
+  rename(cluster_pca = cluster, sample_name = label)
+
+clust_bio <- clust_bio %>%
+  left_join(clust_phys) %>% 
+  select(-sample_name, -location, -year)
+
+micro_join <- micro_join %>%
+  left_join(clust_bio) %>%
+  relocate(cluster, .after = site_id) %>% 
+  relocate(cluster_pca, .after = cluster)
+```
+
+
+```{r}
+# micro_join <- micro_join %>% 
+#   filter(no2 > 0 & po4 > 0 & sio2 > 0) 
+```
+
+```{r}
+#Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
+resp <- micro_join[, 22:ncol(micro_join)]
+
+# resp <- sqrt(resp)
+
+# resp <- decostand(resp, method = "total")
+
+#Explanatory variables
+expl <- micro_join[, 5:20]
+
+#I want to add nutrient ratios.
+# expl <- expl %>% 
+#   mutate(n_p = no2/po4,
+#          si_n = sio2/po4)
+
+#Removing NA's for analysis (currently only 1)
+# expl[is.na(expl)] <- 0
+# expl[expl == Inf] <- 0
+
+
+#Trying to remove variables that have high VIFS. Removed no2 and po4 because they had the highest VIFS. I also think silicate is important because of fjords trends. Doesn't really matter as sio2 should be representative of the other nutrients anyways - when I cut sio2 out, no2 vector was comparable.
+expl <- expl %>%
+  select(-po4, -no2, -Wan_b1, -QT_b1)
+
+```
+
+```{r}
+#Hellinger transformation on species data - particularly suited to species abundance data with large range and lots of zeros. Gives low weights to variables with low counts and many zeroes.
+resp.hell <- decostand(resp, 'hell')
+
+```
+
+```{r}
+#Microscopy
+
+tbRDA.all <- rda(resp.hell ~ . , data = expl, scale = T)
+
+tbRDA.all
+
+anova(tbRDA.all)
+
+adjR2.tbrda <- RsquareAdj (tbRDA.all)$adj.r.squared
+
+adjR2.tbrda
+```
+
+```{r}
+#Assessing collinearity of variables - nutrients are highly related. Play with this.
+vif.cca(tbRDA.all)
+```
+
+```{r}
+constrained_eig <- tbRDA.all$CCA$eig/tbRDA.all$tot.chi*100
+unconstrained_eig <- tbRDA.all$CA$eig/tbRDA.all$tot.chi*100
+expl_var <- c(constrained_eig, unconstrained_eig)
+barplot (expl_var[1:20], col = c(rep ('red', length (constrained_eig)), rep ('black', length (unconstrained_eig))),
+         las = 2, ylab = '% variation')
+```
+
+```{r}
+#Trying different approach for ordiR2step from https://www.davidzeleny.net/anadat-r/doku.php/en:forward_sel_examples - same result as my other test
+tb_rda.vasc.0 <- rda (resp.hell ~ 1, data = expl)
+
+tb_rda.vasc.all <- rda (resp.hell ~ ., data = expl)
+
+sel.osR2 <- ordiR2step (tb_rda.vasc.0, scope = formula (tb_rda.vasc.all), 
+                        R2scope = adjR2.tbrda, direction = 'forward', 
+                        permutations = 9999)
+
+sel.osR2$anova
+
+sel.osR2_adj <- sel.osR2
+
+sel.osR2_adj$anova$`Pr(>F)` <- p.adjust (sel.osR2$anova$`Pr(>F)`, 
+                                         method = 'holm', n = ncol (expl))
+
+sel.osR2_adj$anova
+
+```
+
+
+```{r}
+#Select the statistically significant variables - May want to remove SiO2, see VIFS below!
+env.signif <- subset(expl, select = c(secchi, sio2, temp, QGM_b1))
+
+#RDA using significant variables
+rda.signif <- rda(resp.hell ~ . ,data = env.signif)
+rda.signif
+rda.sign.sum <- summary(rda.signif)
+
+rda.sign.sum
+
+#Adjusted R2 for the 1 significant variables
+#AdjR2 = 
+(R2adj <- RsquareAdj(rda.signif)$adj.r.squared)
+
+#ANOVA for testing significance of model and individual axes #Can do ANOVA by terms...
+#Entire model = 0.001***
+#RDA1 = 0.001***
+#RDA2 = 0.001***
+
+# ?anova.cca
+anova.cca(rda.signif, step = 1000)
+anova.cca(rda.signif, step = 1000, by = "axis")
+
+#All significant - already shown in forward rda, but easier to see (Not corrected)
+anova(rda.signif, by = "terms")
+
+```
+
+```{r}
+#Rough plots using both scaling types - setting scaling-2 as a variable to allow for further plotting.
+
+# Type 1 scaling
+plot_s1 <- ordiplot(rda.signif, scaling = 1, type = "text")
+
+# Type 2 scaling
+plot_s2 <- ordiplot(rda.signif, scaling = 2, type = "text")
+
+```
+
+```{r}
+#Testing species goodness of fit to try to eliminate species
+# https://stackoverflow.com/questions/27823131/customising-vegan-ordination-plot
+
+
+#This selects the species with the 10% best fitting
+sel <- goeveg::ordiselect(resp, rda.signif, fitlim = 0.05)
+sel
+
+#Can also cut species out based on abundance
+sel2 <- goeveg::ordiselect(resp, rda.signif, ablim = 0.20, fitlim = 0.10)
+sel2
+
+```
+
+```{r}
+#Changing site_id to location 
+meta <- micro_join %>% 
+  select(date:cluster_pca) %>% 
+  mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+meta <- meta %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date))
+
+meta <- meta %>%
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 12 ~ "autumn",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+meta <- meta %>%
+  mutate(year = lubridate::year(date)) %>%  
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
+                           TRUE ~ as.numeric(year)))
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+meta <- arrange(mutate(meta,
+                         location = factor(location, levels = order_loc)))
+
+#Order locations from fjord to shelf
+order_loc_seas <- c("winter", "spring", "summer", "autumn")
+
+#Chemtax - Specify order of phyto groups for figures
+meta <- arrange(mutate(meta,
+                         season = factor(season, levels = order_loc_seas)))
+```
+
+
+
+```{r}
+#RDA scaling 2 - angles. selecting distinct species and plotting as arrows with 10% best fit
+
+#Extracting site locations
+sites_loc <- sites.long(plot_s2, env.data = env.signif)
+sites_loc <- cbind(meta, sites_loc)
+head(sites_loc)
+
+#Species location in ordination
+species_loc <- species.long(plot_s2)
+species_loc
+
+axis.long <- axis.long(rda.signif, choices = c(1, 2))
+axis.long
+
+env_loc <-  as.data.frame(rda.sign.sum$biplot[,1:2])
+
+sp_loc <-  as.data.frame(rda.sign.sum$species[,1:2])
+
+sp_bf <- subset(sp_loc, rownames(sp_loc) %in% sel)
+```
+
+
+```{r}
+row.names(sp_bf) <- c("P.n.s",
+                      "Choa.",
+                      "Hill.",
+                      "Tel.",
+                      "S.mar.",
+                      "C.soc.",
+                      "C.cin.")
+                      
+  
+  
+  
+  # "C.deb.",
+  #                     "C.rad",
+  #                     "P.n.s.",
+  #                     "Tha.",
+  #                     "P.gro",
+  #                     "Hil.",
+  #                     "Tel.a.",
+  #                     "Tel.",
+  #                     "Bid.",
+  #                     "S.mar.",
+  #                     "C.cin.",
+  #                     "C.soc.",
+  #                     "Pte.",
+  #                     "P.pou")
+
+
+
+# row.names(spl_10a_10p) <- c("P.n.s",
+#                             "Th.",
+#                             "P.o",
+#                             "Hill.",
+#                             "Tel.",
+#                             "S.m.",
+#                             "P.p.",
+#                             "Bid.",
+#                             "C.s.",
+#                             "C.c.",
+#                             "P.t.")
+                            
+```
+
+
+```{r}
+#Plotting RDS scaling 2
+
+row.names(env_loc) <- c("secchi",
+                        "SiO\u2082\u207B",
+                        "T",
+                        "GM")
+
+ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc, aes(x = axis1, y = axis2,
+                                   fill = as.factor(year),
+                                   shape = location), 
+             size = 10, color = "darkgray", stroke = 2, alpha = 0.9) +
+  scale_fill_npg() +
+  scale_shape_manual(values = c(21, 22, 23 ,24)) +
+  geom_segment(data = env_loc, aes(x = 0, y = 0, xend = RDA1,
+                                   yend = RDA2),
+                arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
+                              type = "closed"),
+                linetype = 1, size = 1.4, colour = "Red", alpha = 0.7) +
+  geom_segment(data = sp_bf, aes(x = 0, y = 0, xend = RDA1,
+                                       yend = RDA2),
+                 arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
+                               type = "closed"),
+               linetype = 1, size = 1.4, colour = "black", alpha = 0.7) +
+  geom_text_repel(data = sp_bf, aes(RDA1, RDA2,
+                                           label = row.names(sp_bf)),
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.5,
+                  segment.alpha = 0.7,
+                  nudge_y = 0.05,
+                  force = 5,
+                  max.iter = 3e3,
+                  size = 5) +
+  geom_text_repel(data = env_loc , aes(RDA1, RDA2, 
+                                       label = row.names(env_loc)),
+                  point.padding = unit(2, 'lines'),
+                  nudge_y = - 0.05,
+                  force = 4,
+                  max.iter = 3e3,
+                  size = 10,
+                  color = "Red") +
+  labs(x = paste("RDA 1 (", format(100 *rda.sign.sum$cont[[1]][2,1], digits = 1),
+               "%)", sep = ""),
+       y = paste("RDA 2 (", format(100 *rda.sign.sum$cont[[1]][2,2], digits = 1),
+               "%)", sep = "")) +
+ 
+  theme_bw() +
+  theme(panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour= "black", face = "bold"),
+        axis.line = element_line(colour = "black"), 
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        text = element_text(size = 28)) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  labs(fill = "Year", shape = "Station")
+
+ggsave(here("figures_rda", "rda_2023-05-24_all_species.png"), 
+        width = 8, height = 6, dpi = 300)
+```
+
+
+
+
+
+
+

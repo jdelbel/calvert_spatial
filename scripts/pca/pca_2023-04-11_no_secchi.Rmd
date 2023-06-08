@@ -124,7 +124,7 @@ up_dm <- up %>%
 up_dm %>%
   filter(date < "2021-01-01") %>% 
   ggplot(aes(x = date, y = up_b1)) +
-  geom_line()
+  geom_area()
 ```
 ```{r}
 up_dm %>% 
@@ -134,8 +134,9 @@ up_dm %>%
   summarise(mm = mean(dm_up, na.rm = T)) %>% 
   ungroup() %>% 
   filter(year < 2021) %>% 
-  ggplot(aes(x = as.factor(month), y = mm, fill = as.factor(year))) +
-  geom_bar(stat = "identity", position = "dodge")
+  ggplot(aes(x = as.factor(month), y = mm)) +
+  geom_col(stat = "identity") +
+  facet_grid(. ~ year)
 ```
 
 
@@ -329,6 +330,17 @@ fig <- (f1 + f2 + f3) / (f4 + f5 + f6) / (f7 + f8 + f9)
 ggsave(here("figures_pca", "timeseries.png"), fig,
        width = 16, height = 10, dpi = 300)
 ```
+
+```{r}
+data_long %>% 
+  mutate(yday = lubridate::yday(date),
+         year = lubridate::year(date)) %>% 
+  filter(site_id == "QCS01" & param == "temp") %>% 
+  ggplot(aes(x = yday, y = val, color = as.factor(year))) + 
+  geom_point() +
+  geom_line() 
+```
+
 
 
 ```{r}

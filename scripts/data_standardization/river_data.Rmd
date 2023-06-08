@@ -1,0 +1,89 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+```
+
+```{r}
+#Upload data
+wan <- read_csv(here("files", "river.csv")) 
+
+db <- read_csv(here("files", "Daily_flow_long_2018_2020_v2023_04_27.csv"))
+```
+
+```{r}
+wan_ds <- wan %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+wan_mean <- wan_ds %>%
+  mutate(wan_b1 = rollmeanr(lag(dis, 1), k = 10, fill = NA))
+
+#So this is offsetting the the rolling average to one day before
+wan_mean <- wan_mean %>% 
+  select(date, wan_dis = dis, wan_b1)
+```
+
+```{r}
+db_ds <- db %>%
+  mutate(date = lubridate::date(Date)) %>%
+  mutate(date = lubridate::ymd(date)) %>% 
+  select(date, Watershed_group, Q)
+
+db_sm <- db_ds %>% 
+  filter(Watershed_group == "Q_SM") %>% 
+  mutate(sm_b1 = rollmeanr(lag(Q, 1), k = 10, fill = NA)) %>%
+  select(!Watershed_group) %>% 
+  rename(sm_dis = Q)
+
+db_gm <- db_ds %>% 
+  filter(Watershed_group == "Q_GM") %>% 
+  mutate(gm_b1 = rollmeanr(lag(Q, 1), k = 10, fill = NA)) %>%  
+  select(!Watershed_group) %>%
+  rename(gm_dis = Q)
+
+db_ra <- db_ds %>% 
+  filter(Watershed_group == "Q_RA") %>% 
+  mutate(ra_b1 = rollmeanr(lag(Q, 1), k = 10, fill = NA)) %>% 
+  select(!Watershed_group) %>%
+  rename(ra_dis = Q)
+```
+
+```{r}
+data <- wan_mean %>% 
+  left_join(db_sm) %>% 
+  left_join(db_gm) %>% 
+  left_join(db_ra)
+```
+
+```{r}
+write_csv(data, here("outputs", "discharge_2023-05-26.csv"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,451 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(here)
+library(patchwork)
+library(RColorBrewer)
+library(ggpubr)
+library(broom)
+library(zoo)
+library(gsw)
+library(gridtext)
+```
+
+```{r}
+#Upload data 
+
+#Microscopy data
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+
+#CTD data
+ctd <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+#Environmental data including wind and discharge
+env <- read_csv(here("outputs", "enviro_2023-05-26.csv"))
+
+#TChla data with 2018 data where Chl was converted to TChla
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+#CHEMTAX
+chem <- read_csv(here("files", "chemtax_2023-04-14.csv"))
+```
+
+```{r}
+ctd_rn <- ctd %>% 
+  select(date:site_id,
+         temp = temp_dm,
+         sal = sal_dm,
+         drho = delta_rho_dm,
+         no2 = no2_dm,
+         secchi = secchi_depth)
+
+env_rn <- env %>% 
+  select(date, wan_b1, gm_b1, sm_b1, ra_b1, wind_b1, wind_dir_b1, par_b1)
+
+env_ctd <- env_rn %>% 
+  left_join(ctd_rn)
+```
+```{r}
+env_ctd_long <- env_ctd %>% 
+  select(date,site_id, wan_b1:secchi) %>% 
+  pivot_longer(cols = c(wan_b1:secchi), names_to = "name", values_to = "vals")
+```
+
+```{r}
+#Here, only including 2019-2020
+chem <- chem %>% 
+  filter(date < "2021-01-01")
+```
+
+```{r}
+chem <- chem %>% 
+  rename(cyan = Cyanobacteria, 
+         hapt = Hapto, 
+         GA = `Prasinophytes-3`,
+         cryp = Cryptophytes, 
+         dino = `Dinoflagellates-1`,
+         dict = Dictyo, 
+         raph = Raphido,
+         diat = `Diatoms-1`)
+
+chem_long <- chem %>% 
+  pivot_longer(cols = c(cyan:diat), names_to = "group", values_to = "tchla")
+```
+
+```{r}
+data <- env_ctd_long %>% 
+  left_join(chem_long)
+
+data_na <- data %>%
+   drop_na()
+
+data_f <- data_na %>% 
+  filter(site_id == "DFO2")
+
+data_c <- data_na %>% 
+  filter(site_id == "KC10")
+
+data_s <- data_na %>% 
+  filter(site_id == "QCS01")
+```
+```{r}
+data_nest_a <- data_na %>% 
+  group_by(name, group) %>%
+  nest()
+
+head(data_nest_a)
+
+str(head(slice(data_nest_a, 1)))
+
+cor_fun_a <- function(df) cor.test(df$vals,
+                                 df$tchla,
+                                 method = "pearson") %>% tidy()
+
+data_nest_a <- mutate(data_nest_a, model = map(data, cor_fun_a))
+
+corr_pr_a <- select(data_nest_a, -data) %>% unnest()
+
+corr_pr_a
+
+corr_pr_a <- mutate(corr_pr_a, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+```
+
+```{r}
+data_nest_f <- data_f %>% 
+  group_by(name, group) %>%
+  nest()
+
+head(data_nest_f)
+
+str(head(slice(data_nest_f, 1)))
+
+cor_fun_f <- function(df) cor.test(df$vals,
+                                 df$tchla,
+                                 method = "pearson") %>% tidy()
+
+data_nest_f <- mutate(data_nest_f, model = map(data, cor_fun_f))
+
+corr_pr_f <- select(data_nest_f, -data) %>% unnest()
+
+corr_pr_f
+
+corr_pr_f <- mutate(corr_pr_f, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+```
+
+
+```{r}
+data_nest_c <- data_c %>% 
+  group_by(name, group) %>%
+  nest()
+
+head(data_nest_c)
+
+str(head(slice(data_nest_c, 1)))
+
+cor_fun_c <- function(df) cor.test(df$vals,
+                                 df$tchla,
+                                 method = "pearson") %>% tidy()
+
+data_nest_c <- mutate(data_nest_c, model = map(data, cor_fun_c))
+
+corr_pr_c <- select(data_nest_c, -data) %>% unnest()
+
+corr_pr_c
+
+corr_pr_c <- mutate(corr_pr_c, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+```
+```{r}
+data_nest_s <- data_s %>% 
+  group_by(name, group) %>%
+  nest()
+
+head(data_nest_s)
+
+str(head(slice(data_nest_s, 1)))
+
+cor_fun_s <- function(df) cor.test(df$vals,
+                                 df$tchla,
+                                 method = "pearson") %>% tidy()
+
+data_nest_s <- mutate(data_nest_s, model = map(data, cor_fun_s))
+
+corr_pr_s <- select(data_nest_s, -data) %>% unnest()
+
+corr_pr_s
+
+corr_pr_s <- mutate(corr_pr_s, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+```
+
+```{r}
+# Order locations from fjord to shelf
+driver_loc <- c("temp",
+                "sal",
+                "drho",
+                "no2",
+                "secchi",
+                "wan_b1",
+                "gm_b1",
+                "sm_b1",
+                "ra_b1",
+                "wind_b1",
+                "wind_dir_b1",
+                "par_b1")
+
+
+group_loc <- c("cyan",
+             "hapt",
+             "GA",
+             "cryp",
+             "dino",
+             "raph",
+             "dict",
+             "diat")
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr_a <- arrange(mutate(corr_pr_a,
+                         name = factor(name, levels = driver_loc)))
+
+corr_pr_a <- arrange(mutate(corr_pr_a,
+                         group = factor(group,
+                                                 levels = group_loc)))
+
+corr_pr_f <- arrange(mutate(corr_pr_f,
+                         name = factor(name, levels = driver_loc)))
+
+corr_pr_f <- arrange(mutate(corr_pr_f,
+                         group = factor(group,
+                                                 levels = group_loc)))
+
+corr_pr_c <- arrange(mutate(corr_pr_c,
+                         name = factor(name, levels = driver_loc)))
+
+corr_pr_c <- arrange(mutate(corr_pr_c,
+                         group = factor(group,
+                                                 levels = group_loc)))
+
+corr_pr_s <- arrange(mutate(corr_pr_s,
+                         name = factor(name, levels = driver_loc)))
+
+corr_pr_s <- arrange(mutate(corr_pr_s,
+                         group = factor(group,
+                                                 levels = group_loc)))
+
+```
+
+```{r}
+ggplot()+
+  geom_tile(data = corr_pr_a,
+            aes(group, name, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr_a, sig == "Sig."),
+            aes(group, name),
+            size = 1.5,
+            colour = "black",
+            fill = "transparent") +
+  geom_text(data = corr_pr_a,
+            aes(group, name, label = round(estimate, 2), 
+                fontface = ifelse(sig == "Sig.", "bold", "plain")),
+            size = 7) +
+  # scale_x_discrete(labels = c("crypto sum" = "Cryp.", 
+  #                             "Diatom sum" = "Diat.",
+  #                             "Skeletonema marinoi" = "S.mar.",
+  #                             "Pseudo-nitzschia seriata" = "P.n.s",
+  #                             "Pseudo-nitzschia" = "P.n.",
+  #                             "Hillea" = "Hill.",
+  #                             "Teleaulax" = "Tel.")) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+                       name = "pearson Correlation") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.03, 0.30),
+        legend.direction = "vertical",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.height = unit(2.5, "cm"),
+        legend.title = element_text(size = 30, angle = -90),
+        legend.title.align = 0.5) +
+        guides(fill = guide_colourbar(title.position = "right")) 
+
+ggsave(here("figures_cor", "all_pearson_test.png"),
+       width = 12, height = 12, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```
+
+
+
+```{r}
+ggplot()+
+  geom_tile(data = corr_pr_f,
+            aes(group, name, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr_f, sig == "Sig."),
+            aes(group, name),
+            size = 1.5,
+            colour = "black",
+            fill = "transparent") +
+  geom_text(data = corr_pr_f,
+            aes(group, name, label = round(estimate, 2), 
+                fontface = ifelse(sig == "Sig.", "bold", "plain")),
+            size = 7) +
+  # scale_x_discrete(labels = c("crypto sum" = "Cryp.", 
+  #                             "Diatom sum" = "Diat.",
+  #                             "Skeletonema marinoi" = "S.mar.",
+  #                             "Pseudo-nitzschia seriata" = "P.n.s",
+  #                             "Pseudo-nitzschia" = "P.n.",
+  #                             "Hillea" = "Hill.",
+  #                             "Teleaulax" = "Tel.")) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+                       name = "pearson Correlation") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.03, 0.30),
+        legend.direction = "vertical",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.height = unit(2.5, "cm"),
+        legend.title = element_text(size = 30, angle = -90),
+        legend.title.align = 0.5) +
+        guides(fill = guide_colourbar(title.position = "right")) 
+
+ggsave(here("figures_cor", "dfo2_pearson_test.png"),
+       width = 12, height = 12, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```
+```{r}
+ggplot()+
+  geom_tile(data = corr_pr_c,
+            aes(group, name, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr_c, sig == "Sig."),
+            aes(group, name),
+            size = 1.5,
+            colour = "black",
+            fill = "transparent") +
+  geom_text(data = corr_pr_c,
+            aes(group, name, label = round(estimate, 2), 
+                fontface = ifelse(sig == "Sig.", "bold", "plain")),
+            size = 7) +
+  # scale_x_discrete(labels = c("crypto sum" = "Cryp.", 
+  #                             "Diatom sum" = "Diat.",
+  #                             "Skeletonema marinoi" = "S.mar.",
+  #                             "Pseudo-nitzschia seriata" = "P.n.s",
+  #                             "Pseudo-nitzschia" = "P.n.",
+  #                             "Hillea" = "Hill.",
+  #                             "Teleaulax" = "Tel.")) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+                       name = "pearson Correlation") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.03, 0.30),
+        legend.direction = "vertical",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.height = unit(2.5, "cm"),
+        legend.title = element_text(size = 30, angle = -90),
+        legend.title.align = 0.5) +
+        guides(fill = guide_colourbar(title.position = "right")) 
+
+ggsave(here("figures_cor", "kc10_pearson_test.png"),
+       width = 12, height = 12, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```
+
+```{r}
+ggplot()+
+  geom_tile(data = corr_pr_s,
+            aes(group, name, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr_s, sig == "Sig."),
+            aes(group, name),
+            size = 1.5,
+            colour = "black",
+            fill = "transparent") +
+  geom_text(data = corr_pr_s,
+            aes(group, name, label = round(estimate, 2), 
+                fontface = ifelse(sig == "Sig.", "bold", "plain")),
+            size = 7) +
+  # scale_x_discrete(labels = c("crypto sum" = "Cryp.", 
+  #                             "Diatom sum" = "Diat.",
+  #                             "Skeletonema marinoi" = "S.mar.",
+  #                             "Pseudo-nitzschia seriata" = "P.n.s",
+  #                             "Pseudo-nitzschia" = "P.n.",
+  #                             "Hillea" = "Hill.",
+  #                             "Teleaulax" = "Tel.")) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+                       name = "pearson Correlation") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.03, 0.30),
+        legend.direction = "vertical",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.height = unit(2.5, "cm"),
+        legend.title = element_text(size = 30, angle = -90),
+        legend.title.align = 0.5) +
+        guides(fill = guide_colourbar(title.position = "right")) 
+
+ggsave(here("figures_cor", "qcs01_pearson_test.png"),
+       width = 12, height = 12, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```
+
+
+
+
+
+

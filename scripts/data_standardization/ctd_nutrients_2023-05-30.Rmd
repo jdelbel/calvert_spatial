@@ -1,0 +1,291 @@
+---
+title: Data Wrangling and standardization for Calvert/QU39 spatial paper
+output: html_notebook
+---
+
+```{r}
+#Load packages
+library(tidyverse) #Data wrangling
+library(readxl) #Import excel files
+library(gsw) #Gibbs Seawater Toolbox
+library(here) #File structure management
+```
+
+```{r}
+#Importing datasets
+
+#Upload ctd data
+ctd <- read_csv(here("files", "ctd.csv")) 
+
+ctd <- ctd %>% 
+  filter(!Station == "QU39")
+
+#Upload nutrient data (QC'd data from the portal)
+nuts <- read_csv(here("files", "nuts_2021-12-15.csv"))
+
+nuts <- nuts %>% 
+  filter(!site_id == "QU39")
+
+#Upload secchi disk data
+secchi <- read_csv(here("files", "secchi.csv"))
+
+#Remove QU39 from the secchi disk datasheet
+secchi <- secchi %>% 
+  filter(!site_id == "QU39")
+
+```
+
+```{r}
+#Making changes to datasets to make them easier to work with.
+
+#making CTD labels shorter and easier to work with. Selecting the columns I want to work with.
+ctd <- ctd %>% 
+  rename(pres = `Pressure (dbar)`,
+         sal = `Salinity (PSU)`,
+         temp = `Temperature (deg C)`,
+         date = `Measurement time`,
+         station = Station,
+         cast_pk = `Cast PK`,
+         par = `PAR (umol m-2 s-1)`)
+
+#Selecting columns I need from the Secchi workbook. Removing two records where the secchi depth was 999.
+secchi <- secchi %>% 
+  select(date, site_id, secchi_depth = line_out_depth) %>% 
+  filter(secchi_depth < 30)
+
+#Looking at coordinates for the CTD dataset - creating a list of unique coordinates
+ctd_coord <- ctd %>% 
+  distinct(station, Latitude, Longitude)
+
+#Some CTD casts are missing coordinates that are required for GSW calculations. Fill the coordinates in using those from the Hakai Station Master - Latitude
+ctd <- ctd %>% 
+  mutate(Latitude = case_when(station == "QU39" & is.na(Latitude) ~ 50.03001,
+                              station == "QCS01" & is.na(Latitude) ~ 51.70493,
+                              station == "KC10" & is.na(Latitude) ~ 51.65064,
+                              station == "DFO2" & is.na(Latitude) ~ 51.52111,
+         TRUE ~ as.numeric(as.character(Latitude))))
+
+#Filling in missing Longitude
+ctd <- ctd %>% 
+  mutate(Longitude = case_when(station == "QU39" & is.na(Longitude) ~ -125.0989,
+                              station == "QCS01" & is.na(Longitude) ~ -128.2388,
+                              station == "KC10" & is.na(Longitude) ~ -127.9513,
+                              station == "DFO2" & is.na(Longitude) ~ -127.5590,
+         TRUE ~ as.numeric(as.character(Longitude))))
+
+#adding year/month/day to CTD dataset
+ctd <- ctd %>%
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date))
+
+```
+
+```{r}
+#Performing GSW calculations
+
+#Calculating absolute salinity
+SA <- gsw_SA_from_SP(ctd$sal, ctd$pres, ctd$Longitude, ctd$Latitude)
+
+#Converting absolute salinity output to a dataframe
+SA <- as.data.frame(SA)
+
+#Calculating conservative temperature
+CT <- gsw_CT_from_t(SA$SA, ctd$temp, ctd$pres)
+
+#Converting conservative temperature output to a dataframe
+CT <- as.data.frame(CT)
+
+#Calculating Density
+rho = gsw_rho(SA$SA, CT$CT, ctd$pres)
+
+#Converting Density to a dataframe
+rho <- as.data.frame(rho)
+
+#Calculating Brunt-Vaisala frequency
+bv <- gsw_Nsquared(SA$SA, CT$CT, ctd$pres)
+
+#Converting Brunt-Vaisala frequency to a dataframe
+bv <- bind_rows(bv)
+
+#Adding a row at the bottom of the Brunt-Vaisala dataframe to make the vector length equal to the other calculations
+bv <- bv %>% 
+  add_row(N2 = NA, p_mid = NA)
+
+#Binding calculations to ctd dataframe
+ctd <- cbind(ctd, SA, CT, rho, bv)
+```
+
+```{r}
+#Performing calculations for delta_rho 
+
+#Finding minimum cast start depth for each profile to determine range of depths to use for density difference. Only 5 casts start deeper than three meters and only 1 doesn't go to 30m. Using 2 and 30 meters for delta_rho calculation
+range_pres <- ctd %>% 
+  group_by(cast_pk) %>% 
+  summarise(min_pres = min(pres),
+            max_pres = max(pres)) %>% 
+  ungroup() %>% 
+  arrange(desc(min_pres))
+
+#The next few steps are used to determine the density difference as a measure of stratification. Using 2 and 30m
+
+#Filter 2m data from the CTD datasheet
+ctd_2 <- ctd %>% 
+  filter(pres == 2) %>% 
+  select(cast_pk, station, Latitude, Longitude, date, year:day, rho)
+
+#filter 30m data
+ctd_30 <- ctd %>% 
+  filter(pres == 30) %>% 
+  select(cast_pk, rho)
+
+#joining 2m data to 3m data
+ctd_dd <- ctd_2 %>% 
+  left_join(ctd_30, by = "cast_pk") %>% 
+  rename(rho_2 = rho.x, 
+         rho_30 = rho.y)
+
+#Calculating difference in density
+ctd_dd <- ctd_dd %>% 
+  mutate(delta_rho = rho_30 - rho_2)
+
+#Preparing delta_rho calculation sheet for merging back into ctd datasheet
+ctd_dd <- ctd_dd %>% 
+  select(cast_pk, delta_rho)
+```
+
+```{r}
+#Merging delta_rho and the corrected turbidity back into the ctd workbook here
+
+#Merging/joining delta_rho and corrected turbidity into ctd datasheet
+ctd <- ctd %>% 
+  left_join(ctd_dd) 
+```
+```{r}
+#Calculating MLD 
+# mld <- ctd %>% 
+#   select(cast_pk, station, date, year:day, pres, rho) %>% 
+#   group_by(cast_pk) %>% 
+#   mutate(rho_diff = rho - lag(rho)) %>% 
+#   ungroup()
+# 
+# mld_2 <- mld %>% 
+#   group_by(cast_pk) %>% 
+#   filter(rho_diff > 0.125) %>%
+#   ungroup()
+# 
+# mld_max <- mld_2 %>% 
+#   group_by(cast_pk) %>% 
+#   slice_max(pres, n = 1) %>%
+#   ungroup()
+```
+
+```{r}
+#Selecting the pertinent columns for analysis - much easier to assess merging/joining with fewer columns
+
+#Selecting 5 m depth CTD data, selecting  columns and renaming certain columns for merging with nutrients and phytoplankton data.
+ctd_5 <- ctd %>%
+  filter(pres == 5) %>% 
+  rename(date_long = date) %>% 
+  mutate(date = lubridate::date(date_long)) %>%
+  select(cast_pk, date, date_long, site_id = station, Latitude, Longitude, pres, 
+         temp, sal, N2, delta_rho)
+
+#Limited years to those being used for analysis
+ctd_5 <- ctd_5 %>% 
+  filter(date > "2018-01-01" & date < "2021-01-01")
+
+#Selecting 5m nutrients and limiting to useful columns (my column selections are scattered all over the place and this could be done to all files much earlier, no? Chunk 2)
+nuts_5 <- nuts %>% 
+  filter(line_out_depth == 5) %>% 
+  select(date, collected, site_id, no2_no3_um, po4, sio2)
+```
+
+```{r}
+#Calculating the daily means for datasets with replicates and replicate casts.
+
+#Determining how many replicate casts there are.
+dup_ctd <- ctd_5 %>% 
+  group_by(date, site_id) %>% 
+  mutate(dups = n()) %>% 
+  arrange(date) %>% 
+  ungroup() %>%
+  filter(dups > 1)  
+
+# Calculating time difference between replicate casts. 
+## Result - 2 just over an hour and one over 4 hours. The four hour one has very similar values, so including in daily mean calculation, but could remove as. 
+dup_ctd <- dup_ctd %>% 
+  group_by(date, site_id) %>% 
+  arrange(date_long) %>% 
+  mutate(time_diff = as.numeric(date_long - lag(date_long), units = "hours"))
+
+ctd_dm <- ctd_5 %>% 
+  select(date, site_id, temp:delta_rho) %>% 
+  group_by(date, site_id) %>% 
+  summarise(temp_dm = mean(temp),
+            sal_dm = mean(sal),
+            N2_dm = mean(N2),
+            delta_rho_dm = mean(delta_rho)) %>% 
+  ungroup()
+
+lat_long <- ctd_5 %>% 
+  select(date, site_id, lat = Latitude, long = Longitude) %>% 
+  group_by(date, site_id) %>% 
+  summarise(lat = mean(lat),
+            long = mean(long)) %>% 
+  ungroup()
+
+ctd_dm <- ctd_dm %>% 
+  left_join(lat_long) %>% 
+  relocate(lat, .after = site_id) %>% 
+  relocate(long, .after = lat)
+
+# Separating replicate nutrient data from 5m depth data. 
+## Duplicates only from QU39 outside of the dates under investigation. Not bothering with looking at difference in time.
+dups_nuts <- nuts_5 %>% 
+  group_by(date, site_id) %>% 
+  mutate(dups = n()) %>% 
+  ungroup() %>%
+  filter(dups > 1)
+  
+#Performing daily mean on 5m depth nutrient data
+nuts_dm <- nuts_5 %>% 
+  group_by(date, site_id) %>% 
+  summarise(no2_dm = mean(no2_no3_um),
+            sio2_dm = mean(sio2),
+            po4_dm = mean(po4)) %>% 
+  ungroup()
+```
+```{r}
+ctd_join <- ctd_dm %>% 
+  left_join(nuts_dm) %>% 
+  left_join(secchi) %>% 
+  distinct(date, site_id, po4_dm)
+
+#Check for duplicates
+ctd_join_dup <- ctd_join %>% 
+  group_by(date, site_id) %>% 
+  summarise(n = n()) %>% 
+  ungroup()
+```
+
+```{r}
+#Exporting as a csv to pull into other analysis.
+write_csv(ctd_join, here("outputs", "ctd_2023-05-30.csv"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
