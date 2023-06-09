@@ -23,6 +23,8 @@ micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
 chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
 chem <- read_csv(here("files", "chemtax_2023-04-14.csv")) 
+
+sf <- read_csv(here("files", "chl_2018_2020.csv")) 
 ```
 
 ```{r}
@@ -45,6 +47,19 @@ micro <- micro %>%
                                 date == "2019-08-31" ~ 9,
                                 date == "2019-11-27" ~ 12,
                              TRUE ~ as.numeric (month_surv)))
+```
+
+```{r}
+sf_less <- sf %>% 
+  filter(line_out_depth == 5 & !filter_type == "Bulk GF/F") %>% 
+  filter(chla_flag == "AV" | is.na(chla_flag)) %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(date, year, site_id, filter_type, chla) %>% 
+  filter(!is.na(chla)) %>% 
+  group_by(date) %>% 
+  mutate(n_filt = n()) %>% 
+  ungroup() %>% 
+  filter(n_filt == 3)
 ```
 
 ```{r}
@@ -375,28 +390,15 @@ palette <- c("#ff8000", #1 - Diatoms (orange)
              "#000000") #8 - Cyanobacteria (black)
 
 palette_micro <- c("#FBCEB1", #Bidd
-                   "#F4730B", #C.ten.
+                   "#FF7F50", #C.ten.
                    "#FF4500", #P.n.s.
                    "#ff8000", #S.mar.
-                   "#ffff00", #Hill
-                   "#ffff66", #Tel
+                   "#FFEA00", #Hill
+                   "#FFFF8F", #Tel
                    "#4d6600", #Olis
                    "#7d4dcc", #P.p.
                    "#71797E", #OD
                    "#E5E4E2") #OF
-
-palette_micro2 <- c("#E5E4E2",
-                    "#71797E",
-                    "#7d4dcc",
-                    "#4d6600",
-                    "#ffff66",
-                    "#ffff00",
-                    "#ff8000",
-                    "#FF4500",
-                    "#F4730B",
-                    "#FBCEB1")
-  
-
 
 ```
 
@@ -576,11 +578,356 @@ f6 <- test %>%
   guides(fill = guide_legend(nrow = 1),
          color = "none")
 
-fig <- (f1 + f2) / (f3 + f4) / (f5 + f6)
+f7 <- sf_less %>%
+  filter(site_id == "DFO2") %>%
+  ggplot() + 
+  geom_area(aes(x = date, y = chla, 
+           fill = filter_type), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_brewer(palette = "Greens") +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(nrow = 1),
+         color = "none")
+
+f8 <- sf_less %>%
+  filter(site_id == "KC10") %>%
+  ggplot() + 
+  geom_area(aes(x = date, y = chla, 
+           fill = filter_type), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_brewer(palette = "Greens") +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(nrow = 2),
+         color = "none")
+
+f9 <- sf_less %>%
+  ggplot() + 
+  geom_area(data = filter(sf_less, year == 2018 & site_id == "QCS01"), 
+           aes(x = date, y = chla,
+           fill = filter_type), stat = "identity", position = "stack",
+           color = "black") +
+    geom_area(data = filter(sf_less, year == 2019 & site_id == "QCS01"), 
+           aes(x = date, y = chla,
+           fill = filter_type), stat = "identity", position = "stack",
+           color = "black") +
+      geom_area(data = filter(sf_less, year == 2020 & site_id == "QCS01"), 
+           aes(x = date, y = chla,
+           fill = filter_type), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_brewer(palette = "Greens") +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(nrow = 2),
+         color = "none")
+
+fig <- (f1 + f2 + f7) / (f3 + f4 + f8) / (f5 + f6 + f9)
 
 ggsave(here("figures_species_timeseries", "test_test2.png"), fig,
-       width = 16, height = 12, dpi = 300)
+       width = 18, height = 12, dpi = 300)
 ```
+
+```{r}
+f1 <- test2 %>%
+  filter(location == "F") %>%
+  ggplot() + 
+  geom_area(aes(x = date, y = species_sum/100000, 
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette_micro) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 32) +
+  labs(y = bquote("Abund. ("~10^5 ~ cells ~ L^-3*")")) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) 
+
+
+f2 <- chem_long %>%
+  filter(site_id == "DFO2") %>% 
+  ggplot() +
+  geom_area(aes(x = date, y = tchla, 
+           fill = fct_rev(group)), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette,
+                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
+                               "Hapt", "Cyan")) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  labs(y = bquote("Phy. (TChla, mg" ~ m^-3*")")) +
+  ylim(0, 12.5) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.5, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        # strip.text.y = element_blank()
+        ) +
+  guides(fill = guide_legend(nrow = 2),
+         color = "none")
+
+f3 <- test2 %>%
+  filter(location == "C") %>%
+  ggplot() + 
+  geom_area(aes(x = date, y = species_sum/100000, 
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette_micro) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 32) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) 
+
+
+f4 <- chem_long %>%
+  filter(site_id == "KC10") %>% 
+  ggplot() +
+  geom_area(aes(x = date, y = tchla, 
+           fill = fct_rev(group)), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette,
+                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
+                               "Hapt", "Cyan")) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  labs(y = "Phyto. ug/L") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        # strip.text.y = element_blank()
+        ) +
+  guides(fill = guide_legend(nrow = 1),
+         color = "none")
+
+test2<- test2 %>% 
+  mutate(year = lubridate::year(date))
+
+f5 <- test2 %>%
+  ggplot() +
+  geom_area(data = filter(test2, year == 2018 & location == "S"), 
+           aes(x = date, y = species_sum/100000,
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+    geom_area(data = filter(test2, year == 2019 & location == "S"), 
+           aes(x = date, y = species_sum/100000,
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+      geom_area(data = filter(test2, year == 2020 & location == "S"), 
+           aes(x = date, y = species_sum/100000,
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette_micro) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 32) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) 
+
+GeomRibbon$handle_na <- function(data, params) { data }
+
+test <- chem_long %>% 
+  filter(site_id == "QCS01")
+
+test$ymax <-test$tchla
+test$ymin <- 0
+zl <- levels(test$group)
+for ( i in 2:length(zl) ) {
+   zi <- test$group==zl[i]
+   zi_1 <- test$group==zl[i-1]
+   test$ymin[zi] <- test$ymax[zi_1]
+   test$ymax[zi] <- test$ymin[zi] + test$ymax[zi]
+}
+
+f6 <- test %>%
+  ggplot(aes(x = date, ymax = ymax, ymin = ymin, fill = fct_rev(group))) + 
+  geom_ribbon(color = "black") +
+  scale_fill_manual(values = palette,
+                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
+                               "Hapt", "Cyan")) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  labs(y = "Phyto. ug/L") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        # strip.text.y = element_blank()
+        ) +
+  guides(fill = guide_legend(nrow = 1),
+         color = "none")
+
+f7 <- sf_less %>%
+  filter(site_id == "DFO2") %>%
+  ggplot() + 
+  geom_area(aes(x = date, y = chla, 
+           fill = filter_type), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_brewer(palette = "Greens") +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  labs(y = bquote("Chla (mg" ~ m^-3*")")) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        # axis.text.y = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = c(0.5, 0.9),
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(nrow = 1),
+         color = "none")
+
+f8 <- sf_less %>%
+  filter(site_id == "KC10") %>%
+  ggplot() + 
+  geom_area(aes(x = date, y = chla, 
+           fill = filter_type), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_brewer(palette = "Greens") +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(nrow = 2),
+         color = "none")
+
+f9 <- sf_less %>%
+  ggplot() + 
+  geom_area(data = filter(sf_less, year == 2018 & site_id == "QCS01"), 
+           aes(x = date, y = chla,
+           fill = filter_type), stat = "identity", position = "stack",
+           color = "black") +
+    geom_area(data = filter(sf_less, year == 2019 & site_id == "QCS01"), 
+           aes(x = date, y = chla,
+           fill = filter_type), stat = "identity", position = "stack",
+           color = "black") +
+      geom_area(data = filter(sf_less, year == 2020 & site_id == "QCS01"), 
+           aes(x = date, y = chla,
+           fill = filter_type), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_brewer(palette = "Greens") +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 12.5) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(nrow = 2),
+         color = "none")
+
+
+fig2 <- (f1 + plot_layout(guides = "collect") & theme(legend.position = "top")) +
+  (f3 + theme(legend.position = "none")) + (f5 + theme(legend.position = "none"))
+
+fig3 <- fig2 / (f2 + f4 + f6) 
+
+fig4 <- fig3 / (f7 + f8 + f9)
+
+ggsave(here("figures_species_timeseries", "test_test3.png"), fig4,
+       width = 18, height = 12, dpi = 300)
+```
+
+
+
+
 
 
 
