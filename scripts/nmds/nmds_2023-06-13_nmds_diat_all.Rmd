@@ -1,0 +1,664 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+library(indicspecies)
+library(fuzzySim)
+library(cluster)
+library(patchwork)
+library(vegan)
+library(RColorBrewer)
+library(ggcorrplot) 
+library(analogue)
+# library(clustsig)
+
+```
+
+```{r}
+#Upload data
+
+#Upload microscopy abundance data in OBIS and long/tide format
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv")) 
+
+```
+
+```{r}
+micro <- micro %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  relocate(year, .after = date) %>% 
+  relocate(month, .after = year)
+
+#Adding location instead of site ID for interpretation of results
+micro <- micro %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+#Creating a unique location-date ID for each sample - makes labels for plotting by dendrogram more informative 
+micro <- micro %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
+
+micro <- micro %>%
+  mutate(month = lubridate::month(date)) %>% 
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "W",
+                            month >= 3 & month <= 5 ~ "Sp",
+                            month >= 6 & month <= 8 ~ "S",
+                            month >= 9 & month <= 12 ~ "A",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+micro <- micro %>%
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
+                           TRUE ~ as.numeric(year)))
+
+# micro <- micro %>% 
+#   filter(month > 4 & month < 11)
+```
+
+```{r}
+#Creating a list of distinct species and groups
+species_distinct <- micro %>% 
+  distinct(group, scientificName)
+
+# micro <- micro %>%
+#   filter(month > 4 & month < 11)
+
+micro <- micro %>% 
+  filter(!group == "Cyanobacteria")
+
+#Separating out diatoms
+micro_diat <- micro %>%
+  filter(group == "Bacillariophyta") 
+```
+
+```{r}
+#Filtering out species that are not present in at least 10% of the samples - this is important for the clustering and nMDS methods I am using as these species can skew the results.
+
+
+
+# Determining total number of samples in the dataset
+sample_num <- micro %>%
+  distinct(date, site_id)
+
+#Determining species that are present in > 10% of samples.
+species_10 <- micro %>%
+  group_by(scientificName) %>%
+  summarise(n_obs = n()) %>%
+  ungroup() %>%
+  mutate(perc_obs = n_obs/78) %>%
+  filter(perc_obs >= 0.10)
+
+#Creating a list of species in > 10% of samples.
+species_10_list <- species_10$scientificName
+
+#Removing species that are not present in > 10% of samples.
+micro <- micro %>%
+  filter(scientificName %in% species_10_list)
+
+micro_diat <- micro_diat %>%
+  filter(scientificName %in% species_10_list)
+```
+
+```{r}
+#Preparing data for the different analysis.
+
+
+#Selecting columns that I will use
+micro_piv <- micro %>% 
+  select(sample_name:location, scientificName, species_sum)
+
+micro_piv_diat <- micro_diat %>% 
+  select(sample_name:location, scientificName, species_sum)
+
+#pivoting wider so species are columns and samples are rows.
+micro_piv <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, 
+              values_from = species_sum, values_fill = 0)
+
+micro_piv_diat <- micro_piv_diat %>% 
+  pivot_wider(names_from = scientificName, 
+              values_from = species_sum, values_fill = 0) 
+
+```
+
+
+```{r}
+#Pulling out species counts for transformation and use in analysis
+species <- micro_piv[, 8:ncol(micro_piv)]
+species_diat <- micro_piv_diat[, 8:ncol(micro_piv_diat)]
+
+#Transforming the abundance data
+# t_abund <- species
+# t_abund_diat <- species_diat
+
+# t_abund <- decostand(species, method = "total")
+# t_abund_diat <- decostand(species_diat, method = "total")
+
+t_abund <- sqrt(species)
+t_abund_diat <- sqrt(t_abund_diat)
+```
+
+```{r}
+#Making separate sheets to performed clustering on.
+hc_abund <- t_abund
+hc_abund_diat <- t_abund_diat
+
+
+#Creating a list of rownames to attach to the clustering sheets - allows me to plot on the dendrogram.
+labs_list <- micro_piv$sample_name
+labs_list_diat <- micro_piv_diat$sample_name
+
+#Making the rownames of the clustering matrix the ones specified in the above list.
+rownames(hc_abund) <- labs_list
+rownames(hc_abund_diat) <- labs_list_diat
+```
+
+```{r}
+#method to assess
+m <- c("average", "single","complete","ward")
+names(m) <- c("average", "single","complete","ward")
+
+#function to compute coefficient
+ac <- function(x){agnes(hc_abund, method = x)$ac}
+map_dbl(m,ac)
+
+ac_diat <- function(x){agnes(hc_abund_diat, method = x)$ac}
+map_dbl(m,ac_diat)
+```
+
+```{r}
+#Performing hierarchical clustering
+
+#Calculating Bray-Curtis Distances
+dis_abund <- vegdist(hc_abund, method = "bray")
+dis_abund_diat <- vegdist(hc_abund_diat, method = "bray")
+
+#Applying wards linkage method
+# clust_ward_abund <- agnes(dis_abund, method = "ward")
+clust_ward_abund <- hclust(dis_abund, method = "average")
+clust_ward_abund_diat <- hclust(dis_abund_diat, method = "average")
+
+```
+
+```{r}
+coph <- cophenetic(clust_ward_abund)
+cor(dis_abund, coph)
+
+coph_diat <- cophenetic(clust_ward_abund_diat)
+cor(dis_abund_diat, coph_diat)
+```
+
+```{r}
+# Enhanced hierarchical clustering, cut in 3 groups
+fviz_dend(clust_ward_abund, cex = 0.5, h = 0.65, color_labels_by_k = TRUE)
+fviz_dend(clust_ward_abund_diat, cex = 0.5, h = 0.65, color_labels_by_k = TRUE)
+```
+
+```{r}
+#For the abundance data, looking at some methods to determine the number of clusters
+
+#These are time intensive, so turning off until needed
+
+fviz_nbclust(hc_abund, FUN = hcut, method = "wss")
+fviz_nbclust(hc_abund, FUN = hcut, method = "silhouette")
+gap_stat <- clusGap(hc_abund, FUN = hcut, nstart = 25, K.max = 20, B = 50)
+fviz_gap_stat(gap_stat)
+
+fviz_nbclust(hc_abund_diat, FUN = hcut, method = "wss")
+fviz_nbclust(hc_abund_diat, FUN = hcut, method = "silhouette")
+gap_stat <- clusGap(hc_abund_diat, FUN = hcut, nstart = 25, K.max = 20, B = 50)
+fviz_gap_stat(gap_stat)
+
+#In general, these approaches do not show many clusters - only 2. This bothers me as there is clearly more structure in the data.
+```
+
+
+```{r}
+#Trying cutting at line 
+
+# Abundance data
+k_abund <- 0.65
+clust_abund <- cutree(clust_ward_abund, h = k_abund)
+#
+clust_df_abund <- data.frame(label = rownames(hc_abund),
+                                   cluster = factor(clust_abund))
+
+k_abund_diat <- 0.65
+clust_abund_diat <- cutree(clust_ward_abund_diat, h = k_abund_diat)
+#
+clust_df_abund_diat <- data.frame(label = rownames(hc_abund_diat),
+                                   cluster = factor(clust_abund_diat))
+```
+
+```{r}
+#Setting up the derived abundance clusters for joining with the actual data
+clust_abund_join <- clust_df_abund %>% 
+  select(sample_name = label, clust_abund = cluster)
+
+micro_piv <- micro_piv %>% 
+  left_join(clust_abund_join) %>% 
+  relocate(clust_abund, .after = location)  
+
+clust_abund_join_diat <- clust_df_abund_diat %>% 
+  select(sample_name = label, clust_abund = cluster)
+
+micro_piv_diat <- micro_piv_diat %>% 
+  left_join(clust_abund_join_diat) %>% 
+  relocate(clust_abund, .after = location) 
+
+```
+```{r}
+#ANOSIM test to see if groupings statistically significant 
+clust_abund <- micro_piv$clust_abund
+clust_abund_diat <- micro_piv_diat$clust_abund
+
+# ano_clust_abund = anosim(t_abund, clust_abund, distance = "bray", permutations = 9999)
+# ano_clust_abund
+# 
+# ano_clust_abund_diat = anosim(t_abund_diat, clust_abund_diat, distance = "bray", permutations = 9999)
+# ano_clust_abund_diat
+
+```
+
+
+
+```{r}
+set.seed(123)
+
+#Running nmds all species
+nmds_abund <-  metaMDS(t_abund, distance = "bray", autotransform = F, 
+                         k = 2, trymax = 100) 
+
+#Show results including stress 
+nmds_abund
+
+#Checking stressplot for fit
+stressplot(nmds_abund)
+
+```
+```{r}
+set.seed(123)
+
+#Running nmds all species
+nmds_abund_diat <-  metaMDS(t_abund_diat, distance = "bray", autotransform = F, 
+                         k = 2, trymax = 100) 
+
+#Show results including stress 
+nmds_abund_diat
+
+#Checking stressplot for fit
+stressplot(nmds_abund_diat)
+
+```
+
+
+```{r}
+#Pulling NMDS scores, months and stations for plotting NMDS is ggplot
+
+#All abundance
+data.scores_abund = as.data.frame(scores(nmds_abund))
+data.scores_abund$date = micro_piv$date
+data.scores_abund$month = micro_piv$month
+data.scores_abund$season = micro_piv$season
+data.scores_abund$site = micro_piv$location
+data.scores_abund$year = micro_piv$year
+data.scores_abund$clust_abund = micro_piv$clust_abund
+
+data.scores_abund_diat = as.data.frame(scores(nmds_abund_diat))
+data.scores_abund_diat$date = micro_piv_diat$date
+data.scores_abund_diat$month = micro_piv_diat$month
+data.scores_abund_diat$season = micro_piv_diat$season
+data.scores_abund_diat$site = micro_piv_diat$location
+data.scores_abund_diat$year = micro_piv_diat$year
+data.scores_abund_diat$clust_abund = micro_piv_diat$clust_abund
+
+```
+
+```{r}
+#Order locations from fjord to shelf for plotting order
+order_loc <- c("F", "C", "S")
+
+season_loc <- c("W", "Sp", "S", "A")
+
+#Setting location order for plots 
+data.scores_abund <- arrange(mutate(data.scores_abund,
+                         site = factor(site, levels = order_loc)))
+
+data.scores_abund_diat <- arrange(mutate(data.scores_abund_diat,
+                         site = factor(site, levels = order_loc)))
+
+data.scores_abund <- arrange(mutate(data.scores_abund,
+                         season = factor(season, levels = season_loc)))
+
+data.scores_abund_diat <- arrange(mutate(data.scores_abund_diat,
+                         season = factor(season, levels = season_loc)))
+```
+
+
+```{r}
+# #Looking at species scores to add to the nmds plot
+# 
+#All species
+vf <- envfit(nmds_abund, t_abund, perm = 999)
+vf_diat <- envfit(nmds_abund_diat, t_abund_diat, perm = 999)
+#
+# #Dinoflagellates
+# vf_dino <- envfit(nmds_dino, transform_dino, perm = 999)
+
+#Pulling out r2 scores
+#All species
+r2 <- vf$vectors$r
+r2_diat <- vf_diat$vectors$r
+
+#MAking dataframe out of r2 values
+#All species
+r2_df <- as.data.frame(r2)
+r2_df_diat <- as.data.frame(r2_diat)
+
+# #All species
+spp.scrs <- as.data.frame(scores(vf, display = "vectors"))
+spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
+spp.scrs2 <- cbind(spp.scrs, r2_df)
+
+spp.scrs_diat <- as.data.frame(scores(vf_diat , display = "vectors"))
+spp.scrs_diat <- cbind(spp.scrs_diat , Species = rownames(spp.scrs_diat ))
+spp.scrs2_diat <- cbind(spp.scrs_diat , r2_df_diat )
+```
+
+
+```{r}
+#Pulling species with only r2 > 0.3 scores
+#All species
+spp.scrs2 <- spp.scrs2 %>% 
+  slice_max(order_by = r2, n = 10)
+
+spp.scrs2_diat <- spp.scrs2_diat %>%
+  slice_max(order_by = r2_diat, n = 10)
+
+# spp.scrs2 <- spp.scrs2 %>%
+#   filter(r2 >= 0.30)
+# 
+# spp.scrs2_diat <- spp.scrs2_diat %>%
+#    filter(r2_diat >= 0.30)
+
+```
+
+
+```{r}
+#Making shorter abbreviated species names for plotting
+
+# rownames(spp.scrs2) <- c("Tel.",
+#                          "Hill.",
+#                          "S.mar.",
+#                          "C.soc.",
+#                          "P.ori")
+# # 
+# rownames(spp.scrs2_diat) <- c("S.mar.",
+#                               "Thal.",
+#                               "L.dan.",
+#                               "C.soc.",
+#                               "C.lac.")
+# 
+```
+
+```{r}
+brewer.pal(n=4,"Spectral")
+```
+
+```{r}
+#This is the horizontal version of the month and year nMDS panel shown incorporated into a large panel later 
+
+nmds1 <- ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores_abund, aes(fill = as.factor(clust_abund), shape = site),
+             size = 9, stroke = 0.1, color = "black") + 
+  # scale_fill_manual(values = c("#D7191C","#FDAE61","#ABDDA4","#2B83BA")) +
+  scale_shape_manual(values = c(21, 22, 23)) + 
+  geom_segment(data = spp.scrs2,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "black",
+               size = 1.2, alpha = 0.7) +
+  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) +
+  ggrepel::geom_text_repel(data = spp.scrs2, aes(x = NMDS1, y = NMDS2,
+                                           label = row.names(spp.scrs2)),
+                  # box.padding = unit(0.5, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.3,
+                  segment.alpha = 0.7,
+                  arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = 0.2,
+                  # nudge_x = -0.2,
+                  force = 3,
+                  max.iter = 3e3,
+                  size = 7) +
+  # xlim(-0.4, 0.7) +
+  # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
+  # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        # axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        # legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "cluster", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+nmds2 <- ggplot(data = data.scores_abund_diat, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores_abund_diat, aes(fill = as.factor(clust_abund), shape = site),
+             size = 9, stroke = 0.1, color = "black") + 
+  # scale_fill_manual(values = c("#D7191C","#FDAE61","#ABDDA4","#2B83BA")) +
+  scale_shape_manual(values = c(21, 22, 23)) + 
+  geom_segment(data = spp.scrs2_diat,
+               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "black",
+               size = 1.2, alpha = 0.7) +
+  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) +
+  ggrepel::geom_text_repel(data = spp.scrs2_diat, aes(x = NMDS1, y = NMDS2,
+                                           label = row.names(spp.scrs2_diat)),
+                  # box.padding = unit(0.5, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.3,
+                  segment.alpha = 0.7,
+                  arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = 0.2,
+                  # nudge_x = -0.2,
+                  force = 2,
+                  max.iter = 3e3,
+                  size = 7) +
+  # xlim(-0.4, 0.7) +
+  # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
+  # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        # axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        # legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Cluster", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+fig <- nmds1 + nmds2
+
+ggsave(here("figures_nmds_new", "2023-06-15_nmds_no_transform.png"), 
+        width = 16, height = 6, dpi = 300)
+```
+
+
+```{r}
+export_cluster <- data.scores_abund %>% 
+  select(date, site, clust_abund)
+
+# write_csv(export_cluster, here("outputs", "diatom_cluster_2023-06-14.csv"))
+```
+
+
+
+
+
+
+```{r}
+#Indicator species analysis
+# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
+
+#Indicators by station for diatoms
+inv_clust_abund = multipatt(t_abund, clust_abund, func = "r.g", duleg = T,
+                       control = how(nperm = 999))
+
+#Looking at results of analysis
+summary(inv_clust_abund)
+```
+
+
+```{r}
+
+# inv_clust_diat <- data.table::as.data.table(inv_clust_rel$sign, keep.rownames = TRUE)
+# 
+# inv_clust_rel_sp <- inv_clust_rel_sp %>%
+#   filter(s.1 == 1 | s.2 == 1 | s.3 == 1 | s.4) %>%
+#   filter(p.value < 0.05) %>%
+#   # filter(!rn == "Skeletonema marinoi") %>%
+#   arrange(rn)
+# 
+# inv_clust_rel_sp_list <- inv_clust_rel_sp$rn
+# 
+# inv_clust_rel_sp_list
+
+```
+
+
+```{r}
+
+
+micro_piv <- arrange(mutate(micro_piv,
+                         season = factor(season, levels = season_loc)))
+
+micro_piv_diat <- arrange(mutate(micro_piv_diat,
+                         season = factor(season, levels = season_loc)))
+```
+
+
+```{r}
+ 
+f1 <- micro_piv %>% 
+  ggplot(aes(x = as.factor(clust_abund), fill = as.factor(season))) +
+  geom_bar(position = "stack", color = "black", alpha = 0.8) +
+  scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
+  labs(y = "# of samples",
+       x = "Cluster",
+       fill = "Season") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank())
+
+f2 <- micro_piv_diat %>% 
+  ggplot(aes(x = as.factor(clust_abund), fill = as.factor(season))) +
+  geom_bar(position = "stack", color = "black", alpha = 0.8) +
+  scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
+  labs(y = "# of samples",
+       x = "Cluster",
+       fill = "Season") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        legend.position = "right",
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+f3 <- micro_piv %>% 
+  ggplot(aes(x = as.factor(clust_abund), fill = as.factor(year))) +
+  geom_bar(position = "stack", color = "black", alpha = 0.8) +
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(y = "# of samples",
+       x = "Cluster",
+       fill = "Year") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none")
+        # axis.title.x = element_blank(),
+        # axis.text.x = element_blank())
+
+f4 <- micro_piv_diat %>% 
+  ggplot(aes(x = as.factor(clust_abund), fill = as.factor(year))) +
+  geom_bar(position = "stack", color = "black", alpha = 0.8) +
+  scale_fill_brewer(palette = "Dark2") + 
+  labs(y = "# of samples",
+       x = "Cluster",
+       fill = "Year") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        legend.position = "right",
+        # axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank())
+
+fig <- (nmds1 + nmds2) / (f1 + f2) / (f3 + f4)
+
+ggsave(here("figures_nmds_new", "2023-06-15_bars_combined.png"), fig,
+        width = 12, height = 14, dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

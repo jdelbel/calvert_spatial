@@ -296,6 +296,10 @@ ctd_up <- ctd %>%
   select(cast_pk, dep_26 = pres)
 ```
 
+
+
+
+
 ```{r}
 #Performing calculations for delta_rho 
 
@@ -367,12 +371,10 @@ ctd_calvert <- ctd %>%
   filter(!station == "QU39" & year > 2017 & year < 2021)
 
 ctd_calvert %>% 
-  filter(station == "KC10" & pres < 50) %>% 
+  filter(station == "KC10" & pres == 5) %>% 
   mutate(year = lubridate::year(date)) %>% 
-  ggplot(aes(x = sal, y = pres, color = as.factor(year))) +
-  geom_point() +
-  scale_y_reverse() +
-  facet_grid(. ~ month)
+  ggplot(aes(x = date, y = sal, color = as.factor(year))) +
+  geom_point() 
 
 ```
 
@@ -400,6 +402,19 @@ nuts_5 <- nuts %>%
   filter(line_out_depth == 5) %>% 
   select(date, collected, site_id, no2_no3_um, po4, sio2)
 ```
+```{r}
+ctd_5 %>%
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>%
+  ggplot(aes(x = date, y = dep_26, color = as.factor(year))) +
+  geom_line() +
+  geom_point() +
+  scale_y_reverse() +
+  facet_grid(. ~ site_id)
+```
+
+
+
 
 ```{r}
 #Calculating the daily means for datasets with replicates and replicate casts.

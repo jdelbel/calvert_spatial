@@ -13,6 +13,7 @@ library(RColorBrewer)
 library(ggpubr)
 library(broom)
 library(vegan)
+library(ggcorrplot)
 ```
 
 ```{r}
@@ -925,12 +926,237 @@ ggsave(here("figures_species_timeseries", "test_test3.png"), fig4,
        width = 18, height = 12, dpi = 300)
 ```
 
+```{r}
+sf_less_perc <- sf_less %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum = sum(chla)) %>% 
+  ungroup() %>% 
+  mutate(perc = chla/sum) 
+```
+
+```{r}
+sf_less_perc %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  filter(filter_type == "20um") %>% 
+  ggplot(aes(x = chla, y = perc, shape = site_id, color = as.factor(month))) +
+  geom_point() +
+  ylim(0, 1) +
+  geom_vline(xintercept = 2)
+```
+```{r}
+sf_wide <- sf_less %>% 
+  pivot_wider(names_from = filter_type, values_from = chla)
+
+sf_perc_wide <- sf_less_perc %>% 
+  select(date:filter_type, perc) %>% 
+  pivot_wider(names_from = filter_type, values_from = perc) %>% 
+  rename(perc_20 = `20um`, perc_3 = `3um`, perc_gff = `GF/F`)
+
+micro_group <- micro %>% 
+  group_by(date, site_id, group) %>% 
+  summarise(sum_micro = sum(species_sum)) %>% 
+  ungroup()
+
+main_diat <- micro %>% 
+  filter(group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  slice_max(species_sum) %>% 
+  ungroup() %>% 
+  select(date, site_id, scientificName)
+
+main_dino <- micro %>% 
+  filter(group == "Dinoflagellata") %>% 
+  group_by(date, site_id) %>% 
+  slice_max(species_sum) %>% 
+  ungroup() %>% 
+  select(date, site_id, scientificName)
+
+main_dict <- micro %>% 
+  filter(group == "Dictyochophyta") %>% 
+  group_by(date, site_id) %>% 
+  slice_max(species_sum) %>% 
+  ungroup() %>% 
+  select(date, site_id, scientificName)
+
+main_cryp <- micro %>% 
+  filter(group == "Cryptophyta") %>% 
+  group_by(date, site_id) %>% 
+  slice_max(species_sum) %>% 
+  ungroup() %>% 
+  select(date, site_id, scientificName)
+
+main_ga <- micro %>% 
+  filter(group == "Chlorophyta-Prasinophyta") %>% 
+  group_by(date, site_id) %>% 
+  slice_max(species_sum) %>% 
+  ungroup() %>% 
+  select(date, site_id, scientificName)
+
+micro_group_distinct <- micro_group %>% 
+  distinct(group)
+
+micro_group_wide <- micro_group %>% 
+  pivot_wider(names_from = group, values_from = sum_micro, values_fill = 0)
+
+pig_join <- micro_group_wide %>% 
+  left_join(sf_wide) %>% 
+  left_join(sf_perc_wide) %>% 
+  left_join(chem)
+
+cors_sf <- pig_join %>% 
+  select(`20um`:Raphidiophyta)
+
+cors_na <- cors_sf %>% 
+  drop_na()
+```
+
+```{r}
+#Making correlation matrix
+cor <- round(cor(cors_na, method = "pearson"), 2)
+
+#Making significance' matrix
+p.mat <- cor_pmat(cors_na, method = "pearson")
+
+```
+
+```{r}
+ggcorrplot(cor,
+  p.mat = p.mat,
+  # method = "circle",
+  type = "lower",
+  sig.level = 0.05,
+  lab = TRUE,
+  # title = "Channel",
+  insig = "blank",
+  lab_size = 5,
+  outline.color = "black") +
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2, color = "black"),
+        # axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+
+ggsave(here("figures_correlogram", "species_size_chem_pearson_SF.png"),
+       width = 20, height = 20, dpi = 300)
+```
+
+```{r}
+#I want to look at the dominant species.
+cors_diat <- pig_join %>% 
+  select(date, site_id, diat, Bacillariophyta, `20um`, perc_20) %>% 
+  left_join(main_diat)
 
 
+cors_diat %>% 
+  filter(!is.na(scientificName)) %>% 
+  ggplot(aes(x = diat, y = Bacillariophyta/10^5)) +
+  geom_smooth(method = "lm", color = "black") +
+  geom_point(aes(fill = scientificName), pch = 21, size = 5) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  labs(x = "CHEM Diatoms",
+       y = "Micro Diatoms",
+       fill = "Dom. Species") +
+  scale_fill_brewer(palette = "Spectral") +
+  theme_bw()
+
+cors_diat %>% 
+  filter(!is.na(scientificName)) %>% 
+  ggplot(aes(x = diat, y = `20um`)) +
+  geom_smooth(method = "lm", color = "black") +
+  geom_point(aes(fill = scientificName), pch = 21, size = 5) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  labs(x = "CHEM Diatoms",
+       y = "Micro Diatoms",
+       fill = "Dom. Species") +
+  scale_fill_brewer(palette = "Spectral") +
+  theme_bw()
+
+cors_diat %>% 
+  filter(!is.na(scientificName)) %>% 
+  ggplot(aes(x = Bacillariophyta, y = `20um`)) +
+  geom_smooth(method = "lm", color = "black") +
+  geom_point(aes(fill = scientificName), pch = 21, size = 5) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  labs(x = "CHEM Diatoms",
+       y = "Micro Diatoms",
+       fill = "Dom. Species") +
+  scale_fill_brewer(palette = "Spectral") +
+  theme_bw()
+```
+
+```{r}
+#I want to look at the dominant species.
+cors_dino <- pig_join %>% 
+  select(date, site_id, dino, Dinoflagellata) %>% 
+  left_join(main_dino)
 
 
+cors_dino %>% 
+  filter(!is.na(scientificName)) %>% 
+  # filter(!scientificName == "Katodinium") %>% 
+  # filter(!scientificName == "Dinophyceae") %>% 
+  ggplot(aes(x = dino, y = Dinoflagellata)) +
+  geom_point(aes(fill = scientificName), pch = 21, size = 5) +
+  ggpubr::stat_cor(aes(label = ..rr.label..), size = 8) 
+```
+```{r}
+#I want to look at the dominant species.
+cors_dict <- pig_join %>% 
+  select(date, site_id, dict, Dictyochophyta) %>% 
+  left_join(main_dict)
 
 
+cors_dict %>% 
+  filter(!is.na(scientificName)) %>% 
+  # filter(!scientificName == "Katodinium") %>% 
+  # filter(!scientificName == "Dinophyceae") %>% 
+  ggplot(aes(x = dict, y = Dictyochophyta)) +
+  geom_point(aes(fill = scientificName), pch = 21, size = 5) +
+  ggpubr::stat_cor(aes(label = ..rr.label..), size = 8) 
+```
+```{r}
+#I want to look at the dominant species.
+cors_cryp <- pig_join %>% 
+  select(date, site_id, cryp, Cryptophyta) %>% 
+  left_join(main_cryp)
 
 
+cors_cryp %>% 
+  filter(!is.na(scientificName)) %>% 
+  # filter(!scientificName == "Katodinium") %>% 
+  # filter(!scientificName == "Dinophyceae") %>% 
+  ggplot(aes(x = cryp, y = Cryptophyta)) +
+  geom_point(aes(fill = scientificName), pch = 21, size = 5) +
+  ggpubr::stat_cor(aes(label = ..rr.label..), size = 8) 
 
+meso <- micro %>% 
+  filter(date == "2019-08-05")
+
+meso2 <- micro %>% 
+  filter(scientificName == "Myrionecta rubra")
+```
+```{r}
+#I want to look at the dominant species.
+cors_ga <- pig_join %>% 
+  select(date, site_id, GA, `Chlorophyta-Prasinophyta`) %>% 
+  left_join(main_ga)
+
+
+cors_ga %>% 
+  filter(!is.na(scientificName)) %>% 
+  # filter(!scientificName == "Katodinium") %>% 
+  # filter(!scientificName == "Dinophyceae") %>% 
+  ggplot(aes(x = GA, y = `Chlorophyta-Prasinophyta`)) +
+  geom_point(aes(fill = scientificName), pch = 21, size = 5) +
+  ggpubr::stat_cor(aes(label = ..rr.label..), size = 8) 
+```
+
+```{r}
+cors %>% 
+  ggplot(aes(x = hapt, y = `Prymnesiophyta-Haptophyta`)) +
+  geom_point(pch = 21, size = 2) +
+  viridis::scale_fill_viridis()
+```

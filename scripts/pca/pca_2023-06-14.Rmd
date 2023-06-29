@@ -37,6 +37,8 @@ up <- read_csv(here("files", "upwell.csv"))
 
 #General environmental data - discharge etc.
 env <- read_csv(here("outputs", "enviro_2023-05-26.csv"))
+
+micro
 ```
 
 ```{r}
@@ -408,6 +410,14 @@ sites_loc_pca_clust <- arrange(mutate(sites_loc_pca_clust,
 ```
 
 
+
+
+```{r}
+
+```
+
+
+
 ```{r}
 #Plotting PCA with clusters
 
@@ -587,258 +597,11 @@ ggsave(here("figures_pca", "PCA-2023-05-30_all_data.png"), fig,
        width = 8, height = 16, dpi = 300)
 ```
 
-```{r}
-#Upload data
-
-#Upload data from my master data standardization sheet
-micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv")) 
-
-#Uploading size separated S.marinoi counts.
-# sm_size <- read_csv(here("outputs", "s_mar_size.csv"))
-```
-
 
 ```{r}
-#Adding location instead of site ID.
-micro <- micro %>% 
-    mutate(location = case_when(site_id == "DFO2" ~ "F",
-                              site_id == "KC10" ~ "C",
-                              site_id == "QCS01" ~ "S",
-                              TRUE ~ as.character(site_id))) 
-```
+export_cluster <- sites_loc_pca_clust %>% 
+  select(date, site_id, location, pca_clust = cluster)
 
-
-```{r}
-#Creating a list of distinct species and groups
-species_distinct <- micro %>% 
-  distinct(group, scientificName)
-
-#Removing groups that are not well quantified or that I am not looking at
-micro <- micro %>% 
-  filter(!scientificName_accepted == "Cyanobacteria")
-```
-
-```{r}
-micro_n <- micro %>% 
-  distinct(date, site_id)
-
-
-#Determining species that are present in > 10% of samples.
-species_10 <- micro %>% 
-  group_by(scientificName) %>% 
-  summarise(n_obs = n()) %>%
-  ungroup() %>% 
-  mutate(perc_obs = n_obs/78) %>% 
-  filter(perc_obs >= 0.10)
-
-#Creating a list of species in > 10% of samples.
-species_10_list <- species_10$scientificName
-
-#Removing species that are not present in > 10% of samples.
-micro <- micro %>% 
-  filter(scientificName %in% species_10_list)
-
-```
-
-```{r}
-micro <- micro %>% 
-  mutate(year = lubridate::year(date),
-         month = lubridate::month(date)) %>% 
-  relocate(year, .after = date) %>% 
-  relocate(month, .after = year)
-```
-
-```{r}
-#Creating separate sheets for just diatoms and dinoflagellates
-# micro_diat <- micro %>% 
-#   filter(class == "Bacillariophyceae")
-# 
-# micro_dino <- micro %>% 
-#   filter(class == "Dinophyceae")
-```
-
-```{r}
-#Preparing data for nMDS analysis - needs to be in wide matrix.
-
-#Selecting columns - all species
-micro_piv <- micro %>% 
-  select(date, month, location, scientificName, species_sum)
-
-# micro_piv_diat <- micro_diat %>% 
-#   select(date, month, location, scientificName, species_sum)
-# 
-# micro_piv_dino <- micro_dino %>% 
-#   select(date, month, location, scientificName, species_sum)
-
-#pivoting wider so species are columns. 
-micro_piv <- micro_piv %>% 
-  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
-  mutate_if(is.numeric, ~ replace_na(., 0))
-
-#Diatoms
-# micro_piv_diat <- micro_piv_diat %>% 
-#   pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
-#   mutate_if(is.numeric, ~ replace_na(., 0))
-# 
-# #Dinoflagellates
-# micro_piv_dino <- micro_piv_dino %>% 
-#   pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
-#   mutate_if(is.numeric, ~ replace_na(., 0))
-
-
-#Adding year to wide format for plotting
-micro_piv <- micro_piv %>% 
-  mutate(year = lubridate::year(date)) %>% 
-  relocate(year, .before = month)
-
-#Diatoms
-# micro_piv_diat <- micro_piv_diat %>% 
-#   mutate(year = lubridate::year(date)) %>% 
-#   relocate(year, .before = month)
-# 
-# #Dinoflaggelates
-# micro_piv_dino <- micro_piv_dino %>% 
-#   mutate(year = lubridate::year(date)) %>% 
-#   relocate(year, .before = month)
-```
-
-```{r}
-data_clust_2 <- data_clust %>% 
-  select(date, location, cluster)
-
-micro_piv <- micro_piv %>% 
-  left_join(data_clust_2) %>% 
-  relocate(cluster, .after = location) 
-
-#Quite a few samples don't have a cluster - 7 - why?
-#Separating
-no_clust <- micro_piv %>% 
-  filter(is.na(cluster))
-
-#Filtering ctd data to see if it is because of missing variables
-#Creating date list to filter with
-date_list <- no_clust$date
-
-#Filter ctd data for dates
-no_clust_ctd <- data %>% 
-  filter(date %in% date_list) %>% 
-  select(date, site_id, temp_dm, sal_dm, no2_dm, delta_rho_dm, secchi_depth)
-
-#4 files out of 7 came out of CTD/nutrient search
-#3 are due to secchi depth - secchi didn't seem to be collected. 
-#Can I use PAR or Turbidity - ugh so tough! Shame to lose these three points.
-#1 is due to delta-rho - profile didn't start until 4m depth. This can be rectified because there were two casts and only one started a 4m. Must have thrown an NA when averaging - FIX
-#2 Are somewhat important summer samples
-
-#Look into secchi depths
-
-#3 dates not in ctd file
-#2018-11-22-fjord. - winter, not a huge deal.
-#2019-11-28-Shelf - winter, not a huge deal.
-#2020-06-04-Channel - why no CTD here
-
-# %>% 
-#   filter(!is.na(cluster))
-
-micro_piv_clust <- micro_piv %>% 
-  left_join(data_clust_2) %>% 
-  relocate(cluster, .after = location) %>% 
-  filter(!is.na(cluster))
-
-# micro_piv_dino <- micro_piv_dino %>% 
-#   left_join(data_clust_2) %>% 
-#   relocate(cluster, .after = location) %>% 
-#   filter(!is.na(cluster))
-```
-
-
-```{r}
-#Pulling out species counts for transform and input into clustering and NMDS
-species <- micro_piv_clust[, 6:ncol(micro_piv_clust)]
-
-#Diatoms
-# species_diat <- micro_piv_diat[, 6:ncol(micro_piv_diat)]
-
-#Dinoflagellates
-# species_dino <- micro_piv_dino[, 6:ncol(micro_piv_dino)]
-
-transform <- log1p(species)
-
-# transform <- decostand(species, method = "total")
-
-# transform <- sqrt(transform)
-```
-
-
-```{r}
-#Creating relative abundance matrix 
-# transform <- decostand(species, method = "total")
-# 
-# transform_diat <- decostand(species_diat, method = "total")
-# 
-# transform_dino <- decostand(species_dino, method = "total")
-# 
-# transform <- sqrt(transform)
-# 
-# #Diatoms
-# transform_diat <- sqrt(transform_diat)
-# 
-# #Dinoflagellates
-# transform_dino <- sqrt(transform_dino)
-
-#Performing square root transformation
-# transform <- log10(transform + 1)
-# 
-# #Diatoms
-# transform_diat <- log10(transform_diat + 1)
-# 
-# #Dinoflagellates
-# transform_dino <- log10(transform_dino + 1)
-```
-
-```{r}
-clust <- micro_piv_clust$cluster
-clust_site <- micro_piv_clust$location
-
-# clust_diat <- micro_piv_diat$cluster
-# clust_dino <- micro_piv_dino$cluster
-
-```
-
-```{r}
-#ANOSIM test to see if groupings statistically significant 
-
-# By Station
-ano_clust = anosim(transform, clust, distance = "bray", permutations = 9999)
-ano_clust
-# 
-# ano_clust_diat = anosim(transform_diat, clust, distance = "bray", permutations = 9999)
-# ano_clust_diat
-# 
-# ano_clust_dino = anosim(transform_dino, clust, distance = "bray", permutations = 9999)
-# ano_clust_dino
-
-```
-
-
-```{r}
-#Not working...
-
-inv_clust = multipatt(transform, clust, func = "r.g", duleg = T,
-                       control = how(nperm = 9999))
-
-summary(inv_clust, indvalcomp = TRUE)
-
-```
-
-```{r}
-phy_clust_div <- data_clust %>% 
-  select(date, site_id, cluster) %>% 
-  left_join(div)
-
-div_stat <- phy_clust_div %>% 
-  filter(!is.na(div)) %>% 
-  group_by(cluster) %>% 
-  summarise(mean_div = mean(div))
+write_csv(export_cluster, here("outputs", "pca_cluster_2023-06-14.csv"))
 ```
 

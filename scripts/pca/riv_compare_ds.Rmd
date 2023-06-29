@@ -32,6 +32,20 @@ lk_wind <- read_csv(here("files", "wind_lookout.csv"))
 chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
 co2 <- read_csv(here("files", "co2.csv"))
+
+up <- read_csv(here("files", "upwell.csv"))
+```
+
+```{r}
+up_dm <- up %>% 
+  select(date = time, upwelling_index) %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(dm_up = mean(upwelling_index)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(up_b1 = rollmeanr(lag(dm_up, 1), k = 3, fill = NA)) %>% 
+  select(date, dm_up, up_b1)
 ```
 
 ```{r}
@@ -105,6 +119,25 @@ lk_dm <- lk_wind2 %>%
             dm_wd = mean(WindDir_Avg)) %>% 
   ungroup() 
 ```
+
+```{r}
+up_fig <-
+  up_dm %>% 
+   ggplot() +
+  geom_col(aes(x = date, y = ifelse(up_b1 < 0, up_b1, 0)), fill= "blue") +
+  geom_col(aes(x = date, y = ifelse(up_b1 > 0, up_b1, 0)), fill= "red") +
+  labs(y = "upwelling") +
+  # scale_colour_steps2()
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
 
 ```{r}
 wind_fig <-
@@ -209,9 +242,9 @@ co2_fig <-
 ```
 
 ```{r}
-fig <- wind_fig / riv_fig / chl_fig / co2_fig
+fig <- up_fig / wind_fig / riv_fig / chl_fig / co2_fig
 
-ggsave(here("figures_river", "riv_co2_chl.png"), fig,
-       width = 16, height = 14, dpi = 300)
+ggsave(here("figures_river", "riv_co2_chl_upwelling.png"), fig,
+       width = 16, height = 18, dpi = 300)
 ```
 

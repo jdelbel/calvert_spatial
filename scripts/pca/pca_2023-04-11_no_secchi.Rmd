@@ -47,6 +47,11 @@ clust_bio <- read_csv(here("outputs", "bio_clust.csv"))
 
 ```
 
+
+
+
+
+
 ```{r}
 riv <- riv %>%
   filter(PARAM == 1) %>% 
@@ -119,6 +124,45 @@ up_dm <- up %>%
   mutate(up_b1 = rollmeanr(lag(dm_up, 1), k = 3, fill = NA)) %>% 
   select(date, dm_up, up_b1)
 ```
+
+```{r}
+up_dm %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(year == "2018") %>% 
+  ggplot() +
+  geom_col(aes(x = date, y = ifelse(up_b1 < 0, up_b1, 0)), fill= "blue") +
+  geom_col(aes(x = date, y = ifelse(up_b1 > 0, up_b1, 0)), fill= "red") +
+  theme_bw()
+
+up_dm %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(year == "2019") %>% 
+  ggplot() +
+  geom_col(aes(x = date, y = ifelse(up_b1 < 0, up_b1, 0)), fill= "blue") +
+  geom_col(aes(x = date, y = ifelse(up_b1 > 0, up_b1, 0)), fill= "red") +
+  theme_bw()
+
+up_dm %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(year == "2018") %>% 
+  ggplot() +
+  geom_col(aes(x = date, y = ifelse(up_b1 < 0, up_b1, 0)), fill= "blue") +
+  geom_col(aes(x = date, y = ifelse(up_b1 > 0, up_b1, 0)), fill= "red") +
+  theme_bw()
+```
+
+```{r}
+up_dm %>% 
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>%
+  ggplot() +
+  geom_boxplot(aes(x = as.factor(month), y = dm_up, fill = as.factor(year)))
+```
+
+
 
 ```{r}
 up_dm %>%

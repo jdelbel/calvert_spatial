@@ -17,30 +17,11 @@ library(broom)
 
 ```{r}
 #Upload data from my master data standardization sheet
-micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv")) 
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv")) 
 
 #Uploading chl data that has been converted to TChla
-chl <- read_csv(here("outputs", "chl_hplc_merged.csv"))
+chl <- read_csv(here("files", "chemtax_2023-04-14.csv"))
 
-#Uploading size separated S.marinoi counts.
-sm_size <- read_csv(here("outputs", "s_mar_size.csv"))
-
-fec <- read_csv(here("outputs", "fecal_master_2022-03-16_het.csv"))
-```
-
-```{r}
-#Remove QU39
-micro <- micro %>% 
-  filter(!site_id == "QU39")
-```
-
-```{r}
-
-#Careful here - removing original s.marinoi counts and replacing with size separated counts. Ensure that the outputs are comparable.
-micro <- micro %>% 
-  filter(!scientificName == "Skeletonema marinoi")
-
-micro <- rbind(micro, sm_size)
 
 ```
 
@@ -67,23 +48,6 @@ micro <- rbind(micro, sm_size)
 #Cryptophyte abundance
 
 #First do the summarizing and filtering for each grouping I want correlated against.
-s_sum <- micro %>% 
-  filter(scientificName == "Skeletonema marinoi small" | 
-           scientificName == "Skeletonema marinoi small") %>% 
-  group_by(date, site_id) %>% 
-  summarise(exp_count = sum(species_sum)) %>% 
-  ungroup() %>% 
-  mutate(scientificName = "Skeletonema marinoi sum") %>% 
-  relocate(scientificName, .before = exp_count)
-
-s_small <- micro %>% 
-  filter(scientificName == "Skeletonema marinoi small") %>%
-  select(date, site_id, scientificName, exp_count = species_sum)
-
-s_large <- micro %>% 
-  filter(scientificName == "Skeletonema marinoi large") %>%
-  select(date, site_id, scientificName, exp_count = species_sum)
-
 d_sum <- micro %>% 
   filter(group == "Bacillariophyta") %>% 
   group_by(date, site_id) %>% 
@@ -100,12 +64,9 @@ c_sum <- micro %>%
   mutate(scientificName = "crypto sum") %>% 
   relocate(scientificName, .before = exp_count)
 
-chl_corr <- chl %>% 
-  select(date, site_id, exp_count = chl) %>% 
-  mutate(scientificName = "TChla") %>% 
-  relocate(scientificName, .before = exp_count)
 
-cor_exp <- rbind(s_sum, s_small, s_large, d_sum, c_sum, chl_corr)
+
+cor_exp <- rbind(d_sum, c_sum)
 
 cor_het <- micro %>% 
   filter(genus == "Gonyaulax" |
@@ -124,16 +85,12 @@ cor_het <- micro %>%
 
 cor_het2 <- micro %>%
   filter(group == "Ciliophora") %>% 
-  select(date, month_surv, site_id, name = scientificName, het_count = species_sum)
+  select(date, site_id, name = scientificName, het_count = species_sum)
 
-cor_het3 <- rbind(cor_het, cor_het2)
+cor_het4 <- rbind(cor_het, cor_het2)
            
-fec_merge <- fec %>%
-  filter(!site_id == "QU39") %>% 
-  mutate(name = "fecal") %>% 
-  select(date, month_surv, site_id, name, het_count = fecal)
 
-cor_het4 <- rbind(cor_het3, fec_merge)
+
 ```
 
 

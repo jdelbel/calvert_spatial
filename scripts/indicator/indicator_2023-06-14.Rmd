@@ -1,0 +1,307 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+library(indicspecies)
+library(fuzzySim)
+library(cluster)
+library(patchwork)
+library(vegan)
+library(RColorBrewer)
+library(ggcorrplot) 
+library(analogue)
+# library(clustsig)
+
+```
+
+```{r}
+#Upload data
+
+#Upload microscopy abundance data in OBIS and long/tide format
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv")) 
+
+#Upload physical-chemical clusters derived via PCA
+clust_pca <- read_csv(here("outputs", "pca_cluster_2023-06-14.csv"))
+
+clust_diat <- read_csv(here("outputs", "diatom_cluster_2023-06-14.csv"))
+
+```
+
+```{r}
+
+#Adding location instead of site ID for interpretation of results
+micro <- micro %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+#Creating a unique location-date ID for each sample - makes labels for plotting by dendrogram more informative 
+micro <- micro %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
+
+#Joining the PCA clusters to the microscopy data
+micro <- micro %>% 
+  left_join(clust_pca) %>% 
+  left_join(clust_diat) %>% 
+  relocate(pca_clust, .after = location) %>% 
+  relocate(clust_abund, .after = pca_clust) %>% 
+  rename(diat_clust = clust_abund)
+
+```
+
+```{r}
+#Creating a list of distinct species and groups
+species_distinct <- micro %>% 
+  distinct(group, scientificName)
+
+#Separating out diatoms
+# micro <- micro %>%
+#   filter(group == "Bacillariophyta")
+```
+
+```{r}
+#Filtering out species that are not present in at least 10% of the samples - this is important for the clustering and nMDS methods I am using as these species can skew the results.
+
+#Determining total number of samples in the dataset
+sample_num <- micro %>% 
+  distinct(date, site_id)
+
+#Determining species that are present in > 10% of samples.
+species_10 <- micro %>% 
+  group_by(scientificName) %>% 
+  summarise(n_obs = n()) %>%
+  ungroup() %>% 
+  mutate(perc_obs = n_obs/78) %>% 
+  filter(perc_obs >= 0.10)
+
+#Creating a list of species in > 10% of samples.
+species_10_list <- species_10$scientificName
+
+#Removing species that are not present in > 10% of samples.
+micro <- micro %>% 
+  filter(scientificName %in% species_10_list)
+
+```
+
+```{r}
+#Adding year and month to the microscopy dataset for analysis.
+
+micro <- micro %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  relocate(year, .after = date) %>% 
+  relocate(month, .after = year)
+```
+
+```{r}
+#Preparing data for the different analysis.
+
+#Selecting columns that I will use
+micro_piv <- micro %>% 
+  select(sample_name:diat_clust, scientificName, species_sum)
+
+#pivoting wider so species are columns and samples are rows.
+micro_piv <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, 
+              values_from = species_sum, values_fill = 0) 
+
+micro_piv_pca <- micro_piv %>% 
+  filter(!is.na(pca_clust))
+
+```
+
+
+```{r}
+#Pulling out species counts for transformation and use in analysis
+species <- micro_piv[, 9:ncol(micro_piv)]
+
+species_pca <- micro_piv_pca[, 9:ncol(micro_piv_pca)]
+
+
+#Transforming the abundance data
+t_abund <- sqrt(species)
+
+t_abund_pca <- sqrt(species_pca)
+
+```
+
+
+```{r}
+#ANOSIM test to see if groupings statistically significant 
+clust_pca <- micro_piv_pca$pca_clust
+clust_diat <- micro_piv$diat_clust
+
+ano_clust_pca = anosim(t_abund_pca, clust_pca, distance = "bray", permutations = 9999)
+ano_clust_pca
+
+ano_clust_diat = anosim(t_abund, clust_diat, distance = "bray", permutations = 9999)
+ano_clust_diat
+
+
+```
+
+
+```{r}
+#Indicator species analysis
+# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
+
+#Indicators by station for diatoms
+inv_clust_pca = multipatt(t_abund_pca, clust_pca, func = "r.g", duleg = T,
+                       control = how(nperm = 999))
+
+#Looking at results of analysis
+summary(inv_clust_pca)
+```
+
+
+
+```{r}
+#Indicator species analysis
+# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
+
+#Indicators by station for diatoms
+inv_clust_diat = multipatt(t_abund, clust_diat, func = "r.g", duleg = T,
+                       control = how(nperm = 999))
+
+#Looking at results of analysis
+summary(inv_clust_diat)
+```
+
+```{r}
+
+inv_clust_diat_sp <- data.table::as.data.table(inv_clust_diat$sign, keep.rownames = TRUE)
+
+inv_clust_diat_sp <- inv_clust_diat_sp %>%
+  filter(s.1 == 1 | s.2 == 1 | s.3 == 1 | s.4) %>%
+  filter(p.value < 0.05) %>%
+  # filter(!rn == "Skeletonema marinoi") %>%
+  arrange(rn)
+
+inv_clust_diat_sp_list <- inv_clust_diat_sp$rn
+
+inv_clust_diat_sp_list
+
+```
+
+```{r}
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+micro <- arrange(mutate(micro,
+                         location = factor(location, levels = order_loc)))
+```
+
+
+
+```{r}
+pca <- micro %>%   
+  # filter(!(pca_clust == 1)) %>% 
+  filter(!is.na(diat_clust)) %>% 
+  filter(scientificName %in% inv_clust_diat_sp_list) %>%
+  # filter(!scientificName == "Skeletonema marinoi") %>% 
+  # filter(!scientificName == "Biddulphiales") %>% 
+  # filter(!scientificName == "Pseudo-nitzschia seriata") %>% 
+  ggplot(aes(x = sample_name, y = scientificName, fill = sqrt(species_sum))) +
+  geom_tile(color = "black", size = 1, alpha = 0.7) +
+  facet_grid(group ~ diat_clust, scales = "free", space = "free") +
+  scale_fill_gradient(name = "log(abund.)",
+                      low = "#012345",
+                      high = "red") +
+  theme_bw() +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        # legend.position = c(0.03, 0.30),
+        legend.direction = "vertical",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.height = unit(2.5, "cm"))
+
+
+ 
+loc <- micro %>%
+  # filter(!(diat_clust == 1)) %>% 
+  filter(!is.na(diat_clust)) %>%
+  ggplot(aes(x = sample_name, y = 1, shape = as.factor(location),
+             fill = as.factor(year))) +
+  geom_point(size = 3, stroke = 1.5) +
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  scale_fill_brewer(palette = "Dark2") +
+  facet_grid(. ~ diat_clust , scales = "free_x", space = "free") +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        # legend.direction = "none",
+        # axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_blank())
+
+panel <- pca / plot_spacer() / loc +
+  plot_layout(heights = c(2, -0.07, 0.06))
+
+ggsave(here("figures_indicator", "2023-06-16_pca_indicator.png"), panel,
+        width = 16, height = 8, dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

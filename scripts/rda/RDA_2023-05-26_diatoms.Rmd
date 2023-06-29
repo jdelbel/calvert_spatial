@@ -47,6 +47,11 @@ micro <- micro %>%
 ```
 
 ```{r}
+test <- micro %>% 
+  filter(date == "2018-04-28")
+```
+
+```{r}
 #Determining total number of samples collected
 sample_num <- micro %>%
   distinct(date, site_id)
@@ -103,6 +108,7 @@ data <- ctd %>%
   left_join(chl)
 ```
 
+
 ```{r}
 #Selecting and renaming the columns that I want
 data <- data %>% 
@@ -130,6 +136,17 @@ micro_join <- data %>%
 micro_join <- micro_join %>% 
   drop_na()
 ```
+```{r}
+micro_join %>% 
+  ggplot(aes(x = temp, y = sal, size = `Pseudo-nitzschia seriata`, color = site_id)) +
+  geom_point()
+```
+```{r}
+micro_join %>% 
+  ggplot(aes(x = sal, y = wan_b1, size = `Skeletonema marinoi`, color = site_id)) +
+  geom_point()
+```
+
 
 ```{r}
 #Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
