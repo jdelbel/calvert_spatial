@@ -148,7 +148,7 @@ species_diat <- micro_piv_diat[, 8:ncol(micro_piv_diat)]
 # t_abund_diat <- decostand(species_diat, method = "total")
 
 t_abund <- sqrt(species)
-t_abund_diat <- sqrt(t_abund_diat)
+t_abund_diat <- sqrt(species_diat)
 ```
 
 ```{r}
@@ -422,30 +422,30 @@ brewer.pal(n=4,"Spectral")
 #This is the horizontal version of the month and year nMDS panel shown incorporated into a large panel later 
 
 nmds1 <- ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores_abund, aes(fill = as.factor(clust_abund), shape = site),
+  geom_point(data = data.scores_abund, aes(fill = as.factor(year), shape = site),
              size = 9, stroke = 0.1, color = "black") + 
   # scale_fill_manual(values = c("#D7191C","#FDAE61","#ABDDA4","#2B83BA")) +
   scale_shape_manual(values = c(21, 22, 23)) + 
-  geom_segment(data = spp.scrs2,
-               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
-               arrow = arrow(length = unit(0.25, "cm")), colour = "black",
-               size = 1.2, alpha = 0.7) +
+  # geom_segment(data = spp.scrs2,
+  #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+  #              arrow = arrow(length = unit(0.25, "cm")), colour = "black",
+  #              size = 1.2, alpha = 0.7) +
   # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
   #            fontface = "bold", label = row.names(spp.scrs2), size = 7) +
-  ggrepel::geom_text_repel(data = spp.scrs2, aes(x = NMDS1, y = NMDS2,
-                                           label = row.names(spp.scrs2)),
-                  # box.padding = unit(0.5, 'lines'),
-                  # point.padding = NA,
-                  point.padding = unit(2, 'lines'),
-                  segment.color = 'black',
-                  segment.size = 0.3,
-                  segment.alpha = 0.7,
-                  arrow = arrow(length = unit(0.01, 'npc')),
-                  # nudge_y = 0.2,
-                  # nudge_x = -0.2,
-                  force = 3,
-                  max.iter = 3e3,
-                  size = 7) +
+  # ggrepel::geom_text_repel(data = spp.scrs2, aes(x = NMDS1, y = NMDS2,
+  #                                          label = row.names(spp.scrs2)),
+  #                 # box.padding = unit(0.5, 'lines'),
+  #                 # point.padding = NA,
+  #                 point.padding = unit(2, 'lines'),
+  #                 segment.color = 'black',
+  #                 segment.size = 0.3,
+  #                 segment.alpha = 0.7,
+  #                 arrow = arrow(length = unit(0.01, 'npc')),
+  #                 # nudge_y = 0.2,
+  #                 # nudge_x = -0.2,
+  #                 force = 3,
+  #                 max.iter = 3e3,
+  #                 size = 7) +
   # xlim(-0.4, 0.7) +
   # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
   # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
@@ -462,30 +462,30 @@ nmds1 <- ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
 nmds2 <- ggplot(data = data.scores_abund_diat, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores_abund_diat, aes(fill = as.factor(clust_abund), shape = site),
+  geom_point(data = data.scores_abund_diat, aes(fill = as.factor(year), shape = site),
              size = 9, stroke = 0.1, color = "black") + 
   # scale_fill_manual(values = c("#D7191C","#FDAE61","#ABDDA4","#2B83BA")) +
   scale_shape_manual(values = c(21, 22, 23)) + 
-  geom_segment(data = spp.scrs2_diat,
-               aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
-               arrow = arrow(length = unit(0.25, "cm")), colour = "black",
-               size = 1.2, alpha = 0.7) +
+  # geom_segment(data = spp.scrs2_diat,
+  #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+  #              arrow = arrow(length = unit(0.25, "cm")), colour = "black",
+  #              size = 1.2, alpha = 0.7) +
   # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
   #            fontface = "bold", label = row.names(spp.scrs2), size = 7) +
-  ggrepel::geom_text_repel(data = spp.scrs2_diat, aes(x = NMDS1, y = NMDS2,
-                                           label = row.names(spp.scrs2_diat)),
-                  # box.padding = unit(0.5, 'lines'),
-                  # point.padding = NA,
-                  point.padding = unit(2, 'lines'),
-                  segment.color = 'black',
-                  segment.size = 0.3,
-                  segment.alpha = 0.7,
-                  arrow = arrow(length = unit(0.01, 'npc')),
-                  # nudge_y = 0.2,
-                  # nudge_x = -0.2,
-                  force = 2,
-                  max.iter = 3e3,
-                  size = 7) +
+  # ggrepel::geom_text_repel(data = spp.scrs2_diat, aes(x = NMDS1, y = NMDS2,
+  #                                          label = row.names(spp.scrs2_diat)),
+  #                 # box.padding = unit(0.5, 'lines'),
+  #                 # point.padding = NA,
+  #                 point.padding = unit(2, 'lines'),
+  #                 segment.color = 'black',
+  #                 segment.size = 0.3,
+  #                 segment.alpha = 0.7,
+  #                 arrow = arrow(length = unit(0.01, 'npc')),
+  #                 # nudge_y = 0.2,
+  #                 # nudge_x = -0.2,
+  #                 force = 2,
+  #                 max.iter = 3e3,
+  #                 size = 7) +
   # xlim(-0.4, 0.7) +
   # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
   # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
@@ -503,7 +503,7 @@ nmds2 <- ggplot(data = data.scores_abund_diat, aes(x = NMDS1, y = NMDS2)) +
 
 fig <- nmds1 + nmds2
 
-ggsave(here("figures_nmds_new", "2023-06-15_nmds_no_transform.png"), 
+ggsave(here("figures_nmds_new", "2023-07-11_Year.png"), 
         width = 16, height = 6, dpi = 300)
 ```
 

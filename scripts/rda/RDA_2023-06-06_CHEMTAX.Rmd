@@ -28,7 +28,7 @@ chem <- read_csv(here("files", "chemtax_2023-04-14.csv"))
 
 ctd <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
 
-env <- read_csv(here("outputs", "enviro_2023-05-26.csv"))
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
 
 chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
@@ -53,6 +53,7 @@ data <- ctd %>%
   left_join(chem)
 ```
 
+
 ```{r}
 #Selecting and renaming the columns that I want
 data <- data %>% 
@@ -71,6 +72,7 @@ data <- data %>%
          wind_b1,
          wind_dir_b1,
          par_b1,
+         up_b1,
          tchla,
          cyan = Cyanobacteria, 
          hapt = Hapto, 
@@ -94,6 +96,7 @@ data_na <- data %>%
   drop_na()
 ```
 
+
 ```{r}
 # data_na <- data_na %>% 
 #   mutate(np = no2/po4) %>% 
@@ -104,11 +107,11 @@ data_na <- data %>%
 
 ```{r}
 #Separating into response variables (chemtax) and Explanatory variables (Environmental)
-resp <- data_na[, 19:ncol(data_na)]
+resp <- data_na[, 20:ncol(data_na)]
 # resp <- scale(resp, center = F, scale = T)
 
 #Explanatory variables
-expl <- data_na[, 4:17]
+expl <- data_na[, 4:18]
 
 #Trying to remove variables that have high VIFS. Removed no2 and po4 because they had the highest VIFS. I also think silicate is important because of fjords trends. Doesn't really matter as sio2 should be representative of the other nutrients anyways - when I cut sio2 out, no2 vector was comparable. 
 expl <- expl %>%
@@ -119,9 +122,10 @@ expl <- expl %>%
 
 ```{r}
 #Hellinger transformation on species data - particularly suited to species abundance data with large range and lots of zeros. Gives low weights to variables with low counts and many zeroes.
-resp.hell <- decostand(resp, 'total')
+resp.hell <- decostand(resp, 'hellinger')
+
 # resp.hell <- resp
-resp.hell <- sqrt(resp)
+# resp.hell <- sqrt(resp)
 
 decorana (resp.hell)
 ```
@@ -177,7 +181,7 @@ sel.osR2_adj$anova
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif <- subset(expl, select = c(sio2, temp, secchi, drho))
+env.signif <- subset(expl, select = c(sio2, temp, secchi))
 
 #RDA using significant variables
 rda.signif <- rda(resp.hell ~ . ,data = env.signif)

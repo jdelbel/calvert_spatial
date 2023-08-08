@@ -125,19 +125,72 @@ par_mean <- par %>%
 ```
 
 ```{r}
+#Filtering and selecting needed columns for the lookout wind data
+up2 <- up%>%
+  mutate(date = lubridate::date(time),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, upwelling_index) %>% 
+  filter(year > 2017 & year < 2022)
+
+#Calculating the daily mean of the wind data and then the backwards running 3 day mean with a one day lag
+up_mean <- up2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(up_dm = mean(upwelling_index)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(up_b1 = rollmeanr(lag(up_dm, 1), k = 3, fill = NA)) %>% 
+  select(date, up_dm, up_b1)
+  
+```
+
+
+```{r}
 data <- wan_mean %>% 
   left_join(db_sm) %>% 
   left_join(db_gm) %>% 
   left_join(db_ra) %>% 
   left_join(wind_mean) %>% 
-  left_join(par_mean)
+  left_join(par_mean) %>% 
+  left_join(up_mean)
 ```
 
 ```{r}
-write_csv(data, here("outputs", "enviro_2023-05-26.csv"))
+write_csv(data, here("outputs", "enviro_2023-05-26_up.csv"))
 ```
 
 
+```{r}
+up_dm <- up2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(up_dm = mean(upwelling_index))
+
+up_cm <- up_dm %>% 
+  drop_na() %>% 
+  mutate(year = lubridate::year(date2),
+         yday = lubridate::yday(date2)) %>% 
+  group_by(year) %>% 
+  mutate(test = cumsum(up_dm)) %>% 
+  ungroup()
+
+up_cm %>% 
+  filter(year < 2021) %>% 
+  ggplot(aes(x = date2, y = test/10^4, color = as.factor(year))) +
+  geom_line(size = 2) +
+  theme_bw()
+
+wind_mean %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(year < 2021) %>% 
+  ggplot(aes(x = yday, y = wind_dir_dm, color = as.factor(year))) +
+  geom_smooth(span = 0.5) +
+  theme_bw()
+  
+```
 
 
 

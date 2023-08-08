@@ -1,0 +1,432 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(gsw)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(zoo)
+```
+
+```{r}
+#Upload data
+
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+
+ctd <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+```
+
+```{r}
+#Removing species groups
+
+#Creating a list of distinct species and groups
+species_distinct <- micro %>% 
+  distinct(group, scientificName)
+
+#Removing groups that are not well quantified or that I am not looking at
+micro <- micro %>% 
+  filter(!scientificName_accepted == "Cyanobacteria")
+```
+
+```{r}
+#Determining total number of samples collected
+sample_num <- micro %>%
+  distinct(date, site_id)
+
+#Filtering out species that were not present in at least 10% of the samples
+species_10 <- micro %>%
+  group_by(scientificName) %>%
+  summarise(n_obs = n()) %>%
+  ungroup() %>%
+  mutate(perc_obs = n_obs/78) %>%
+  filter(perc_obs >= 0.10)
+
+#Creating a list of species that were not in 10% of the samples
+species_10_list <- species_10$scientificName
+
+#Removing species that were not in 10% of the samples.
+micro <- micro %>%
+  filter(scientificName %in% species_10_list)
+
+```
+
+```{r}
+#Filtering to only include diatoms
+# micro <- micro %>% 
+#   filter(group == "Bacillariophyta") 
+```
+
+```{r}
+#Pivoting data for RDA analysis
+
+#Selecting columns for pivot
+micro_piv <- micro %>%
+  mutate(month = lubridate::month(date)) %>% 
+  select(date, month, site_id, scientificName, species_sum)
+
+#performing pivot and making NA's 0's. 
+micro_piv <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum,
+              values_fill = 0) 
+
+micro_piv <- micro_piv %>% 
+  select(!month)
+```
+
+```{r}
+#Selecting columns from the CTD master sheet
+ctd <- ctd %>% 
+  select(date, site_id, temp_dm, sal_dm, delta_rho_dm, no2_dm:secchi_depth)
+```
+
+```{r}
+data <- ctd %>% 
+  left_join(env) %>% 
+  left_join(chl)
+```
+
+
+```{r}
+#Selecting and renaming the columns that I want
+data <- data %>% 
+  select(date:site_id,
+         temp = temp_dm,
+         sal = sal_dm,
+         drho = delta_rho_dm,
+         no2 = no2_dm,
+         sio2 = sio2_dm,
+         po4 = po4_dm,
+         secchi = secchi_depth,
+         wan_b1, 
+         sm_b1,
+         gm_b1,
+         ra_b1,
+         wind_b1,
+         wind_dir_b1,
+         par_b1,
+         up_b1,
+         tchla)
+
+micro_join <- data %>%
+  left_join(micro_piv)
+
+#removing NAs for analysis
+micro_join <- micro_join %>% 
+  drop_na()
+```
+```{r}
+micro_join %>% 
+  filter(site_id == "QCS01") %>% 
+  ggplot(aes(x = up_b1, y = drho, color = site_id)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+
+```{r}
+#Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
+resp <- micro_join[, 19:ncol(micro_join)]
+
+#Explanatory variables
+expl <- micro_join[, 3:18]
+
+#Trying to remove variables that have high VIFS. Removed no2 and po4 because they had the highest VIFS. I also think silicate is important because of fjords trends. Doesn't really matter as sio2 should be representative of the other nutrients anyways - when I cut sio2 out, no2 vector was comparable. 
+expl <- expl %>%
+  select(-po4, -no2, -wan_b1)
+
+```
+
+```{r}
+#Hellinger transformation on species data - particularly suited to species abundance data with large range and lots of zeros. Gives low weights to variables with low counts and many zeroes.
+# resp.hell <- decostand(resp, 'hell')
+resp.hell <- sqrt(resp)
+```
+
+```{r}
+#Microscopy
+
+tbRDA.all <- rda(resp.hell ~ . , data = expl, scale = T)
+
+tbRDA.all
+
+anova(tbRDA.all)
+
+adjR2.tbrda <- RsquareAdj (tbRDA.all)$adj.r.squared
+
+adjR2.tbrda
+```
+
+```{r}
+#Assessing collinearity of variables - nutrients are highly related. Play with this.
+vif.cca(tbRDA.all)
+```
+
+```{r}
+constrained_eig <- tbRDA.all$CCA$eig/tbRDA.all$tot.chi*100
+unconstrained_eig <- tbRDA.all$CA$eig/tbRDA.all$tot.chi*100
+expl_var <- c(constrained_eig, unconstrained_eig)
+barplot (expl_var[1:20], col = c(rep ('red', length (constrained_eig)), rep ('black', length (unconstrained_eig))),
+         las = 2, ylab = '% variation')
+```
+
+```{r}
+#Trying different approach for ordiR2step from https://www.davidzeleny.net/anadat-r/doku.php/en:forward_sel_examples - same result as my other test
+tb_rda.vasc.0 <- rda (resp.hell ~ 1, data = expl)
+
+tb_rda.vasc.all <- rda (resp.hell ~ ., data = expl)
+
+sel.osR2 <- ordiR2step (tb_rda.vasc.0, scope = formula (tb_rda.vasc.all), 
+                        R2scope = adjR2.tbrda, direction = 'forward', 
+                        permutations = 9999)
+
+sel.osR2$anova
+
+sel.osR2_adj <- sel.osR2
+
+sel.osR2_adj$anova$`Pr(>F)` <- p.adjust (sel.osR2$anova$`Pr(>F)`, 
+                                         method = 'holm', n = ncol (expl))
+
+sel.osR2_adj$anova
+
+```
+
+
+```{r}
+#Select the statistically significant variables - May want to remove SiO2, see VIFS below!
+env.signif <- subset(expl, select = c(tchla, sio2, temp, gm_b1))
+
+#RDA using significant variables
+rda.signif <- rda(resp.hell ~ . ,data = env.signif)
+rda.signif
+rda.sign.sum <- summary(rda.signif)
+
+rda.sign.sum
+
+#Adjusted R2 for the 1 significant variables
+#AdjR2 = 
+(R2adj <- RsquareAdj(rda.signif)$adj.r.squared)
+
+#ANOVA for testing significance of model and individual axes #Can do ANOVA by terms...
+#Entire model = 0.001***
+#RDA1 = 0.001***
+#RDA2 = 0.001***
+
+# ?anova.cca
+anova.cca(rda.signif, step = 1000)
+anova.cca(rda.signif, step = 1000, by = "axis")
+
+#All significant - already shown in forward rda, but easier to see (Not corrected)
+anova(rda.signif, by = "terms")
+
+```
+
+```{r}
+varp <- varpart (resp.hell, ~ drho, ~ sio2, ~ temp, ~ gm_b1, data = expl)
+varp
+
+plot (varp, digits = 2, Xnames = c('drho', 'sio2', "temp", "gm_b1"),
+      bg = c('navy', 'tomato'))
+```
+
+
+
+```{r}
+#Rough plots using both scaling types - setting scaling-2 as a variable to allow for further plotting.
+
+# Type 1 scaling
+plot_s1 <- ordiplot(rda.signif, scaling = 1, type = "text")
+
+# Type 2 scaling
+plot_s2 <- ordiplot(rda.signif, scaling = 2, type = "text")
+
+```
+
+```{r}
+#Testing species goodness of fit to try to eliminate species
+# https://stackoverflow.com/questions/27823131/customising-vegan-ordination-plot
+
+
+#This selects the species with the 10% best fitting
+sel <- goeveg::ordiselect(resp, rda.signif, fitlim = 0.05)
+sel
+
+#Can also cut species out based on abundance
+sel2 <- goeveg::ordiselect(resp, rda.signif, ablim = 0.20, fitlim = 0.10)
+sel2
+
+```
+
+```{r}
+#Changing site_id to location 
+meta <- micro_join %>% 
+  select(date:site_id) %>% 
+  mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+meta <- meta %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date))
+
+meta <- meta %>%
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 12 ~ "autumn",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+meta <- meta %>%
+  mutate(year = lubridate::year(date)) %>%  
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
+                           TRUE ~ as.numeric(year)))
+
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+#Chemtax - Specify order of phyto groups for figures
+meta <- arrange(mutate(meta,
+                         location = factor(location, levels = order_loc)))
+
+#Order locations from fjord to shelf
+order_loc_seas <- c("winter", "spring", "summer", "autumn")
+
+#Chemtax - Specify order of phyto groups for figures
+meta <- arrange(mutate(meta,
+                         season = factor(season, levels = order_loc_seas)))
+```
+
+
+
+```{r}
+#RDA scaling 2 - angles. selecting distinct species and plotting as arrows with 10% best fit
+
+#Extracting site locations
+sites_loc <- sites.long(plot_s2, env.data = env.signif)
+sites_loc <- cbind(meta, sites_loc)
+head(sites_loc)
+
+#Species location in ordination
+species_loc <- species.long(plot_s2)
+species_loc
+
+axis.long <- axis.long(rda.signif, choices = c(1, 2))
+axis.long
+
+env_loc <-  as.data.frame(rda.sign.sum$biplot[,1:2])
+
+sp_loc <-  as.data.frame(rda.sign.sum$species[,1:2])
+
+sp_bf <- subset(sp_loc, rownames(sp_loc) %in% sel)
+```
+
+
+```{r}
+row.names(sp_bf) <- c("P.n.s",
+                      "Cho.",
+                      "Hill.",
+                      "Tel.",
+                      "S.mar.",
+                      "C.soc.",
+                      "C.cin")
+```
+
+
+```{r}
+#Plotting RDS scaling 2
+
+row.names(env_loc) <- c("SD",
+                        "SiO\u2082\u207B",
+                        "T",
+                        "GM")
+
+ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc, aes(x = axis1, y = axis2,
+                                   fill = as.factor(year),
+                                   shape = location), 
+             size = 10, color = "black", stroke = 0.5, alpha = 0.9) +
+  scale_fill_npg() +
+  scale_shape_manual(values = c(21, 22, 23 ,24)) +
+  geom_segment(data = env_loc, aes(x = 0, y = 0, xend = RDA1*20,
+                                   yend = RDA2*20),
+                arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
+                              type = "closed"),
+                linetype = 1, size = 1.4, colour = "Red", alpha = 1) +
+  geom_segment(data = sp_bf, aes(x = 0, y = 0, xend = RDA1,
+                                       yend = RDA2),
+                 arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
+                               type = "closed"),
+               linetype = 1, size = 1.4, colour = "black", alpha = 1) +
+  geom_text_repel(data = sp_bf, aes(RDA1, RDA2,
+                                           label = row.names(sp_bf)),
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.7,
+                  segment.alpha = 1,
+                  nudge_y = 0.05,
+                  force = 5,
+                  max.iter = 3e3,
+                  size = 8) +
+  geom_text_repel(data = env_loc , aes(RDA1*5, RDA2*5, 
+                                       label = row.names(env_loc)),
+                  point.padding = unit(2, 'lines'),
+                  nudge_y = - 0.05,
+                  force = 4,
+                  max.iter = 3e3,
+                  size = 10,
+                  color = "Red") +
+  labs(x = paste("RDA 1 (", format(100 *rda.sign.sum$cont[[1]][2,1], digits = 1),
+               "%)", sep = ""),
+       y = paste("RDA 2 (", format(100 *rda.sign.sum$cont[[1]][2,2], digits = 1),
+               "%)", sep = "")) +
+ 
+  theme_bw() +
+  theme(panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour= "black", face = "bold"),
+        axis.line = element_line(colour = "black"), 
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        text = element_text(size = 28)) +
+  guides(fill = guide_legend(override.aes = list(shape = 21))) +
+  labs(fill = "Year", shape = "Station")
+
+ggsave(here("figures_rda", "rda_2023-07-18_all.png"), 
+        width = 8, height = 6, dpi = 300)
+```
+
+```{r}
+A1.surface <- ordisurf(plot_s2, y = drho)
+```
+
+
+
+
+
+

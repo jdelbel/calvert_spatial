@@ -1,0 +1,210 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+library(zoo)
+```
+
+```{r}
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+co2 <- read_csv(here("files", "co2.csv"))
+
+```
+
+```{r}
+co2_avg <- co2 %>%
+  select(measurementTime, year, sw_xCO2_QC, sw_xCO2) %>% 
+  mutate(date_time = lubridate::mdy_hm(measurementTime)) %>%
+  mutate(date = lubridate::date(date_time)) %>% 
+  filter(is.na(sw_xCO2_QC)) %>%
+  filter(!is.na(sw_xCO2)) %>% 
+  filter(year > 2017 & year < 2022) %>% 
+  group_by(date) %>% 
+  summarise(mean_co2 = mean(sw_xCO2)) %>%
+  ungroup()
+```
+
+```{r}
+up_cm <- env %>% 
+  select(date, up_dm) %>% 
+  # drop_na() %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  group_by(year) %>% 
+  mutate(up_cm = cumsum(replace_na(up_dm, 0))) %>% 
+  ungroup()
+```
+
+
+```{r}
+up_fig <-
+  up_cm %>% 
+  ggplot() +
+  geom_col(aes(x = date, y = ifelse(up_dm < 0/10^3, up_dm/10^3, 0)), fill= "blue") +
+  geom_col(aes(x = date, y = ifelse(up_dm > 0/10^3, up_dm/10^3, 0)), fill= "red") +
+  geom_line(aes(x = date, y = up_cm/10^4, color = as.factor(year)), size = 2) +
+  labs(y = "upwelling") +
+  # scale_colour_steps2()
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none")
+```
+
+
+```{r}
+wind_fig <-
+  env %>% 
+  ggplot(aes(x = date, y = wind_dm^3, color = wind_dir_dm)) +
+  geom_point(size = 2) +
+  geom_line(size = 2) +
+  scale_color_stepsn(colors = brewer.pal(n = 8, name = "RdBu"),
+                     breaks = seq(0, 360, by = 45),
+                    limits = c(0 = "N", 360),
+                    name = "Dir.(°)") +
+  # scale_color_continuous(type = "viridis",
+  #                        guide_colourbar(title = "Dir. (°)",
+  #                                        barwidth = 0.5,
+  #                                        barheight = 10)) +
+  labs(y = bquote("Wind ("*m^3~s^-3*")")) +
+  # scale_colour_steps2()
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank()) +
+  guides(color = guide_colourbar(barwidth = 1, barheight = 12))
+```
+
+```{r}
+riv <- env %>% 
+  select(date, Q_GM = gm_dis, Q_SM = sm_dis, Q_RA = ra_dis) %>% 
+  pivot_longer(!date, names_to = "Watershed_group", values_to = "Q")
+
+# Order locations from fjord to shelf
+riv_loc <- c("Q_GM",
+             "Q_SM",
+             "Q_RA")
+
+riv <- arrange(mutate(riv, 
+                      Watershed_group = factor(Watershed_group,
+                                               levels = riv_loc)))
+
+riv_fig <- 
+  ggplot() +
+  geom_area(data = riv %>% filter(!Watershed_group == "Wan"),
+            aes(x = date, y = Q, fill = Watershed_group),
+            stat = "identity", position = "stack", color = "black", 
+            size = 0.5) +
+  geom_line(data = riv %>% filter(Watershed_group == "Wan"),
+            aes(x = date, y = Q), color = "white", size = 1) +
+  # scale_fill_d3(labels = c('glacier', 'snow', 'rain')) +
+  scale_fill_brewer(palette = "Blues",
+                    labels = c('glacier', 'snow', 'rain')) +
+  labs(fill = NULL,
+       y = bquote(Dis. ~ "("~m^-3*~s^-1*")")) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+chl <- chl %>% 
+   add_row(date = as.Date("2020-01-01"), site_id = "QCS01",
+           tchla = NA, location = "S") %>% 
+   add_row(date = as.Date("2019-01-01"), site_id = "QCS01",
+           tchla = NA, location = "S")
+
+loc <- c("F",
+         "C",
+         "S")
+
+chl <- arrange(mutate(chl, 
+                      location = factor(location,
+                                               levels = loc)))
+
+chl_fig <- chl %>% 
+  ggplot(aes(x = date, y = tchla, color = location)) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", size = 2, stroke = 2) +
+  scale_color_jco() +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  labs(y = bquote("TChla (mg" ~ m^-3*")"),
+       color = NULL) +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+co2_fig <-
+  co2_avg %>% 
+  ggplot(aes(x = date, y = mean_co2)) +
+  geom_point(size = 1) +
+  geom_line(size = 1) +
+  geom_area(alpha = 0.3) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  labs(y = "ρCO2 (ppm)") +
+  ylim(0, 900) +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+fig <- up_fig / wind_fig / riv_fig / chl_fig / co2_fig
+
+ggsave(here("figures_river", "riv_co2_chl_upwelling.png"), fig,
+       width = 16, height = 18, dpi = 300)
+```
+
+```{r}
+test <- lk_dm %>% 
+  mutate(month = lubridate::month(date2),
+         year = lubridate::year(date2)) %>% 
+  filter(month == 7 & year == 2020)
+
+
+openair::windRose(test, ws = "dm_w", wd = "dm_wd", angle = 10, width = 1, grid.line = 1)
+```
+

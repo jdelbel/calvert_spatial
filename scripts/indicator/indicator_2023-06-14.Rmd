@@ -31,7 +31,7 @@ library(analogue)
 micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv")) 
 
 #Upload physical-chemical clusters derived via PCA
-clust_pca <- read_csv(here("outputs", "pca_cluster_2023-06-14.csv"))
+clust_pca <- read_csv(here("outputs", "pca_cluster_2023-06-14_upwell_tchla.csv"))
 
 clust_diat <- read_csv(here("outputs", "diatom_cluster_2023-06-14.csv"))
 
@@ -142,12 +142,17 @@ t_abund_pca <- sqrt(species_pca)
 #ANOSIM test to see if groupings statistically significant 
 clust_pca <- micro_piv_pca$pca_clust
 clust_diat <- micro_piv$diat_clust
+year <- micro_piv$year
+site <- micro_piv$site_id
 
 ano_clust_pca = anosim(t_abund_pca, clust_pca, distance = "bray", permutations = 9999)
 ano_clust_pca
 
-ano_clust_diat = anosim(t_abund, clust_diat, distance = "bray", permutations = 9999)
-ano_clust_diat
+ano_site_pca = anosim(t_abund, site, distance = "bray", permutations = 9999)
+ano_site_pca
+
+# ano_clust_diat = anosim(t_abund, clust_diat, distance = "bray", permutations = 9999)
+# ano_clust_diat
 
 
 ```
@@ -158,11 +163,27 @@ ano_clust_diat
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by station for diatoms
-inv_clust_pca = multipatt(t_abund_pca, clust_pca, func = "r.g", duleg = T,
+inv_clust_pca = multipatt(t_abund_pca, clust_pca, func = "r.g", duleg = F,
                        control = how(nperm = 999))
 
 #Looking at results of analysis
 summary(inv_clust_pca)
+
+iv <- labdsv::indval(t_abund_pca, clust_pca)
+
+summary(iv)
+```
+
+
+```{r}
+micro_piv %>% 
+  ggplot(aes(x = date, y = `Prorocentrum micans`,
+             color = site_id)) +
+  geom_point(size = 5) +
+  geom_line()
+```
+```{r}
+
 ```
 
 
@@ -172,7 +193,7 @@ summary(inv_clust_pca)
 # https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
 
 #Indicators by station for diatoms
-inv_clust_diat = multipatt(t_abund, clust_diat, func = "r.g", duleg = T,
+inv_clust_diat = multipatt(t_abund_diat, clust_pca, func = "r.g", duleg = T,
                        control = how(nperm = 999))
 
 #Looking at results of analysis
@@ -181,17 +202,17 @@ summary(inv_clust_diat)
 
 ```{r}
 
-inv_clust_diat_sp <- data.table::as.data.table(inv_clust_diat$sign, keep.rownames = TRUE)
+inv_clust_sp <- data.table::as.data.table(inv_clust_pca$sign, keep.rownames = TRUE)
 
-inv_clust_diat_sp <- inv_clust_diat_sp %>%
+inv_clust_sp <- inv_clust_sp %>%
   filter(s.1 == 1 | s.2 == 1 | s.3 == 1 | s.4) %>%
   filter(p.value < 0.05) %>%
   # filter(!rn == "Skeletonema marinoi") %>%
   arrange(rn)
 
-inv_clust_diat_sp_list <- inv_clust_diat_sp$rn
+inv_clust_sp_list <- inv_clust_sp$rn
 
-inv_clust_diat_sp_list
+inv_clust_sp_list
 
 ```
 
@@ -209,14 +230,13 @@ micro <- arrange(mutate(micro,
 ```{r}
 pca <- micro %>%   
   # filter(!(pca_clust == 1)) %>% 
-  filter(!is.na(diat_clust)) %>% 
-  filter(scientificName %in% inv_clust_diat_sp_list) %>%
+  filter(scientificName %in% inv_clust_sp_list) %>%
   # filter(!scientificName == "Skeletonema marinoi") %>% 
   # filter(!scientificName == "Biddulphiales") %>% 
   # filter(!scientificName == "Pseudo-nitzschia seriata") %>% 
-  ggplot(aes(x = sample_name, y = scientificName, fill = sqrt(species_sum))) +
+  ggplot(aes(x = pca_clust, y = scientificName, fill = sqrt(species_sum))) +
   geom_tile(color = "black", size = 1, alpha = 0.7) +
-  facet_grid(group ~ diat_clust, scales = "free", space = "free") +
+  facet_grid(pca_clust ~ , scales = "free", space = "free") +
   scale_fill_gradient(name = "log(abund.)",
                       low = "#012345",
                       high = "red") +
@@ -241,13 +261,13 @@ pca <- micro %>%
  
 loc <- micro %>%
   # filter(!(diat_clust == 1)) %>% 
-  filter(!is.na(diat_clust)) %>%
+  # filter(!is.na(diat_clust)) %>%
   ggplot(aes(x = sample_name, y = 1, shape = as.factor(location),
              fill = as.factor(year))) +
   geom_point(size = 3, stroke = 1.5) +
   scale_shape_manual(values = c(21, 22, 23 ,24)) + 
   scale_fill_brewer(palette = "Dark2") +
-  facet_grid(. ~ diat_clust , scales = "free_x", space = "free") +
+  facet_grid(. ~ pca_clust , scales = "free_x", space = "free") +
   theme(axis.title.x = element_blank(),
         strip.background = element_blank(),
         strip.text.y = element_blank(),
@@ -269,10 +289,12 @@ loc <- micro %>%
         panel.border = element_blank(),
         axis.line = element_blank())
 
-panel <- pca / plot_spacer() / loc +
-  plot_layout(heights = c(2, -0.07, 0.06))
+panel <- pca 
 
-ggsave(here("figures_indicator", "2023-06-16_pca_indicator.png"), panel,
+# / plot_spacer() / loc +
+#   plot_layout(heights = c(2, -0.07, 0.06))
+
+ggsave(here("figures_indicator", "2023-07_04_pca_indicator.png"), panel,
         width = 16, height = 8, dpi = 300)
 ```
 

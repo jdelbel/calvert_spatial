@@ -21,7 +21,7 @@ meta <- read_csv(here("files", "meta_phyto_2021-06-21.csv"))
 s_mar <- read_xlsx(here("files", "s_mar_size.xlsx"))
 
 #Downloading master datasheet where S.marinoi are not separated by size (for comparison)
-micro <- read_csv(here("outputs", "micro_master_2021-10-18.csv"))
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
 ```
 
 ```{r}
@@ -41,7 +41,7 @@ meta <- meta %>%
 #joining skeletonema counts with metadata
 s_mar_long <- s_mar_long %>% 
   left_join(meta) %>% 
-  select(date, site_id, species, counts)
+  select(date, hakai_id, site_id, species, counts)
 ```
 ```{r}
 #Pivoting wider for comparison with my master sheet
@@ -103,6 +103,6 @@ s_mar_export <- s_mar_export %>%
 
 ```{r}
 #Exporting as a csv for upload into me analysis workbooks.
-write_csv(s_mar_export, here("outputs", "s_mar_size.csv"))
+write_csv(s_mar_export, here("outputs", "s_mar_size_2023-07-03.csv"))
 ```
 

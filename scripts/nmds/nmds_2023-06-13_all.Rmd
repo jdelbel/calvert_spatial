@@ -81,13 +81,20 @@ species_10 <- micro %>%
   mutate(perc_obs = n_obs/78) %>% 
   filter(perc_obs >= 0.10)
 
+species_2 <- micro %>% 
+  group_by(scientificName) %>% 
+  summarise(max_abund = max(species_sum)) %>% 
+  ungroup() %>% 
+  filter(max_abund < 5000)
+
 #Creating a list of species in > 10% of samples.
 species_10_list <- species_10$scientificName
+species_2_list <- species_2$scientificName
 
 #Removing species that are not present in > 10% of samples.
 micro <- micro %>% 
-  filter(scientificName %in% species_10_list)
-
+  filter(scientificName %in% species_10_list) %>% 
+  filter(!scientificName %in% species_2_list)
 ```
 
 ```{r}
@@ -120,7 +127,7 @@ micro_piv <- micro_piv %>%
 species <- micro_piv[, 8:ncol(micro_piv)]
 
 #Transforming the abundance data
-t_abund <- sqrt(species)
+t_abund <- species
 
 ```
 
@@ -155,7 +162,7 @@ dis_abund <- vegdist(hc_abund, method = "bray")
 
 #Applying wards linkage method
 # clust_ward_abund <- agnes(dis_abund, method = "ward")
-clust_ward_abund <- hclust(dis_abund, method = "ward.D2")
+clust_ward_abund <- hclust(dis_abund, method = "complete")
 
 
 ```
@@ -167,7 +174,7 @@ cor(dis_abund, coph)
 
 ```{r}
 # Enhanced hierarchical clustering, cut in 3 groups
-fviz_dend(clust_ward_abund, cex = 0.5, k = 3, color_labels_by_k = TRUE)
+fviz_dend(clust_ward_abund, cex = 0.5, h = 0.65, color_labels_by_k = TRUE)
 
 ```
 
@@ -178,7 +185,7 @@ fviz_dend(clust_ward_abund, cex = 0.5, k = 3, color_labels_by_k = TRUE)
 
 fviz_nbclust(hc_abund, FUN = hcut, method = "wss")
 fviz_nbclust(hc_abund, FUN = hcut, method = "silhouette")
-gap_stat <- clusGap(hc_abund, FUN = hcut, nstart = 25, K.max = 20, B = 50)
+gap_stat <- clusGap(hc_abund, FUN = hcut, nstart = 25, K.max = 10, B = 50)
 fviz_gap_stat(gap_stat)
 
 #In general, these approaches do not show many clusters - only 2. This bothers me as there is clearly more structure in the data.
@@ -189,8 +196,8 @@ fviz_gap_stat(gap_stat)
 #Trying cutting at line 
 
 # Abundance data
-k_abund <- 3
-clust_abund <- cutree(clust_ward_abund, k = k_abund)
+k_abund <- 0.65
+clust_abund <- cutree(clust_ward_abund, h = k_abund)
 #
 clust_df_abund <- data.frame(label = rownames(hc_abund),
                                    cluster = factor(clust_abund))
@@ -290,7 +297,7 @@ ggplot() +
             color = "black", fill = NA, size = 0.8) +
  # scale_color_manual(values = site_color_abund) +
  # scale_y_reverse(limits = c(1, -0.5)) +
- ylim(-0.5, 3) +
+ ylim(-0.5, 1) +
   # coord_flip() +
  theme_bw() +
  theme(legend.position = "none",
@@ -301,7 +308,7 @@ ggplot() +
        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
-ggsave(here("figures_nmds_new", "2023-06-13_sqrt_abund_ALL.png"),
+ggsave(here("figures_nmds_new", "2023-07-11_complete.png"),
        width = 16, height = 12, dpi = 300)
 ```
 
@@ -498,7 +505,7 @@ ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) +
   labs(fill = "Month", shape = "Station") +
   guides(fill = guide_legend(override.aes = list(shape = 21)))
 
-ggsave(here("figures_nmds_new", "2023-06-13_sqrt_ALL_nmds_pca_clust.png"),
+ggsave(here("figures_nmds_new", "2023-07-11.png"),
        width = 8, height = 5, dpi = 300)
 ```
 
@@ -525,6 +532,10 @@ inv_clust_abund = multipatt(t_abund, clust_abund, func = "r.g", duleg = T,
 
 #Looking at results of analysis
 summary(inv_clust_abund)
+
+iv <- labdsv::indval(t_abund, clust_abund)
+
+summary(iv)
 ```
 
 
@@ -790,7 +801,7 @@ cp <- micro_all_c %>%
   guides(fill = guide_legend(ncol = 4),
          color = "none")
 
-ggsave(here("figures_nmds_new", "2023-06-13-horiz-bar_ALL.png"), cp,
+ggsave(here("figures_nmds_new", "2023-07-10.png"), cp,
        width = 16, height = 8, dpi = 300)
 ```
 
@@ -840,7 +851,7 @@ micro_all_c %>%
   guides(fill = guide_legend(ncol = 4),
          color = "none")
 
-ggsave(here("figures_nmds_new", "2023-06-13_vert_bar_ALL.png"),
+ggsave(here("figures_nmds_new", "2023-07-23_vert.png"),
        width = 14, height = 16, dpi = 300)
 ```
 

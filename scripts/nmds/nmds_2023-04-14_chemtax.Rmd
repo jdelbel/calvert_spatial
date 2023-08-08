@@ -181,7 +181,7 @@ dis_abund <- vegdist(hc_abund, method = "bray")
 
 #Applying wards linkage method
 # clust_ward_abund <- agnes(dis_abund, method = "ward")
-clust_ward_abund <- hclust(dis_abund, method = "average")
+clust_ward_abund <- hclust(dis_abund, method = "complete")
 
 
 ```
@@ -192,7 +192,7 @@ cor(dis_abund, coph)
 ```
 ```{r}
 # Enhanced hierarchical clustering, cut in 3 groups
-fviz_dend(clust_ward_abund, cex = 0.5, h = 0.60, color_labels_by_k = TRUE)
+fviz_dend(clust_ward_abund, cex = 0.5, h = 0.65, color_labels_by_k = TRUE)
 ```
 
 ```{r}
@@ -213,7 +213,7 @@ fviz_gap_stat(gap_stat)
 #Trying cutting at line 
 
 # Abundance data
-k_abund <- 0.60
+k_abund <- 0.65
 clust_abund <- cutree(clust_ward_abund, h = k_abund)
 #
 clust_df_abund <- data.frame(label = rownames(hc_abund),
@@ -308,7 +308,7 @@ ggplot() +
  geom_text(data = dendrogram_ends_abund, aes(x = x, y = y.y, label = sample_name,
                                        color = as.factor(cluster),
            hjust = 1, angle = 90, size = 6)) +
-  geom_hline(yintercept = 0.60) +
+  geom_hline(yintercept = 0.65) +
  # geom_rect(data = rect_abund, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0,
  #                                  ymax = ymax_abund),
  #            color = "black", fill = NA, size = 0.8) +
@@ -500,7 +500,7 @@ spp.scrs2 <- spp.scrs2 %>%
 #This is the horizontal version of the month and year nMDS panel shown incorporated into a large panel later 
 
 ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) + 
-  geom_point(data = data.scores_abund, aes(fill = as.factor(clust_abund), shape = site),
+  geom_point(data = data.scores_abund, aes(fill = as.factor(month), shape = site),
              size = 7, stroke = 1.5) + 
   scale_fill_brewer(palette = "Spectral") +
   # scale_fill_manual(values = c("blue", "springgreen4", "black", "magenta")) + 
@@ -509,8 +509,8 @@ ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) +
                aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
                arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
                size = 1.2, alpha = 0.7) +
-  geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
-             fontface = "bold", label = row.names(spp.scrs2), size = 7) +
+  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) +
   ggrepel::geom_text_repel(data = spp.scrs2, aes(x = NMDS1, y = NMDS2,
                                            label = row.names(spp.scrs2)),
                   # box.padding = unit(0.5, 'lines'),
@@ -554,6 +554,10 @@ inv_clust_abund = multipatt(t_abund, clust_abund, func = "r.g", duleg = F,
 
 #Looking at results of analysis
 summary(inv_clust_abund)
+
+iv <- labdsv::indval(t_abund, clust_abund)
+
+summary(iv)
 ```
 
 

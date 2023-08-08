@@ -1,0 +1,130 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+library(zoo)
+```
+
+```{r}
+#Upload data
+
+#Physical - chemical data
+data <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+#Chlorophyll data
+chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
+
+#Upwelling data - currently not used and needs to be incorporating into my environmental sheet
+up <- read_csv(here("files", "upwell.csv"))
+
+#General environmental data - discharge etc.
+env <- read_csv(here("outputs", "enviro_2023-05-26.csv"))
+
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+```
+
+
+```{r}
+#Pulling out taxonomic data from my physical-chemical sheet - I should just do this in my standardization sheet. Not needed as I always do work on the microscopy before I join it and easier to do this aspect in the individual workbooks.
+data <- data %>% 
+  select(date:secchi_depth)
+
+#Joining all of the data
+data_join <- data %>% 
+  left_join(chl) %>% 
+  left_join(env)
+
+#Relocating metadata
+data_join <- data_join %>% 
+  relocate(location, .after = site_id)
+
+#Adding date information and relocating
+data_join <- data_join %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  relocate(month, .after = date) %>% 
+  relocate(year, .after = month)
+```
+```{r}
+#Selecting the variables I want
+data_pca <- data_join %>%
+  select(date, month, year, site_id, location, temp = temp_dm, 
+         sal = sal_dm, drho = delta_rho_dm, no2 = no2_dm, po4_dm, 
+         sio2_dm, secchi = secchi_depth, sm_b1, gm_b1, ra_b1, wan_b1, wind_b1, 
+         wind_dir_b1, par_b1)
+```
+
+
+
+#Let's try to add mixed layer depth. See if the calculation works for these waters.
+
+```{r}
+#Removing NA's for analysis 
+data_pca <- data_pca %>%
+  drop_na()
+```
+
+```{r}
+data_pca <- data_pca %>%
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 12 ~ "autumn",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+data_pca <- data_pca %>%
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
+                           TRUE ~ as.numeric(year)))
+```
+
+
+```{r}
+# https://uw.pressbooks.pub/appliedmultivariatestatistics/chapter/permdisp/
+
+#Pulling out explanatory variables for PCA analysis
+expl <- data_pca %>% 
+  select(temp:secchi)
+
+expl <- log1p(expl)
+
+dis <- vegdist(expl, method = "euclidean")
+
+location <- data_pca$location
+year <- data_pca$year
+season <- data_pca$season
+
+mod <- betadisper(dis, location, type = "centroid")
+
+anova(mod)
+TukeyHSD(mod)
+
+plot(mod, hull = FALSE, ellipse = TRUE)
+
+pm <- adonis2(expl ~ location, method = "euc")
+
+pm
+
+boxplot(mod)
+
+#So what this says is that differences are due to disperson (rather than location) and that the differences in dispersion are between the Fjord and Channel - the channel and shelf and fjord and shelf differences are driven by differences in location only. So then you could conclude that that fjord and channel are somewhat linked?
+```
+

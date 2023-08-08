@@ -40,9 +40,11 @@ env <- read_csv(here("outputs", "enviro_2023-05-26.csv"))
 
 micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
 ```
+
+
 ```{r}
-micro <- micro %>%
-  filter(group == "Bacillariophyta")
+# micro <- micro %>%
+#   filter(group == "Bacillariophyta")
 
 micro <- micro %>% 
     mutate(location = case_when(site_id == "DFO2" ~ "F",
@@ -81,7 +83,7 @@ data <- data %>%
 #Joining all of the data
 data_join <- data %>% 
   left_join(chl) %>% 
-  left_join(env)
+  left_join(env) 
 
 #Relocating metadata
 data_join <- data_join %>% 

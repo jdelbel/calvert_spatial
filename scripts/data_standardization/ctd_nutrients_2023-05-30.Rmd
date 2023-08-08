@@ -161,25 +161,35 @@ ctd_dd <- ctd_dd %>%
 ctd <- ctd %>% 
   left_join(ctd_dd) 
 ```
+
+
 ```{r}
 #Calculating MLD 
-# mld <- ctd %>% 
-#   select(cast_pk, station, date, year:day, pres, rho) %>% 
-#   group_by(cast_pk) %>% 
-#   mutate(rho_diff = rho - lag(rho)) %>% 
-#   ungroup()
+mld <- ctd %>%
+  select(cast_pk, station, date, year:day, pres, rho) %>%
+  group_by(cast_pk) %>%
+  filter(pres > 1) %>% 
+  slice_min(pres, with_ties = FALSE) %>%
+  ungroup() %>%
+  filter(pres < 3) %>%
+  select(cast_pk, surf_rho = rho)
 # 
-# mld_2 <- mld %>% 
-#   group_by(cast_pk) %>% 
-#   filter(rho_diff > 0.125) %>%
-#   ungroup()
-# 
-# mld_max <- mld_2 %>% 
-#   group_by(cast_pk) %>% 
-#   slice_max(pres, n = 1) %>%
-#   ungroup()
-```
+mld_2 <- ctd %>%
+  select(cast_pk, station, date, year:day, pres, rho) %>%
+  left_join(mld) %>%
+  mutate(mld = rho - surf_rho) %>%
+  group_by(cast_pk) %>%
+  filter(mld > 0.125) %>%
+  slice_min(pres) %>%
+  ungroup()
 
+mld_2 %>%
+  filter(year < 2021) %>%
+  ggplot(aes(x = date, y = pres)) +
+  geom_line() +
+  geom_point() +
+  facet_grid(station ~ year, scales = "free")
+```
 ```{r}
 #Selecting the pertinent columns for analysis - much easier to assess merging/joining with fewer columns
 

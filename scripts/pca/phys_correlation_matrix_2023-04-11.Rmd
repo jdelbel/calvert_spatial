@@ -27,40 +27,52 @@ library(ggcorrplot)
 library(zoo)
 library(gsw)
 ```
+
+
 ```{r}
-#Uploading datasheet with physical, nutrients, chlorophyll, microscopy and chemtax data.
-# micro <- read_csv(here("outputs", "micro_kc10_2021-12-01.csv"))
+#Physical - chemical data
+data <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
 
-#From pca_2023-04-11_wind_par
-data <- read_csv(here("outputs", "ctd_wind_riv.csv"))
+#Chlorophyll data
+chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
 
-bb <- read_csv(here("files", "Daily_flow_2018_2020_v2023_04_27.csv"))
+#General environmental data - discharge etc.
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
 ```
 
 ```{r}
-bb_avg <- bb %>%
-  mutate(QT_b1 = rollmeanr(lag(Q_Total, 1), k = 10, fill = NA),
-         QGM_b1 = rollmeanr(lag(Q_GM, 1), k = 10, fill = NA),
-         QSM_b1 = rollmeanr(lag(Q_SM, 1), k = 10, fill = NA),
-         QRA_b1 = rollmeanr(lag(Q_RA, 1), k = 10, fill = NA))
+#Pulling out taxonomic data from my physical-chemical sheet - I should just do this in my standardization sheet. Not needed as I always do work on the microscopy before I join it and easier to do this aspect in the individual workbooks.
+data <- data %>% 
+  select(date:secchi_depth)
 
-#So this is offsetting the the rolling average to one day before
-bb_dg <- bb_avg %>% 
-  select(date = Date, QT_b1:QRA_b1)
+#Joining all of the data
+data_join <- data %>% 
+  left_join(chl) %>% 
+  left_join(env) 
+
+#Relocating metadata
+data_join <- data_join %>% 
+  relocate(location, .after = site_id)
+
+#Adding date information and relocating
+data_join <- data_join %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  relocate(month, .after = date) %>% 
+  relocate(year, .after = month)
 ```
 
 ```{r}
-data_pca <- data %>% 
-  select(date, site_id, temp, sal, drho, no2, secchi, lk_wd, par_b1, Wan_b1, tchla)
+#Selecting the variables I want
+data_pca <- data_join %>%
+  select(date, month, year, site_id, location, temp = temp_dm, 
+         sal = sal_dm, drho = delta_rho_dm, no2 = no2_dm, po4_dm, 
+         sio2_dm, secchi = secchi_depth, sm_b1, gm_b1, ra_b1, wan_b1, wind_b1, 
+         wind_dir_b1, par_b1, up_b1, dep_26_dm, tchla)
 
-data_pca <- data_pca %>% 
-  left_join(bb_dg)
-
+#Removing NA's for analysis 
 data_pca <- data_pca %>%
   drop_na()
-
-data_pca <- data_pca %>% 
-  relocate(tchla, .after = QRA_b1)
 ```
 
 ```{r}
@@ -85,27 +97,29 @@ s <- s %>%
 
 ```{r}
 #Making correlation matrix
-cor_f <- round(cor(f, method = "spearman"), 2)
+cor_f <- round(cor(f, method = "pearson"), 2)
 
 #Making significance' matrix
-p.mat_f <- cor_pmat(f, method = "spearman")
+p.mat_f <- cor_pmat(f, method = "pearson")
 
 #Making correlation matrix
-cor_c <- round(cor(c, method = "spearman"), 2)
+cor_c <- round(cor(c, method = "pearson"), 2)
 
 #Making significance' matrix
-p.mat_c <- cor_pmat(c, method = "spearman")
+p.mat_c <- cor_pmat(c, method = "pearson")
 
 #Making correlation matrix
-cor_s <- round(cor(s, method = "spearman"), 2)
+cor_s <- round(cor(s, method = "pearson"), 2)
 
 #Making significance' matrix
-p.mat_s <- cor_pmat(s, method = "spearman")
+p.mat_s <- cor_pmat(s, method = "pearson")
 
 ```
 
 ```{r}
-fig_f <- ggcorrplot(cor_f,
+
+  
+  ggcorrplot(cor_f,
   p.mat = p.mat_f,
   method = "circle",
   type = "lower",
@@ -115,41 +129,41 @@ fig_f <- ggcorrplot(cor_f,
   insig = "blank",
   lab_size = 2.5,
   outline.color = "black") +
-  scale_x_discrete(labels = c("S",
-                              "\u394\u3C1",
-                              "NO\u2083\u207B+NO\u2082\u207B",
-                                "Secchi",
-                                "Wind. Dir.",
-                                "PAR",
-                                "Wan.",
-                                "T",
-                                "GM",
-                                "SM",
-                                "R",
-                                "TChla")) +
-  #                             "Riv_B10", 
-  #                             "lk_w", 
-  #                             "lk_wd",
-  #                             "par_b1",
-  #                             "lev",
-  #                             "rain",
-  #                             "lev_b1",
-  #                             "rain_b1",
-  #                             "TChla",
-  #                             "Diat.")) +
-  scale_y_discrete(labels = c("T",
-                                "S",
-                                "\u394\u3C1",
-                                "NO\u2083\u207B+NO\u2082\u207B",
-                                "Secchi",
-                                "Wind. Dir.",
-                                "PAR",
-                                "Wan.",
-                                "T",
-                                "GM",
-                                "SM",
-                                "R",
-                                "TChla")) +
+  # scale_x_discrete(labels = c("S",
+  #                             "\u394\u3C1",
+  #                             "NO\u2083\u207B+NO\u2082\u207B",
+  #                               "Secchi",
+  #                               "Wind. Dir.",
+  #                               "PAR",
+  #                               "Wan.",
+  #                               "T",
+  #                               "GM",
+  #                               "SM",
+  #                               "R",
+  #                               "TChla")) +
+  # #                             "Riv_B10", 
+  # #                             "lk_w", 
+  # #                             "lk_wd",
+  # #                             "par_b1",
+  # #                             "lev",
+  # #                             "rain",
+  # #                             "lev_b1",
+  # #                             "rain_b1",
+  # # #                             "TChla",
+  # # #                             "Diat.")) +
+  # scale_y_discrete(labels = c("T",
+  #                               "S",
+  #                               "\u394\u3C1",
+  #                               "NO\u2083\u207B+NO\u2082\u207B",
+  #                               "Secchi",
+  #                               "Wind. Dir.",
+  #                               "PAR",
+  #                               "Wan.",
+  #                               "T",
+  #                               "GM",
+  #                               "SM",
+  #                               "R",
+  #                               "TChla")) +
   # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Fjord") +
   theme_bw() +
@@ -161,11 +175,13 @@ fig_f <- ggcorrplot(cor_f,
         plot.title = element_text(margin = margin(t = 40,b = -30)),
         legend.position = "none")
 
-# ggsave(here("figures_good", "corr_kc10_full_year2_844_rain.png"),
-#        width = 8, height = 8, dpi = 300)
+ggsave(here("figures_correlogram", "corr_kc10_pearson.png"),
+       width = 8, height = 8, dpi = 300)
 ```
 ```{r}
-fig_c <- ggcorrplot(cor_c,
+# fig_c <- 
+#   
+  ggcorrplot(cor_c,
   p.mat = p.mat_c,
   method = "circle",
   type = "lower",
@@ -175,41 +191,41 @@ fig_c <- ggcorrplot(cor_c,
   insig = "blank",
   lab_size = 2.5,
   outline.color = "black") +
-  scale_x_discrete(labels = c("S",
-                              "\u394\u3C1",
-                              "NO\u2083\u207B+NO\u2082\u207B",
-                                "Secchi",
-                                "Wind. Dir.",
-                                "PAR",
-                                "Wan.",
-                                "T",
-                                "GM",
-                                "SM",
-                                "R",
-                                "TChla")) +
-  #                             "Riv_B10", 
-  #                             "lk_w", 
-  #                             "lk_wd",
-  #                             "par_b1",
-  #                             "lev",
-  #                             "rain",
-  #                             "lev_b1",
-  #                             "rain_b1",
-  #                             "TChla",
-  #                             "Diat.")) +
-  scale_y_discrete(labels = c("T",
-                                "S",
-                                "\u394\u3C1",
-                                "NO\u2083\u207B+NO\u2082\u207B",
-                                "Secchi",
-                                "Wind. Dir.",
-                                "PAR",
-                                "Wan.",
-                                "T",
-                                "GM",
-                                "SM",
-                                "R",
-                                "TChla")) +
+  # scale_x_discrete(labels = c("S",
+  #                             "\u394\u3C1",
+  #                             "NO\u2083\u207B+NO\u2082\u207B",
+  #                               "Secchi",
+  #                               "Wind. Dir.",
+  #                               "PAR",
+  #                               "Wan.",
+  #                               "T",
+  #                               "GM",
+  #                               "SM",
+  #                               "R",
+  #                               "TChla")) +
+  # #                             "Riv_B10", 
+  # #                             "lk_w", 
+  # #                             "lk_wd",
+  # #                             "par_b1",
+  # #                             "lev",
+  # #                             "rain",
+  # #                             "lev_b1",
+  # #                             "rain_b1",
+  # #                             "TChla",
+  # #                             "Diat.")) +
+  # scale_y_discrete(labels = c("T",
+  #                               "S",
+  #                               "\u394\u3C1",
+  #                               "NO\u2083\u207B+NO\u2082\u207B",
+  #                               "Secchi",
+  #                               "Wind. Dir.",
+  #                               "PAR",
+  #                               "Wan.",
+  #                               "T",
+  #                               "GM",
+  #                               "SM",
+  #                               "R",
+  #                               "TChla")) +
   # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Channel") +
   theme_bw() +
@@ -226,7 +242,9 @@ fig_c <- ggcorrplot(cor_c,
 ```
 
 ```{r}
-fig_s <- ggcorrplot(cor_s,
+# fig_s <- 
+  
+ggcorrplot(cor_s,
   p.mat = p.mat_c,
   method = "circle",
   type = "lower",
@@ -236,41 +254,41 @@ fig_s <- ggcorrplot(cor_s,
   insig = "blank",
   lab_size = 2.5,
   outline.color = "black") +
-  scale_x_discrete(labels = c("S",
-                              "\u394\u3C1",
-                              "NO\u2083\u207B+NO\u2082\u207B",
-                                "Secchi",
-                                "Wind. Dir.",
-                                "PAR",
-                                "Wan.",
-                                "T",
-                                "GM",
-                                "SM",
-                                "R",
-                                "TChla")) +
-  #                             "Riv_B10", 
-  #                             "lk_w", 
-  #                             "lk_wd",
-  #                             "par_b1",
-  #                             "lev",
-  #                             "rain",
-  #                             "lev_b1",
-  #                             "rain_b1",
-  #                             "TChla",
-  #                             "Diat.")) +
-  scale_y_discrete(labels = c("T",
-                                "S",
-                                "\u394\u3C1",
-                                "NO\u2083\u207B+NO\u2082\u207B",
-                                "Secchi",
-                                "Wind. Dir.",
-                                "PAR",
-                                "Wan.",
-                                "T",
-                                "GM",
-                                "SM",
-                                "R",
-                                "TChla")) +
+  # scale_x_discrete(labels = c("S",
+  #                             "\u394\u3C1",
+  #                             "NO\u2083\u207B+NO\u2082\u207B",
+  #                               "Secchi",
+  #                               "Wind. Dir.",
+  #                               "PAR",
+  #                               "Wan.",
+  #                               "T",
+  #                               "GM",
+  #                               "SM",
+  #                               "R",
+  #                               "TChla")) +
+  # #                             "Riv_B10", 
+  # #                             "lk_w", 
+  # #                             "lk_wd",
+  # #                             "par_b1",
+  # #                             "lev",
+  # #                             "rain",
+  # #                             "lev_b1",
+  # #                             "rain_b1",
+  # #                             "TChla",
+  # #                             "Diat.")) +
+  # scale_y_discrete(labels = c("T",
+  #                               "S",
+  #                               "\u394\u3C1",
+  #                               "NO\u2083\u207B+NO\u2082\u207B",
+  #                               "Secchi",
+  #                               "Wind. Dir.",
+  #                               "PAR",
+  #                               "Wan.",
+  #                               "T",
+  #                               "GM",
+  #                               "SM",
+  #                               "R",
+  #                               "TChla")) +
   # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
   ggtitle("Shelf") +
   theme_bw() +
