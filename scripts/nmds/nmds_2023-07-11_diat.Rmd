@@ -21,8 +21,6 @@ library(RColorBrewer)
 library(ggcorrplot) 
 library(analogue)
 # library(clustsig)
-library(BiodiversityR)
-library(ggsci)
 
 ```
 
@@ -33,101 +31,7 @@ library(ggsci)
 micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv")) 
 
 #Upload physical-chemical clusters derived via PCA
-clust_pca <- read_csv(here("outputs", "pca_clusters_2023-08-2.csv"))
-
-#Physical - chemical data
-data <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
-
-#Chlorophyll data
-chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
-
-#General environmental data - discharge etc.
-env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
-
-sf <- read_csv(here("files", "chl_2018_2020.csv"))
-
-chem <- read_csv(here("files", "chemtax_2023-04-14.csv"))
-
-#Uploading size separated S.marinoi counts.
-sm_size <- read_csv(here("outputs", "s_mar_size_2023-07-03.csv"))
-```
-
-
-```{r}
-test <- micro %>% 
-  mutate(month = lubridate::month(date),
-         year = lubridate::year(date)) %>% 
-  filter(site_id == "KC10" & year == 2019 & month == "7")
-```
-
-```{r}
-#Filtering out bulk chlorophyll, removing bad data and cutting down on colums
-sf_less <- sf %>% 
-  filter(line_out_depth == 5 & !filter_type == "Bulk GF/F") %>% 
-  filter(chla_flag == "AV" | is.na(chla_flag)) %>%
-  mutate(year = lubridate::year(date)) %>% 
-  select(date, year, site_id, filter_type, chla) %>% 
-  filter(!is.na(chla)) %>% 
-  group_by(date) %>% 
-  mutate(n_filt = n()) %>% 
-  ungroup() %>% 
-  filter(n_filt == 3) %>% 
-  select(-n_filt) %>% 
-  group_by(date, site_id) %>% 
-  mutate(sum_sf = sum(chla)) %>% 
-  ungroup() %>% 
-  mutate(perc_sf = chla/sum_sf) 
-```
-
-```{r}
-chem <- chem %>% 
-  rename(cyan = Cyanobacteria, hapt = Hapto, GA = `Prasinophytes-3`,
-         cryp = Cryptophytes, dino = `Dinoflagellates-1`, raph = Raphido,
-         dict = Dictyo, diat = `Diatoms-1`)
-
-chem_long <- chem %>% 
-  pivot_longer(c(cyan:diat), values_to = "tchla", names_to = "group")
-```
-
-
-
-```{r}
-
-data <- data %>% 
-  select(date:secchi_depth)
-
-#Joining all of the data
-data_join <- data %>% 
-  left_join(chl) %>% 
-  left_join(env) 
-
-#Relocating metadata
-data_join <- data_join %>% 
-  relocate(location, .after = site_id)
-
-#Adding date information and relocating
-data_join <- data_join %>% 
-  mutate(year = lubridate::year(date),
-         month = lubridate::month(date)) %>% 
-  relocate(month, .after = date) %>% 
-  relocate(year, .after = month)
-```
-
-```{r}
-#Selecting the variables I want
-data_pca <- data_join %>%
-  select(date, month, year, site_id, location, temp = temp_dm, 
-         sal = sal_dm, drho = delta_rho_dm, no2 = no2_dm, po4_dm, 
-         sio2_dm, secchi = secchi_depth, sm_b1, gm_b1, ra_b1, wan_b1, wind_b1, 
-         wind_dir_b1, up_b1, dep_26_dm, tchla, par_b1)
-
-
-```
-
-```{r}
-data_pca_long <- data_pca %>% 
-  select(date, site_id, temp:par_b1) %>% 
-  pivot_longer(c(temp:par_b1), names_to = "par", values_to = "val")
+clust_pca <- read_csv(here("outputs", "pca_cluster_2023-06-14.csv"))
 
 ```
 
@@ -145,14 +49,10 @@ micro <- micro %>%
 micro <- micro %>% 
   unite(sample_name, c(location, date), sep = "", remove = FALSE)
 
-clust_pca <- clust_pca %>% 
-  rename(sample_name = label)
-
-
 #Joining the PCA clusters to the microscopy data
 micro <- micro %>% 
   left_join(clust_pca) %>% 
-  relocate(cluster, .after = location)
+  relocate(pca_clust, .after = location)
 
 ```
 
@@ -162,8 +62,8 @@ species_distinct <- micro %>%
   distinct(group, scientificName)
 
 # Separating out diatoms
-# micro <- micro %>%
-#   filter(!group == "Bacillariophyta")
+micro <- micro %>%
+  filter(group == "Bacillariophyta")
 ```
 
 ```{r}
@@ -213,7 +113,7 @@ micro <- micro %>%
 
 #Selecting columns that I will use
 micro_piv <- micro %>% 
-  select(sample_name:cluster, scientificName, species_sum)
+  select(sample_name:pca_clust, scientificName, species_sum)
 
 #pivoting wider so species are columns and samples are rows.
 micro_piv <- micro_piv %>% 
@@ -228,7 +128,7 @@ micro_piv <- micro_piv %>%
 species <- micro_piv[, 8:ncol(micro_piv)]
 
 #Transforming the abundance data
-# t_abund <- disttransform(species, method = "chord")
+# t_abund <- decostand(species, "hellinger")
 
 t_abund <- sqrt(species)
 
@@ -277,7 +177,7 @@ cor(dis_abund, coph)
 
 ```{r}
 # Enhanced hierarchical clustering, cut in 3 groups
-fviz_dend(clust_ward_abund, cex = 0.5, h = 0.6, color_labels_by_k = TRUE)
+fviz_dend(clust_ward_abund, cex = 0.5, h = 0.67, color_labels_by_k = TRUE)
 
 ```
 
@@ -299,7 +199,7 @@ fviz_gap_stat(gap_stat)
 #Trying cutting at line 
 
 # Abundance data
-k_abund <- 0.67
+k_abund <- 0.7
 clust_abund <- cutree(clust_ward_abund, h = k_abund)
 #
 clust_df_abund <- data.frame(label = rownames(hc_abund),
@@ -385,7 +285,7 @@ dendrogram_ends_abund <- dendrogram_ends_abund %>%
 
 ```{r}
 #Plotting dendrogram - saving for incorporation later.
-dendro <- ggplot() +
+ggplot() +
  geom_segment(data = dendrogram_segments_abund, 
               aes(x = x, y = y, xend = xend, yend = yend)) +
  geom_segment(data = dendrogram_ends_abund, aes(x = x, y = y.x, xend = xend,
@@ -393,16 +293,16 @@ dendro <- ggplot() +
               size = 3)) +
  geom_text(data = dendrogram_ends_abund, aes(x = x, y = y.y, label = sample_name,
                                        color = as.factor(cluster),
-           hjust = 1, angle = 90, size = 4)) +
- geom_hline(yintercept = 0.67, size = 1) +
+           hjust = 1, angle = 90, size = 6)) +
+ geom_hline(yintercept = 0.68, size = 1) +
  geom_rect(data = rect_abund, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0,
                                   ymax = ymax_abund),
             color = "black", fill = NA, size = 0.8) +
  # scale_color_manual(values = site_color_abund) +
  # scale_y_reverse(limits = c(1, -0.5)) +
- ylim(-0.7, 1) +
+ ylim(-0.3, 1) +
   # coord_flip() +
- theme_minimal() +
+ theme_bw() +
  theme(legend.position = "none",
        axis.title.x = element_blank(),
        axis.title.y = element_blank(),
@@ -427,7 +327,7 @@ clust_abund_join <- clust_df_abund %>%
 
 micro_piv <- micro_piv %>% 
   left_join(clust_abund_join) %>% 
-  relocate(clust_abund, .after = cluster)
+  relocate(clust_abund, .after = pca_clust)
 
 clust <- micro_piv %>% 
   select(date, site_id, clust_abund)
@@ -435,7 +335,7 @@ clust <- micro_piv %>%
 
 
 ```{r}
-write_csv(clust, here("outputs", "bio_clust_full.csv"))
+# write_csv(clust, here("outputs", "bio_clust_full_diat.csv"))
 
 ```
 Should probably transfer indicator analysis for both PCA and taxonomy data to separate sheet
@@ -623,12 +523,18 @@ ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) +
 #        width = 8, height = 5, dpi = 300)
 ```
 
+
 ```{r}
 export_cluster <- data.scores_abund %>% 
   select(date, site, clust_abund)
 
-write_csv(export_cluster, here("outputs", "final_cluster_2023-07-31.csv"))
+write_csv(export_cluster, here("outputs", "final_cluster_2023-07-31_diat.csv"))
 ```
+
+
+
+
+
 
 ```{r}
 #Indicator species analysis
@@ -645,34 +551,106 @@ iv <- labdsv::indval(t_abund, clust_abund)
 
 summary(iv)
 ```
+
+
 ```{r}
-micro_test <- micro %>%
-  left_join(clust_abund_join) %>% 
-  group_by(clust_abund, scientificName) %>%
-  summarise(mean_count = mean(species_sum)) %>% 
-  ungroup() 
+#Add cluster abundance to the micro sheet. 
+micro <- micro %>% 
+  left_join(clust_df_abund2) %>% 
+  rename(clust_abund = cluster) %>% 
+  relocate(clust_abund, .after = clust_pca)
+```
+```{r}
+micro_all <- micro %>%
+  group_by(date, location) %>%
+  mutate(sum_count = sum(species_sum)) %>%
+  ungroup() %>%
+  mutate(perc = species_sum/sum_count)
 
-# micro_test %>% 
-#   ggplot(aes(x = mean_count, y = clust_abund, fill = scientificName)) +
-#   geom_bar(stat = "stack")
-# 
-# ggsave(here("figures_nmds_new", "test.png"),
-#        width = 8, height = 16, dpi = 300)
+```
 
-micro_piv %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = `Skeletonema marinoi`)) +
-  geom_boxplot()
+```{r}
+#Ordering the data in the order of the dendrogram from hierarchical clustering.
 
-micro_piv %>% 
-  ggplot(aes(x = date, y = `Thalassiosira nordenskioeldii`, color = site_id)) +
-  geom_line()
+#Creating a list with the order of the samples in the dendrogram.
+hc_order <- dendrogram_ends_abund$sample_name
 
-sm_size_join <- sm_size %>% 
-  left_join(clust)
+hc_order_exp <- as_tibble(hc_order)
 
-sm_size_join %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = species_sum, fill = scientificName)) +
-  geom_boxplot()
+#Setting the order to the same as the clustering using the specified list
+micro_all$sample_name <- factor(micro_all$sample_name, levels = unique(hc_order))
+```
+
+```{r}
+micro_all
+```
+
+
+```{r}
+loc <- micro_all_c %>%
+  ggplot(aes(x = sample_name, y = 1, shape = as.factor(location),
+             fill = as.factor(year))) +
+  geom_point(size = 3, stroke = 1.5) +
+  scale_shape_manual(values = c(21, 22, 23 ,24)) + 
+  scale_fill_brewer(palette = "Dark2") +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        # legend.direction = "none",
+        # axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_blank())
+```
+
+
+```{r}
+#Could add color bars for year and month.
+season <- micro_all_c %>%
+  ggplot(aes(x = sample_name, y = 1, fill = as.factor(season))) +
+  geom_tile(color = "white", size = 0.3) +
+  geom_text(aes(label = season), size = 2, color = "White") +
+  scale_fill_brewer(palette = "Spectral") +
+  theme(axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none",
+        # legend.direction = "none",
+        # axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        panel.border = element_blank(),
+        axis.line = element_blank())
+```
+
+```{r}
+panel <- cp / plot_spacer() / loc / plot_spacer() / season +
+  plot_layout(heights = c(2, -0.07, 0.06, -0.09, 0.06))
+
+ggsave(here("figures_nmds_new", "2023-06-13_diat_panel.png"), panel,
+        width = 16, height = 8, dpi = 300)
 ```
 
 ```{r}
@@ -686,300 +664,173 @@ micro_piv <- micro_piv %>%
   
 #I want to push December from each year to winter of the next year
 micro_piv <- micro_piv %>%
-  mutate(year = case_when(season == "winter" & month == 12 ~ year + 1,
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
                            TRUE ~ as.numeric(year)))
-
-order_loc_seas <- c("W", "Sp", "S", "A")
 
 micro_piv <- arrange(mutate(micro_piv,
                          season = factor(season, levels = order_loc_seas)))
 ```
 
+
 ```{r}
-data_pca_join <- data_pca %>% 
-  left_join(clust)
+test <- micro_all_c %>% 
+  distinct(sample_name, cluster, .keep_all = T) %>% 
+  group_by(cluster) %>% 
+  summarise(n = n()) %>% 
+  ungroup()  
+
+micro_all_c3 <- micro_all_c %>% 
+  group_by(cluster, scientificName2) %>% 
+  summarise(sum = mean(species_sum)) %>% 
+  ungroup() %>% 
+  group_by(cluster) %>% 
+  mutate(sum_tot = sum(sum)) %>% 
+  ungroup()
+
+micro_all_c3 <- micro_all_c3 %>% 
+  left_join(test)
+
+test2 <- micro_all_c3 %>% 
+  distinct(cluster, sum_tot, n)
 ```
 
 
 
 ```{r}
-f1 <- micro_piv %>% 
+f1 <- ggplot() +
+  geom_col(data = micro_all_c3, 
+           aes(x = as.factor(cluster), y = sum/100000, 
+           fill = scientificName2), position = "stack",
+           color = "black") +
+  # geom_text(data = test2, 
+  #           aes(x = as.factor(cluster), y = sum_tot/100000, label = n),
+  #           vjust = -1, size = 5) +
+  # ylim(0, 28) +
+  scale_fill_manual(values = getPalette_c(colourCount_c)) +
+  labs(x = "Cluster",
+       y = "Abund. (10^5 cells L)") +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank()) +
+  guides(fill = guide_legend(ncol = 2),
+         color = "none") 
+
+f2 <- micro_piv %>% 
   ggplot(aes(x = as.factor(clust_abund), fill = as.factor(season))) +
   geom_bar(position = "stack", color = "black", alpha = 0.8) +
   scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
   labs(y = "# of samples",
        x = "Cluster",
-       fill = "") +
+       fill = "Season") +
   theme_bw() +
   theme(text = element_text(size = 25),
         axis.text = element_text(colour = "black"),
-        legend.position = c(0.15, 0.82),
+        legend.position = c(0.85, 0.72),
         axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        legend.background = element_blank(),
-        legend.box.background = element_blank(),
-        legend.key = element_blank())
+        axis.text.x = element_blank())
 
-f2 <- micro_piv %>% 
+f3 <- micro_piv %>% 
   ggplot(aes(x = as.factor(clust_abund), fill = as.factor(year))) +
   geom_bar(position = "stack", color = "black", alpha = 0.8) +
   scale_fill_brewer(palette = "Dark2") + 
   labs(y = "# of samples",
        x = "Cluster",
-       fill = "") +
+       fill = "Year") +
   theme_bw() +
   theme(text = element_text(size = 25),
         axis.text = element_text(colour = "black"),
-        legend.position = c(0.15, 0.82),
+        legend.position = c(0.85, 0.75),
         axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        legend.background = element_blank(),
-        legend.box.background = element_blank(),
-        legend.key = element_blank())
+        axis.text.x = element_blank())
 
-f3 <- micro_piv %>% 
+f4 <- micro_piv %>% 
   ggplot(aes(x = as.factor(clust_abund), fill = as.factor(site_id))) +
   geom_bar(position = "stack", color = "black", alpha = 0.8) +
-  # scale_fill_manual(values = c("brown", "forestgreen", "royalblue4"),
-  #                   labels = c("F", "C", "S")) + 
-  scale_fill_jco(labels = c("F", "C", "S")) +
+  scale_fill_manual(values = c("brown", "forestgreen", "royalblue4")) + 
   labs(y = "# of samples",
        x = "Cluster",
-       fill = "") +
+       fill = "Station") +
   theme_bw() +
   theme(text = element_text(size = 25),
         axis.text = element_text(colour = "black"),
-        legend.position = c(0.16, 0.82),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        legend.background = element_blank(),
-        legend.box.background = element_blank(),
-        legend.key = element_blank())
+        legend.position = c(0.85, 0.75),
+        axis.title.x = element_blank())
 
-f4 <- data_pca_join %>% 
-  filter(!is.na(clust_abund)) %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = temp, fill = as.factor(clust_abund))) +
-  geom_boxplot() + 
-  # ggpubr::stat_compare_means(size = 6) +
-  labs(y = "Temp. (°C)") +
-  scale_fill_npg() +
+fig <- f1 / f2 / f3 / f4
+
+ggsave(here("figures_nmds_new", "2023-06-13_bar_panel_ALL.png"), fig,
+        width = 8, height = 16, dpi = 300)
+```
+
+```{r}
+micro_piv %>% 
+  ggplot(aes(x = as.factor(clust_abund), fill = as.factor(season))) +
+  geom_bar(position = "stack", color = "black", alpha = 0.8) +
+  scale_fill_manual(values = c("blue4", "darkolivegreen", "red2", "goldenrod1")) + 
+  labs(y = "# of samples",
+       x = "Cluster",
+       fill = "Season") +
   theme_bw() +
   theme(text = element_text(size = 25),
         axis.text = element_text(colour = "black"),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        legend.position = "none")
-
-f5 <- data_pca_join %>% 
-  filter(!is.na(clust_abund)) %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = sal, fill = as.factor(clust_abund))) +
-  geom_boxplot() +
-  scale_fill_npg() +
-  labs(y = "Salinity") +
-  # ggpubr::stat_compare_means(size = 6) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.text = element_text(colour = "black"),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        legend.position = "none")
-
-f6 <- data_pca_join %>% 
-  filter(!is.na(clust_abund)) %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = sio2_dm, fill = as.factor(clust_abund))) +
-  geom_boxplot() + 
-  scale_fill_npg() +
-  labs(y = "DSi\u207B\u0020\u0028\u00B5mol\u0020L\u207B\u00B9\u0029") +
-  # ggpubr::stat_compare_means(size = 6) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.text = element_text(colour = "black"),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        legend.position = "none")
-
-f7 <- data_pca_join %>% 
-  filter(!is.na(clust_abund)) %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = drho, fill = as.factor(clust_abund))) +
-  geom_boxplot() +
-  scale_fill_npg() +
-  labs(y = "Δρ") +
-  # scale_x_discrete(labels = c("1" = "W1",
-  #                             "2" = "W2",
-  #                             "3" = "Flag.",
-  #                             "4" = "SM.",
-  #                             "5" = "SB",
-  #                             "6" = "PN"))
-  # ggpubr::stat_compare_means(size = 6) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.text = element_text(colour = "black"),
-        axis.title.x = element_blank(),
-        legend.position = "none")
-
-f8 <- data_pca_join %>% 
-  filter(!is.na(clust_abund)) %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = gm_b1/10^2, fill = as.factor(clust_abund))) +
-  geom_boxplot() + 
-  scale_fill_npg() +
-  labs(y = bquote(G.Mtn. ~ "("~m^-3*~s^-1*")")) +
-  # ggpubr::stat_compare_means(size = 6) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.text = element_text(colour = "black"),
-        axis.title.x = element_blank(),
-        legend.position = "none")
-
-f9 <- data_pca_join %>% 
-  filter(!is.na(clust_abund)) %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = tchla, fill = as.factor(clust_abund))) +
-  geom_boxplot() + 
-  scale_fill_npg() +
-  labs(y = bquote("TChla (mg" ~ m^-3*")")) +
-  lims(y = c(0, 15)) +
-  # ggpubr::stat_compare_means(size = 6) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.text = element_text(colour = "black"),
-        axis.title.x = element_blank(),
-        legend.position = "none")
-```
-
-```{r}
-fig <- dendro / (f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9) +
-  plot_layout(heights = c(1.5, 4))
-
-ggsave(here("figures_nmds_new", "test.png"), fig,
-       width = 16, height = 16, dpi = 300)
-```
-
-```{r}
-kruskal.test(tchla ~ clust_abund, data = data_pca_join)
-
-data_pca_join$clust_abund <- as.factor(data_pca_join$clust_abund)
-
-#Dunn Test to look where differences are occuring.
-FSA::dunnTest(data_pca_join$tchla ~ data_pca_join$clust_abund,
-              method = "bonferroni")
-```
-
-```{r}
-micro_clust <- micro %>% 
-  left_join(clust_abund_join)
-```
-
-
-```{r}
-shan_d <- diversity(species)
-
-shan_d <- as.data.frame(shan_d)
-
-shan_d$clust <- micro_piv$clust_abund
-
-shan_d_med <- shan_d %>% 
-  group_by(clust) %>% 
-  summarise(median_h = median(shan_d)) %>% 
-  ungroup()
-
-rich <- micro %>% 
-  group_by(sample_name) %>% 
-  summarise(n = n()) %>% 
-  ungroup() %>% 
-  left_join(clust_abund_join) %>% 
-  group_by(clust_abund) %>% 
-  summarise(med_rich = median(n)) %>% 
-  ungroup()
-
-rich_diat <- micro %>% 
-  filter(group == "Bacillariophyta") %>% 
-  group_by(sample_name) %>% 
-  summarise(n = n()) %>% 
-  ungroup() %>% 
-  left_join(clust_abund_join) %>% 
-  group_by(clust_abund) %>% 
-  summarise(med_rich = median(n),
-            mean_rich = mean(n)) %>% 
-  ungroup()
-
+        # legend.title = element_blank(),
+        legend.position = c(0.9, 0.75))
 ```
 ```{r}
-#Preparing data for the different analysis.
+#I want to export these clusters to look at physio - Chemical.
 
-#Selecting columns that I will use
-micro_piv_diat <- micro %>%
-  filter(group == "Bacillariophyta") %>% 
-  select(sample_name:cluster, scientificName, species_sum)
+plot_meta_export <- plot_meta %>% 
+  left_join(clust_df_abund2)
 
-#pivoting wider so species are columns and samples are rows.
-micro_piv_diat <- micro_piv_diat %>% 
-  pivot_wider(names_from = scientificName, 
-              values_from = species_sum, values_fill = 0) 
-
-micro_piv_diat <- micro_piv_diat %>% 
-  left_join(clust_abund_join)
-
-micro_piv_diat <- micro_piv_diat %>%
-  relocate(clust_abund, .after = cluster)
-
-species_diat <- micro_piv_diat[, 9:ncol(micro_piv_diat)]
-
-shan_d_diat <- diversity(species_diat)
-
-shan_d_diat <- as.data.frame(shan_d_diat)
-
-shan_d_diat$clust_diat <- micro_piv_diat$clust_abund
-
-shan_d_med_diat <- shan_d_diat %>% 
-  group_by(clust_diat) %>% 
-  summarise(median_h = median(shan_d_diat)) %>% 
-  ungroup()
+write_csv(plot_meta_export, here("outputs", "bio_clust_full.csv"))
 ```
 
-```{r}
-micro_clust %>% 
-  filter(scientificName == "Protoperidinium" | scientificName == "Gymnodinium" |
-           scientificName == "Gyrodinium") %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = species_sum, fill = scientificName)) +
-  geom_boxplot()
 
-micro_clust %>% 
-  filter(scientificName == "Oligotrichea") %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = species_sum, fill = scientificName)) +
-  geom_boxplot()
-```
-```{r}
-sf_join <- sf_less %>% 
-  left_join(clust)
-  
-sf_join %>%
-  filter(!is.na(clust_abund)) %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = chla, fill = filter_type)) +
-  geom_boxplot()
 
-sf_join %>%
-  filter(!is.na(clust_abund)) %>% 
-  group_by(clust_abund, filter_type) %>% 
-  summarise(mean = mean(chla)) %>% 
-  ungroup() %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = mean, fill = filter_type)) +
-  geom_bar(position = "stack", stat = "identity")
-```
-```{r}
-chem_join <- chem_long %>% 
-  left_join(clust)
-  
-chem_join %>%
-  filter(!is.na(clust_abund)) %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = tchla, fill = group)) +
-  geom_boxplot()
 
-chem_join %>%
-  filter(!is.na(clust_abund)) %>% 
-  group_by(clust_abund, group) %>% 
-  summarise(mean = mean(tchla)) %>% 
-  ungroup() %>% 
-  ggplot(aes(x = as.factor(clust_abund), y = mean, fill = group)) +
-  geom_bar(position = "stack", stat = "identity")
-```
+Ok, I like this. 
+
+1 - add number of samples for each cluster. (Done)
+2 - Change the color map to the same as for the time-series plot. (Done)
+3 - Add bars with year, station and season for each cluster. (Done)
+4 - Maybe try shannon/richness? (maybe or just write in text?)
+5 - Maybe add nmds? (Don't think it adds much)
+6 - try the same for the PCA clusters (Yeah, true)
+7 - Add these cluster colors to the RDA (Do today)
+8 - Make time-series plots with CHEMTAX for each station - maybe get them all on one plot. (Work on now.)
+
+9 - ANOSIM table on different groupings.
+
+Wham bam, I think that will be the manuscript
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

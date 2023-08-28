@@ -1,0 +1,141 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(patchwork)
+library(RColorBrewer)
+library(ggpubr)
+library(broom)
+library(vegan)
+library(ggcorrplot)
+```
+
+```{r}
+#Upload data from my master data standardization sheet
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv")) 
+
+#Uploading chl data that has been converted to TChla
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+chem <- read_csv(here("files", "chemtax_2023-04-14.csv")) 
+
+sf <- read_csv(here("files", "chl_2018_2020.csv")) 
+```
+
+```{r}
+#Removing unreliable cyanobacteria estimates
+micro <- micro %>%
+  filter(!scientificName_accepted == "Cyanobacteria")
+```
+
+```{r}
+test <- micro %>% 
+  distinct(group, scientificName)
+```
+
+
+```{r}
+#Filtering out bulk chlorophyll, removing bad data and cutting down on colums
+sf_less <- sf %>% 
+  filter(line_out_depth == 5 & !filter_type == "Bulk GF/F") %>% 
+  filter(chla_flag == "AV" | is.na(chla_flag)) %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(date, year, site_id, filter_type, chla) %>% 
+  filter(!is.na(chla)) %>% 
+  group_by(date) %>% 
+  mutate(n_filt = n()) %>% 
+  ungroup() %>% 
+  filter(n_filt == 3)
+```
+
+
+```{r}
+#Adding a percent contribution column
+sf_less <- sf_less %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_sf = sum(chla)) %>% 
+  ungroup() %>% 
+  mutate(perc_sf = chla/sum_sf) 
+```
+
+
+
+```{r}
+#Making the size-fractionated cocncentrations wider for joining
+sf_wide <- sf_less %>%
+  select(-(n_filt:perc_sf)) %>% 
+  pivot_wider(names_from = filter_type, values_from = chla)
+
+#making the size-fractionated percent contributions wider for joining
+sf_perc_wide <- sf_less %>% 
+  select(date:filter_type, perc_sf) %>% 
+  pivot_wider(names_from = filter_type, values_from = perc_sf) %>% 
+  rename(perc_20 = `20um`, perc_3 = `3um`, perc_gff = `GF/F`)
+
+chem <- chem %>% 
+  rename(cyan = Cyanobacteria, hapt = Hapto, GA = `Prasinophytes-3`,
+         cryp = Cryptophytes, dino = `Dinoflagellates-1`, raph = Raphido,
+         dict = Dictyo, diat = `Diatoms-1`)
+
+het_dino <- micro %>% 
+  filter(scientificName == "Gymnodinium" | scientificName == "Gyrodinium" |
+           scientificName == "Protoperidinium") %>% 
+  select(date, site_id, scientificName, species_sum) %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum,
+              values_fill = 0)
+
+het_cil <- micro %>% 
+  filter(group == "Ciliophora") %>% 
+  select(date, site_id, scientificName, species_sum) %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum,
+              values_fill = 0)
+distinct <- micro %>% 
+  distinct(group)
+
+
+het_cho <- micro %>% 
+  filter(group == "Choanoflagellata") %>% 
+  select(date, site_id, scientificName, species_sum) %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum,
+              values_fill = 0)
+
+GA <- micro %>% 
+  filter(group == "Chlorophyta-Prasinophyta") %>% 
+  select(date, site_id, scientificName, species_sum) %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum,
+              values_fill = 0)
+
+join <- sf_wide %>% 
+  select(date, site_id, micro = `20um`, nano = `3um`, pico = `GF/F`) %>% 
+  left_join(chem) %>% 
+  left_join(het_dino) %>% 
+  left_join(het_cil) %>%
+  left_join(het_cho) %>% 
+  left_join(GA) %>% 
+  left_join(chl)
+
+join <- join %>%
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date),
+         season = case_when(month == 12 | month == 1 | month == 2 ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 12 ~ "autumn",)) %>%
+  relocate(season, .after = month) 
+```
+
+```{r}
+join %>%
+  ggplot(aes(x = Gyrodinium, y = nano, color = as.factor(year), shape = site_id)) +
+  geom_point(size = 4) +
+  
+```
+
+
+

@@ -1765,87 +1765,121 @@ library(broom)</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBkYXRhIGZyb20gbXkgbWFzdGVyIGRhdGEgc3RhbmRhcmRpemF0aW9uIHNoZWV0XG5taWNybyA8LSByZWFkX2NzdihoZXJlKFwib3V0cHV0c1wiLCBcIm1pY3JvX2FsbF8yMDIyLTExLTI1LmNzdlwiKSkgXG5cbiNVcGxvYWRpbmcgY2hsIGRhdGEgdGhhdCBoYXMgYmVlbiBjb252ZXJ0ZWQgdG8gVENobGFcbmNobCA8LSByZWFkX2NzdihoZXJlKFwiZmlsZXNcIiwgXCJjaGVtdGF4XzIwMjMtMDQtMTQuY3N2XCIpKVxuXG5cbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBkYXRhIGZyb20gbXkgbWFzdGVyIGRhdGEgc3RhbmRhcmRpemF0aW9uIHNoZWV0XG5taWNybyA8LSByZWFkX2NzdihoZXJlKFwib3V0cHV0c1wiLCBcIm1pY3JvX2FsbF8yMDIyLTExLTI1LmNzdlwiKSkgXG5gYGAifQ== -->
 <pre class="r"><code>#Upload data from my master data standardization sheet
-micro &lt;- read_csv(here(&quot;outputs&quot;, &quot;micro_all_2022-11-25.csv&quot;)) 
-
-#Uploading chl data that has been converted to TChla
-chl &lt;- read_csv(here(&quot;files&quot;, &quot;chemtax_2023-04-14.csv&quot;))
-</code></pre>
+micro &lt;- read_csv(here(&quot;outputs&quot;, &quot;micro_all_2022-11-25.csv&quot;)) </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29yX2hldDIgPC0gbWljcm8gJT4lXG4gIGZpbHRlcihncm91cCA9PSBcIkNpbGlvcGhvcmFcIikgJT4lIFxuICBzZWxlY3QoZGF0ZSwgbW9udGhfc3Vydiwgc2l0ZV9pZCwgbmFtZSA9IHNjaWVudGlmaWNOYW1lLCBoZXRfY291bnQgPSBzcGVjaWVzX3N1bSlcblxuYGBgIn0= -->
-<pre class="r"><code>cor_het2 &lt;- micro %&gt;%
-  filter(group == &quot;Ciliophora&quot;) %&gt;% 
-  select(date, month_surv, site_id, name = scientificName, het_count = species_sum)
-</code></pre>
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogMzIzNiBDb2x1bW5zOiAyMC0tIENvbHVtbiBzcGVjaWZpY2F0aW9uIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLVxuRGVsaW1pdGVyOiBcIixcIlxuY2hyICAoMTYpOiBzaXRlX2lkLCB0cm9waGljU3RhdHVzLCBncm91cCwgc2NpZW50aWZpY05hbWUsIG9yaWdfbmFtZSwgc2NpZW50aWZpY05hbWVfYWNjZXB0ZWQsIHJhbmsuLi5cbmRibCAgICgzKTogQXBoaWFJRCwgY291bnQsIHNwZWNpZXNfc3VtXG5kYXRlICAoMSk6IGRhdGVcbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
+<pre><code>Rows: 3236 Columns: 20-- Column specification ------------------------------------------------------------------------------
+Delimiter: &quot;,&quot;
+chr  (16): site_id, trophicStatus, group, scientificName, orig_name, scientificName_accepted, rank...
+dbl   (3): AphiaID, count, species_sum
+date  (1): date
+i Use `spec()` to retrieve the full column specification for this data.
+i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZGluZyBjaGwgZGF0YSB0aGF0IGhhcyBiZWVuIGNvbnZlcnRlZCB0byBUQ2hsYVxuY2hsIDwtIHJlYWRfY3N2KGhlcmUoXCJmaWxlc1wiLCBcImNoZW10YXhfMjAyMy0wNC0xNC5jc3ZcIikpXG5gYGAifQ== -->
+<pre class="r"><code>#Uploading chl data that has been converted to TChla
+chl &lt;- read_csv(here(&quot;files&quot;, &quot;chemtax_2023-04-14.csv&quot;))</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3IgaW4gYHNlbGVjdCgpYDpcbiEgQ2FuJ3Qgc3Vic2V0IGNvbHVtbnMgdGhhdCBkb24ndCBleGlzdC5cbnggQ29sdW1uIGBtb250aF9zdXJ2YCBkb2Vzbid0IGV4aXN0LlxuQmFja3RyYWNlOlxuIDEuIG1pY3JvICU+JSBmaWx0ZXIoZ3JvdXAgPT0gXCJDaWxpb3Bob3JhXCIpICU+JSAuLi5cbiAzLiBkcGx5cjo6OnNlbGVjdC5kYXRhLmZyYW1lKC4sIGRhdGUsIG1vbnRoX3N1cnYsIHNpdGVfaWQsIG5hbWUgPSBzY2llbnRpZmljTmFtZSwgaGV0X2NvdW50ID0gc3BlY2llc19zdW0pXG4ifQ== -->
-<pre><code>Error in `select()`:
-! Can&#39;t subset columns that don&#39;t exist.
-x Column `month_surv` doesn&#39;t exist.
-Backtrace:
- 1. micro %&gt;% filter(group == &quot;Ciliophora&quot;) %&gt;% ...
- 3. dplyr:::select.data.frame(., date, month_surv, site_id, name = scientificName, het_count = species_sum)</code></pre>
+<!-- rnb-output-begin eyJkYXRhIjoiUm93czogODcgQ29sdW1uczogMTAtLSBDb2x1bW4gc3BlY2lmaWNhdGlvbiAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS1cbkRlbGltaXRlcjogXCIsXCJcbmNociAgKDEpOiBzaXRlX2lkXG5kYmwgICg4KTogQ3lhbm9iYWN0ZXJpYSwgSGFwdG8sIFByYXNpbm9waHl0ZXMtMywgQ3J5cHRvcGh5dGVzLCBEaW5vZmxhZ2VsbGF0ZXMtMSwgUmFwaGlkbywgRGljdHlvLC4uLlxuZGF0ZSAoMSk6IGRhdGVcbmkgVXNlIGBzcGVjKClgIHRvIHJldHJpZXZlIHRoZSBmdWxsIGNvbHVtbiBzcGVjaWZpY2F0aW9uIGZvciB0aGlzIGRhdGEuXG5pIFNwZWNpZnkgdGhlIGNvbHVtbiB0eXBlcyBvciBzZXQgYHNob3dfY29sX3R5cGVzID0gRkFMU0VgIHRvIHF1aWV0IHRoaXMgbWVzc2FnZS5cbiJ9 -->
+<pre><code>Rows: 87 Columns: 10-- Column specification ------------------------------------------------------------------------------
+Delimiter: &quot;,&quot;
+chr  (1): site_id
+dbl  (8): Cyanobacteria, Hapto, Prasinophytes-3, Cryptophytes, Dinoflagellates-1, Raphido, Dictyo,...
+date (1): date
+i Use `spec()` to retrieve the full column specification for this data.
+i Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc3RyKGhlYWQoc2xpY2UoZGF0YV9uZXN0LCAxKSkpXG5cbmBgYCJ9 -->
-<pre class="r"><code>str(head(slice(data_nest, 1)))
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI0Rpbm9mbGFnZWxsYXRlIHNwZWNpZXMga25vd24gdG8gZmVlZCBvbiBkaWF0b21zXG4jR29ueWF1bGF4IChza2VsZXRvbmVtYSlcbiNHeW1ub2Rpbml1bSAoc2tlbCArIGNoYWluIGRpYXRvbXMpXG4jR3lyb2Rpbml1bSAoZGlhdG9tIGNoYWlucylcbiNQcm9yb2NlbnRydW0oc2tlbClcbiNQcm90b3BlcmlkaW5pdW0gKG1lZGl1bSB0byBsYXJnZSBkaWF0b21zIGFuZCBkaW5vZmxhZ2VsbGF0ZXMgLSAzMC04MCUpXG4jU2NyaXBwc2llbGxhIHRyb2Nob2lkZWFzIChTa2VsKVxuI09saWdvdHJpY2hlYSAoY2lsaWF0ZSlcbiNNeXJpb25lY3RhIHJ1YnJhIChjcnlwdG9waHl0ZXMpXG4jRGlub3BoeXNpcyAoQ3J5cHRvcGh5dGVzKVxuI1RpbnRpbm5pbmEgKENpbGlhdGUpXG4jRmVjYWxcblxuI1RoaW5ncyB0byBjb3JyZWxhdGUgYWdhaW5zdCBcbiNUQ2hsYVxuI1MubWFyIChzbWFsbClcbiNTLm1hciAobGFyZ2UpXG4jUy5tYXIgKHRvdGFsKVxuI2RpYXRvbSBhYnVuZGFuY2UgXG4jQ3J5cHRvcGh5dGUgYWJ1bmRhbmNlXG5cbiNGaXJzdCBkbyB0aGUgc3VtbWFyaXppbmcgYW5kIGZpbHRlcmluZyBmb3IgZWFjaCBncm91cGluZyBJIHdhbnQgY29ycmVsYXRlZCBhZ2FpbnN0LlxuZF9zdW0gPC0gbWljcm8gJT4lIFxuICBmaWx0ZXIoZ3JvdXAgPT0gXCJCYWNpbGxhcmlvcGh5dGFcIikgJT4lIFxuICBncm91cF9ieShkYXRlLCBzaXRlX2lkKSAlPiUgXG4gIHN1bW1hcmlzZShleHBfY291bnQgPSBzdW0oc3BlY2llc19zdW0pKSAlPiUgXG4gIHVuZ3JvdXAoKSAlPiUgXG4gIG11dGF0ZShzY2llbnRpZmljTmFtZSA9IFwiRGlhdG9tIHN1bVwiKSAlPiUgXG4gIHJlbG9jYXRlKHNjaWVudGlmaWNOYW1lLCAuYmVmb3JlID0gZXhwX2NvdW50KVxuYGBgIn0= -->
+<pre class="r"><code>#Dinoflagellate species known to feed on diatoms
+#Gonyaulax (skeletonema)
+#Gymnodinium (skel + chain diatoms)
+#Gyrodinium (diatom chains)
+#Prorocentrum(skel)
+#Protoperidinium (medium to large diatoms and dinoflagellates - 30-80%)
+#Scrippsiella trochoideas (Skel)
+#Oligotrichea (ciliate)
+#Myrionecta rubra (cryptophytes)
+#Dinophysis (Cryptophytes)
+#Tintinnina (Ciliate)
+#Fecal
+
+#Things to correlate against 
+#TChla
+#S.mar (small)
+#S.mar (large)
+#S.mar (total)
+#diatom abundance 
+#Cryptophyte abundance
+
+#First do the summarizing and filtering for each grouping I want correlated against.
+d_sum &lt;- micro %&gt;% 
+  filter(group == &quot;Bacillariophyta&quot;) %&gt;% 
+  group_by(date, site_id) %&gt;% 
+  summarise(exp_count = sum(species_sum)) %&gt;% 
+  ungroup() %&gt;% 
+  mutate(scientificName = &quot;Diatom sum&quot;) %&gt;% 
+  relocate(scientificName, .before = exp_count)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiYHN1bW1hcmlzZSgpYCBoYXMgZ3JvdXBlZCBvdXRwdXQgYnkgJ2RhdGUnLiBZb3UgY2FuIG92ZXJyaWRlIHVzaW5nIHRoZSBgLmdyb3Vwc2AgYXJndW1lbnQuXG4ifQ== -->
+<pre><code>`summarise()` has grouped output by &#39;date&#39;. You can override using the `.groups` argument.</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY19zdW0gPC0gbWljcm8gJT4lIFxuICBmaWx0ZXIoZ3JvdXAgPT0gXCJDcnlwdG9waHl0YVwiKSAlPiUgXG4gIGdyb3VwX2J5KGRhdGUsIHNpdGVfaWQpICU+JSBcbiAgc3VtbWFyaXNlKGV4cF9jb3VudCA9IHN1bShzcGVjaWVzX3N1bSkpICU+JSBcbiAgdW5ncm91cCgpICU+JSBcbiAgbXV0YXRlKHNjaWVudGlmaWNOYW1lID0gXCJjcnlwdG8gc3VtXCIpICU+JSBcbiAgcmVsb2NhdGUoc2NpZW50aWZpY05hbWUsIC5iZWZvcmUgPSBleHBfY291bnQpXG5gYGAifQ== -->
+<pre class="r"><code>c_sum &lt;- micro %&gt;% 
+  filter(group == &quot;Cryptophyta&quot;) %&gt;% 
+  group_by(date, site_id) %&gt;% 
+  summarise(exp_count = sum(species_sum)) %&gt;% 
+  ungroup() %&gt;% 
+  mutate(scientificName = &quot;crypto sum&quot;) %&gt;% 
+  relocate(scientificName, .before = exp_count)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiYHN1bW1hcmlzZSgpYCBoYXMgZ3JvdXBlZCBvdXRwdXQgYnkgJ2RhdGUnLiBZb3UgY2FuIG92ZXJyaWRlIHVzaW5nIHRoZSBgLmdyb3Vwc2AgYXJndW1lbnQuXG4ifQ== -->
+<pre><code>`summarise()` has grouped output by &#39;date&#39;. You can override using the `.groups` argument.</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29yX2V4cCA8LSByYmluZChkX3N1bSwgY19zdW0pXG5cbmNvcl9oZXQgPC0gbWljcm8gJT4lIFxuICBmaWx0ZXIoZ2VudXMgPT0gXCJHb255YXVsYXhcIiB8XG4gICAgICAgICAgIGdlbnVzID09IFwiR3ltbm9kaW5pdW1cIiB8XG4gICAgICAgICAgIGdlbnVzID09IFwiR3lyb2Rpbml1bVwiIHxcbiAgICAgICAgICAgZ2VudXMgPT0gXCJQcm9yb2NlbnRydW1cIiB8XG4gICAgICAgICAgIGdlbnVzID09IFwiUHJvdG9wZXJpZGluaXVtXCIgfFxuICAgICAgICAgICBnZW51cyA9PSBcIlNjcmlwcHNpZWxsYVwiIHxcbiAgICAgICAgICAgZ2VudXMgPT0gXCJEaW5vcGh5c2lzXCIgfFxuICAgICAgICAgICBnZW51cyA9PSBcIkthdG9kaW5pdW1cIikgJT4lIFxuICBncm91cF9ieShkYXRlLCBzaXRlX2lkLCBnZW51cykgJT4lIFxuICBzdW1tYXJpc2UoaGV0X2NvdW50ID0gc3VtKHNwZWNpZXNfc3VtKSkgJT4lIFxuICBzZWxlY3QoZGF0ZSwgc2l0ZV9pZCwgbmFtZSA9IGdlbnVzLCBoZXRfY291bnQpXG5gYGAifQ== -->
+<pre class="r"><code>cor_exp &lt;- rbind(d_sum, c_sum)
+
+cor_het &lt;- micro %&gt;% 
+  filter(genus == &quot;Gonyaulax&quot; |
+           genus == &quot;Gymnodinium&quot; |
+           genus == &quot;Gyrodinium&quot; |
+           genus == &quot;Prorocentrum&quot; |
+           genus == &quot;Protoperidinium&quot; |
+           genus == &quot;Scrippsiella&quot; |
+           genus == &quot;Dinophysis&quot; |
+           genus == &quot;Katodinium&quot;) %&gt;% 
+  group_by(date, site_id, genus) %&gt;% 
+  summarise(het_count = sum(species_sum)) %&gt;% 
+  select(date, site_id, name = genus, het_count)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiYHN1bW1hcmlzZSgpYCBoYXMgZ3JvdXBlZCBvdXRwdXQgYnkgJ2RhdGUnLCAnc2l0ZV9pZCcuIFlvdSBjYW4gb3ZlcnJpZGUgdXNpbmcgdGhlIGAuZ3JvdXBzYCBhcmd1bWVudC5cbiJ9 -->
+<pre><code>`summarise()` has grouped output by &#39;date&#39;, &#39;site_id&#39;. You can override using the `.groups` argument.</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29yX2hldDIgPC0gbWljcm8gJT4lXG4gIGZpbHRlcihncm91cCA9PSBcIkNpbGlvcGhvcmFcIikgJT4lIFxuICBzZWxlY3QoZGF0ZSwgc2l0ZV9pZCwgbmFtZSA9IHNjaWVudGlmaWNOYW1lLCBoZXRfY291bnQgPSBzcGVjaWVzX3N1bSlcblxuY29yX2hldDQgPC0gcmJpbmQoY29yX2hldCwgY29yX2hldDIpXG4gICAgICAgICAgIFxuXG5cbmBgYCJ9 -->
+<pre class="r"><code>cor_het2 &lt;- micro %&gt;%
+  filter(group == &quot;Ciliophora&quot;) %&gt;% 
+  select(date, site_id, name = scientificName, het_count = species_sum)
+
+cor_het4 &lt;- rbind(cor_het, cor_het2)
+           
 </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiZ3JvcGRfZGYgWzYgeCAzXSAoUzM6IGdyb3VwZWRfZGYvdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICQgbmFtZSAgICAgICAgICA6IGNociBbMTo2XSBcIkRpbm9waHlzaXNcIiBcIkRpbm9waHlzaXNcIiBcIkdvbnlhdWxheFwiIFwiR29ueWF1bGF4XCIgLi4uXG4gJCBzY2llbnRpZmljTmFtZTogY2hyIFsxOjZdIFwiRGlhdG9tIHN1bVwiIFwiY3J5cHRvIHN1bVwiIFwiRGlhdG9tIHN1bVwiIFwiY3J5cHRvIHN1bVwiIC4uLlxuICQgZGF0YSAgICAgICAgICA6TGlzdCBvZiA2XG4gIC4uJCA6IHRpYmJsZSBbNDEgeCA0XSAoUzM6IHRibF9kZi90YmwvZGF0YS5mcmFtZSlcbiAgLi4gLi4kIGRhdGUgICAgIDogRGF0ZVsxOjQxXSwgZm9ybWF0OiBcIjIwMTgtMDEtMTBcIiBcIjIwMTgtMDMtMzFcIiAuLi5cbiAgLi4gLi4kIHNpdGVfaWQgIDogY2hyIFsxOjQxXSBcIlFDUzAxXCIgXCJERk8yXCIgXCJRQ1MwMVwiIFwiUUNTMDFcIiAuLi5cbiAgLi4gLi4kIGhldF9jb3VudDogbnVtIFsxOjQxXSA0MCAxNDQgNzQgMzU2IDE0NCAxMDgwIDU3NiAyODggODkgNjIgLi4uXG4gIC4uIC4uJCBleHBfY291bnQ6IG51bSBbMTo0MV0gNTUyMCA2NTIxMzYgNzUyNjEgNzU5ODkgNDI2MTM1IC4uLlxuICAuLiQgOiB0aWJibGUgWzQxIHggNF0gKFMzOiB0YmxfZGYvdGJsL2RhdGEuZnJhbWUpXG4gIC4uIC4uJCBkYXRlICAgICA6IERhdGVbMTo0MV0sIGZvcm1hdDogXCIyMDE4LTAxLTEwXCIgXCIyMDE4LTAzLTMxXCIgLi4uXG4gIC4uIC4uJCBzaXRlX2lkICA6IGNociBbMTo0MV0gXCJRQ1MwMVwiIFwiREZPMlwiIFwiUUNTMDFcIiBcIlFDUzAxXCIgLi4uXG4gIC4uIC4uJCBoZXRfY291bnQ6IG51bSBbMTo0MV0gNDAgMTQ0IDc0IDM1NiAxNDQgMTA4MCA1NzYgMjg4IDg5IDYyIC4uLlxuICAuLiAuLiQgZXhwX2NvdW50OiBudW0gWzE6NDFdIDQ3MjUwIDExMjAwMCAxMDAwMDAgMjU2Njc0IDEyNjUyNCAuLi5cbiAgLi4kIDogdGliYmxlIFsxOCB4IDRdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiAuLiQgZGF0ZSAgICAgOiBEYXRlWzE6MThdLCBmb3JtYXQ6IFwiMjAxOC0wMy0zMVwiIFwiMjAxOC0wNy0yNFwiIC4uLlxuICAuLiAuLiQgc2l0ZV9pZCAgOiBjaHIgWzE6MThdIFwiREZPMlwiIFwiREZPMlwiIFwiS0MxMFwiIFwiUUNTMDFcIiAuLi5cbiAgLi4gLi4kIGhldF9jb3VudDogbnVtIFsxOjE4XSAxNDQgODkgNjIgMTAwOCA0OCAuLi5cbiAgLi4gLi4kIGV4cF9jb3VudDogbnVtIFsxOjE4XSA2NTIxMzYgMjYwNjA1IDIyOTA4OCAzNDQ0OTIgNDU3NDMgLi4uXG4gIC4uJCA6IHRpYmJsZSBbMTggeCA0XSAoUzM6IHRibF9kZi90YmwvZGF0YS5mcmFtZSlcbiAgLi4gLi4kIGRhdGUgICAgIDogRGF0ZVsxOjE4XSwgZm9ybWF0OiBcIjIwMTgtMDMtMzFcIiBcIjIwMTgtMDctMjRcIiAuLi5cbiAgLi4gLi4kIHNpdGVfaWQgIDogY2hyIFsxOjE4XSBcIkRGTzJcIiBcIkRGTzJcIiBcIktDMTBcIiBcIlFDUzAxXCIgLi4uXG4gIC4uIC4uJCBoZXRfY291bnQ6IG51bSBbMToxOF0gMTQ0IDg5IDYyIDEwMDggNDggLi4uXG4gIC4uIC4uJCBleHBfY291bnQ6IG51bSBbMToxOF0gMTEyMDAwIDIyMjc0MCA5ODAwMDAgMTc4NTAwIDI0NTAwMCAuLi5cbiAgLi4kIDogdGliYmxlIFs3MyB4IDRdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiAuLiQgZGF0ZSAgICAgOiBEYXRlWzE6NzNdLCBmb3JtYXQ6IFwiMjAxOC0wMS0xMFwiIFwiMjAxOC0wMS0xMVwiIC4uLlxuICAuLiAuLiQgc2l0ZV9pZCAgOiBjaHIgWzE6NzNdIFwiUUNTMDFcIiBcIktDMTBcIiBcIkRGTzJcIiBcIktDMTBcIiAuLi5cbiAgLi4gLi4kIGhldF9jb3VudDogbnVtIFsxOjczXSAxNjAgMjAwIDQwIDQwIDIzNjggLi4uXG4gIC4uIC4uJCBleHBfY291bnQ6IG51bSBbMTo3M10gNTUyMCAzNDcwIDU1ODAgMTc2MDAgNDc2MjIgLi4uXG4gIC4uJCA6IHRpYmJsZSBbNzMgeCA0XSAoUzM6IHRibF9kZi90YmwvZGF0YS5mcmFtZSlcbiAgLi4gLi4kIGRhdGUgICAgIDogRGF0ZVsxOjczXSwgZm9ybWF0OiBcIjIwMTgtMDEtMTBcIiBcIjIwMTgtMDEtMTFcIiAuLi5cbiAgLi4gLi4kIHNpdGVfaWQgIDogY2hyIFsxOjczXSBcIlFDUzAxXCIgXCJLQzEwXCIgXCJERk8yXCIgXCJLQzEwXCIgLi4uXG4gIC4uIC4uJCBoZXRfY291bnQ6IG51bSBbMTo3M10gMTYwIDIwMCA0MCA0MCAyMzY4IC4uLlxuICAuLiAuLiQgZXhwX2NvdW50OiBudW0gWzE6NzNdIDQ3MjUwIDk0NTAwIDg3NTAgNzA4MCA5NzIyNSAuLi5cbiAtIGF0dHIoKiwgXCJncm91cHNcIik9IHRpYmJsZSBbNiB4IDNdIChTMzogdGJsX2RmL3RibC9kYXRhLmZyYW1lKVxuICAuLiQgbmFtZSAgICAgICAgICA6IGNociBbMTo2XSBcIkRpbm9waHlzaXNcIiBcIkRpbm9waHlzaXNcIiBcIkdvbnlhdWxheFwiIFwiR29ueWF1bGF4XCIgLi4uXG4gIC4uJCBzY2llbnRpZmljTmFtZTogY2hyIFsxOjZdIFwiRGlhdG9tIHN1bVwiIFwiY3J5cHRvIHN1bVwiIFwiRGlhdG9tIHN1bVwiIFwiY3J5cHRvIHN1bVwiIC4uLlxuICAuLiQgLnJvd3MgICAgICAgICA6IGxpc3Q8aW50PiBbMTo2XSBcbiAgLi4gLi4kIDogaW50IDFcbiAgLi4gLi4kIDogaW50IDJcbiAgLi4gLi4kIDogaW50IDNcbiAgLi4gLi4kIDogaW50IDRcbiAgLi4gLi4kIDogaW50IDVcbiAgLi4gLi4kIDogaW50IDZcbiAgLi4gLi5AIHB0eXBlOiBpbnQoMCkgXG4gIC4uLSBhdHRyKCosIFwiLmRyb3BcIik9IGxvZ2kgVFJVRVxuIn0= -->
-<pre><code>gropd_df [6 x 3] (S3: grouped_df/tbl_df/tbl/data.frame)
- $ name          : chr [1:6] &quot;Dinophysis&quot; &quot;Dinophysis&quot; &quot;Gonyaulax&quot; &quot;Gonyaulax&quot; ...
- $ scientificName: chr [1:6] &quot;Diatom sum&quot; &quot;crypto sum&quot; &quot;Diatom sum&quot; &quot;crypto sum&quot; ...
- $ data          :List of 6
-  ..$ : tibble [41 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : Date[1:41], format: &quot;2018-01-10&quot; &quot;2018-03-31&quot; ...
-  .. ..$ site_id  : chr [1:41] &quot;QCS01&quot; &quot;DFO2&quot; &quot;QCS01&quot; &quot;QCS01&quot; ...
-  .. ..$ het_count: num [1:41] 40 144 74 356 144 1080 576 288 89 62 ...
-  .. ..$ exp_count: num [1:41] 5520 652136 75261 75989 426135 ...
-  ..$ : tibble [41 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : Date[1:41], format: &quot;2018-01-10&quot; &quot;2018-03-31&quot; ...
-  .. ..$ site_id  : chr [1:41] &quot;QCS01&quot; &quot;DFO2&quot; &quot;QCS01&quot; &quot;QCS01&quot; ...
-  .. ..$ het_count: num [1:41] 40 144 74 356 144 1080 576 288 89 62 ...
-  .. ..$ exp_count: num [1:41] 47250 112000 100000 256674 126524 ...
-  ..$ : tibble [18 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : Date[1:18], format: &quot;2018-03-31&quot; &quot;2018-07-24&quot; ...
-  .. ..$ site_id  : chr [1:18] &quot;DFO2&quot; &quot;DFO2&quot; &quot;KC10&quot; &quot;QCS01&quot; ...
-  .. ..$ het_count: num [1:18] 144 89 62 1008 48 ...
-  .. ..$ exp_count: num [1:18] 652136 260605 229088 344492 45743 ...
-  ..$ : tibble [18 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : Date[1:18], format: &quot;2018-03-31&quot; &quot;2018-07-24&quot; ...
-  .. ..$ site_id  : chr [1:18] &quot;DFO2&quot; &quot;DFO2&quot; &quot;KC10&quot; &quot;QCS01&quot; ...
-  .. ..$ het_count: num [1:18] 144 89 62 1008 48 ...
-  .. ..$ exp_count: num [1:18] 112000 222740 980000 178500 245000 ...
-  ..$ : tibble [73 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : Date[1:73], format: &quot;2018-01-10&quot; &quot;2018-01-11&quot; ...
-  .. ..$ site_id  : chr [1:73] &quot;QCS01&quot; &quot;KC10&quot; &quot;DFO2&quot; &quot;KC10&quot; ...
-  .. ..$ het_count: num [1:73] 160 200 40 40 2368 ...
-  .. ..$ exp_count: num [1:73] 5520 3470 5580 17600 47622 ...
-  ..$ : tibble [73 x 4] (S3: tbl_df/tbl/data.frame)
-  .. ..$ date     : Date[1:73], format: &quot;2018-01-10&quot; &quot;2018-01-11&quot; ...
-  .. ..$ site_id  : chr [1:73] &quot;QCS01&quot; &quot;KC10&quot; &quot;DFO2&quot; &quot;KC10&quot; ...
-  .. ..$ het_count: num [1:73] 160 200 40 40 2368 ...
-  .. ..$ exp_count: num [1:73] 47250 94500 8750 7080 97225 ...
- - attr(*, &quot;groups&quot;)= tibble [6 x 3] (S3: tbl_df/tbl/data.frame)
-  ..$ name          : chr [1:6] &quot;Dinophysis&quot; &quot;Dinophysis&quot; &quot;Gonyaulax&quot; &quot;Gonyaulax&quot; ...
-  ..$ scientificName: chr [1:6] &quot;Diatom sum&quot; &quot;crypto sum&quot; &quot;Diatom sum&quot; &quot;crypto sum&quot; ...
-  ..$ .rows         : list&lt;int&gt; [1:6] 
-  .. ..$ : int 1
-  .. ..$ : int 2
-  .. ..$ : int 3
-  .. ..$ : int 4
-  .. ..$ : int 5
-  .. ..$ : int 6
-  .. ..@ ptype: int(0) 
-  ..- attr(*, &quot;.drop&quot;)= logi TRUE</code></pre>
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZGF0YSA8LSBjb3JfaGV0NCAlPiUgXG4gIGxlZnRfam9pbihjb3JfZXhwKVxuXG5gYGAifQ== -->
+<pre class="r"><code>data &lt;- cor_het4 %&gt;% 
+  left_join(cor_exp)
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiSm9pbmluZyB3aXRoIGBieSA9IGpvaW5fYnkoZGF0ZSwgc2l0ZV9pZClgRGV0ZWN0ZWQgYW4gdW5leHBlY3RlZCBtYW55LXRvLW1hbnkgcmVsYXRpb25zaGlwIGJldHdlZW4gYHhgIGFuZCBgeWAuXG4ifQ== -->
+<pre><code>Joining with `by = join_by(date, site_id)`Detected an unexpected many-to-many relationship between `x` and `y`.</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->

@@ -33,7 +33,18 @@ env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
 chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
 clust <- read_csv(here("outputs", "final_cluster_2023-07-31.csv"))
+
+chem <- read_csv(here("files", "chemtax_2023-04-14.csv"))
+
+sf <- read_csv(here("files", "chl_2018_2020.csv"))
 ```
+
+```{r}
+#Here, only including 2019-2020
+chem <- chem %>% 
+  filter(date < "2021-01-01")
+```
+
 
 ```{r}
 #Removing species groups
@@ -71,8 +82,8 @@ micro <- micro %>%
 
 ```{r}
 #Filtering to only include diatoms
-# micro <- micro %>% 
-#   filter(group == "Bacillariophyta") 
+micro_d <- micro %>%
+  filter(group == "Bacillariophyta")
 ```
 
 ```{r}
@@ -83,12 +94,23 @@ micro_piv <- micro %>%
   mutate(month = lubridate::month(date)) %>% 
   select(date, month, site_id, scientificName, species_sum)
 
+micro_piv_d <- micro_d %>%
+  mutate(month = lubridate::month(date)) %>% 
+  select(date, month, site_id, scientificName, species_sum)
+
 #performing pivot and making NA's 0's. 
 micro_piv <- micro_piv %>% 
   pivot_wider(names_from = scientificName, values_from = species_sum,
               values_fill = 0) 
 
+micro_piv_d <- micro_piv_d %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum,
+              values_fill = 0)
+
 micro_piv <- micro_piv %>% 
+  select(!month)
+
+micro_piv_d <- micro_piv_d %>% 
   select(!month)
 ```
 
@@ -130,14 +152,22 @@ data <- data %>%
 micro_join <- data %>%
   left_join(micro_piv)
 
+micro_join_d <- data %>%
+  left_join(micro_piv_d)
+
 #removing NAs for analysis
 micro_join <- micro_join %>% 
+  drop_na()
+
+micro_join_d <- micro_join_d %>% 
   drop_na()
 ```
 
 ```{r}
 #Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
 resp <- micro_join[, 20:ncol(micro_join)]
+
+resp_d <- micro_join_d[, 20:ncol(micro_join_d)]
 
 #Explanatory variables
 expl <- micro_join[, 3:18]
@@ -151,6 +181,7 @@ expl <- expl %>%
 #Hellinger transformation on species data - particularly suited to species abundance data with large range and lots of zeros. Gives low weights to variables with low counts and many zeroes.
 resp.hell <- decostand(resp, 'hell')
 
+resp.hell_d <- decostand(resp_d, 'hell')
 ```
 
 ```{r}
@@ -168,8 +199,24 @@ adjR2.tbrda
 ```
 
 ```{r}
+#Microscopy
+
+tbRDA.d <- rda(resp.hell_d ~ . , data = expl, scale = T)
+
+tbRDA.d
+
+anova(tbRDA.d)
+
+adjR2.tbrda_d <- RsquareAdj (tbRDA.d)$adj.r.squared
+
+adjR2.tbrda_d
+```
+
+```{r}
 #Assessing collinearity of variables - nutrients are highly related. Play with this.
 vif.cca(tbRDA.all)
+
+vif.cca(tbRDA.d)
 ```
 
 ```{r}
@@ -181,6 +228,17 @@ barplot (expl_var[1:20], col = c(rep ('red', length (constrained_eig)), rep ('bl
 ```
 
 ```{r}
+constrained_eig <- tbRDA.d$CCA$eig/tbRDA.d$tot.chi*100
+unconstrained_eig <- tbRDA.d$CA$eig/tbRDA.d$tot.chi*100
+expl_var <- c(constrained_eig, unconstrained_eig)
+barplot (expl_var[1:20], col = c(rep ('red', length (constrained_eig)), rep ('black', length (unconstrained_eig))),
+         las = 2, ylab = '% variation')
+```
+
+
+
+
+```{r}
 #Trying different approach for ordiR2step from https://www.davidzeleny.net/anadat-r/doku.php/en:forward_sel_examples - same result as my other test
 tb_rda.vasc.0 <- rda (resp.hell ~ 1, data = expl)
 
@@ -188,7 +246,7 @@ tb_rda.vasc.all <- rda (resp.hell ~ ., data = expl)
 
 sel.osR2 <- ordiR2step (tb_rda.vasc.0, scope = formula (tb_rda.vasc.all), 
                         R2scope = adjR2.tbrda, direction = 'forward', 
-                        permutations = 99999)
+                        permutations = 9999)
 
 sel.osR2$anova
 
@@ -200,6 +258,35 @@ sel.osR2_adj$anova$`Pr(>F)` <- p.adjust (sel.osR2$anova$`Pr(>F)`,
 sel.osR2_adj$anova
 
 ```
+```{r}
+0.19304 - 0.16920
+```
+
+```{r}
+#Trying different approach for ordiR2step from https://www.davidzeleny.net/anadat-r/doku.php/en:forward_sel_examples - same result as my other test
+tb_rda.vasc.0_d <- rda (resp.hell_d ~ 1, data = expl)
+
+tb_rda.vasc.d <- rda (resp.hell_d ~ ., data = expl)
+
+sel.osR2_d <- ordiR2step (tb_rda.vasc.0_d, scope = formula (tb_rda.vasc.d), 
+                        R2scope = adjR2.tbrda_d, direction = 'forward', 
+                        permutations = 9999)
+
+sel.osR2_d$anova
+
+sel.osR2_adj_d <- sel.osR2_d
+
+sel.osR2_adj_d$anova$`Pr(>F)` <- p.adjust (sel.osR2_d$anova$`Pr(>F)`, 
+                                         method = 'holm', n = ncol (expl))
+
+sel.osR2_adj_d$anova
+
+```
+```{r}
+0.197321 - 0.157657
+
+```
+
 
 
 ```{r}
@@ -232,6 +319,36 @@ anova(rda.signif, by = "terms")
 ```
 
 ```{r}
+#Select the statistically significant variables - May want to remove SiO2, see VIFS below!
+env.signif_d <- subset(expl, select = c(drho, sio2, temp, gm_b1))
+
+#RDA using significant variables
+rda.signif_d <- rda(resp.hell_d ~ . ,data = env.signif_d)
+rda.signif_d
+rda.sign.sum_d <- summary(rda.signif_d)
+
+rda.sign.sum_d
+
+#Adjusted R2 for the 1 significant variables
+#AdjR2 = 
+(R2adj_d <- RsquareAdj(rda.signif_d)$adj.r.squared)
+
+#ANOVA for testing significance of model and individual axes #Can do ANOVA by terms...
+#Entire model = 0.001***
+#RDA1 = 0.001***
+#RDA2 = 0.001***
+
+# ?anova.cca
+anova.cca(rda.signif_d, step = 1000)
+anova.cca(rda.signif_d, step = 1000, by = "axis")
+
+#All significant - already shown in forward rda, but easier to see (Not corrected)
+anova(rda.signif_d, by = "terms")
+
+```
+
+
+```{r}
 #Rough plots using both scaling types - setting scaling-2 as a variable to allow for further plotting.
 
 # Type 1 scaling
@@ -240,7 +357,21 @@ plot_s1 <- ordiplot(rda.signif, scaling = 1, type = "text")
 # Type 2 scaling
 plot_s2 <- ordiplot(rda.signif, scaling = 2, type = "text")
 
+plot_s3 <- ordiplot(rda.signif, scaling = 3, type = "text")
 ```
+
+```{r}
+#Rough plots using both scaling types - setting scaling-2 as a variable to allow for further plotting.
+
+# Type 1 scaling
+plot_s1_d <- ordiplot(rda.signif_d, scaling = 1, type = "text")
+
+# Type 2 scaling
+plot_s2_d <- ordiplot(rda.signif_d, scaling = 2, type = "text")
+
+plot_s3_d <- ordiplot(rda.signif_d, scaling = 3, type = "text")
+```
+
 
 ```{r}
 #Testing species goodness of fit to try to eliminate species
@@ -251,10 +382,15 @@ plot_s2 <- ordiplot(rda.signif, scaling = 2, type = "text")
 sel <- goeveg::ordiselect(resp, rda.signif, fitlim = 0.05)
 sel
 
+sel_d <- goeveg::ordiselect(resp_d, rda.signif_d, fitlim = 0.05)
+sel_d
+
 #Can also cut species out based on abundance
 sel2 <- goeveg::ordiselect(resp, rda.signif, ablim = 0.20, fitlim = 0.10)
 sel2
 
+sel2_d <- goeveg::ordiselect(resp_d, rda.signif_d, ablim = 0.20, fitlim = 0.10)
+sel2_d
 ```
 
 ```{r}
@@ -315,12 +451,12 @@ meta <- arrange(mutate(meta,
 #RDA scaling 2 - angles. selecting distinct species and plotting as arrows with 10% best fit
 
 #Extracting site locations
-sites_loc <- sites.long(plot_s2, env.data = env.signif)
+sites_loc <- sites.long(plot_s3, env.data = env.signif)
 sites_loc <- cbind(meta, sites_loc)
 head(sites_loc)
 
 #Species location in ordination
-species_loc <- species.long(plot_s2)
+species_loc <- species.long(plot_s3)
 species_loc
 
 axis.long <- axis.long(rda.signif, choices = c(1, 2))
@@ -332,9 +468,29 @@ sp_loc <-  as.data.frame(rda.sign.sum$species[,1:2])
 
 sp_bf <- subset(sp_loc, rownames(sp_loc) %in% sel)
 
+```
+```{r}
+#RDA scaling 2 - angles. selecting distinct species and plotting as arrows with 10% best fit
+
+#Extracting site locations
+sites_loc_d <- sites.long(plot_s3_d, env.data = env.signif_d)
+sites_loc_d <- cbind(meta, sites_loc_d)
+head(sites_loc_d)
+
+#Species location in ordination
+species_loc_d <- species.long(plot_s3_d)
+species_loc_d
+
+axis.long_d <- axis.long(rda.signif_d, choices = c(1, 2))
+axis.long_d
+
+env_loc_d <-  as.data.frame(rda.sign.sum_d$biplot[,1:2])
+
+sp_loc_d <-  as.data.frame(rda.sign.sum_d$species[,1:2])
+
+sp_bf_d <- subset(sp_loc_d, rownames(sp_loc_d) %in% sel_d)
 
 ```
-
 
 ```{r}
 row.names(sp_bf) <- c("P.n.s",
@@ -344,6 +500,29 @@ row.names(sp_bf) <- c("P.n.s",
                       "S.mar.",
                       "C.soc.",
                       "C.cin")
+
+row.names(sp_bf_d) <- c("P.n.s",
+                      "R.set.",
+                      "S.mar",
+                      "Bidd.",
+                      "C.ten",
+                      "C.soc.",
+                      "C.rad")
+
+# row.names(sp_bf) <- c("P.n.s",
+#                       "Thal.",
+#                        "Cho.",
+#                        "Hill.",
+#                        "Tel.",
+#                        "S.mar.",
+#                        "P.n.",
+#                        "C.deb.",
+#                        "p.ori.",
+#                        "P.pou.",
+#                        "C.soc.",
+#                        "T.acu.",
+#                        "T.amp.",
+#                        "C.cin")
 ```
 
 
@@ -351,11 +530,11 @@ row.names(sp_bf) <- c("P.n.s",
 #Plotting RDS scaling 2
 
 row.names(env_loc) <- c("SD",
-                        "SiO\u2082\u207B",
+                        "DSi",
                         "T",
                         "GM")
 
-ggplot() + 
+all <- ggplot() + 
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
   geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
   scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
@@ -385,7 +564,7 @@ ggplot() +
                   nudge_y = 0.05,
                   force = 5,
                   max.iter = 3e3,
-                  size = 8) +
+                  size = 10) +
   geom_text_repel(data = env_loc , aes(RDA1, RDA2, 
                                        label = row.names(env_loc)),
                   point.padding = unit(2, 'lines'),
@@ -398,7 +577,7 @@ ggplot() +
                "%)", sep = ""),
        y = paste("RDA 2 (", format(100 *rda.sign.sum$cont[[1]][2,2], digits = 1),
                "%)", sep = "")) +
- 
+  annotate("text", x = -0.7, y = 0.7, label = "All", size = 10) +
   theme_bw() +
   theme(panel.background = element_blank(),
         panel.border = element_rect(fill = NA, colour = "black"), 
@@ -409,20 +588,116 @@ ggplot() +
         axis.text = element_text(colour= "black", face = "bold"),
         axis.line = element_line(colour = "black"), 
         plot.title = element_text(hjust = 0.5, face = "bold"),
-        text = element_text(size = 28)) +
-  guides(fill = guide_legend(override.aes = list(shape = 21))) +
-  labs(fill = "Cluster", shape = "Station")
+        text = element_text(size = 28),
+        legend.direction = "horizontal",
+        legend.position = "top",
+        legend.box = "vertical") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
 
-ggsave(here("figures_rda", "rda_2023-07-18_all.png"), 
+ggsave(here("figures_rda", "rda_2023-07-18_all_s3.png"),
         width = 8, height = 6, dpi = 300)
 ```
 ```{r}
-sites_loc %>%
-  ggplot(aes(x = date, y = sio2)) +
-  geom_line() +
-  geom_point() +
-  facet_grid(location~.)
-  
+#Plotting RDS scaling 2
+
+row.names(env_loc_d) <- c("Δρ",
+                        "DSi",
+                        "T",
+                        "GM")
+
+diat <- ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_d, aes(x = axis1, y = axis2,
+                                   fill = as.factor(year),
+                                   shape = location), 
+             size = 10, color = "black", stroke = 0.5, alpha = 0.9) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_shape_manual(values = c(21, 22, 23 ,24)) +
+  geom_segment(data = env_loc_d, aes(x = 0, y = 0, xend = RDA1,
+                                   yend = RDA2),
+                arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
+                              type = "closed"),
+                linetype = 1, size = 1.4, colour = "Red", alpha = 1) +
+  geom_segment(data = sp_bf_d, aes(x = 0, y = 0, xend = RDA1,
+                                       yend = RDA2),
+                 arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
+                               type = "closed"),
+               linetype = 1, size = 1.4, colour = "black", alpha = 1) +
+  geom_text_repel(data = sp_bf_d, aes(RDA1, RDA2,
+                                           label = row.names(sp_bf_d)),
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'black',
+                  segment.size = 0.7,
+                  segment.alpha = 1,
+                  nudge_y = 0.05,
+                  force = 5,
+                  max.iter = 3e3,
+                  size = 10) +
+  geom_text_repel(data = env_loc_d, aes(RDA1, RDA2, 
+                                       label = row.names(env_loc_d)),
+                  point.padding = unit(2, 'lines'),
+                  nudge_y = - 0.05,
+                  force = 4,
+                  max.iter = 3e3,
+                  size = 10,
+                  color = "Red") +
+  labs(x = paste("RDA 1 (", format(100 *rda.sign.sum_d$cont[[1]][2,1], digits = 1),
+               "%)", sep = ""),
+       y = paste("RDA 2 (", format(100 *rda.sign.sum_d$cont[[1]][2,2], digits = 1),
+               "%)", sep = "")) +
+  annotate("text", x = -0.55, y = 0.4, label = "Diatoms", size = 10) +
+  theme_bw() +
+  theme(panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour= "black", face = "bold"),
+        axis.line = element_line(colour = "black"), 
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        text = element_text(size = 28),
+        legend.direction = "horizontal",
+        legend.position = "top",
+        legend.box = "vertical") +
+  labs(fill = "") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)),
+         color = "none",
+         shape = "none")
+
+ggsave(here("figures_rda", "rda_2023-08-04_s3.png"), 
+        width = 8, height = 6, dpi = 300)
+```
+
+```{r}
+fig <- all + diat
+
+ggsave(here("figures_rda", "combined.png"), fig,
+       width = 16, height = 8, dpi = 300)
+```
+```{r}
+RColorBrewer::brewer.pal(n = 3,"Dark2")
+```
+```{r}
+#Filtering out bulk chlorophyll, removing bad data and cutting down on colums
+sf_less <- sf %>% 
+  filter(line_out_depth == 5 & !filter_type == "Bulk GF/F") %>% 
+  filter(chla_flag == "AV" | is.na(chla_flag)) %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(date, year, site_id, filter_type, chla) %>% 
+  filter(!is.na(chla)) %>% 
+  group_by(date) %>% 
+  mutate(n_filt = n()) %>% 
+  ungroup() %>% 
+  filter(n_filt == 3)
+
+sf_less_join <- sf_less %>% 
+  select(date, site_id, filter_type, chla) %>% 
+  pivot_wider(names_from = filter_type, values_from = chla)
 ```
 
 
@@ -430,8 +705,70 @@ sites_loc %>%
 
 
 ```{r}
-A1.surface <- ordisurf(plot_s2, y = drho)
+data_chem <- data %>% 
+  left_join(chem) %>%
+  left_join(sf_less_join) %>% 
+  mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id) %>% 
+  mutate(year = lubridate::year(date))
+
+#Chemtax - Specify order of phyto groups for figures
+data_chem <- arrange(mutate(data_chem,
+                         location = factor(location, levels = order_loc)))
 ```
+
+
+```{r}
+data_chem %>% 
+  filter(!is.na(`Diatoms-1`)) %>% 
+  ggplot(aes(x = temp, y = Hapto)) +
+  geom_point(aes(fill = as.factor(year), shape = location), 
+             size = 10, color = "black", stroke = 0.5, alpha = 0.9) +
+  scale_fill_manual(values = c("#D95F02", "#7570B3")) +
+  scale_shape_manual(values = c(21, 22, 23)) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour= "black", face = "bold"),
+        axis.line = element_line(colour = "black"), 
+        text = element_text(size = 28),
+        legend.position = "none") +
+  labs(fill = "") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)),
+         color = "none",
+         shape = "none")
+```
+```{r}
+data_chem %>% 
+  ggplot(aes(x = temp, y = cya)) +
+  geom_point(aes(fill = as.factor(year), shape = location), 
+             size = 10, color = "black", stroke = 0.5, alpha = 0.9) +
+  scale_fill_brewer(palette = "Dark2") +
+  scale_shape_manual(values = c(21, 22, 23)) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour= "black", face = "bold"),
+        axis.line = element_line(colour = "black"), 
+        text = element_text(size = 28),
+        legend.position = "none") +
+  labs(fill = "") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)),
+         color = "none",
+         shape = "none")
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -24,103 +24,45 @@ library(zoo)
 ```{r}
 #Upload data
 
-micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+sf <- read_csv(here("files", "chl_2018_2020.csv")) 
 
 ctd <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
 
-env <- read_csv(here("outputs", "enviro_2023-05-26.csv"))
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
 
 chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
-#Uploading size separated S.marinoi counts.
-sm_size <- read_csv(here("outputs", "s_mar_size_2023-07-03.csv"))
-
 ```
 
 ```{r}
-sm_size <- sm_size %>% 
-  select(-hakai_id)
 
-micro <- micro %>% 
-  filter(!scientificName == "Skeletonema marinoi")
+sf_less <- sf %>% 
+  filter(line_out_depth == 5 & !filter_type == "Bulk GF/F") %>% 
+  filter(chla_flag == "AV" | is.na(chla_flag)) %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(date, site_id, filter_type, chla) %>% 
+  filter(!is.na(chla)) %>% 
+  group_by(date) %>% 
+  mutate(n_filt = n()) %>% 
+  ungroup() %>% 
+  filter(n_filt == 3) %>%
+  select(-n_filt)
 
-micro <- rbind(micro, sm_size)
-
-```
-
-
-```{r}
-#Removing species groups
-
-#Creating a list of distinct species and groups
-species_distinct <- micro %>% 
-  distinct(group, scientificName)
-
-#Removing groups that are not well quantified or that I am not looking at
-micro <- micro %>% 
-  filter(!scientificName_accepted == "Cyanobacteria")
-```
-
-```{r}
-test <- micro %>% 
-  filter(date == "2018-04-28")
-```
-
-```{r}
-#Determining total number of samples collected
-sample_num <- micro %>%
-  distinct(date, site_id)
-
-#Filtering out species that were not present in at least 10% of the samples
-species_10 <- micro %>%
-  group_by(scientificName) %>%
-  summarise(n_obs = n()) %>%
-  ungroup() %>%
-  mutate(perc_obs = n_obs/78) %>%
-  filter(perc_obs >= 0.10)
-
-#Creating a list of species that were not in 10% of the samples
-species_10_list <- species_10$scientificName
-
-#Removing species that were not in 10% of the samples.
-micro <- micro %>%
-  filter(scientificName %in% species_10_list)
-
-```
-
-```{r}
-#Filtering to only include diatoms
-micro <- micro %>% 
-  filter(group == "Bacillariophyta") 
-```
-
-```{r}
-#Pivoting data for RDA analysis
-
-#Selecting columns for pivot
-micro_piv <- micro %>%
-  mutate(month = lubridate::month(date)) %>% 
-  select(date, month, site_id, scientificName, species_sum)
-
-#performing pivot and making NA's 0's. 
-micro_piv <- micro_piv %>% 
-  pivot_wider(names_from = scientificName, values_from = species_sum,
-              values_fill = 0) 
-
-micro_piv <- micro_piv %>% 
-  select(!month)
+sf_wide <- sf_less %>% 
+  pivot_wider(names_from = filter_type, values_from = chla)
 ```
 
 ```{r}
 #Selecting columns from the CTD master sheet
 ctd <- ctd %>% 
-  select(date, site_id, temp_dm, sal_dm, delta_rho_dm, no2_dm:secchi_depth)
+  select(date:secchi_depth)
 ```
 
 ```{r}
 data <- ctd %>% 
   left_join(env) %>% 
-  left_join(chl)
+  left_join(chl) %>%
+  left_join(sf_wide)
 ```
 
 
@@ -142,44 +84,57 @@ data <- data %>%
          wind_b1,
          wind_dir_b1,
          par_b1,
-         tchla)
+         up_b1,
+         dep_26_dm,
+         micro = `20um`,
+         nano = `3um`,
+         pico = `GF/F`)
 
-micro_join <- data %>%
-  left_join(micro_piv)
+#Adding location instead of site ID for interpretation of results
+data <- data %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
 
 #removing NAs for analysis
-micro_join <- micro_join %>% 
+data_na <- data %>% 
   drop_na()
 ```
-```{r}
-micro_join %>% 
-  ggplot(aes(x = temp, y = sal, size = `Pseudo-nitzschia seriata`, color = site_id)) +
-  geom_point()
-```
-```{r}
-micro_join %>% 
-  ggplot(aes(x = sal, y = wan_b1, size = `Skeletonema marinoi large`, color = site_id)) +
-  geom_point()
-```
 
 
 ```{r}
-#Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
-resp <- micro_join[, 18:ncol(micro_join)]
+# data_na <- data_na %>% 
+#   mutate(np = no2/po4) %>% 
+#   relocate(np, .after = sio2)
+```
+
+
+
+```{r}
+#Separating into response variables (chemtax) and Explanatory variables (Environmental)
+resp <- data_na[, 20:ncol(data_na)]
+# resp <- scale(resp, center = F, scale = T)
 
 #Explanatory variables
-expl <- micro_join[, 3:16]
+expl <- data_na[, 4:19]
 
 #Trying to remove variables that have high VIFS. Removed no2 and po4 because they had the highest VIFS. I also think silicate is important because of fjords trends. Doesn't really matter as sio2 should be representative of the other nutrients anyways - when I cut sio2 out, no2 vector was comparable. 
 expl <- expl %>%
-  select(-po4, -no2, -wan_b1)
+  select(-no2, -po4)
+
 
 ```
 
 ```{r}
 #Hellinger transformation on species data - particularly suited to species abundance data with large range and lots of zeros. Gives low weights to variables with low counts and many zeroes.
-resp.hell <- decostand(resp, 'hell')
+# resp.hell <- decostand(resp, 'hellinger')
 
+resp.hell <- resp
+# resp.hell <- sqrt(resp)
+
+decorana (resp.hell)
 ```
 
 ```{r}
@@ -217,7 +172,7 @@ tb_rda.vasc.all <- rda (resp.hell ~ ., data = expl)
 
 sel.osR2 <- ordiR2step (tb_rda.vasc.0, scope = formula (tb_rda.vasc.all), 
                         R2scope = adjR2.tbrda, direction = 'forward', 
-                        permutations = 9999)
+                        permutations = 49999)
 
 sel.osR2$anova
 
@@ -233,7 +188,7 @@ sel.osR2_adj$anova
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif <- subset(expl, select = c(secchi, sio2, temp, gm_b1))
+env.signif <- subset(expl, select = c(sio2, temp, secchi))
 
 #RDA using significant variables
 rda.signif <- rda(resp.hell ~ . ,data = env.signif)
@@ -271,32 +226,12 @@ plot_s2 <- ordiplot(rda.signif, scaling = 2, type = "text")
 
 ```
 
-```{r}
-#Testing species goodness of fit to try to eliminate species
-# https://stackoverflow.com/questions/27823131/customising-vegan-ordination-plot
 
-
-#This selects the species with the 10% best fitting
-sel <- goeveg::ordiselect(resp, rda.signif, fitlim = 0.05)
-sel
-
-#Can also cut species out based on abundance
-sel2 <- goeveg::ordiselect(resp, rda.signif, ablim = 0.20, fitlim = 0.10)
-sel2
-
-```
 
 ```{r}
 #Changing site_id to location 
-meta <- micro_join %>% 
-  select(date:site_id) %>% 
-  mutate(location = case_when(site_id == "DFO2" ~ "F",
-                              site_id == "KC10" ~ "C",
-                              site_id == "QCS01" ~ "S",
-                              TRUE ~ as.character(site_id))) %>% 
-  relocate(location, .after = site_id)
-
-meta <- meta %>% 
+meta <- data_na %>% 
+  select(date:location) %>% 
   mutate(year = lubridate::year(date),
          month = lubridate::month(date))
 
@@ -349,28 +284,16 @@ env_loc <-  as.data.frame(rda.sign.sum$biplot[,1:2])
 
 sp_loc <-  as.data.frame(rda.sign.sum$species[,1:2])
 
-sp_bf <- subset(sp_loc, rownames(sp_loc) %in% sel)
-```
-
-
-```{r}
-row.names(sp_bf) <- c("P.n.s",
-                      "R.set.",
-                      "S.mar",
-                      "Bidd.",
-                      "C.ten",
-                      "C.soc.",
-                      "C.rad")
 ```
 
 
 ```{r}
 #Plotting RDS scaling 2
 
-row.names(env_loc) <- c("Secchi",
-                        "SiO\u2082\u207B",
-                        "T",
-                        "GM")
+# row.names(env_loc) <- c("Δρ",
+#                         "SiO\u2082\u207B",
+#                         "T",
+#                         "GM")
 
 ggplot() + 
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
@@ -388,13 +311,13 @@ ggplot() +
                 arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
                               type = "closed"),
                 linetype = 1, size = 1.4, colour = "Red", alpha = 1) +
-  geom_segment(data = sp_bf, aes(x = 0, y = 0, xend = RDA1,
+  geom_segment(data = sp_loc, aes(x = 0, y = 0, xend = RDA1,
                                        yend = RDA2),
                  arrow = arrow(angle = 22.5,length = unit(0.35,"cm"),
                                type = "closed"),
                linetype = 1, size = 1.4, colour = "black", alpha = 1) +
-  geom_text_repel(data = sp_bf, aes(RDA1, RDA2,
-                                           label = row.names(sp_bf)),
+  geom_text_repel(data = sp_loc, aes(RDA1, RDA2,
+                                           label = row.names(sp_loc)),
                   point.padding = unit(2, 'lines'),
                   segment.color = 'black',
                   segment.size = 0.7,
@@ -430,13 +353,12 @@ ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Year", shape = "Station")
 
-ggsave(here("figures_rda", "rda_2023-05-24_diatoms_sm_separated.png"), 
+ggsave(here("figures_rda", "rda_2023-06-23_CHEMTAX_relative_sqrt.png"),
         width = 8, height = 6, dpi = 300)
 ```
 
-```{r}
-A1.surface <- ordisurf(plot_s2, y = drho)
-```
+
+
 
 
 

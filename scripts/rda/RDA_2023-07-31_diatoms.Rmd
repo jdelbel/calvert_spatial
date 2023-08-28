@@ -32,7 +32,7 @@ env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
 
 chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
-clust <- read_csv(here("outputs", "final_cluster_2023-07-31.csv"))
+clust <- read_csv(here("outputs", "final_cluster_2023-07-31_diat.csv"))
 
 ```
 
@@ -73,7 +73,7 @@ micro <- micro %>%
 ```{r}
 #Filtering to only include diatoms
 micro <- micro %>% 
-  filter(group == "Bacillariophyta") 
+  filter(!group == "Bacillariophyta") 
 ```
 
 ```{r}

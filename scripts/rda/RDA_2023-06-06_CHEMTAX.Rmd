@@ -43,7 +43,7 @@ chem <- chem %>%
 ```{r}
 #Selecting columns from the CTD master sheet
 ctd <- ctd %>% 
-  select(date, site_id, temp_dm, sal_dm, delta_rho_dm, no2_dm:secchi_depth)
+  select(date:secchi_depth)
 ```
 
 ```{r}
@@ -73,6 +73,7 @@ data <- data %>%
          wind_dir_b1,
          par_b1,
          up_b1,
+         dep_26_dm,
          tchla,
          cyan = Cyanobacteria, 
          hapt = Hapto, 
@@ -107,15 +108,15 @@ data_na <- data %>%
 
 ```{r}
 #Separating into response variables (chemtax) and Explanatory variables (Environmental)
-resp <- data_na[, 20:ncol(data_na)]
+resp <- data_na[, 21:ncol(data_na)]
 # resp <- scale(resp, center = F, scale = T)
 
 #Explanatory variables
-expl <- data_na[, 4:18]
+expl <- data_na[, 4:19]
 
 #Trying to remove variables that have high VIFS. Removed no2 and po4 because they had the highest VIFS. I also think silicate is important because of fjords trends. Doesn't really matter as sio2 should be representative of the other nutrients anyways - when I cut sio2 out, no2 vector was comparable. 
 expl <- expl %>%
-  select(-no2, -po4, -sm_b1, -wan_b1)
+  select(-sio2, -po4)
 
 
 ```
@@ -181,7 +182,7 @@ sel.osR2_adj$anova
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif <- subset(expl, select = c(sio2, temp, secchi))
+env.signif <- subset(expl, select = c(no2, temp, secchi,drho))
 
 #RDA using significant variables
 rda.signif <- rda(resp.hell ~ . ,data = env.signif)

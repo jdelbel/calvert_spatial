@@ -1,0 +1,574 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+library(zoo)
+library(ggpubr)
+```
+
+```{r}
+#Upload data
+
+#Physical - chemical data
+data <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+#Chlorophyll data
+chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
+
+#General environmental data - discharge etc.
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
+
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+
+clust <- read_csv(here("outputs", "bio_clust_full.csv"))
+```
+
+
+```{r}
+
+data <- data %>% 
+  select(date:secchi_depth)
+
+#Joining all of the data
+data_join <- data %>% 
+  left_join(chl) %>% 
+  left_join(env) 
+
+#Relocating metadata
+data_join <- data_join %>% 
+  relocate(location, .after = site_id)
+
+#Adding date information and relocating
+data_join <- data_join %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  relocate(month, .after = date) %>% 
+  relocate(year, .after = month)
+```
+
+```{r}
+#Selecting the variables I want
+data_pca <- data_join %>%
+  select(date, month, year, site_id, location, temp = temp_dm, 
+         sal = sal_dm, drho = delta_rho_dm, no2 = no2_dm, po4_dm, 
+         sio2_dm, secchi = secchi_depth, sm_b1, gm_b1, ra_b1, wan_b1, wind_b1, 
+         wind_dir_b1, up_b1, dep_26_dm, tchla, par_b1)
+
+
+```
+
+```{r}
+data_pca_long <- data_pca %>% 
+  select(date, site_id, temp:par_b1) %>% 
+  pivot_longer(c(temp:par_b1), names_to = "par", values_to = "val")
+
+data_pca_long <- data_pca_long %>% 
+  left_join(clust)
+
+data_pca <- data_pca %>% 
+  left_join(clust)
+```
+
+```{r}
+# data_pca_long %>% 
+#   filter(!is.na(clust_abund)) %>% 
+#   # filter(par == "drho" | par == "gm_b1" | par == "sm_b1" | par == "ra_b1"|
+#   #          par == "no2" | par == "sio2" |
+#   #        par == "sal" | par == "temp" | par == "wind_b1" | par == "wind_dir_b1") %>% 
+#   ggplot(aes(x = as.factor(clust_abund), y = val)) +
+#   geom_boxplot() +
+#   ggpubr::stat_compare_means(size = 6) +
+#   facet_wrap(~par, scales = "free_y")
+# 
+# ggsave(here("figures_pca", "KW_test.png"),
+#        width = 16, height = 16, dpi = 300)
+```
+
+
+```{r}
+# kruskal.test(temp ~ clust_abund, data = data_pca)
+# 
+# data_pca$clust_abund <- as.factor(data_pca$clust_abund)
+# 
+# #Dunn Test to look where differences are occuring.
+# FSA::dunnTest(data_pca$temp ~ data_pca$clust_abund,
+#               method = "bonferroni")
+```
+
+#Let's try to add mixed layer depth. See if the calculation works for these waters.
+
+```{r}
+# stats <- data_pca %>% 
+#   select(date, site_id, temp:tchla) %>% 
+#   pivot_longer(cols = c(temp:tchla), names_to = "param", values_to = "val") %>% 
+#   group_by(site_id, param) %>% 
+#   summarize(min = min(val, na.rm = T),
+#             max = max(val, na.rm = T),
+#             median = median(val, na.rm = T)) %>% 
+#   ungroup() %>% 
+#   filter(param == "no2")
+# 
+# sal <- data_pca %>% 
+#   select(date, site_id, location, sal, temp)
+```
+
+```{r}
+# data_pca %>% 
+#   filter(site_id == "QCS01") %>% 
+#   mutate(yday = lubridate::yday(date)) %>% 
+#   ggplot(aes(x = date, y = sal, color = site_id)) +
+#   geom_point() +
+#   geom_line()
+```
+
+
+
+```{r}
+#Removing NA's for analysis 
+data_pca <- data_pca %>%
+  drop_na()
+```
+
+```{r}
+#Pulling out explanatory variables for PCA analysis
+expl <- data_pca[, 6:22]
+```
+
+```{r}
+#Scaling data being used for PCA (Should look into whether I should also center as I did with the mantel tests)
+expl <- scale(expl)
+
+#Converting to a data frame for subsequent analysis.
+expl <- as.data.frame(expl)
+
+```
+
+
+```{r}
+#Running PCA using vegan - when RDA is run without response variables, then it is a PCA
+pca <- rda(expl)
+
+#Looking at results - for interpretation of following look at.
+head(summary(pca))
+
+#Looking at scores
+loadings <- scores(pca, display = 'species', scaling = 0)
+loadings
+```
+
+
+```{r}
+#Looking at the variables with highest correlation with axis 1
+sort (abs (loadings[,1]), decreasing = TRUE)
+```
+```{r}
+#Looking at the variables with highest correlation with axis 2
+sort (abs (loadings[,2]), decreasing = TRUE)
+```
+
+
+```{r}
+biplot (pca, display = 'species', scaling = 'species')
+```
+
+```{r}
+#Looking at different scalings
+source ('https://raw.githubusercontent.com/zdealveindy/anadat-r/master/scripts/NumEcolR2/cleanplot.pca.R')
+par (mfrow = c(1,2))
+cleanplot.pca (pca, scaling = 1)
+cleanplot.pca (pca, scaling = 2)
+```
+
+```{r}
+#Looking into importance of each axis
+
+# define "evplot" function first:
+source ('https://raw.githubusercontent.com/zdealveindy/anadat-r/master/scripts/NumEcolR1/evplot.R')
+
+# Finally, in the PCA object select the component $eig with the vector of eigenvalues:
+ev <- pca$CA$eig
+
+evplot (ev)
+```
+
+
+```{r}
+library (BiodiversityR)
+sig <- PCAsignificance (pca, axes = 14)
+sig
+
+barplot(sig[c('percentage of variance', 'broken-stick percentage'), ], beside = T, 
+  xlab = 'PCA axis', ylab = 'explained variation [%]', col = c('grey', 'black'), 
+  legend = TRUE)
+```
+
+
+```{r}
+p_pca <- biplot(pca, scaling = 1, type = "none", xlab = c("PCA1"),
+               ylab = c("PCA2"), xlim = c(-0.01, 0.1), ylim = c(-1.1, 1.1))
+
+points(scores(pca, display = 'sites', choices = c(1, 2), scaling = 1),
+       pch = 21, cex = 2.0,
+       bg = c("blue", "springgreen4", "black", "magenta")[as.factor(data_pca$site_id)])
+
+legend("topright", legend = c(levels(as.factor(data_pca$site_id))),
+       pch = 21,
+       pt.bg = c("blue", "springgreen4", "black", "magenta"),
+       bty = "n", cex = 1.5)
+```
+
+```{r}
+
+data_pca <- data_pca %>%
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 12 ~ "autumn",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+data_pca <- data_pca %>%
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
+                           TRUE ~ as.numeric(year)))
+```
+
+```{r}
+#Setting up parameters for plotting PCA
+
+# https://programmer.ink/think/r-redundancy-analysis-rda-ggplot2.html
+# https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html
+
+#Extracting site locations
+sites_loc_pca <- sites.long(p_pca, env.data = expl)
+meta_pca <- data_pca %>% 
+  select(date:location, month:year)
+sites_loc_pca <- cbind(meta_pca, sites_loc_pca)
+head(sites_loc_pca)
+sites_loc_pca <- sites_loc_pca %>% 
+  mutate(year = lubridate::year(date))
+
+#Species location in ordination
+species_loc_pca <- species.long(p_pca)
+species_loc_pca
+
+axis.long_pca <- axis.long(pca, choices = c(1, 2))
+axis.long_pca
+
+#these are both throwing zeros - One I won't need because I'm not plotting species vectors.
+#trying something from here. https://tem11010.github.io/Plotting-PCAs/
+# env_loc_pca <- as.data.frame(pca$biplot[,1:2])
+vscores <- as.data.frame(pca$CA$v)
+```
+
+```{r}
+#Adding results of clustering to the pca scores for plotting
+
+sites_loc_pca_clust <- sites_loc_pca %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
+```
+
+```{r}
+order_loc <- c("F", "C", "S")
+
+#Set order for locations in plot
+sites_loc_pca_clust <- arrange(mutate(sites_loc_pca_clust,
+                         location = factor(location, levels = order_loc)))
+
+#Order locations from fjord to shelf
+order_loc_seas <- c("winter", "spring", "summer", "autumn")
+
+#Chemtax - Specify order of phyto groups for figures
+sites_loc_pca_clust <- arrange(mutate(sites_loc_pca_clust,
+                         season = factor(season, levels = order_loc_seas)))
+```
+
+```{r}
+#Plotting PCA with clusters
+
+row.names(vscores) <- c("Temp",
+                        "Sal",
+                        "Δρ",
+                        "DIN",
+                        "DIP",
+                        "DSi",
+                        "SD",
+                        "S.Mtn",
+                        "G.Mtn",
+                        "Rain",
+                        "WAN",
+                        "WS",
+                        "WD",
+                        "UI",
+                        "ρ1026",
+                        "TChla",
+                        "PAR")
+                        
+p1 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_pca_clust, aes(fill = as.factor(season),
+                                   shape = location, stroke = 0.1), 
+             size = 10, color = "black", alpha = 1) +
+  scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) + 
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1*1.5, yend = PC2*1.5), 
+               arrow = arrow(length = unit(0.2,"cm")),
+               alpha = 1, color = 'grey', size = 1.5) +
+  geom_text_repel(data = vscores, aes(PC1*1.5, PC2*1.5,
+                                           label = row.names(vscores)),
+                  box.padding = unit(0.3, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'blue',
+                  # segment.size = 0.5,
+                  # segment.alpha = 0.4,
+                  # arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = -0.02,
+                  # nudge_x = 0.1,
+                  force = 0.1,
+                  max.iter = 3e3,
+                  size = 8,
+                  color = "black") +
+  labs(x = "PCA1 (40%)",
+       y = "PCA2 (19%)") +
+  # xlim(-0.9, 1.1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        # axis.text.x = element_blank(),
+        # axis.title.x = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24)) +
+        theme(legend.direction = "horizontal") +
+        theme(legend.position = "top") +
+        theme(legend.box = "vertical") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+
+p2 <- ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_pca_clust, aes(x = axis1, y = axis2, 
+                                       fill = as.factor(year), 
+                                       shape = location, stroke = 1), 
+             size = 10, color = "black") +
+  scale_fill_brewer(palette = "Dark2") + 
+  scale_shape_manual(values = c(21, 22, 23)) + 
+  # geom_text(data = vscores, aes(x = PC1, y = PC2, label = rownames(vscores)),
+  #           col = 'red') +
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
+               arrow = arrow(length = unit(0.2,"cm")),
+               alpha = 1, color = 'gray', size = 1.5) +
+  # geom_text_repel(data = vscores, aes(PC1, PC2,
+  #                                          label = row.names(vscores)),
+  #                 box.padding = unit(0.3, 'lines'),
+  #                 # point.padding = NA,
+  #                 point.padding = unit(2, 'lines'),
+  #                 segment.color = 'blue',
+  #                 # segment.size = 0.5,
+  #                 # segment.alpha = 0.4,
+  #                 # arrow = arrow(length = unit(0.01, 'npc')),
+  #                 # nudge_y = -0.02,
+  #                 # nudge_x = 0.1,
+  #                 force = 0.1,
+  #                 max.iter = 3e3,
+  #                 size = 8,
+  #                 color = "black") +
+  labs(x = "PCA1 (40%)",
+       y = "PCA2 (19%)") +
+  # xlim(-1.0, 1.3) +
+  # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
+  #                                  digits = 3), "%)", sep = ""),
+  #      y = paste("PCA 2 (", format(100 *pca$cont[[1]][2,2], 
+  #                                  digits = 2), "%)", sep = "")) +
+ 
+  # coord_fixed(ratio = 1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        # axis.text.x = element_blank(),
+        # axis.title.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        # legend.position = c(0.9, 0.85),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24)) +
+        theme(legend.direction = "horizontal") +
+        theme(legend.position = "top") +
+        theme(legend.box = "vertical") +
+  labs(fill = "") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)),
+         color = "none",
+         shape = "none")
+
+fig <- p1 + p2
+ 
+ggsave(here("figures_pca", "PCA-2023-08_16_panel.png"), fig,
+       width = 15, height = 6, dpi = 300)
+```
+
+```{r}
+chl_loc <- data_pca %>% 
+  select(date, site_id, tchla) %>% 
+  pivot_wider(names_from = "site_id", values_from = "tchla") %>% 
+  rename(tchla_f = DFO2, tchla_c = KC10, tchla_s = QCS01) %>% 
+  pivot_longer(c(tchla_c:tchla_s), names_to = "tchla_loc", values_to = "tchla")
+
+data_pca_long2 <- data_pca_long %>% 
+  filter(!par == "tchla") %>% 
+  select(date, par, val)
+
+chl_cor <- chl_loc %>% 
+  left_join(data_pca_long2)
+
+data_nest <- chl_cor %>% 
+  group_by(tchla_loc, par) %>%
+  nest()
+
+head(data_nest)
+
+str(head(slice(data_nest, 1)))
+
+cor_fun <- function(df) cor.test(df$tchla,
+                                 df$val,
+                                 method = "pearson") %>% tidy()
+
+data_nest <- mutate(data_nest, model = map(data, cor_fun))
+
+corr_pr <- select(data_nest, -data) %>% unnest()
+
+corr_pr
+
+corr_pr <- mutate(corr_pr, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+```
+
+```{r}
+
+#Order locations from fjord to shelf
+env_loc <- c("temp",
+               "sal",
+               "drho",
+               "dep_26_dm",
+               "up_b1",
+               "no2",
+               "po4_dm",
+               "sio2_dm",
+               "secchi",
+               "gm_b1",
+               "sm_b1",
+               "ra_b1",
+               "wind_b1",
+               "wind_dir_b1",
+               "par_b1")
+
+loc <- c("tchla_f", "tchla_c", "tchla_s")
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         par = factor(par, levels = env_loc)))
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         tchla_loc = factor(tchla_loc, levels = loc)))
+```
+
+
+
+```{r}
+sr <- ggplot()+
+  geom_tile(data = corr_pr,
+            aes(par, tchla_loc, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr, sig == "Sig."),
+            aes(par, tchla_loc),
+            size = 1.5,
+            colour = "black",
+            fill = "transparent") +
+  geom_text(data = corr_pr,
+            aes(par, tchla_loc, label = round(estimate, 2),
+                fontface = ifelse(sig == "Sig.", "bold", "plain")),
+            size = 7) +
+  scale_x_discrete(labels = c("temp" = "Temp",
+                              "sal" = "Sal",
+                             "drho" = "Δρ",
+                             "dep_26_dm" = "ρ1026",
+                             "up_b1" = "UI",
+                             "no2" = "DIN",
+                             "po4_dm" = "DIP",
+                             "sio2_dm" = "DSi",
+                             "secchi" = "SD",
+                             "gm_b1" = "G.Mtn.",
+                             "sm_b1" = "S.Mtn.",
+                             "ra_b1" = "Rain",
+                             "wind_b1" = "WS",
+                             "wind_dir_b1" = "WD",
+                             "par_b1" = "PAR")) +
+  scale_y_discrete(labels = c("tchla_f" = "TChla-F",
+                              "tchla_c" = "TChla-C",
+                              "tchla_s" = "TChla-S")) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+                       name = "Pearson Correlation") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.width = unit(5, "cm"),
+        legend.title = element_text(size = 25),
+        legend.title.align = 0.5,
+        legend.text = element_text(size = 20)) +
+        guides(fill = guide_colourbar(title.position = "top")) 
+
+ggsave(here("figures_cor", "pearsons_rank_tchla.png"), 
+       width = 15, height = 6, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```
+
+```{r}
+panel <- wrap_elements(full = fig) / sr + plot_layout(heights = c(2, 0.5), widths = c(2, 1))
+
+ggsave(here("figures_cor", "pca_pearsons_panel.png"), panel,
+        width = 16, height = 12, dpi = 300)
+```
+

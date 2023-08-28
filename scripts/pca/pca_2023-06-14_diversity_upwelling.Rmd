@@ -21,6 +21,7 @@ library(RColorBrewer)
 library(indicspecies)
 library(factoextra)
 library(zoo)
+library(ggpubr)
 ```
 
 ```{r}
@@ -36,6 +37,8 @@ chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
 env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
 
 micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+
+clust <- read_csv(here("outputs", "bio_clust_full.csv"))
 ```
 
 
@@ -97,13 +100,22 @@ data_join <- data_join %>%
 
 ```{r}
 data_join %>% 
-  # filter(site_id == "KC10") %>% 
-  ggplot(aes(x = delta_rho_dm, y = wan_b1, )) +
-  geom_point(pch = 21, fill = "white", stroke = 1.5, size = 2) +
+  filter(site_id == "QCS01") %>%
+  ggplot(aes(x = secchi_depth, y = tchla)) +
+  geom_point(pch = 21,  stroke = 1.5, size = 2) +
   geom_smooth(method = "lm") +
-   ggpubr:: stat_cor(aes(label = paste(..rr.label..,
-                                       ..p.label.., sep = "~`,`~")),
-                     label.x = 3)
+  ggpubr:: stat_cor(aes(label = paste(..rr.label..,
+                                       ..p.label.., sep = "~`,`~")))
+```
+
+
+```{r}
+data_join %>% 
+  ggplot(aes(x = gm_b1, y = delta_rho_dm)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  ggpubr:: stat_cor(aes(label = paste(..rr.label..,
+                                       ..p.label.., sep = "~`,`~")))
 ```
 
 
@@ -113,33 +125,83 @@ data_pca <- data_join %>%
   select(date, month, year, site_id, location, temp = temp_dm, 
          sal = sal_dm, drho = delta_rho_dm, no2 = no2_dm, po4_dm, 
          sio2_dm, secchi = secchi_depth, sm_b1, gm_b1, ra_b1, wan_b1, wind_b1, 
-         wind_dir_b1, par_b1, up_b1, dep_26_dm, tchla)
+         wind_dir_b1, up_b1, dep_26_dm, tchla par_b1)
+
+# up_b1
+# dep_26_dm,
 ```
 
-#Let's try to add mixed layer depth. See if the calculation works for these waters.
+```{r}
+data_pca_long <- data_pca %>% 
+  select(date, site_id, temp:par_b1) %>% 
+  pivot_longer(c(temp:par_b1), names_to = "par", values_to = "val")
+
+data_pca_long <- data_pca_long %>% 
+  left_join(clust)
+
+data_pca <- data_pca %>% 
+  left_join(clust)
+```
+```{r}
+data_pca_long %>% 
+  filter(!is.na(clust_abund)) %>% 
+  # filter(par == "drho" | par == "gm_b1" | par == "sm_b1" | par == "ra_b1"|
+  #          par == "no2" | par == "sio2" |
+  #        par == "sal" | par == "temp" | par == "wind_b1" | par == "wind_dir_b1") %>% 
+  ggplot(aes(x = as.factor(clust_abund), y = val)) +
+  geom_boxplot() +
+  ggpubr::stat_compare_means(size = 6) +
+  facet_wrap(~par, scales = "free_y")
+
+ggsave(here("figures_pca", "KW_test.png"),
+       width = 16, height = 16, dpi = 300)
+```
+
 
 ```{r}
-stats <- data_pca %>% 
-  select(date, site_id, temp:tchla) %>% 
-  pivot_longer(cols = c(temp:tchla), names_to = "param", values_to = "val") %>% 
-  group_by(site_id, param) %>% 
-  summarize(min = min(val, na.rm = T),
-            max = max(val, na.rm = T),
-            median = median(val, na.rm = T)) %>% 
-  ungroup() %>% 
-  filter(param == "no2")
+kruskal.test(temp ~ clust_abund, data = data_pca)
 
-sal <- data_pca %>% 
-  select(date, site_id, location, sal, temp)
+data_pca$clust_abund <- as.factor(data_pca$clust_abund)
+
+#Dunn Test to look where differences are occuring.
+FSA::dunnTest(data_pca$temp ~ data_pca$clust_abund,
+              method = "bonferroni")
 ```
 
 ```{r}
 data_pca %>% 
-  filter(site_id == "QCS01") %>% 
-  mutate(yday = lubridate::yday(date)) %>% 
-  ggplot(aes(x = date, y = sal, color = site_id)) +
-  geom_point() +
-  geom_line()
+  filter(!is.na(clust_abund)) %>% 
+  ggplot(aes(x = date, y = sm_b1 + gm_b1 + ra_b1)) +
+  geom_point(aes(color = clust_abund), size =5) +
+  geom_line() +
+  facet_grid(site_id ~ .)
+```
+
+
+#Let's try to add mixed layer depth. See if the calculation works for these waters.
+
+```{r}
+# stats <- data_pca %>% 
+#   select(date, site_id, temp:tchla) %>% 
+#   pivot_longer(cols = c(temp:tchla), names_to = "param", values_to = "val") %>% 
+#   group_by(site_id, param) %>% 
+#   summarize(min = min(val, na.rm = T),
+#             max = max(val, na.rm = T),
+#             median = median(val, na.rm = T)) %>% 
+#   ungroup() %>% 
+#   filter(param == "no2")
+# 
+# sal <- data_pca %>% 
+#   select(date, site_id, location, sal, temp)
+```
+
+```{r}
+# data_pca %>% 
+#   filter(site_id == "QCS01") %>% 
+#   mutate(yday = lubridate::yday(date)) %>% 
+#   ggplot(aes(x = date, y = sal, color = site_id)) +
+#   geom_point() +
+#   geom_line()
 ```
 
 
@@ -152,7 +214,7 @@ data_pca <- data_pca %>%
 
 ```{r}
 #Pulling out explanatory variables for PCA analysis
-expl <- data_pca[, 6:22]
+expl <- data_pca[, 6:21]
 ```
 
 ```{r}
@@ -467,6 +529,7 @@ sites_loc_pca_clust <- sites_loc_pca_clust %>%
   left_join(clust_df) %>%
   relocate(cluster, .after = month)
 ```
+
 ```{r}
 #Set order for locations in plot
 sites_loc_pca_clust <- arrange(mutate(sites_loc_pca_clust,
@@ -508,8 +571,8 @@ row.names(vscores) <- c("Temp",
                         "WD",
                         "PAR",
                         "UI",
-                        "ρ1026", 
-                        "TChla")
+                        "ρ1026")
+                        # "TChla")
                         
 p1 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
@@ -718,7 +781,7 @@ p4 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
 
 fig <- p1 + p2 + p3 + p4
  
-ggsave(here("figures_pca", "PCA-2023-08_03.png"), fig,
+ggsave(here("figures_pca", "PCA-2023-08_14_panel.png"), fig,
        width = 16, height = 12, dpi = 300)
 ```
 
@@ -768,7 +831,7 @@ ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
   guides(fill = guide_legend(override.aes = list(shape = 21))) +
   labs(fill = "Year", shape = "Station")
 
-ggsave(here("figures_pca", "PCA-2023-08_03_single_no_turb.png"),
+ggsave(here("figures_pca", "PCA-2023-08_14.png"),
        width = 8, height = 6, dpi = 300)
 ```
 
@@ -784,7 +847,7 @@ test <- test %>%
   left_join(clust_df)
 
 test %>% 
-  select(cluster, temp:tchla) %>% 
+  select(cluster, temp:par_b1) %>% 
   pivot_longer(!cluster, names_to = "param", values_to = "val") %>% 
   ggplot(aes(x = as.factor(cluster), y = val)) +
   geom_boxplot() +

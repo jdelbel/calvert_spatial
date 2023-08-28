@@ -1,0 +1,424 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(gsw)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(zoo)
+```
+
+```{r}
+#Upload data
+
+chem <- read_csv(here("files", "chemtax_2023-04-14.csv"))
+
+ctd <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+sf <- read_csv(here("files", "chl_2018_2020.csv")) 
+
+```
+
+```{r}
+#Filtering out bulk chlorophyll, removing bad data and cutting down on colums
+sf_less <- sf %>% 
+  filter(line_out_depth == 5 & !filter_type == "Bulk GF/F") %>% 
+  filter(chla_flag == "AV" | is.na(chla_flag)) %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(date, year, site_id, filter_type, chla) %>% 
+  filter(!is.na(chla)) %>% 
+  group_by(date) %>% 
+  mutate(n_filt = n()) %>% 
+  ungroup() %>% 
+  filter(n_filt == 3)
+```
+
+```{r}
+#Adding a percent contribution column
+sf_less <- sf_less %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_sf = sum(chla)) %>% 
+  ungroup() %>% 
+  mutate(perc_sf = chla/sum_sf) 
+```
+
+```{r}
+#Here, only including 2019-2020
+chem <- chem %>% 
+  filter(date < "2021-01-01")
+```
+
+```{r}
+#Selecting columns from the CTD master sheet
+ctd <- ctd %>% 
+  select(date:secchi_depth)
+```
+
+```{r}
+data <- ctd %>% 
+  left_join(env) %>% 
+  left_join(chl) %>%
+  left_join(chem)
+```
+
+```{r}
+#Selecting and renaming the columns that I want
+data <- data %>% 
+  select(date:site_id,
+         temp = temp_dm,
+         sal = sal_dm,
+         drho = delta_rho_dm,
+         no2 = no2_dm,
+         sio2 = sio2_dm,
+         po4 = po4_dm,
+         secchi = secchi_depth,
+         wan_b1, 
+         sm_b1,
+         gm_b1,
+         ra_b1,
+         wind_b1,
+         wind_dir_b1,
+         par_b1,
+         up_b1,
+         dep_26_dm,
+         tchla,
+         cyan = Cyanobacteria, 
+         hapt = Hapto, 
+         GA = `Prasinophytes-3`,
+         cryp = Cryptophytes, 
+         dino = `Dinoflagellates-1`,
+         dict = Dictyo, 
+         raph = Raphido,
+         diat = `Diatoms-1`)
+
+#Adding location instead of site ID for interpretation of results
+data <- data %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+#removing NAs for analysis
+data_na <- data %>% 
+  drop_na()
+```
+
+```{r}
+data_na %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot(aes(x = dep_26_dm, y = cyan , color = as.factor(year), shape = site_id)) +
+  geom_point()
+```
+
+
+```{r}
+data_na %>% 
+  # filter(location == "C") %>%
+  ggplot(aes(x = sal, y = cryp, color = location)) +
+  geom_point()
+```
+
+```
+data_na %>% 
+  # filter(location == "C") %>%
+  ggplot(aes(x = temp, y = hapt, color = location)) +
+  geom_point()
+```
+
+```{r}
+env <- data_na %>% 
+  filter(site_id == "DFO2") %>%
+  select(date, location, temp:dep_26_dm) %>% 
+  pivot_longer(temp:dep_26_dm, names_to = "par", values_to = "val")
+
+chem_long <- data_na %>% 
+  filter(site_id == "DFO2") %>% 
+  select(date, location, cyan:diat) %>% 
+  pivot_longer(cyan:diat, names_to = "group", values_to = "tchla")
+
+cor <- chem_long %>% 
+  left_join(env)
+```
+
+
+```{r}
+data_nest <- cor %>% 
+  group_by(group, par) %>%
+  nest()
+
+head(data_nest)
+
+str(head(slice(data_nest, 1)))
+
+
+cor_fun <- function(df) cor.test(df$tchla,
+                                 df$val,
+                                 method = "pearson") %>% tidy()
+
+
+
+data_nest <- mutate(data_nest, model = map(data, cor_fun))
+
+corr_pr <- select(data_nest, -data) %>% unnest()
+
+corr_pr
+
+corr_pr <- mutate(corr_pr, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+
+```
+
+```{r}
+
+#Order locations from fjord to shelf
+env_loc <- c("temp",
+               "sal",
+               "drho",
+               "dep_26_dm",
+               "up_b1",
+               "no2",
+               "po4",
+               "sio2",
+               "secchi",
+               "gm_b1",
+               "sm_b1",
+               "ra_b1",
+               "wan_b1",
+               "wind_b1",
+               "wind_dir_b1",
+               "par_b1")
+
+order_chem <- c("cyan", "hapt", "GA", "cryp",
+                   "dino", "raph", "dict", "diat")
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         par = factor(par, levels = env_loc)))
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         group = factor(group, levels = order_chem)))
+```
+
+```{r}
+ggplot()+
+  geom_tile(data = corr_pr,
+            aes(par, group, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr, sig == "Sig."),
+            aes(par, group),
+            size = 1.5,
+            colour = "black",
+            fill = "transparent") +
+  geom_text(data = corr_pr,
+            aes(par, group, label = round(estimate, 2),
+                fontface = ifelse(sig == "Sig.", "bold", "plain")),
+            size = 7) +
+  scale_x_discrete(labels = c("temp" = "Temp",
+                              "sal" = "Sal",
+                             "drho" = "Δρ",
+                             "dep_26_dm" = "ρ1026",
+                             "up_b1" = "UI",
+                             "no2" = "DIN",
+                             "po4" = "DIP",
+                             "sio2" = "DSi",
+                             "secchi" = "SD",
+                             "gm_b1" = "G.Mtn.",
+                             "sm_b1" = "S.Mtn.",
+                             "ra_b1" = "Rain",
+                             "wan_b1" = "Wan.",
+                             "wind_b1" = "WS",
+                             "wind_dir_b1" = "WD",
+                             "par_b1" = "PAR")) +
+  # scale_y_discrete(labels = c("TChla_all" = "TChla-all",
+  #                             "tchla_f" = "TChla-F",
+  #                             "tchla_c" = "TChla-C",
+  #                             "tchla_s" = "TChla-S")) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+                       name = "Correlation") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.width = unit(5, "cm"),
+        legend.key.height = unit(0.4, "cm"),
+        legend.title = element_text(size = 20),
+        legend.title.align = 0.5,
+        legend.text = element_text(size = 15)) +
+        guides(fill = guide_colourbar(title.position = "top")) 
+
+ggsave(here("figures_cor", "pearson_chemtax_DFO2.png"),
+       width = 15, height = 6, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```
+
+
+```{r}
+sf_less_join <- sf_less %>% 
+  select(date, site_id, filter_type, chla) %>% 
+  drop_na()
+
+env_sf <- data_na %>% 
+  # filter(site_id == "QCS01") %>% 
+  select(date, site_id, temp:dep_26_dm) %>% 
+  pivot_longer(temp:dep_26_dm, names_to = "par", values_to = "val")
+
+cor_sf <- sf_less_join %>% 
+  left_join(env_sf) %>% 
+  drop_na()
+```
+```{r}
+data_nest <- cor_sf %>% 
+  group_by(filter_type, par) %>%
+  nest()
+
+head(data_nest)
+
+str(head(slice(data_nest, 1)))
+
+
+cor_fun <- function(df) cor.test(df$chla,
+                                 df$val,
+                                 method = "spearman") %>% tidy()
+
+
+
+data_nest <- mutate(data_nest, model = map(data, cor_fun))
+
+corr_pr <- select(data_nest, -data) %>% unnest()
+
+corr_pr
+
+corr_pr <- mutate(corr_pr, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+
+```
+
+```{r}
+
+#Order locations from fjord to shelf
+env_loc <- c("temp",
+               "sal",
+               "drho",
+               "dep_26_dm",
+               "up_b1",
+               "no2",
+               "po4",
+               "sio2",
+               "secchi",
+               "gm_b1",
+               "sm_b1",
+               "ra_b1",
+               "wan_b1",
+               "wind_b1",
+               "wind_dir_b1",
+               "par_b1")
+
+order_size <- c("GF/F", "3um", "20um")
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         par = factor(par, levels = env_loc)))
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         filter_type = factor(filter_type, levels = order_size)))
+```
+
+```{r}
+ggplot()+
+  geom_tile(data = corr_pr,
+            aes(par, filter_type, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr, sig == "Sig."),
+            aes(par, filter_type),
+            size = 1.5,
+            colour = "black",
+            fill = "transparent") +
+  geom_text(data = corr_pr,
+            aes(par, filter_type, label = round(estimate, 2),
+                fontface = ifelse(sig == "Sig.", "bold", "plain")),
+            size = 7) +
+  scale_x_discrete(labels = c("temp" = "Temp",
+                              "sal" = "Sal",
+                             "drho" = "Δρ",
+                             "dep_26_dm" = "ρ1026",
+                             "up_b1" = "UI",
+                             "no2" = "DIN",
+                             "po4" = "DIP",
+                             "sio2" = "DSi",
+                             "secchi" = "SD",
+                             "gm_b1" = "G.Mtn.",
+                             "sm_b1" = "S.Mtn.",
+                             "ra_b1" = "Rain",
+                             "wan_b1" = "Wan.",
+                             "wind_b1" = "WS",
+                             "wind_dir_b1" = "WD",
+                             "par_b1" = "PAR")) +
+  # scale_y_discrete(labels = c("TChla_all" = "TChla-all",
+  #                             "tchla_f" = "TChla-F",
+  #                             "tchla_c" = "TChla-C",
+  #                             "tchla_s" = "TChla-S")) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+                       name = "Correlation") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.width = unit(5, "cm"),
+        legend.key.height = unit(0.4, "cm"),
+        legend.title = element_text(size = 20),
+        legend.title.align = 0.5,
+        legend.text = element_text(size = 15)) +
+        guides(fill = guide_colourbar(title.position = "top")) 
+
+ggsave(here("figures_cor", "spearman_SF.png"),
+       width = 15, height = 6, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```

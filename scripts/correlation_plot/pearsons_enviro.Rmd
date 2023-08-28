@@ -1,0 +1,500 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+library(ggcorrplot)
+library(zoo)
+library(gsw)
+```
+
+```{r}
+#Upload data
+
+#Physical - chemical data
+data <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+#Chlorophyll data
+chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
+
+#General environmental data - discharge etc.
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
+```
+
+```{r}
+data <- data %>% 
+  select(date:secchi_depth)
+
+#Joining all of the data
+data_join <- data %>% 
+  left_join(chl) %>% 
+  left_join(env) 
+
+#Relocating metadata
+data_join <- data_join %>% 
+  relocate(location, .after = site_id)
+
+#Adding date information and relocating
+data_join <- data_join %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  relocate(month, .after = date) %>% 
+  relocate(year, .after = month)
+```
+
+
+```{r}
+data_pca <- data_join %>%
+  select(date, month, year, site_id, location, temp = temp_dm, 
+         sal = sal_dm, drho = delta_rho_dm, no2 = no2_dm, po4_dm, 
+         sio2_dm, secchi = secchi_depth, sm_b1, gm_b1, ra_b1, wan_b1, wind_b1, 
+         wind_dir_b1, par_b1, up_b1, dep_26_dm, tchla) %>% 
+  drop_na()
+```
+
+```{r}
+f <- data_pca %>% 
+  filter(site_id == "DFO2")
+
+f <- f %>% 
+  select(temp:tchla)
+
+c <- data_pca %>% 
+  filter(site_id == "KC10")
+
+c <- c %>% 
+  select(temp:tchla)
+
+s <- data_pca %>% 
+  filter(site_id == "QCS01")
+
+s <- s %>% 
+  select(temp:tchla)
+
+all <- data_pca %>% 
+  select(temp:tchla)
+```
+
+```{r}
+#Making correlation matrix
+cor_f <- round(cor(f, method = "pearson"), 2)
+
+#Making significance' matrix
+p.mat_f <- cor_pmat(f, method = "pearson")
+
+#Making correlation matrix
+cor_c <- round(cor(c, method = "pearson"), 2)
+
+#Making significance' matrix
+p.mat_c <- cor_pmat(c, method = "pearson")
+
+#Making correlation matrix
+cor_s <- round(cor(s, method = "pearson"), 2)
+
+#Making significance' matrix
+p.mat_s <- cor_pmat(s, method = "pearson")
+
+
+#Making correlation matrix
+cor_a <- round(cor(all, method = "pearson"), 2)
+
+#Making significance' matrix
+p.mat_a <- cor_pmat(all, method = "pearson")
+```
+
+```{r}
+ggcorrplot(cor_f,
+  p.mat = p.mat_f,
+  method = "circle",
+  sig.level = 0.05,
+  insig = "blank",
+  lab_size = 2.5,
+  lab_col = "white",
+  outline.color = "black",
+  lab = T,
+  legend.title = "") +
+  scale_x_discrete(labels = c("Temp.",
+                              "Sal.",
+                              "Δρ",
+                              "DIN",
+                              "DIP",
+                              "DSi",
+                              "SD",
+                              "S.Mtn",
+                              "G.Mtn",
+                              "Rain",
+                              "WAN",
+                              "WS",
+                              "WD",
+                              "PAR",
+                              "UI",
+                              "ρ1026",
+                              "TChla")) +
+    scale_y_discrete(labels = c("Temp.",
+                              "Sal.",
+                              "Δρ",
+                              "DIN",
+                              "DIP",
+                              "DSi",
+                              "SD",
+                              "S.Mtn",
+                              "G.Mtn",
+                              "Rain",
+                              "WAN",
+                              "WS",
+                              "WD",
+                              "PAR",
+                              "UI",
+                              "ρ1026",
+                              "TChla")) +
+  ggtitle("Fjord") +
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2),
+        axis.text = element_text(color = "black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        legend.key.width = unit(0.5, "cm"),
+        legend.key.height = unit(2.8, "cm")) 
+
+ggsave(here("figures_cor", "pearson_fjord.png"),
+       width = 8, height = 8, dpi = 300)
+```
+
+```{r}
+ggcorrplot(cor_c,
+  p.mat = p.mat_c,
+  method = "circle",
+  sig.level = 0.05,
+  insig = "blank",
+  lab_size = 2.5,
+  lab_col = "white",
+  outline.color = "black",
+  lab = T,
+  legend.title = "") +
+  scale_x_discrete(labels = c("Temp.",
+                              "Sal.",
+                              "Δρ",
+                              "DIN",
+                              "DIP",
+                              "DSi",
+                              "SD",
+                              "S.Mtn",
+                              "G.Mtn",
+                              "Rain",
+                              "WAN",
+                              "WS",
+                              "WD",
+                              "PAR",
+                              "UI",
+                              "ρ1026",
+                              "TChla")) +
+    scale_y_discrete(labels = c("Temp.",
+                              "Sal.",
+                              "Δρ",
+                              "DIN",
+                              "DIP",
+                              "DSi",
+                              "SD",
+                              "S.Mtn",
+                              "G.Mtn",
+                              "Rain",
+                              "WAN",
+                              "WS",
+                              "WD",
+                              "PAR",
+                              "UI",
+                              "ρ1026",
+                              "TChla")) +
+  ggtitle("Channel") +
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2),
+        axis.text = element_text(color = "black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        legend.key.width = unit(0.5, "cm"),
+        legend.key.height = unit(2.8, "cm")) 
+
+ggsave(here("figures_cor", "pearson_channel.png"),
+       width = 8, height = 8, dpi = 300)
+```
+```{r}
+ggcorrplot(cor_s,
+  p.mat = p.mat_s,
+  method = "circle",
+  sig.level = 0.05,
+  insig = "blank",
+  lab_size = 2.5,
+  lab_col = "white",
+  outline.color = "black",
+  lab = T,
+  legend.title = "") +
+  scale_x_discrete(labels = c("Temp.",
+                              "Sal.",
+                              "Δρ",
+                              "DIN",
+                              "DIP",
+                              "DSi",
+                              "SD",
+                              "S.Mtn",
+                              "G.Mtn",
+                              "Rain",
+                              "WAN",
+                              "WS",
+                              "WD",
+                              "PAR",
+                              "UI",
+                              "ρ1026",
+                              "TChla")) +
+    scale_y_discrete(labels = c("Temp.",
+                              "Sal.",
+                              "Δρ",
+                              "DIN",
+                              "DIP",
+                              "DSi",
+                              "SD",
+                              "S.Mtn",
+                              "G.Mtn",
+                              "Rain",
+                              "WAN",
+                              "WS",
+                              "WD",
+                              "PAR",
+                              "UI",
+                              "ρ1026",
+                              "TChla")) +
+  ggtitle("Shelf") +
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2),
+        axis.text = element_text(color = "black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        legend.key.width = unit(0.5, "cm"),
+        legend.key.height = unit(2.8, "cm")) 
+
+ggsave(here("figures_cor", "pearson_shelf.png"),
+       width = 8, height = 8, dpi = 300)
+```
+
+```{r}
+ggcorrplot(cor_a,
+  p.mat = p.mat_a,
+  method = "circle",
+  sig.level = 0.05,
+  insig = "blank",
+  lab_size = 2.5,
+  lab_col = "white",
+  outline.color = "black",
+  lab = T,
+  legend.title = "") +
+  scale_x_discrete(labels = c("Temp.",
+                              "Sal.",
+                              "Δρ",
+                              "DIN",
+                              "DIP",
+                              "DSi",
+                              "SD",
+                              "S.Mtn",
+                              "G.Mtn",
+                              "Rain",
+                              "WAN",
+                              "WS",
+                              "WD",
+                              "PAR",
+                              "UI",
+                              "ρ1026",
+                              "TChla")) +
+    scale_y_discrete(labels = c("Temp.",
+                              "Sal.",
+                              "Δρ",
+                              "DIN",
+                              "DIP",
+                              "DSi",
+                              "SD",
+                              "S.Mtn",
+                              "G.Mtn",
+                              "Rain",
+                              "WAN",
+                              "WS",
+                              "WD",
+                              "PAR",
+                              "UI",
+                              "ρ1026",
+                              "TChla")) +
+  ggtitle("All") +
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2),
+        axis.text = element_text(color = "black"),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        legend.key.width = unit(0.5, "cm"),
+        legend.key.height = unit(2.8, "cm")) 
+
+ggsave(here("figures_cor", "pearson_all.png"),
+       width = 8, height = 8, dpi = 300)
+```
+
+```{r}
+f %>% 
+  ggplot(aes(x = up_b1, no2)) +
+  geom_point() +
+  ggpubr:: stat_cor(aes(label = paste(..rr.label..,
+                                       ..p.label.., sep = "~`,`~")))
+```
+
+
+```{r}
+fig_c <- ggcorrplot(cor_c,
+  p.mat = p.mat_c,
+  method = "circle",
+  type = "lower",
+  sig.level = 0.05,
+  lab = TRUE,
+  # title = "Channel",
+  insig = "blank",
+  lab_size = 2.5,
+  outline.color = "black") +
+  scale_x_discrete(labels = c("S",
+                              "\u394\u3C1",
+                              "NO\u2083\u207B+NO\u2082\u207B",
+                                "Secchi",
+                                "Wind. Dir.",
+                                "PAR",
+                                "Wan.",
+                                "T",
+                                "GM",
+                                "SM",
+                                "R",
+                                "TChla")) +
+  #                             "Riv_B10", 
+  #                             "lk_w", 
+  #                             "lk_wd",
+  #                             "par_b1",
+  #                             "lev",
+  #                             "rain",
+  #                             "lev_b1",
+  #                             "rain_b1",
+  #                             "TChla",
+  #                             "Diat.")) +
+  scale_y_discrete(labels = c("T",
+                                "S",
+                                "\u394\u3C1",
+                                "NO\u2083\u207B+NO\u2082\u207B",
+                                "Secchi",
+                                "Wind. Dir.",
+                                "PAR",
+                                "Wan.",
+                                "T",
+                                "GM",
+                                "SM",
+                                "R",
+                                "TChla")) +
+  # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
+  ggtitle("Channel") +
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2, color = "black"),
+        # axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+
+# ggsave(here("figures_good", "corr_kc10_full_year2_844_rain.png"),
+#        width = 8, height = 8, dpi = 300)
+```
+
+```{r}
+fig_s <- ggcorrplot(cor_s,
+  p.mat = p.mat_c,
+  method = "circle",
+  type = "lower",
+  sig.level = 0.05,
+  lab = TRUE,
+  # title = "Channel",
+  insig = "blank",
+  lab_size = 2.5,
+  outline.color = "black") +
+  scale_x_discrete(labels = c("S",
+                              "\u394\u3C1",
+                              "NO\u2083\u207B+NO\u2082\u207B",
+                                "Secchi",
+                                "Wind. Dir.",
+                                "PAR",
+                                "Wan.",
+                                "T",
+                                "GM",
+                                "SM",
+                                "R",
+                                "TChla")) +
+  #                             "Riv_B10", 
+  #                             "lk_w", 
+  #                             "lk_wd",
+  #                             "par_b1",
+  #                             "lev",
+  #                             "rain",
+  #                             "lev_b1",
+  #                             "rain_b1",
+  #                             "TChla",
+  #                             "Diat.")) +
+  scale_y_discrete(labels = c("T",
+                                "S",
+                                "\u394\u3C1",
+                                "NO\u2083\u207B+NO\u2082\u207B",
+                                "Secchi",
+                                "Wind. Dir.",
+                                "PAR",
+                                "Wan.",
+                                "T",
+                                "GM",
+                                "SM",
+                                "R",
+                                "TChla")) +
+  # annotate(geom = "text", x = 2.5, y = 19, label= "Channel", size = 10) +
+  ggtitle("Shelf") +
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 90,hjust = 0.95, vjust = 0.2, color = "black"),
+        # axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        plot.title = element_text(margin = margin(t = 40,b = -30)),
+        legend.position = "none")
+
+# ggsave(here("figures_good", "corr_kc10_full_year2_844_rain.png"),
+#        width = 8, height = 8, dpi = 300)
+```
+
+
+
+```{r}
+fig <- fig_f + fig_c + fig_s
+
+ggsave(here("figures_pca", "corr_spearman_bb_riv.png"), fig,
+       width = 14, height = 6, dpi = 300)
+```
+
+

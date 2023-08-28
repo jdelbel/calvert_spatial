@@ -1,0 +1,177 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(factoextra)
+library(ggdendro)
+library(dendextend)
+library(colormap)
+library(indicspecies)
+library(fuzzySim)
+library(cluster)
+library(patchwork)
+library(vegan)
+library(RColorBrewer)
+library(ggcorrplot) 
+library(analogue)
+# library(clustsig)
+library(BiodiversityR)
+
+```
+
+```{r}
+#Upload data
+
+#Upload microscopy abundance data in OBIS and long/tide format
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv")) 
+
+#Upload physical-chemical clusters derived via PCA
+clust_pca <- read_csv(here("outputs", "pca_clusters_2023-08-2.csv"))
+
+```
+
+```{r}
+
+#Adding location instead of site ID for interpretation of results
+micro <- micro %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+#Creating a unique location-date ID for each sample - makes labels for plotting by dendrogram more informative 
+micro <- micro %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
+
+clust_pca <- clust_pca %>% 
+  rename(sample_name = label)
+
+#Joining the PCA clusters to the microscopy data
+micro <- micro %>% 
+  left_join(clust_pca) %>% 
+  relocate(cluster, .after = location)
+
+```
+
+```{r}
+#Creating a list of distinct species and groups
+species_distinct <- micro %>% 
+  distinct(group, scientificName)
+
+# Separating out diatoms
+# micro <- micro %>%
+#   filter(!group == "Bacillariophyta")
+```
+
+```{r}
+#Filtering out species that are not present in at least 10% of the samples - this is important for the clustering and nMDS methods I am using as these species can skew the results.
+
+#Determining total number of samples in the dataset
+sample_num <- micro %>% 
+  distinct(date, site_id)
+
+#Determining species that are present in > 10% of samples.
+species_10 <- micro %>% 
+  group_by(scientificName) %>% 
+  summarise(n_obs = n()) %>%
+  ungroup() %>% 
+  mutate(perc_obs = n_obs/78) %>% 
+  filter(perc_obs >= 0.10)
+
+# species_2 <- micro %>% 
+#   group_by(scientificName) %>% 
+#   summarise(max_abund = max(species_sum)) %>% 
+#   ungroup() %>% 
+#   filter(max_abund < 5000)
+
+#Creating a list of species in > 10% of samples.
+species_10_list <- species_10$scientificName
+# species_2_list <- species_2$scientificName
+
+#Removing species that are not present in > 10% of samples.
+micro <- micro %>% 
+  filter(scientificName %in% species_10_list) 
+# %>% 
+#   filter(!scientificName %in% species_2_list)
+```
+
+```{r}
+#Adding year and month to the microscopy dataset for analysis.
+
+micro <- micro %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  relocate(year, .after = date) %>% 
+  relocate(month, .after = year)
+```
+
+```{r}
+#Preparing data for the different analysis.
+
+#Selecting columns that I will use
+micro_piv <- micro %>% 
+  select(sample_name:cluster, scientificName, species_sum)
+
+#pivoting wider so species are columns and samples are rows.
+micro_piv <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, 
+              values_from = species_sum, values_fill = 0) 
+
+micro_piv <- micro_piv %>% 
+  filter(!is.na(cluster))
+
+```
+
+
+```{r}
+#Pulling out species counts for transformation and use in analysis
+species <- micro_piv[, 8:ncol(micro_piv)]
+
+#Transforming the abundance data
+# t_abund <- disttransform(species, method = "chord")
+
+t_abund <- sqrt(species)
+
+```
+
+
+```{r}
+#ANOSIM test to see if groupings statistically significant 
+
+clust_pca <- micro_piv$cluster
+
+ano_clust_pca = anosim(t_abund, clust_pca, distance = "bray", permutations = 9999)
+ano_clust_pca
+```
+
+```{r}
+iv <- labdsv::indval(t_abund, clust_pca)
+
+summary(iv)
+```
+```{r}
+micro_test <- micro %>%
+  left_join(clust_abund_join) %>% 
+  group_by(clust_abund, scientificName) %>%
+  summarise(mean_count = mean(species_sum)) %>% 
+  ungroup() 
+
+# micro_test %>% 
+#   ggplot(aes(x = mean_count, y = clust_abund, fill = scientificName)) +
+#   geom_bar(stat = "stack")
+# 
+# ggsave(here("figures_nmds_new", "test.png"),
+#        width = 8, height = 16, dpi = 300)
+
+micro_piv %>% 
+  ggplot(aes(x = as.factor(clust_pca), y = `Ebria tripartita`/10^6)) +
+  geom_col()
+```
+

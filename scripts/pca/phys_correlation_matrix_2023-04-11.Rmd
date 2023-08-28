@@ -175,9 +175,11 @@ p.mat_s <- cor_pmat(s, method = "pearson")
         plot.title = element_text(margin = margin(t = 40,b = -30)),
         legend.position = "none")
 
-ggsave(here("figures_correlogram", "corr_kc10_pearson.png"),
+ggsave(here("figures_correlogram", "corr_dfo2_pearson.png"),
        width = 8, height = 8, dpi = 300)
 ```
+
+
 ```{r}
 # fig_c <- 
 #   
@@ -237,8 +239,8 @@ ggsave(here("figures_correlogram", "corr_kc10_pearson.png"),
         plot.title = element_text(margin = margin(t = 40,b = -30)),
         legend.position = "none")
 
-# ggsave(here("figures_good", "corr_kc10_full_year2_844_rain.png"),
-#        width = 8, height = 8, dpi = 300)
+ggsave(here("figures_correlogram", "corr_kc10_pearson.png"),
+       width = 8, height = 8, dpi = 300)
 ```
 
 ```{r}
