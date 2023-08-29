@@ -1,0 +1,472 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(patchwork)
+library(RColorBrewer)
+library(ggpubr)
+library(broom)
+library(vegan)
+library(ggcorrplot)
+```
+
+```{r}
+#Upload data from my master data standardization sheet
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv")) 
+
+#Uploading chl data that has been converted to TChla
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+chem <- read_csv(here("files", "chemtax_2023-04-14.csv")) 
+
+sf <- read_csv(here("files", "chl_2018_2020.csv")) 
+```
+
+
+```{r}
+#Add year column
+micro <- micro %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  relocate(year, .after = date) %>% 
+  relocate(month, .after = year)
+
+micro <- micro %>%  
+  mutate(month_surv = lubridate::month(date),
+         month_surv = case_when(date == "2019-08-29" ~ 9,
+                                date == "2019-08-31" ~ 9,
+                                date == "2019-11-27" ~ 12,
+                             TRUE ~ as.numeric (month_surv)))
+```
+
+```{r}
+sf_less <- sf %>% 
+  filter(line_out_depth == 5 & !filter_type == "Bulk GF/F") %>% 
+  filter(chla_flag == "AV" | is.na(chla_flag)) %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(date, year, site_id, filter_type, chla) %>% 
+  filter(!is.na(chla)) %>% 
+  group_by(date) %>% 
+  mutate(n_filt = n()) %>% 
+  ungroup() %>% 
+  filter(n_filt == 3)
+```
+
+```{r}
+# Changing site_id to location 
+micro <- micro %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+
+chl <- chl %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+```
+
+```{r}
+#Looking at dominant dinoflagellate species
+dino <- micro %>% 
+  filter(group == "Dinoflagellata") %>% 
+  group_by(scientificName) %>% 
+  summarise(median = median(species_sum)) %>% 
+  ungroup()
+
+hetero <- micro %>% 
+  filter(group == "Ciliophora" | genus == "Gymnodinium" | genus == "Gyrodinium"
+         | genus == "Protoperidinium" | 
+           genus == "Ceratium")
+
+hetero_genus <- hetero %>% 
+  filter(!is.na(genus)) %>% 
+  group_by(date, site_id, genus) %>% 
+  summarise(sum_genus = sum(species_sum)) %>% 
+  ungroup()
+
+hetero_genus_na <- hetero %>% 
+  filter(is.na(genus)) %>%
+  distinct(scientificName)
+
+tin <- micro %>% 
+  filter(scientificName == "Tintinnina") %>% 
+  select(date, site_id, genus = scientificName, sum_genus = species_sum)
+
+oli <- micro %>% 
+  filter(scientificName == "Oligotrichea") %>% 
+  select(date, site_id, Oligotrichea = species_sum)
+
+hetero_genus2 <- rbind(hetero_genus, tin)
+
+hetero_genus_wide <- hetero_genus2 %>% 
+  pivot_wider(names_from = genus, values_from = sum_genus, values_fill = 0)
+
+hetero_genus_long <- hetero_genus_wide %>% 
+  pivot_longer(cols = c(Gymnodinium:Tintinnina), names_to = "genus",
+               values_to = "sum_genus")
+
+hetero_genus_long <- hetero_genus_long %>% 
+  left_join(oli)
+```
+```{r}
+scale = 4
+
+
+hetero_genus_long %>%
+  ggplot() + 
+  geom_area(aes(x = date, y = sum_genus/10^3, 
+           fill = genus), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  geom_line(aes(date, Oligotrichea/10^3/scale), size = 2) +
+  scale_y_continuous(sec.axis = sec_axis(~.*scale,
+                                         name = bquote("Oligo. (x"~10^3~L^-1*")"))) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  facet_grid(site_id~.) +
+  # ylim(0, 32) +
+  labs(y = bquote("Abund. ("~10^3 ~ cells ~ L^-1*")")) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank())
+```
+
+
+```{r}
+h1 <- hetero_genus_long %>%
+  filter(site_id == "DFO2") %>%
+  ggplot() + 
+  geom_area(aes(x = date, y = sum_genus/10^3, 
+           fill = genus), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  geom_point(aes(date, Oligotrichea/10^3/scale), size = 2.5, fill = "white",
+             stroke = 1, pch = 21) +
+  scale_y_continuous(limits = c(0, 20), sec.axis = sec_axis(~.*scale,
+                                         name = bquote("Oligo. (x"~10^3~L^-1*")"))) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  labs(y = bquote("Abund. ("~10^3 ~ cells ~ L^-1*")")) +
+  annotate("text", x = as.Date("2018-06-01"), y = 19, label = "FJORD", size = 10) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.title.y.right = element_blank(),
+        axis.text.y.right = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.title = element_blank(),
+        legend.position = "none",
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank())
+
+h2 <- hetero_genus_long %>%
+  filter(site_id == "KC10") %>%
+  ggplot() + 
+  geom_area(aes(x = date, y = sum_genus/10^3, 
+           fill = genus), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  geom_point(aes(date, Oligotrichea/10^3/scale), size = 2.5, fill = "white",
+             stroke = 1, pch = 21) +
+  scale_y_continuous(limits = c(0, 20), sec.axis = sec_axis(~.*scale,
+                                         name = bquote("Oligo. (x"~10^3~L^-1*")"))) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  annotate("text", x = as.Date("2018-07-01"), y = 19, label = "CHANNEL", size = 10) +
+  labs(y = bquote("Abund. ("~10^3 ~ cells ~ L^-1*")")) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.title.y.right = element_blank(),
+        axis.text.y.right = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.title = element_blank(),
+        legend.position = c(0.3, 0.78),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) 
+
+hetero_genus_long <- hetero_genus_long %>% 
+  mutate(year = lubridate::year(date)) 
+
+h3 <- hetero_genus_long %>%
+  filter(site_id == "QCS01") %>%
+  mutate(year = lubridate::year(date)) %>% 
+  ggplot() + 
+  geom_area(data = filter(hetero_genus_long, year == 2018 & site_id == "QCS01"), 
+           aes(x = date, y = sum_genus/10^3,
+           fill = genus), stat = "identity", position = "stack",
+           color = "black") +
+  geom_area(data = filter(hetero_genus_long, year == 2019 & site_id == "QCS01"), 
+           aes(x = date, y = sum_genus/10^3,
+           fill = genus), stat = "identity", position = "stack",
+           color = "black") +
+    geom_area(data = filter(hetero_genus_long, year == 2020 & site_id == "QCS01"), 
+           aes(x = date, y = sum_genus/10^3,
+           fill = genus), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_brewer(palette = "Set1") +
+  geom_point(aes(date, Oligotrichea/10^3/scale), size = 2.5, fill = "white",
+             stroke = 1, pch = 21) +
+  scale_y_continuous(limits = c(0, 20), 
+                     sec.axis = sec_axis(~.*scale,
+                                         name = bquote("Oligotrichea. (x"~10^3~L^-1*")"))) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  annotate("text", x = as.Date("2018-05-01"), y = 19, label = "SHELF", size = 10) +
+  labs(y = bquote("Abund. ("~10^3 ~ cells ~ L^-1*")")) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.title.y.left = element_blank(),
+        axis.text.y.left = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.title = element_blank(),
+        legend.position = "none",
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) 
+
+```
+
+```{r}
+het2 <- h1 + h2 + h3
+
+ggsave(here("figures_species_timeseries", "het.png"), het2,
+       width = 16, height = 5, dpi = 300)
+```
+
+```{r}
+cors <- hetero_genus_wide %>% 
+  left_join(oli) %>% 
+  pivot_longer(c(Gymnodinium:Oligotrichea)) %>% 
+  group_by(date, site_id) %>% 
+  summarise(het_sum = sum(value)) %>% 
+  ungroup() %>% 
+  left_join()
+
+sf_wide <- sf_less %>% 
+  select(date, site_id, filter_type, chla) %>% 
+  pivot_wider(names_from = filter_type, values_from = chla)
+
+cors <- cors %>% 
+  left_join(sf_wide)
+```
+```{r}
+
+cors <- cors %>%
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date),) %>% 
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 12 ~ "autumn",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+cors <- cors %>%
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
+                           TRUE ~ as.numeric(year)))
+
+cors <- cors %>% 
+    mutate(location = case_when(site_id == "DFO2" ~ "F",
+                              site_id == "KC10" ~ "C",
+                              site_id == "QCS01" ~ "S",
+                              TRUE ~ as.character(site_id))) %>% 
+  relocate(location, .after = site_id)
+```
+
+```{r}
+
+order_loc <- c("F", "C", "S")
+
+#Set order for locations in plot
+cors <- arrange(mutate(cors,
+                         location = factor(location, levels = order_loc)))
+
+#Order locations from fjord to shelf
+order_loc_seas <- c("winter", "spring", "summer", "autumn")
+
+#Chemtax - Specify order of phyto groups for figures
+cors <- arrange(mutate(cors,
+                         season = factor(season, levels = order_loc_seas)))
+
+```
+
+
+```{r}
+c1 <- cors %>% 
+  ggplot(aes(y = het_sum/10^3, x = `20um`)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  ylim(0, 25) +
+  labs(x = bquote("Chla"[MICRO]~"(mg" ~ m^-3*")"),
+       y = bquote("Microzoo. ("~10^3 ~ cells ~ L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        # axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.text = element_text(colour = "black"),
+        # legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = c(0.8, 0.65),
+        legend.spacing.y = unit(0, "lines"),
+        legend.margin = margin(0, 0, 0, 0)) +
+        # theme(legend.direction = "horizontal") +
+        # theme(legend.position = "top") +
+        # theme(legend.box = "vertical") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), ncol = 1)) +
+  labs(fill = "", shape = "")
+
+c2 <- cors %>% 
+  ggplot(aes(y = het_sum/10^3, x = `3um`)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ylim(0, 25) +
+  labs(x = bquote("Chla"[NANO]~"(mg" ~ m^-3*")"),
+       y = bquote("Microzoop. (x"~10^3~L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+
+c3 <- cors %>% 
+  ggplot(aes(y = het_sum/10^3, x = `GF/F`)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ylim(0, 25) +
+  labs(x = bquote("Chla"[PICO]~"(mg" ~ m^-3*")"),
+       y = bquote("Microzoop. (x"~10^3~L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+
+c4 <- cors %>% 
+  filter(season == "autumn") %>%
+  ggplot(aes(y = het_sum/10^3, x = `20um`)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  scale_fill_manual(values = c("goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  ylim(0, 25) +
+  labs(x = bquote("Chla"[MICRO]~"(mg" ~ m^-3*")"),
+       y = bquote("Microzoo. ("~10^3 ~ cells ~ L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+        # legend.position = c(0.9, 0.9)) +
+        # theme(legend.direction = "horizontal") +
+        # theme(legend.position = "top") +
+        # theme(legend.box = "vertical") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), ncol = 1)) +
+  labs(fill = "", shape = "")
+
+c5 <- cors %>% 
+  filter(season == "autumn") %>%
+  ggplot(aes(y = het_sum/10^3, x = `3um`)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  scale_fill_manual(values = c("goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ylim(0, 25) +
+  xlim(0, 2.5) +
+  labs(x = bquote("Chla"[NANO]~"(mg" ~ m^-3*")"),
+       y = bquote("Microzoop. (x"~10^3~L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+
+c6 <- cors %>% 
+  filter(season == "autumn") %>%
+  ggplot(aes(y = het_sum/10^3, x = `GF/F`)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  scale_fill_manual(values = c("goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ylim(0, 25) +
+  scale_x_continuous(labels = scales::number_format(accuracy = 0.1)) +
+  labs(x = bquote("Chla"[PICO]~"(mg" ~ m^-3*")"),
+       y = bquote("Microzoop. (x"~10^3~L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+
+
+
+  
+```
+
+```{r}
+het3 <- (h1 + plot_layout(guides = "collect") & guides(fill = guide_legend(nrow = 1)) &
+           theme(legend.position = "top")) +
+  (h2 + theme(legend.position = "none")) + (h3 + theme(legend.position = "none"))
+
+
+cor_fig <- het3 / (c1 + c2 + c3) / (c4 + c5 + c6)
+
+ggsave(here("figures_species_timeseries", "cor_fig.png"), cor_fig,
+       width = 18, height = 14, dpi = 300)
+```

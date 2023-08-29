@@ -565,6 +565,16 @@ fec <- fec %>%
 fec <- fec %>% 
   left_join(meta)
 
+fec %>% 
+  filter(!is.na(site_id) & !site_id == "QU39") %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(year > 2017 & year < 2021) %>% 
+  ggplot(aes(x = yday, y = fecal, color = as.factor(year))) +
+  geom_line() +
+  geom_point() +
+  facet_grid(site_id ~.)
+
 fec_merge <- fec %>% 
   select(date, site_id, fecal)
 ```

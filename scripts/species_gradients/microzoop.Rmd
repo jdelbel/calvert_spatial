@@ -26,6 +26,8 @@ chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 chem <- read_csv(here("files", "chemtax_2023-04-14.csv")) 
 
 sf <- read_csv(here("files", "chl_2018_2020.csv")) 
+
+clust <- read_csv(here("outputs", "final_cluster_2023-07-31.csv"))
 ```
 
 ```{r}
@@ -85,7 +87,7 @@ chem <- chem %>%
 
 het_dino <- micro %>% 
   filter(scientificName == "Gymnodinium" | scientificName == "Gyrodinium" |
-           scientificName == "Protoperidinium") %>% 
+           scientificName == "Protoperidinium" | scientificName == "Ceratium") %>%
   select(date, site_id, scientificName, species_sum) %>% 
   pivot_wider(names_from = scientificName, values_from = species_sum,
               values_fill = 0)
@@ -105,10 +107,10 @@ het_cho <- micro %>%
   pivot_wider(names_from = scientificName, values_from = species_sum,
               values_fill = 0)
 
-GA <- micro %>% 
-  filter(group == "Chlorophyta-Prasinophyta") %>% 
-  select(date, site_id, scientificName, species_sum) %>% 
-  pivot_wider(names_from = scientificName, values_from = species_sum,
+sum_micro <- micro %>% 
+  group_by(date, site_id, group) %>% 
+  summarise(sum_group = sum(species_sum)) %>% 
+  pivot_wider(names_from = group, values_from = sum_group,
               values_fill = 0)
 
 join <- sf_wide %>% 
@@ -117,7 +119,7 @@ join <- sf_wide %>%
   left_join(het_dino) %>% 
   left_join(het_cil) %>%
   left_join(het_cho) %>% 
-  left_join(GA) %>% 
+  left_join(sum_micro) %>% 
   left_join(chl)
 
 join <- join %>%
@@ -129,12 +131,37 @@ join <- join %>%
                             month >= 9 & month <= 12 ~ "autumn",)) %>%
   relocate(season, .after = month) 
 ```
+```{r}
+join <- join %>% 
+  mutate(sum_het = Gymnodinium + Gyrodinium + Protoperidinium + `Myrionecta rubra` + Oligotrichea + Tintinnina + Ceratium)
+```
+
+```{r}
+join <- join %>% 
+  left_join(clust)
+```
+
 
 ```{r}
 join %>%
-  ggplot(aes(x = Gyrodinium, y = nano, color = as.factor(year), shape = site_id)) +
+  mutate(month = lubridate::month(date)) %>%
+  ggplot(aes(x = sum_het, y = nano, color = as.factor(month), 
+             shape = site_id)) +
   geom_point(size = 4) +
+  xlim(0, 25000)
   
+```
+```{r}
+join %>% 
+  ggplot(aes(x = date, y = Choanozoa, color = site_id)) +
+  geom_line()
+```
+```{r}
+join %>%
+  filter(!is.na(clust_abund)) %>% 
+  ggplot(aes(x = as.factor(site_id), y = Tintinnina)) +
+  geom_boxplot() +
+  facet_grid(.~ season)
 ```
 
 
