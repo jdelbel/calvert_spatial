@@ -470,17 +470,6 @@ ggsave(here("figures_species_timeseries", "cor_fig.png"), cor_fig,
        width = 18, height = 14, dpi = 300)
 ```
 ```{r}
-
-
-
-cor_fig2 <- (c1 + c2 + c3) / (c4 + c5 + c6)
-
-ggsave(here("figures_species_timeseries", "cor_fig2.png"), cor_fig2,
-       width = 16, height = 10, dpi = 300)
-```
-
-
-```{r}
 test <- micro %>% 
   select(date, site_id, scientificName, species_sum) %>% 
   filter(scientificName == "Myrionecta rubra" | scientificName == "Teleaulax") %>% 
