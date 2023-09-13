@@ -111,6 +111,10 @@ riv <- arrange(mutate(riv,
                                                levels = riv_loc)))
 ```
 
+```{r}
+riv_20 <- riv %>% 
+  filter(date > "2020-01-01" & Watershed_group == "Q_tot")
+```
 
 
 ```{r}
@@ -151,7 +155,7 @@ fs2 <- riv %>%
   scale_x_date(limits = as.Date(c("2020-06-20", "2020-07-10"))) +
   ylim(0, 7) +
   theme_bw() +
-  theme(text = element_text(size = 25),
+  theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
         axis.text.x = element_blank(),
         axis.title.x = element_blank(),
@@ -174,7 +178,7 @@ fs3 <- env %>%
   ylim(0, 1200) +
   scale_x_date(limits = as.Date(c("2020-06-20", "2020-07-10"))) +
   theme_bw() +
-  theme(text = element_text(size = 25),
+  theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
         axis.text.x = element_blank(),
         axis.title.x = element_blank(),
@@ -195,7 +199,7 @@ fs4 <- env %>%
   scale_x_date(limits = as.Date(c("2020-06-20", "2020-07-10"))) +
   ylim(-2, 2) +
   theme_bw() +
-  theme(text = element_text(size = 25),
+  theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
         axis.title.x = element_blank(),
         axis.title.y = element_blank(),
@@ -217,7 +221,7 @@ fp1 <- micro_join %>%
            , size = 10) +
   scale_x_date(limits = as.Date(c("2019-07-01", "2019-07-20"))) +
   theme_bw() +
-  theme(text = element_text(size = 25),
+  theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
         axis.text.x = element_blank(),
         axis.title.x = element_blank(),
@@ -237,11 +241,11 @@ fp2 <- riv %>%
   scale_fill_brewer(palette = "Blues",
                     labels = c('glacier', 'snow', 'rain')) +
   labs(fill = NULL,
-       y = bquote(Dis. ~ "("~m^-3*~s^-1*")")) +
+       y = bquote(Dis. ~ "("~10^3 ~ m^-3*~s^-1*")")) +
   scale_x_date(limits = as.Date(c("2019-07-01", "2019-07-20"))) +
   ylim(0, 7) +
   theme_bw() +
-  theme(text = element_text(size = 25),
+  theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
         axis.text.x = element_blank(),
         axis.title.x = element_blank(),
@@ -279,7 +283,7 @@ fp4 <- env %>%
   scale_x_date(limits = as.Date(c("2019-07-01", "2019-07-20"))) +
   ylim(-2, 2) +
   theme_bw() +
-  theme(text = element_text(size = 25),
+  theme(text = element_text(size = 28),
         axis.text = element_text(color = 'black'),
         axis.title.x = element_blank(),
         strip.background = element_blank(),
@@ -293,6 +297,24 @@ fig_panel <- fp1 + fs1 + fp2 + fs2 + fp4 + fs4 + plot_layout(ncol = 2)
 ggsave(here("figures_species_timeseries", "skel_pseud_panel.png"), fig_panel,
         width = 16, height = 12, dpi = 300)
 ```
+
+```{r}
+ctd %>%
+  ggplot() +
+  geom_line(aes(x = date, y = dep_26_dm, color = site_id)) +
+  # scale_x_date(limits = as.Date(c("2019-07-01", "2019-07-20"))) +
+  # scale_x_date(limits = as.Date(c("2020-06-20", "2020-07-10"))) +
+  # ylim(60, 100) +
+  scale_y_reverse() +
+  theme_bw() +
+  theme(text = element_text(size = 28),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+
 
 
 ```{r}
@@ -330,7 +352,113 @@ qcs <- micro_join %>%
 ```
 
 
+```{r}
+test <- micro %>% 
+  group_by(scientificName) %>% 
+  summarise(median = median(species_sum),
+            mean = mean(species_sum),
+            min = min(species_sum),
+            max = max(species_sum),
+            n = n()) %>% 
+  ungroup()
 
+test2 <- sf %>% 
+  filter(date == "2018-04-28" & line_out_depth == 5)
+
+test3 <- micro %>% 
+  filter(group == "Chlorophyta-Prasinophyta")
+
+test4 <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(site_id == "QCS01" | site_id == "KC10") %>%
+  filter(year == 2020 & scientificName == "Skeletonema marinoi") %>% 
+  summarise(median = median(species_sum))
+  
+test5 <- micro %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(scientificName == "Skeletonema marinoi") 
+
+```
+
+```{r}
+micro_join %>%
+  filter(site_id == "KC10" | site_id == "QCS01") %>% 
+  ggplot(aes(x = date, y = `Rhizosolenia setigera`/10^5, fill = site_id)) +
+  geom_col(color = "black", width = 1, size = 1) +
+  scale_fill_manual(values = c("#EFC000FF","#868686FF"),
+                    labels = c("C", "F")) +
+  labs(y = bquote("Abund. ("~10^5 ~ cells ~ L^-1*")")) +
+  labs(fill = "") +
+  scale_x_date(limits = as.Date(c("2018-07-01", "2018-08-31"))) +
+  annotate("text", x = as.Date("2020-06-24"), y = 5, label = "2020 - S.marinoi"
+           , size = 10) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none")
+
+
+riv %>%
+  ggplot() +
+  geom_area(data = riv %>% filter(!Watershed_group == "Q_tot"),
+            aes(x = date, y = Q/10^3, fill = Watershed_group),
+            stat = "identity", position = "stack", color = "black", 
+            size = 0.5) +
+  geom_line(data = riv %>% filter(Watershed_group == "Q_tot"),
+            aes(x = date, y = Q/10^3), color = "black", size = 1.5) +
+  # scale_fill_d3(labels = c('glacier', 'snow', 'rain')) +
+  scale_fill_brewer(palette = "Blues",
+                    labels = c('glacier', 'snow', 'rain')) +
+  labs(fill = NULL,
+       y = bquote(Dis. ~ "("~m^-3*~s^-1*")")) +
+ scale_x_date(limits = as.Date(c("2018-07-01", "2018-08-31"))) +
+  ylim(0, 7) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = c(0.87, 0.83))
+
+
+env %>%
+  ggplot() +
+  geom_col(aes(x = date, y = ifelse(up_dm < 0/10^2, up_dm/10^2, 0)),
+           fill= "blue", color = "black") +
+  geom_col(aes(x = date, y = ifelse(up_dm > 0/10^2, up_dm/10^2, 0)),
+           fill= "red", color = "black") +
+  labs(y = bquote("UI. ("~10^2 ~ m^-3*~s^-1*")")) +
+  scale_x_date(limits = as.Date(c("2018-07-01", "2018-08-31"))) +
+  ylim(-2, 2) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none")
+
+ctd %>%
+  ggplot() +
+  geom_point(aes(x = date, y = sal_dm, color = site_id)) +
+  # labs(y = bquote("UI. ("~10^2 ~ m^-3*~s^-1*")")) +
+  scale_x_date(limits = as.Date(c("2018-07-01", "2018-08-31"))) +
+  # ylim(-2, 2) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = "none")
+```
 
 
 

@@ -27,6 +27,61 @@ chem <- read_csv(here("files", "chemtax_2023-04-14.csv"))
 
 sf <- read_csv(here("files", "chl_2018_2020.csv")) 
 ```
+```{r}
+pp <- micro %>% 
+  filter(genus == "Heterosigma")
+
+hapt <- micro %>% 
+  filter(date == "2019-08-06" | date == "2019-08-31" | date == "2020-09-04") %>% 
+  filter(group == "Dictyochophyta" | group == "Prymnesiophyta-Haptophyta" |
+           group == "Chrysophyta")
+
+dino <- micro %>% 
+  filter(date == "2019-08-06" | date == "2019-08-31") %>% 
+  filter(group == "Dinoflagellata") %>% 
+  group_by(date, genus) %>% 
+  summarise(sum = sum(species_sum)) %>% 
+  ungroup()
+
+alex <- micro %>% 
+  filter(genus == "Alexandrium")
+
+cryp <- micro %>% 
+  filter(date == "2019-08-05")
+```
+
+```{r}
+hapt %>% 
+  ggplot(aes(x = as.factor(date), y = species_sum/10^4, fill = scientificName)) + 
+  geom_bar(stat = "identity", position = "stack", color = "black") +
+  ggsci::scale_fill_jco() +
+  labs(y = bquote("Abund. ("~10^4 ~ cells ~ L^-1*")")) +
+  annotate("text", x = 0.8, y = 6, label = "SHELF", size = 10) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank())
+
+# dino %>%
+#   ggplot(aes(x = as.factor(date), y = sum/10^4, fill = genus)) + 
+#   geom_bar(stat = "identity", position = "stack", color = "black") +
+#   ggsci::scale_fill_jco() +
+#   labs(y = bquote("Abund. ("~10^4 ~ cells ~ L^-1*")")) +
+#   annotate("text", x = 0.8, y = 2.5, label = "SHELF", size = 10) +
+#   theme_bw() +
+#   theme(text = element_text(size = 25),
+#         axis.title.x = element_blank(),
+#         axis.text = element_text(colour = "black"),
+#         legend.title = element_blank(),
+#         strip.background.y = element_blank(),
+#         strip.text.y = element_blank())
+
+ggsave(here("figures_species_timeseries", "summer_2019_shelf.png"),
+       width = 10, height = 6, dpi = 300)
+```
 
 ```{r}
 #Remove QU39
@@ -1128,6 +1183,32 @@ ggsave(here("figures_species_timeseries", "phyto_chem_het.png"), fig5,
        width = 18, height = 16, dpi = 300)
 ```
 
+```{r}
+my <- hetero_genus_wide %>% 
+  left_join(chem)
+
+m_cryp <- micro %>% 
+  filter(group == "Cryptophyta") %>% 
+  select(date, site_id, scientificName, species_sum) %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum) %>% 
+  mutate(t_all = Teleaulax + `Teleaulax acuta` + `Teleaulax amphioxeia`,
+         all = Teleaulax + `Teleaulax acuta` + `Teleaulax amphioxeia` + Hillea)
+
+my <- my %>% 
+  left_join(m_cryp)
+
+my %>% 
+  ggplot(aes(x = cryp, y = Myrionecta)) +
+  geom_point() +
+  ylim(0, 2500) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8)
+
+my %>% 
+  ggplot(aes(x = Hillea, y = Myrionecta)) +
+  geom_point() +
+  ylim(0, 5000) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8)
+```
 
 
 

@@ -102,17 +102,30 @@ data_pca_long %>%
 ggsave(here("figures_pca", "KW_test.png"),
        width = 16, height = 16, dpi = 300)
 ```
+```{r}
+medians <- data_pca_long %>% 
+  filter(!is.na(clust_abund)) %>% 
+  group_by(clust_abund, par) %>% 
+  summarise(median = median(val, na.rm = TRUE),
+            min = min(val, na.rm = TRUE),
+            max = max(val, na.rm = TRUE)) %>% 
+  ungroup()
+```
 
 
 ```{r}
-kruskal.test(sal ~ clust_abund, data = data_pca)
+data_pca_na <- data_pca %>% 
+  filter(!is.na(clust_abund))
 
-data_pca$clust_abund <- as.factor(data_pca$clust_abund)
+kruskal.test(temp ~ clust_abund, data = data_pca_na)
+
+data_pca_na$clust_abund <- as.factor(data_pca_na$clust_abund)
 
 #Dunn Test to look where differences are occuring.
-FSA::dunnTest(data_pca$sal ~ data_pca$clust_abund,
+FSA::dunnTest(data_pca_na$temp ~ data_pca_na$clust_abund,
               method = "bonferroni")
 ```
+
 
 #Let's try to add mixed layer depth. See if the calculation works for these waters.
 
@@ -223,7 +236,7 @@ barplot(sig[c('percentage of variance', 'broken-stick percentage'), ], beside = 
 
 
 ```{r}
-p_pca <- biplot(pca, scaling = 1, type = "none", xlab = c("PCA1"),
+p_pca <- biplot(pca, scaling = 2, type = "none", xlab = c("PCA1"),
                ylab = c("PCA2"), xlim = c(-0.01, 0.1), ylim = c(-1.1, 1.1))
 
 points(scores(pca, display = 'sites', choices = c(1, 2), scaling = 1),
@@ -329,13 +342,13 @@ p1 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
   scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
   geom_point(data = sites_loc_pca_clust, aes(fill = as.factor(season),
                                    shape = location, stroke = 0.1), 
-             size = 10, color = "black", alpha = 1) +
+             size = 10, color = "black", alpha = 0.7, stroke = 0.1) +
   scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
   scale_shape_manual(values = c(21, 22, 23)) + 
-  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1*1.5, yend = PC2*1.5), 
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1*2, yend = PC2*2), 
                arrow = arrow(length = unit(0.2,"cm")),
                alpha = 1, color = 'grey', size = 1.5) +
-  geom_text_repel(data = vscores, aes(PC1*1.5, PC2*1.5,
+  geom_text_repel(data = vscores, aes(PC1*2, PC2*2,
                                            label = row.names(vscores)),
                   box.padding = unit(0.3, 'lines'),
                   # point.padding = NA,
@@ -384,7 +397,7 @@ p2 <- ggplot() +
   #           col = 'red') +
   geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
                arrow = arrow(length = unit(0.2,"cm")),
-               alpha = 1, color = 'gray', size = 1.5) +
+               alpha = 1, color = 'black', size = 1.5) +
   # geom_text_repel(data = vscores, aes(PC1, PC2,
   #                                          label = row.names(vscores)),
   #                 box.padding = unit(0.3, 'lines'),
@@ -432,7 +445,7 @@ p2 <- ggplot() +
 
 fig <- p1 + p2
  
-ggsave(here("figures_pca", "PCA-2023-08_16_panel.png"), fig,
+ggsave(here("figures_pca", "PCA-2023-08_16_panel_scale-2.png"), fig,
        width = 15, height = 6, dpi = 300)
 ```
 
@@ -756,9 +769,11 @@ ggsave(here("figures_cor", "pearsons_tchla.png"),
 panel <- wrap_elements(full = fig) / sr / p +
   plot_layout(heights = c(2, 0.5, 0.5), widths = c(2, 1, 1))
 
-ggsave(here("figures_cor", "pca_spearmans_pearson_panel.png"), panel,
+ggsave(here("figures_cor", "pca_spearmans_pearson_panel_s2.png"), panel,
         width = 16, height = 14, dpi = 300)
 ```
+
+
 ```{r}
 hc <- expl
 

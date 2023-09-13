@@ -87,6 +87,22 @@ sf_perc_wide <- sf_less %>%
   rename(perc_20 = `20um`, perc_3 = `3um`, perc_gff = `GF/F`)
 ```
 
+```{r}
+all <- micro %>% 
+  group_by(date, site_id) %>% 
+  summarise(sum_abund = sum(species_sum)) %>% 
+  ungroup() %>% 
+  left_join(chl)
+```
+
+```{r}
+all %>% 
+  ggplot(aes(x = sum_abund, y = tchla)) +
+  geom_smooth(method = "lm", color = "black") +
+  geom_point(size = 5) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8)
+```
+
 
 ```{r}
 #Summing species counts into group level outputs
@@ -281,10 +297,20 @@ pig_join %>%
   ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8)
 ```
 
+```{r}
+pig_join %>% 
+  ggplot(aes(x = Cryptophyta, y = Cryptophytes)) +
+  geom_smooth(method = "lm", color = "black") +
+  geom_point(size = 5) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8)
+
+cryp <- pig_join %>% 
+  select(date, site_id, Cryptophyta, Cryptophytes)
+```
 
 ```{r}
 pig_join_phyto %>% 
-  ggplot(aes(x = diat, y = raph_m)) +
+  ggplot(aes(x = sf_3, y = sf_gff)) +
   geom_smooth(method = "lm", color = "black") +
   geom_point(size = 5) +
   ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
@@ -302,6 +328,31 @@ pig_join_phyto %>%
         legend.position = "none") 
 ```
 
+```{r}
+micro_dino <- micro %>% 
+  filter(group == "Dinoflagellata") %>% 
+  filter(!genus == "Gymnodinium" & !genus == "Gyrodinium" & !genus == "Protoperidinium") %>% 
+  group_by(date, site_id) %>% 
+  summarise(dino_sum = sum(species_sum)) %>% 
+  ungroup()
+
+micro_dino <- micro_dino %>% 
+  left_join(sf_wide)
+
+micro_dino %>% 
+  ggplot(aes(x = `3um`, y = dino_sum)) +
+  geom_smooth(method = "lm", color = "black") +
+  geom_point(size = 5) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        # axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        # axis.text.y = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none") 
+```
 
 
 
