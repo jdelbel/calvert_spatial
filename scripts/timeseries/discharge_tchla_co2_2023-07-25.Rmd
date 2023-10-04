@@ -348,4 +348,249 @@ riv %>%
 ggsave(here("figures_river", "discharge_monthly.png"),
        width = 16, height = 12, dpi = 300)
 ```
+```{r}
+riv %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(!Watershed_group == "Q_tot") %>% 
+  ggplot() +
+  geom_area(aes(x = yday, y = Q, fill = Watershed_group),
+            stat = "identity", position = "stack", color = "black", 
+            size = 0.5) +
+  # geom_line(data = riv %>% filter(Watershed_group == "Wan"),
+  #           aes(x = date, y = Q), color = "white", size = 1) +
+  # scale_fill_d3(labels = c('glacier', 'snow', 'rain')) +
+  scale_fill_brewer(palette = "Set2",
+                    labels = c('glacier', 'snow', 'rain')) +
+  labs(fill = NULL,
+       y = bquote(Dis. ~ "("~m^-3*~s^-1*")")) +
+  facet_grid(year ~.) +
+  # scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_river", "discharge_vert.png"),
+       width = 16, height = 12, dpi = 300)
+```
+```{r}
+cs_riv <- riv %>% 
+  filter(Watershed_group == "Q_tot") %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  mutate(median = median(Q)) %>% 
+  group_by(year) %>% 
+  mutate(ms = Q - median,
+         cs = cumsum(ms),
+         cs_raw = cumsum(Q),
+         ip = cs - lag(cs, 1)) %>% 
+  ungroup()
+
+cs_wan <- env %>%
+  select(date, wan_dis) %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  mutate(median = median(wan_dis)) %>% 
+  group_by(year) %>% 
+  mutate(ms = wan_dis - median,
+         cs = cumsum(ms),
+         cs_raw = cumsum(wan_dis),
+         ip = cs - lag(cs, 1)) %>% 
+  ungroup()
+
+cs_join <- cs_riv %>% 
+  select(date, cs, cs_raw)
+
+cs_wan_join <- cs_wan %>% 
+  select(date, cs_wan = cs, cs_wan_raw = cs_raw)
+
+riv <- riv %>% 
+  left_join(cs_join) %>% 
+  left_join(cs_wan_join)
+```
+
+```{r}
+cs_wan %>% 
+  ggplot(aes(x = date, y = cs_raw, color = as.factor(year))) +
+  geom_line()
+```
+
+```{r}
+riv_test <- riv %>% 
+  mutate(Q_d = Q/10^3,
+         cs_d = cs/10^4,
+         cs_raw_d = cs_raw/10^4,
+         cs_wan_d = cs_wan/10^4,
+         cs_wan_raw_d = cs_wan_raw/10^4)
+```
+
+
+
+```{r}
+scale <- 2
+
+riv_test %>% 
+  filter(!Watershed_group == "Q_tot") %>% 
+  ggplot() +
+  geom_area(aes(x = date, y = Q_d, fill = Watershed_group),
+            stat = "identity", position = "stack", color = "black", 
+            size = 0.1, alpha = 0.8) +
+  geom_line(data = filter(riv_test, date >= "2018-01-01" &
+                            date <= "2018-12-31"),
+            aes(date, y = cs_d/scale),
+            color = "black", size = 1.5) +
+  geom_line(data = filter(riv_test, date >= "2019-01-01" &
+                            date <= "2019-12-31"),
+            aes(date, y = cs_d/scale),
+            color = "black", size = 1.5) +
+  geom_line(data = filter(riv_test, date >= "2020-01-01" &
+                            date <= "2020-12-31"),
+            aes(date, y = cs_d/scale),
+            color = "black", size = 1.5) +
+  geom_line(data = filter(riv_test, date >= "2018-01-01" &
+                            date <= "2018-12-31"),
+            aes(date, y = cs_wan_d/scale),
+            color = "black", size = 1.0, linetype = "dotted") +
+  geom_line(data = filter(riv_test, date >= "2019-01-01" &
+                            date <= "2019-12-31"),
+            aes(date, y = cs_wan_d/scale),
+            color = "black", size = 1.0, linetype = "dotted") +
+  geom_line(data = filter(riv_test, date >= "2020-01-01" &
+                            date <= "2020-12-31"),
+            aes(date, y = cs_wan_d/scale),
+            color = "black", size = 1.0, linetype = "dotted") +
+  geom_point(aes(x = as.Date("2018-05-02"), y = -5.786401/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 2.5) +
+  geom_point(aes(x = as.Date("2019-05-08"), y = -9.507108/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 2.5) +
+  geom_point(aes(x = as.Date("2020-04-19"), y = -4.7487954/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 2.5) +
+  scale_y_continuous(sec.axis = sec_axis(~.*scale,
+                                         name = bquote("Int. Dis."~"("*10^4~m^3*~s^-1*")"))) + 
+  # geom_line(data = riv %>% filter(Watershed_group == "Wan"),
+  #           aes(x = date, y = Q), color = "white", size = 1) +
+  # scale_fill_d3(labels = c('glacier', 'snow', 'rain')) +
+  scale_fill_brewer(palette = "Dark2",
+                    labels = c('glacier', 'snow', 'rain')) +
+  labs(fill = NULL,
+       y = bquote("Dis."~"("*10^3~m^3*~s^-1*")")) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01")),
+               expand = c(0, 0),
+               date_breaks = "years", date_labels = "%b%y") +
+  theme_bw() +
+  theme(legend.position = c(0.08, 0.86),
+        text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_river", "discharge_cs.png"),
+       width = 16, height = 6, dpi = 300)
+```
+```{r}
+max_cs <- riv_test %>%
+  mutate(year = lubridate::year(date)) %>% 
+  group_by(year) %>% 
+  filter(cs_d == max(cs_d))
+```
+
+
+
+```{r}
+scale <- 10
+
+riv_test %>% 
+  filter(!Watershed_group == "Q_tot") %>% 
+  ggplot() +
+  geom_area(aes(x = date, y = Q_d, fill = Watershed_group),
+            stat = "identity", position = "stack", color = "black", 
+            size = 0.1, alpha = 0.8) +
+  geom_line(data = filter(riv_test, date >= "2018-01-01" &
+                            date <= "2018-12-31"),
+            aes(date, y = cs_raw_d/scale),
+            color = "black", size = 1.5) +
+  geom_line(data = filter(riv_test, date >= "2019-01-01" &
+                            date <= "2019-12-31"),
+            aes(date, y = cs_raw_d/scale),
+            color = "black", size = 1.5) +
+  geom_line(data = filter(riv_test, date >= "2020-01-01" &
+                            date <= "2020-12-31"),
+            aes(date, y = cs_raw_d/scale),
+            color = "black", size = 1.5) +
+  geom_line(data = filter(riv_test, date >= "2018-01-01" &
+                            date <= "2018-12-31"),
+            aes(date, y = cs_wan_raw_d/scale),
+            color = "black", size = 1.0, linetype = "dotted") +
+  geom_line(data = filter(riv_test, date >= "2019-01-01" &
+                            date <= "2019-12-31"),
+            aes(date, y = cs_wan_raw_d/scale),
+            color = "black", size = 1.0, linetype = "dotted") +
+  geom_line(data = filter(riv_test, date >= "2020-01-01" &
+                            date <= "2020-12-31"),
+            aes(date, y = cs_wan_raw_d/scale),
+            color = "black", size = 1.0, linetype = "dotted") +
+  geom_point(aes(x = as.Date("2018-05-02"), y = 12.020980/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 2.5) +
+  geom_point(aes(x = as.Date("2019-05-08"), y = 9.169442/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 2.5) +
+  geom_point(aes(x = as.Date("2020-04-19"), y = 11.301365/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 2.5) +
+  scale_y_continuous(sec.axis = sec_axis(~.*scale,
+                                         name = bquote("Int. Dis."~"("*10^4~m^3*~s^-1*")"))) + 
+  # geom_line(data = riv %>% filter(Watershed_group == "Wan"),
+  #           aes(x = date, y = Q), color = "white", size = 1) +
+  # scale_fill_d3(labels = c('glacier', 'snow', 'rain')) +
+  scale_fill_brewer(palette = "Dark2",
+                    labels = c('glacier', 'snow', 'rain')) +
+  labs(fill = NULL,
+       y = bquote("Dis."~"("*10^3~m^3*~s^-1*")")) +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01")),
+               expand = c(0, 0),
+               date_breaks = "years", date_labels = "%b%y") +
+  theme_bw() +
+  theme(legend.position = c(0.08, 0.86),
+        text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_river", "discharge_cs_raw.png"),
+       width = 16, height = 6, dpi = 300)
+```
+
+
+
+
+```{r}
+sal_fig <- sal_dis <- ctd_s %>% 
+  ggplot(aes(x = date, y = sal, color = location)) +
+  geom_line(size = 2) +
+  geom_point(pch = 21, fill = "white", size = 2, stroke = 2) +
+  scale_color_jco() +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01")),
+               expand = c(0, 0),
+               date_breaks = "years", date_labels = "%b%y") +
+  theme_bw() +
+  labs(y = bquote("Sal. (PSU)"),
+       color = NULL) +
+  theme(legend.position = c(0.08, 0.1),
+        text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+```
+
+```{r}
+fig <- cs_fig / sal_fig
+
+ggsave(here("figures_river", "discharge_cs_salt.png"),
+       width = 16, height = 10, dpi = 300)
+```
 

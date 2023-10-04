@@ -44,47 +44,6 @@ clust <- read_csv(here("outputs", "final_cluster_2023-07-31.csv"))
 
 
 ```{r}
-test_c <- data %>% 
-  filter(site_id == "DFO2") %>% 
-  select(date, delta_rho_dm)
-
-test_j <- env %>% 
-  select(date, wan_dis, sm_dis, gm_dis, ra_dis) %>% 
-  mutate(tot = sm_dis + gm_dis + ra_dis) %>% 
-  left_join(test_c)
-
-test_cor <- ccf(test_j$gm_dis, test_j$delta_rho_dm, na.action = na.pass)
-
-test_cor
-
-t <- as.data.frame(test_cor$acf)
-l <- as.data.frame(test_cor$lag)
-
-#tot = 0.847, -5
-#wan = 0.999, -5
-#sm = 0.873, -7
-#gm = 0.999, -5
-#ra = 0.338, -8
-
-test_lag <- env %>%
-  select(date, gm_dis) %>% 
-  mutate(gm_b5 = lag(gm_dis, 1)) %>% 
-  left_join(test_c)
-
-test_lag %>% 
-  ggplot(aes(x = delta_rho_dm, y = gm_b5)) +
-  geom_point()
-```
-```{r}
-
-```
-
-
-
-
-
-
-```{r}
 
 data <- data %>% 
   select(date:secchi_depth)
@@ -112,13 +71,10 @@ data_pca <- data_join %>%
   select(date, month, year, site_id, location, temp = temp_dm, 
          sal = sal_dm, drho = delta_rho_dm, no2 = no2_dm, po4_dm, 
          sio2_dm, secchi = secchi_depth, sm_b1, gm_b1, ra_b1, wan_b1, wind_b1, 
-         wind_dir_b1, up_b1, dep_26_dm, tchla, par_b1)
+         wind_dir_b1, up_b1, par_b1)
 
 
 ```
-
-
-
 
 ```{r}
 data_pca_long <- data_pca %>% 
@@ -207,7 +163,7 @@ data_pca <- data_pca %>%
 
 ```{r}
 #Pulling out explanatory variables for PCA analysis
-expl <- data_pca[, 6:22]
+expl <- data_pca[, 6:20]
 ```
 
 ```{r}
@@ -375,8 +331,8 @@ row.names(vscores) <- c("Temp",
                         "WS",
                         "WD",
                         "UI",
-                        "ρ1026",
-                        "TChla",
+                        # "ρ1026",
+                        # "TChla",
                         "PAR")
                         
 p1 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
@@ -489,7 +445,7 @@ p2 <- ggplot() +
 
 fig <- p1 + p2
  
-ggsave(here("figures_pca", "PCA-2023-08_16_panel_scale-2.png"), fig,
+ggsave(here("figures_pca", "PCA-2023-09_15_panel_scale-2.png"), fig,
        width = 15, height = 6, dpi = 300)
 ```
 
@@ -971,8 +927,8 @@ ggplot() +
  ylab("Distance") # flipped x and y coordinates for aesthetic reasons
 
  
-# ggsave(here("figures_pca", "ward_eucl_2023-03-27_no_secchi.png"),
-#        width = 6, height = 12, dpi = 300)
+ggsave(here("figures_pca", "ward_eucl_2023-09-15.png"),
+       width = 6, height = 12, dpi = 300)
 ```
 ```{r}
 #Adding results of clustering to the pca scores for plotting

@@ -469,6 +469,7 @@ cor_fig <- het3 / (c1 + c2 + c3) / (c4 + c5 + c6)
 ggsave(here("figures_species_timeseries", "cor_fig.png"), cor_fig,
        width = 18, height = 14, dpi = 300)
 ```
+
 ```{r}
 
 
@@ -479,17 +480,266 @@ ggsave(here("figures_species_timeseries", "cor_fig2.png"), cor_fig2,
        width = 16, height = 10, dpi = 300)
 ```
 
+```{r}
+diat <- micro %>% 
+  filter(group == "Bacillariophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(diat = sum(species_sum)) %>% 
+  ungroup()
+
+cryp <- micro %>% 
+  filter(group == "Cryptophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(cryp = sum(species_sum)) %>% 
+  ungroup()
+
+ga <- micro %>% 
+  filter(group == "Chlorophyta-Prasinophyta") %>% 
+  group_by(date, site_id) %>% 
+  summarise(ga = sum(species_sum)) %>% 
+  ungroup()
+
+cors_2 <- cors %>% 
+  left_join(diat) %>% 
+  left_join(cryp) %>% 
+  left_join(chem) %>% 
+  left_join(ga)
+```
+```{r}
+d1 <- cors_2 %>% 
+  # filter(season == "autumn") %>%
+  ggplot(aes(y = het_sum/10^3, x = diat/10^5)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ylim(0, 25) +
+  labs(x = bquote("Diatoms (x"~10^5~L^-1*")"),
+       y = bquote("Microzoop. (x"~10^3~L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        # axis.title.y = element_blank(),
+        # axis.text.y = element_blank(),
+        # axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+```
 
 ```{r}
-test <- micro %>% 
-  select(date, site_id, scientificName, species_sum) %>% 
-  filter(scientificName == "Myrionecta rubra" | scientificName == "Teleaulax") %>% 
-  pivot_wider(names_from = scientificName, values_from = species_sum)
+c1 <- cors_2 %>% 
+  # filter(season == "autumn") %>%
+  ggplot(aes(y = het_sum/10^3, x = cryp/10^5)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ylim(0, 25) +
+  xlim(0, 11) +
+  labs(x = bquote("Crypt. (x"~10^5~L^-1*")"),
+       y = bquote("Microzoop. (x"~10^3~L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        # # axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+```
 
+```{r}
+g1 <- cors_2 %>% 
+  # filter(season == "autumn") %>%
+  ggplot(aes(y = het_sum/10^3, x = ga/10^5)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ylim(0, 25) +
+  labs(x = bquote("Green (x"~10^5~L^-1*")"),
+       y = bquote("Microzoop. (x"~10^3~L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        # # axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+```
+
+```{r}
+da <- cors_2 %>% 
+  filter(season == "autumn") %>%
+  ggplot(aes(y = het_sum/10^3, x = diat/10^5)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  scale_fill_manual(values = c("goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ylim(0, 25) +
+  labs(x = bquote("Diatoms (x"~10^5~L^-1*")"),
+       y = bquote("Microzoop. (x"~10^3~L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        # axis.title.y = element_blank(),
+        # axis.text.y = element_blank(),
+        # # axis.text.x = element_blank(),
+        # axis.title.x = element_blank(),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+```
+
+```{r}
+ca <- cors_2 %>% 
+  filter(season == "autumn") %>%
+  ggplot(aes(y = het_sum/10^3, x = cryp/10^5)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  scale_fill_manual(values = c("goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ylim(0, 25) +
+  labs(x = bquote("Crypt. (x"~10^5~L^-1*")"),
+       y = bquote("Microzoop. (x"~10^3~L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        # # axis.text.x = element_blank(),
+        # axis.title.x = element_blank(),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+```
+
+```{r}
+ga <- cors_2 %>% 
+  filter(season == "autumn") %>%
+  ggplot(aes(y = het_sum/10^3, x = ga/10^5)) +
+  geom_point(aes(fill = as.factor(season), shape = location), 
+             size = 7, color = "black", alpha = 0.9, stroke = 1) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  scale_fill_manual(values = c("goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) +
+  ylim(0, 25) +
+  labs(x = bquote("Green (x"~10^5~L^-1*")"),
+       y = bquote("Microzoop. (x"~10^3~L^-1*")")) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        axis.text = element_text(colour = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        # # axis.text.x = element_blank(),
+        # axis.title.x = element_blank(),
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24, colour = "black"),
+        legend.position = "none") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+```
+
+```{r}
+cor_fig3 <- (d1 + c1 + g1) / (da + ca + ga)
+
+ggsave(here("figures_species_timeseries", "cor_fig_phyto_group.png"), cor_fig3,
+       width = 16, height = 10, dpi = 300)
+```
+
+```{r}
+#Try correlating different grazers with JUST cryptophyte abundance.
+
+test <- hetero_genus_wide %>% 
+  left_join(oli) %>% 
+  pivot_longer(cols = c(Gymnodinium:Oligotrichea), names_to = "genus",
+               values_to = "sum_genus") %>% 
+  left_join(cors_2) %>% 
+  select(date:location, cryp)
+
+cryp_distinct <- micro %>% 
+  filter(group == "Cryptophyta") %>% 
+  distinct(scientificName)
+
+hill <- micro %>% 
+  filter(scientificName == "Hillea") %>% 
+  select(date, site_id, hill = species_sum)
+
+tel <- micro %>% 
+  filter(genus == "Teleaulax") %>% 
+  select(date, site_id, tel = species_sum)
+
+test <- test %>% 
+  left_join(hill)
+
+test <- test %>%
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date),) %>% 
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 12 ~ "autumn",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+test <- test %>%
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
+                           TRUE ~ as.numeric(year)))
+
+
+```
+```{r}
 test %>% 
-  ggplot(aes(x = `Myrionecta rubra`, y = Teleaulax)) +
+  filter(sum_genus < 20000) %>% 
+  # filter(season == "autumn") %>% 
+  ggplot(aes(x = sum_genus, y = cryp)) + 
   geom_point() +
   ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
-  xlim(0, 5000)
+  facet_wrap(~genus, scales = "free")
+
+ggsave(here("figures_species_timeseries", "cor_hetero_genus_cryp_all.png"),
+       width = 16, height = 10, dpi = 300)
 ```
+
+```{r}
+test %>% 
+  filter(sum_genus < 20000) %>% 
+  filter(season == "autumn") %>%
+  ggplot(aes(x = sum_genus, y = hill)) + 
+  geom_point() +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) +
+  facet_wrap(~genus, scales = "free")
+
+ggsave(here("figures_species_timeseries", "cor_hetero_genus_hillea_autumn.png"),
+       width = 16, height = 10, dpi = 300)
+```
+
 

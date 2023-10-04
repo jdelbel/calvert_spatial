@@ -23,7 +23,6 @@ library(analogue)
 # library(clustsig)
 library(BiodiversityR)
 library(ggsci)
-library(ggforce)
 
 ```
 
@@ -51,6 +50,17 @@ chem <- read_csv(here("files", "chemtax_2023-04-14.csv"))
 
 #Uploading size separated S.marinoi counts.
 sm_size <- read_csv(here("outputs", "s_mar_size_2023-07-03.csv"))
+```
+
+
+```{r}
+micro_species <- micro %>% 
+  distinct(scientificName_accepted)
+
+micro %>% 
+  filter(scientificName == "Ditylum brightwellii") %>% 
+  ggplot(aes(x = date, y = species_sum, color = site_id)) +
+  geom_point()
 ```
 
 
@@ -148,6 +158,16 @@ micro <- micro %>%
   left_join(clust_pca) %>% 
   relocate(cluster, .after = location)
 
+micro_group <- micro %>% 
+  distinct(group)
+
+micro_proto <- micro %>% 
+  filter(group == "Metazoa")
+
+
+micro <- micro %>% 
+  filter(!group == "Protozoa") %>% 
+  filter(!group == "Metazoa")
 ```
 
 ```{r}
@@ -164,15 +184,15 @@ species_distinct <- micro %>%
 #Filtering out species that are not present in at least 10% of the samples - this is important for the clustering and nMDS methods I am using as these species can skew the results.
 
 #Determining total number of samples in the dataset
-sample_num <- micro %>% 
+sample_num <- micro %>%
   distinct(date, site_id)
 
 #Determining species that are present in > 10% of samples.
-species_10 <- micro %>% 
-  group_by(scientificName) %>% 
+species_10 <- micro %>%
+  group_by(scientificName) %>%
   summarise(n_obs = n()) %>%
-  ungroup() %>% 
-  mutate(perc_obs = n_obs/78) %>% 
+  ungroup() %>%
+  mutate(perc_obs = n_obs/78) %>%
   filter(perc_obs >= 0.10)
 
 # species_2 <- micro %>% 
@@ -186,8 +206,8 @@ species_10_list <- species_10$scientificName
 # species_2_list <- species_2$scientificName
 
 #Removing species that are not present in > 10% of samples.
-micro <- micro %>% 
-  filter(scientificName %in% species_10_list) 
+micro <- micro %>%
+  filter(scientificName %in% species_10_list)
 # %>% 
 #   filter(!scientificName %in% species_2_list)
 ```
@@ -224,8 +244,9 @@ species <- micro_piv[, 8:ncol(micro_piv)]
 #Transforming the abundance data
 # t_abund <- disttransform(species, method = "chord")
 
-t_abund <- sqrt(species)
+# t_abund <- decostand(species, "total")
 
+t_abund <- sqrt(species)
 ```
 
 ```{r}
@@ -271,7 +292,7 @@ cor(dis_abund, coph)
 
 ```{r}
 # Enhanced hierarchical clustering, cut in 3 groups
-fviz_dend(clust_ward_abund, cex = 0.5, h = 0.6, color_labels_by_k = TRUE)
+fviz_dend(clust_ward_abund, cex = 0.5, h = 0.64, color_labels_by_k = TRUE)
 
 ```
 
@@ -293,7 +314,7 @@ fviz_gap_stat(gap_stat)
 #Trying cutting at line 
 
 # Abundance data
-k_abund <- 0.67
+k_abund <- 0.62
 clust_abund <- cutree(clust_ward_abund, h = k_abund)
 #
 clust_df_abund <- data.frame(label = rownames(hc_abund),
@@ -388,14 +409,14 @@ dendro <- ggplot() +
  geom_text(data = dendrogram_ends_abund, aes(x = x, y = y.y, label = sample_name,
                                        color = as.factor(cluster),
            hjust = 1, angle = 90, size = 4)) +
- geom_hline(yintercept = 0.67, size = 1) +
+ geom_hline(yintercept = 0.62, size = 1) +
  geom_rect(data = rect_abund, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0,
                                   ymax = ymax_abund),
             color = "black", fill = NA, size = 0.8) +
  # scale_color_manual(values = site_color_abund) +
  # scale_y_reverse(limits = c(1, -0.5)) +
- scale_color_npg() +
- ylim(-0.7, 1) +
+ # scale_color_npg() +
+ ylim(-0.6, 1) +
   # coord_flip() +
  ylab("BC Similarity") +
  theme_bw() +
@@ -404,15 +425,15 @@ dendro <- ggplot() +
        axis.title.x = element_blank(),
        # axis.title.y = element_blank(),
        axis.text.x = element_blank(),
-       text = element_text(size = 25)) +
- annotate("text", x = 4, y = 0.25, label = "C2-W2", size = 9) +
- annotate("text", x = 12, y = 0.25, label = "C1-W1", size = 9) +
- annotate("text", x = 22, y = 0.25, label = "C5-SB", size = 9) +
- annotate("text", x = 31.5, y = 0.25, label = "C6-PN", size = 9) +
- annotate("text", x = 48, y = 0.25, label = "C4-SM", size = 9) +
- annotate("text", x = 70, y = 0.25, label = "C3-F", size = 9)
+       text = element_text(size = 25)) 
+ # annotate("text", x = 4, y = 0.25, label = "C2-W2", size = 9) +
+ # annotate("text", x = 12, y = 0.25, label = "C1-W1", size = 9) +
+ # annotate("text", x = 22, y = 0.25, label = "C5-SB", size = 9) +
+ # annotate("text", x = 31.5, y = 0.25, label = "C6-PN", size = 9) +
+ # annotate("text", x = 48, y = 0.25, label = "C4-SM", size = 9) +
+ # annotate("text", x = 70, y = 0.25, label = "C3-F", size = 9)
 
-ggsave(here("figures_nmds_new", "2023-07-19_complete.png"),
+ggsave(here("figures_nmds_new", "2023-10-04_complete_sqrt_60.png"),
        width = 16, height = 8, dpi = 300)
 ```
 
@@ -431,7 +452,7 @@ clust <- micro_piv %>%
 
 
 ```{r}
-write_csv(clust, here("outputs", "bio_clust_full.csv"))
+# write_csv(clust, here("outputs", "bio_clust_full.csv"))
 
 ```
 Should probably transfer indicator analysis for both PCA and taxonomy data to separate sheet
@@ -441,8 +462,8 @@ Should probably transfer indicator analysis for both PCA and taxonomy data to se
 clust_pca <- micro_piv$clust_pca
 clust_abund <- micro_piv$clust_abund
 
-ano_clust_abund = anosim(t_abund, clust_abund, distance = "bray", permutations = 9999)
-ano_clust_abund
+# ano_clust_abund = anosim(t_abund, clust_abund, distance = "bray", permutations = 9999)
+# ano_clust_abund
 
 
 ```
@@ -463,25 +484,6 @@ nmds_abund
 stressplot(nmds_abund)
 
 ```
-```{r}
-micro_piv <- micro_piv %>%
-  mutate(month = lubridate::month(date)) %>% 
-  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "W",
-                            month >= 3 & month <= 5 ~ "Sp",
-                            month >= 6 & month <= 8 ~ "S",
-                            month >= 9 & month <= 12 ~ "A",)) %>%
-  relocate(season, .after = month)    
-  
-#I want to push December from each year to winter of the next year
-micro_piv <- micro_piv %>%
-  mutate(year = case_when(season == "winter" & month == 12 ~ year + 1,
-                           TRUE ~ as.numeric(year)))
-
-order_loc_seas <- c("W", "Sp", "S", "A")
-
-micro_piv <- arrange(mutate(micro_piv,
-                         season = factor(season, levels = order_loc_seas)))
-```
 
 
 ```{r}
@@ -495,7 +497,7 @@ data.scores_abund$site = micro_piv$location
 data.scores_abund$year = micro_piv$year
 data.scores_abund$clust_pca = micro_piv$pca_clust
 data.scores_abund$clust_abund = micro_piv$clust_abund
-data.scores_abund$season = micro_piv$season
+
 ```
 
 ```{r}
@@ -596,11 +598,11 @@ spp.scrs2 <- spp.scrs2 %>%
 
 ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) + 
   geom_point(data = data.scores_abund, aes(fill = as.factor(clust_abund), shape = site),
-             size = 7, stroke = 2) + 
-  scale_fill_brewer(palette = "Spectral") +
+             size = 7, stroke = 1.5) + 
+  # scale_fill_brewer(palette = "Dark2") +
   scale_shape_manual(values = c(21, 22, 23)) + 
-  # geom_mark_hull(aes(color = season),
-  #                  concavity=0.1, size=0.2, show.legend=FALSE) +
+  # geom_mark_hull(aes(color = as.factor(clust_abund)),
+  #                   concavity=0.1, size=0.2, show.legend=FALSE) +
   # geom_segment(data = spp.scrs2,
   #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
   #              arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
@@ -644,7 +646,7 @@ ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) +
 export_cluster <- data.scores_abund %>% 
   select(date, site, clust_abund)
 
-write_csv(export_cluster, here("outputs", "final_cluster_2023-07-31.csv"))
+# write_csv(export_cluster, here("outputs", "final_cluster_2023-07-31.csv"))
 ```
 
 ```{r}
@@ -662,6 +664,8 @@ iv <- labdsv::indval(t_abund, clust_abund)
 
 summary(iv)
 ```
+
+
 ```{r}
 micro_test <- micro %>%
   left_join(clust_abund_join) %>% 
@@ -866,26 +870,20 @@ f9 <- data_pca_join %>%
 fig <- dendro / (f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9) +
   plot_layout(heights = c(1.5, 4))
 
-ggsave(here("figures_nmds_new", "dendro_box_2023-09-13.png"), fig,
+ggsave(here("figures_nmds_new", "dendro_box_2023-10-04_60.png"), fig,
        width = 16, height = 16, dpi = 300)
 ```
 
-```{r}
-fig <- f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + hd + rd + sf + 
-                       plot_layout(ncol = 3)
 
-ggsave(here("figures_nmds_new", "box_2023-09-13.png"), fig,
-       width = 16, height = 16, dpi = 300)
-```
 
 ```{r}
-kruskal.test(sal ~ clust_abund, data = data_pca_join)
-
-data_pca_join$clust_abund <- as.factor(data_pca_join$clust_abund)
-
-#Dunn Test to look where differences are occuring.
-FSA::dunnTest(data_pca_join$sal ~ data_pca_join$clust_abund,
-              method = "bonferroni")
+# kruskal.test(sal ~ clust_abund, data = data_pca_join)
+# 
+# data_pca_join$clust_abund <- as.factor(data_pca_join$clust_abund)
+# 
+# #Dunn Test to look where differences are occuring.
+# FSA::dunnTest(data_pca_join$sal ~ data_pca_join$clust_abund,
+#               method = "bonferroni")
 
 ```
 
@@ -1124,7 +1122,13 @@ FSA::dunnTest(sf_join_20$perc_sf ~ sf_join_20$clust_abund,
 
 ```
 
+```{r}
+fig <- f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + hd + rd + sf + 
+                       plot_layout(ncol = 3)
 
+ggsave(here("figures_nmds_new", "box_2023-10-04_60.png"), fig,
+       width = 16, height = 16, dpi = 300)
+```
 
 
 ```{r}

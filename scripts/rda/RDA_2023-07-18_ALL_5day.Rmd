@@ -28,7 +28,7 @@ micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
 
 ctd <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
 
-env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
+env <- read_csv(here("outputs", "enviro_2023-10-03_up_5day.csv"))
 
 chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
 
@@ -245,7 +245,7 @@ tb_rda.vasc.all <- rda (resp.hell ~ ., data = expl)
 
 sel.osR2 <- ordiR2step (tb_rda.vasc.0, scope = formula (tb_rda.vasc.all), 
                         R2scope = adjR2.tbrda, direction = 'forward', 
-                        permutations = 9999)
+                        permutations = 99999)
 
 sel.osR2$anova
 
@@ -290,7 +290,7 @@ sel.osR2_adj_d$anova
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif <- subset(expl, select = c(secchi, sio2, temp, gm_b1))
+env.signif <- subset(expl, select = c(secchi, sio2, temp))
 
 #RDA using significant variables
 rda.signif <- rda(resp.hell ~ . ,data = env.signif)
@@ -319,7 +319,7 @@ anova(rda.signif, by = "terms")
 
 ```{r}
 #Select the statistically significant variables - May want to remove SiO2, see VIFS below!
-env.signif_d <- subset(expl, select = c(drho, sio2, temp, gm_b1))
+env.signif_d <- subset(expl, select = c(drho, sio2, temp, gm_b1, sm_b1))
 
 #RDA using significant variables
 rda.signif_d <- rda(resp.hell_d ~ . ,data = env.signif_d)
@@ -497,6 +497,7 @@ row.names(sp_bf) <- c("P.n.s",
                       "Hill.",
                       "Tel.",
                       "S.mar.",
+                      "P.soc.",
                       "C.soc.",
                       "C.cin")
 
@@ -506,7 +507,7 @@ row.names(sp_bf_d) <- c("P.n.s",
                       "Bidd.",
                       "C.ten",
                       "C.soc.",
-                      "C.rad")
+                      "T.pac.")
 
 # row.names(sp_bf) <- c("P.n.s",
 #                       "Thal.",
@@ -530,8 +531,7 @@ row.names(sp_bf_d) <- c("P.n.s",
 
 row.names(env_loc) <- c("SD",
                         "DSi",
-                        "T",
-                        "GM")
+                        "T")
 
 all <- ggplot() + 
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
@@ -594,16 +594,18 @@ all <- ggplot() +
   guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
   labs(fill = "", shape = "")
 
-ggsave(here("figures_rda", "rda_2023-07-18_all_s3.png"),
+ggsave(here("figures_rda", "rda_2023-07-18_all_s3_5day.png"),
         width = 8, height = 6, dpi = 300)
 ```
+
 ```{r}
 #Plotting RDS scaling 2
 
 row.names(env_loc_d) <- c("Δρ",
                         "DSi",
                         "T",
-                        "GM")
+                        "GM",
+                        "SM")
 
 diat <- ggplot() + 
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
@@ -668,20 +670,20 @@ diat <- ggplot() +
          color = "none",
          shape = "none")
 
-ggsave(here("figures_rda", "rda_2023-08-04_s3.png"), 
+ggsave(here("figures_rda", "rda_2023-08-04_s3_5day.png"), 
         width = 8, height = 6, dpi = 300)
 ```
 
 ```{r}
 fig <- all + diat
 
-ggsave(here("figures_rda", "combined.png"), fig,
+ggsave(here("figures_rda", "combined_5day.png"), fig,
        width = 16, height = 8, dpi = 300)
 ```
 
 ```{r}
 #Variance partitioning trial
-varp <- varpart(resp.hell, ~ gm_b1, ~ sio2, ~ temp, ~ secchi, data = env.signif)
+varp <- varpart(resp.hell, ~ sio2, ~ temp, ~ secchi, data = env.signif)
 varp
 
 
@@ -691,7 +693,7 @@ varp_d
 
 
 ```{r}
-plot(varp, digits = 3, Xnames = c('GM', 'DSi', 'T', "secchi"), bg = c('navy', 'tomato', 'green', "red"))
+plot(varp, digits = 3, Xnames = c('DSi', 'T', "secchi"), bg = c('navy', 'tomato', 'green', "red"))
 plot(varp_d, digits = 3, Xnames = c("drho", "sio2", "temp", "gm_b1"), bg = c('navy', 'tomato', 'green', "red"))
 ```
 

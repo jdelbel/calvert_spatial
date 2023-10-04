@@ -1,0 +1,199 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+library(zoo)
+library(ggpubr)
+library(broom)
+```
+
+```{r}
+#Upload data
+
+#Physical - chemical data
+data <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+#Chlorophyll data
+chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
+
+#General environmental data - discharge etc.
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
+
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+
+clust <- read_csv(here("outputs", "final_cluster_2023-07-31.csv"))
+```
+
+
+```{r}
+test_c <- data %>% 
+  filter(site_id == "KC10") %>% 
+  select(date, delta_rho_dm, sal_dm)
+
+test_f <- data %>% 
+  filter(site_id == "DFO2") %>% 
+  select(date, delta_rho_dm, sal_dm)
+
+test_s <- data %>% 
+  filter(site_id == "QCS01") %>% 
+  select(date, delta_rho_dm, sal_dm)
+
+test_j <- env %>% 
+  select(date, wan_dis, sm_dis, gm_dis, ra_dis) %>% 
+  mutate(tot = sm_dis + gm_dis + ra_dis) %>% 
+  left_join(test_c)
+
+test_cor_wan <- ccf(test_j$wan_dis, test_j$delta_rho_dm, na.action = na.pass,
+                    type = "covariance")
+test_cor_gm <- ccf(test_j$gm_dis, test_j$delta_rho_dm, na.action = na.pass)
+test_cor_sm <- ccf(test_j$sm_dis, test_j$delta_rho_dm, na.action = na.pass)
+test_cor_ra <- ccf(test_j$ra_dis, test_j$delta_rho_dm, na.action = na.pass)
+test_cor_tot <- ccf(test_j$tot, test_j$delta_rho_dm, na.action = na.pass)
+
+test_cor_tot
+```
+
+
+```{r}
+t_gm <- as.data.frame(test_cor_gm$acf)
+t_gm <- t_gm %>% 
+  rename(acf = V1)
+
+t_sm <- as.data.frame(test_cor_sm$acf)
+t_sm <- t_sm %>% 
+  rename(acf = V1)
+
+t_ra <- as.data.frame(test_cor_ra$acf)
+t_ra <- t_ra %>% 
+  rename(acf = V1)
+
+t_wan <- as.data.frame(test_cor_wan$acf)
+t_wan <- t_wan %>% 
+  rename(acf = V1)
+
+t_tot <- as.data.frame(test_cor_tot$acf)
+t_tot <- t_tot %>% 
+  rename(acf = V1)
+
+l_gm <- as.data.frame(test_cor_gm$lag)
+l_gm <- l_gm %>% 
+  rename(lag = V1)
+
+l_sm <- as.data.frame(test_cor_sm$lag)
+l_sm <- l_sm %>% 
+  rename(lag = V1)
+
+l_ra <- as.data.frame(test_cor_ra$lag)
+l_ra <- l_ra %>% 
+  rename(lag = V1)
+
+l_wan <- as.data.frame(test_cor_wan$lag)
+l_wan <- l_wan %>% 
+  rename(lag = V1)
+
+l_tot <- as.data.frame(test_cor_tot$lag)
+l_tot <- l_tot %>% 
+  rename(lag = V1)
+
+test_plot <- cbind(l_gm, t_gm)
+test_plot <- test_plot %>% 
+  mutate(type = "GM")
+
+test_plot_sm <- cbind(l_sm, t_sm)
+test_plot_sm <- test_plot_sm %>% 
+  mutate(type = "SM")
+
+test_plot_ra <- cbind(l_ra, t_ra)
+test_plot_ra <- test_plot_ra %>% 
+  mutate(type = "RA")
+
+test_plot_wan <- cbind(l_wan, t_wan)
+test_plot_wan <- test_plot_wan %>% 
+  mutate(type = "Wan")
+
+test_plot_tot <- cbind(l_tot, t_tot)
+test_plot_tot <- test_plot_tot %>% 
+  mutate(type = "Total")
+
+test_plot_j <- rbind(test_plot_tot, test_plot, test_plot_sm, test_plot_ra,
+                     test_plot_wan)
+```
+
+```{r}
+order_loc <- c("Total", "Wan", "GM", "SM", "RA")
+
+#Set order for locations in plot
+test_plot_j <- arrange(mutate(test_plot_j,
+                         type = factor(type, levels = order_loc)))
+```
+
+
+```{r}
+test_plot_j %>% 
+  filter(lag > -16 & lag < 1) %>% 
+  ggplot(aes(x = as.factor(lag), y = acf, fill = type)) +
+  geom_bar(stat = "identity", position = "dodge", color = "black", width = 0.6) +
+  scale_fill_brewer(palette = "Dark2") +
+  ylim(0, 1) +
+  labs(x = "Lag (Days)",
+       y = "Auto Correlation Factor",
+       fill = NULL) +
+  ggtitle("Shelf - Stratification vs Discharge") +
+  theme_bw() +
+  facet_grid(type ~ .) +
+  theme(text = element_text(size = 30),
+        axis.text = element_text(color = "black"),
+        strip.background = element_blank())
+
+ggsave(here("figures_pca", "lag_correlation_qcs01.png"), 
+       width = 14, height = 14, dpi = 300)
+```
+
+
+```{r}
+#tot = 0.847, -5
+#wan = 0.999, -5
+#sm = 0.873, -7
+#gm = 0.999, -5
+#ra = 0.338, -8
+
+env %>%
+  mutate(tot = gm_dis + sm_dis + ra_dis) %>% 
+  select(date, tot) %>% 
+  # mutate(gm_b5 = lag(wan_dis, 10)) %>% 
+  mutate(gm_b5 = rollmeanr(lag(tot, 0), k = 11, fill = NA)) %>% 
+  left_join(test_c) %>% 
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>%
+  ggplot(aes(x = delta_rho_dm, y = gm_b5)) +
+  geom_point(aes(fill = as.factor(year)), pch = 21, size = 3) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) 
+
+test_j %>% 
+  mutate(month = lubridate::month(date)) %>% 
+  ggplot(aes(x = tot, y = gm_dis)) +
+  geom_point(aes(fill = as.factor(month)), pch = 21) +
+  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8)
+
+0.85^2
+```
+
+

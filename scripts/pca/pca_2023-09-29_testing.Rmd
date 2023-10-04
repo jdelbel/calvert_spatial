@@ -23,6 +23,8 @@ library(factoextra)
 library(zoo)
 library(ggpubr)
 library(broom)
+library(FactoMineR)
+library(missMDA)
 ```
 
 ```{r}
@@ -41,47 +43,6 @@ micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
 
 clust <- read_csv(here("outputs", "final_cluster_2023-07-31.csv"))
 ```
-
-
-```{r}
-test_c <- data %>% 
-  filter(site_id == "DFO2") %>% 
-  select(date, delta_rho_dm)
-
-test_j <- env %>% 
-  select(date, wan_dis, sm_dis, gm_dis, ra_dis) %>% 
-  mutate(tot = sm_dis + gm_dis + ra_dis) %>% 
-  left_join(test_c)
-
-test_cor <- ccf(test_j$gm_dis, test_j$delta_rho_dm, na.action = na.pass)
-
-test_cor
-
-t <- as.data.frame(test_cor$acf)
-l <- as.data.frame(test_cor$lag)
-
-#tot = 0.847, -5
-#wan = 0.999, -5
-#sm = 0.873, -7
-#gm = 0.999, -5
-#ra = 0.338, -8
-
-test_lag <- env %>%
-  select(date, gm_dis) %>% 
-  mutate(gm_b5 = lag(gm_dis, 1)) %>% 
-  left_join(test_c)
-
-test_lag %>% 
-  ggplot(aes(x = delta_rho_dm, y = gm_b5)) +
-  geom_point()
-```
-```{r}
-
-```
-
-
-
-
 
 
 ```{r}
@@ -111,111 +72,40 @@ data_join <- data_join %>%
 data_pca <- data_join %>%
   select(date, month, year, site_id, location, temp = temp_dm, 
          sal = sal_dm, drho = delta_rho_dm, no2 = no2_dm, po4_dm, 
-         sio2_dm, secchi = secchi_depth, sm_b1, gm_b1, ra_b1, wan_b1, wind_b1, 
-         wind_dir_b1, up_b1, dep_26_dm, tchla, par_b1)
+         sio2_dm, secchi = secchi_depth)
 
 
-```
-
-
-
-
-```{r}
-data_pca_long <- data_pca %>% 
-  select(date, site_id, temp:par_b1) %>% 
-  pivot_longer(c(temp:par_b1), names_to = "par", values_to = "val")
-
-data_pca_long <- data_pca_long %>% 
-  left_join(clust)
-
-data_pca <- data_pca %>% 
-  left_join(clust)
 ```
 
 ```{r}
-data_pca_long %>%
-  filter(!is.na(clust_abund)) %>%
-  # filter(par == "drho" | par == "gm_b1" | par == "sm_b1" | par == "ra_b1"|
-  #          par == "no2" | par == "sio2" |
-  #        par == "sal" | par == "temp" | par == "wind_b1" | par == "wind_dir_b1") %>%
-  ggplot(aes(x = as.factor(clust_abund), y = val)) +
-  geom_boxplot() +
-  ggpubr::stat_compare_means(size = 6) +
-  facet_wrap(~par, scales = "free_y")
+expl <- data_pca[, 6:12]
 
-ggsave(here("figures_pca", "KW_test.png"),
-       width = 16, height = 16, dpi = 300)
+test <- missMDA::imputePCA(expl)
+
+test2 <- as.data.frame(test$completeObs)
 ```
-```{r}
-medians <- data_pca_long %>% 
-  filter(!is.na(clust_abund)) %>% 
-  group_by(clust_abund, par) %>% 
-  summarise(median = median(val, na.rm = TRUE),
-            min = min(val, na.rm = TRUE),
-            max = max(val, na.rm = TRUE)) %>% 
-  ungroup()
-```
-
-
-```{r}
-data_pca_na <- data_pca %>% 
-  filter(!is.na(clust_abund))
-
-kruskal.test(temp ~ clust_abund, data = data_pca_na)
-
-data_pca_na$clust_abund <- as.factor(data_pca_na$clust_abund)
-
-#Dunn Test to look where differences are occuring.
-FSA::dunnTest(data_pca_na$temp ~ data_pca_na$clust_abund,
-              method = "bonferroni")
-```
-
-
-#Let's try to add mixed layer depth. See if the calculation works for these waters.
-
-```{r}
-# stats <- data_pca %>% 
-#   select(date, site_id, temp:tchla) %>% 
-#   pivot_longer(cols = c(temp:tchla), names_to = "param", values_to = "val") %>% 
-#   group_by(site_id, param) %>% 
-#   summarize(min = min(val, na.rm = T),
-#             max = max(val, na.rm = T),
-#             median = median(val, na.rm = T)) %>% 
-#   ungroup() %>% 
-#   filter(param == "no2")
-# 
-# sal <- data_pca %>% 
-#   select(date, site_id, location, sal, temp)
-```
-
-```{r}
-# data_pca %>% 
-#   filter(site_id == "QCS01") %>% 
-#   mutate(yday = lubridate::yday(date)) %>% 
-#   ggplot(aes(x = date, y = sal, color = site_id)) +
-#   geom_point() +
-#   geom_line()
-```
-
 
 
 ```{r}
 #Removing NA's for analysis 
-data_pca <- data_pca %>%
-  drop_na()
+# data_pca <- data_pca %>%
+#   drop_na()
 ```
 
 ```{r}
 #Pulling out explanatory variables for PCA analysis
-expl <- data_pca[, 6:22]
+# expl <- data_pca[, 6:22]
 ```
 
 ```{r}
 #Scaling data being used for PCA (Should look into whether I should also center as I did with the mantel tests)
-expl <- scale(expl)
+expl <- scale(test2)
+
+
 
 #Converting to a data frame for subsequent analysis.
 expl <- as.data.frame(expl)
+
 
 ```
 
@@ -367,17 +257,7 @@ row.names(vscores) <- c("Temp",
                         "DIN",
                         "DIP",
                         "DSi",
-                        "SD",
-                        "S.Mtn",
-                        "G.Mtn",
-                        "Rain",
-                        "WAN",
-                        "WS",
-                        "WD",
-                        "UI",
-                        "ρ1026",
-                        "TChla",
-                        "PAR")
+                        "SD")
                         
 p1 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
   geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
@@ -457,8 +337,8 @@ p2 <- ggplot() +
   #                 max.iter = 3e3,
   #                 size = 8,
   #                 color = "black") +
-  labs(x = "PCA1 (40%)",
-       y = "PCA2 (19%)") +
+  labs(x = "PCA1 (56%)",
+       y = "PCA2 (29%)") +
   # xlim(-1.0, 1.3) +
   # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
   #                                  digits = 3), "%)", sep = ""),
@@ -489,332 +369,8 @@ p2 <- ggplot() +
 
 fig <- p1 + p2
  
-ggsave(here("figures_pca", "PCA-2023-08_16_panel_scale-2.png"), fig,
+ggsave(here("figures_pca", "PCA-2023-08_16_panel_scale-2_missMDA.png"), fig,
        width = 15, height = 6, dpi = 300)
-```
-
-```{r}
-chl_loc <- data_pca %>% 
-  select(date, site_id, tchla) %>% 
-  pivot_wider(names_from = "site_id", values_from = "tchla") %>% 
-  rename(tchla_f = DFO2, tchla_c = KC10, tchla_s = QCS01) %>% 
-  pivot_longer(c(tchla_c:tchla_s), names_to = "tchla_loc", values_to = "tchla")
-
-chl_all <- data_pca %>% 
-  select(date, site_id, tchla) 
-
-data_pca_long2 <- data_pca_long %>% 
-  filter(!par == "tchla") %>% 
-  select(date, par, val)
-
-chl_cor <- chl_loc %>% 
-  left_join(data_pca_long2)
-
-chl_cor_all <- chl_all %>% 
-  left_join(data_pca_long2)
-
-data_nest <- chl_cor %>% 
-  group_by(tchla_loc, par) %>%
-  nest()
-
-data_nest_all <- chl_cor_all %>% 
-  group_by(par) %>%
-  nest()
-
-head(data_nest)
-head(data_nest_all)
-
-str(head(slice(data_nest, 1)))
-str(head(slice(data_nest_all, 1)))
-
-cor_fun <- function(df) cor.test(df$tchla,
-                                 df$val,
-                                 method = "spearman") %>% tidy()
-
-
-
-data_nest <- mutate(data_nest, model = map(data, cor_fun))
-data_nest_all <- mutate(data_nest_all, model = map(data, cor_fun))
-
-corr_pr <- select(data_nest, -data) %>% unnest()
-corr_pr_all <- select(data_nest_all, -data) %>% unnest()
-
-corr_pr
-corr_pr_all
-
-corr_pr <- mutate(corr_pr, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
-corr_pr_all <- mutate(corr_pr_all, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
-
-corr_pr <- rbind(corr_pr, corr_pr_all)
-
-corr_pr <- corr_pr %>% 
-  mutate(tchla_loc = case_when(is.na(tchla_loc) ~ "TChla_all", 
-                           TRUE ~ as.character(tchla_loc)))
-  
-```
-
-```{r}
-
-#Order locations from fjord to shelf
-env_loc <- c("temp",
-               "sal",
-               "drho",
-               "dep_26_dm",
-               "up_b1",
-               "no2",
-               "po4_dm",
-               "sio2_dm",
-               "secchi",
-               "gm_b1",
-               "sm_b1",
-               "ra_b1",
-               "wan_b1",
-               "wind_b1",
-               "wind_dir_b1",
-               "par_b1")
-
-loc <- c("TChla_all", "tchla_f", "tchla_c", "tchla_s")
-
-#Chemtax - Specify order of phyto groups for figures
-corr_pr <- arrange(mutate(corr_pr,
-                         par = factor(par, levels = env_loc)))
-
-#Chemtax - Specify order of phyto groups for figures
-corr_pr <- arrange(mutate(corr_pr,
-                         tchla_loc = factor(tchla_loc, levels = loc)))
-```
-
-
-```{r}
-sr <- ggplot()+
-  geom_tile(data = corr_pr,
-            aes(par, tchla_loc, fill = estimate),
-            size = 1,
-            colour = "white")+
-  geom_tile(data = filter(corr_pr, sig == "Sig."),
-            aes(par, tchla_loc),
-            size = 1.5,
-            colour = "black",
-            fill = "transparent") +
-  geom_text(data = corr_pr,
-            aes(par, tchla_loc, label = round(estimate, 2),
-                fontface = ifelse(sig == "Sig.", "bold", "plain")),
-            size = 7) +
-  scale_x_discrete(labels = c("temp" = "Temp",
-                              "sal" = "Sal",
-                             "drho" = "Δρ",
-                             "dep_26_dm" = "ρ1026",
-                             "up_b1" = "UI",
-                             "no2" = "DIN",
-                             "po4_dm" = "DIP",
-                             "sio2_dm" = "DSi",
-                             "secchi" = "SD",
-                             "gm_b1" = "G.Mtn.",
-                             "sm_b1" = "S.Mtn.",
-                             "ra_b1" = "Rain",
-                             "wan_b1" = "Wan.",
-                             "wind_b1" = "WS",
-                             "wind_dir_b1" = "WD",
-                             "par_b1" = "PAR")) +
-  scale_y_discrete(labels = c("TChla_all" = "TChla-all",
-                              "tchla_f" = "TChla-F",
-                              "tchla_c" = "TChla-C",
-                              "tchla_s" = "TChla-S")) +
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
-                       name = "Correlation") +
-  theme_bw() +
-  theme(text = element_text(size = 30),
-        axis.title.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.y = element_blank(),
-        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        axis.title.y = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        axis.line = element_line(colour = "black"),
-        legend.background = element_blank(),
-        legend.key.width = unit(5, "cm"),
-        legend.key.height = unit(0.4, "cm"),
-        legend.title = element_text(size = 20),
-        legend.title.align = 0.5,
-        legend.text = element_text(size = 15)) +
-        guides(fill = guide_colourbar(title.position = "top")) 
-
-ggsave(here("figures_cor", "Spearmans_rank_tchla.png"), 
-       width = 15, height = 6, dpi = 300)
-
-# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
-```
-
-```{r}
-chl_loc <- data_pca %>% 
-  select(date, site_id, tchla) %>% 
-  pivot_wider(names_from = "site_id", values_from = "tchla") %>% 
-  rename(tchla_f = DFO2, tchla_c = KC10, tchla_s = QCS01) %>% 
-  pivot_longer(c(tchla_c:tchla_s), names_to = "tchla_loc", values_to = "tchla")
-
-chl_all <- data_pca %>% 
-  select(date, site_id, tchla) 
-
-data_pca_long2 <- data_pca_long %>% 
-  filter(!par == "tchla") %>% 
-  select(date, par, val)
-
-chl_cor <- chl_loc %>% 
-  left_join(data_pca_long2)
-
-chl_cor_all <- chl_all %>% 
-  left_join(data_pca_long2)
-
-data_nest <- chl_cor %>% 
-  group_by(tchla_loc, par) %>%
-  nest()
-
-data_nest_all <- chl_cor_all %>% 
-  group_by(par) %>%
-  nest()
-
-head(data_nest)
-head(data_nest_all)
-
-str(head(slice(data_nest, 1)))
-str(head(slice(data_nest_all, 1)))
-
-cor_fun <- function(df) cor.test(df$tchla,
-                                 df$val,
-                                 method = "pearson") %>% tidy()
-
-
-
-data_nest <- mutate(data_nest, model = map(data, cor_fun))
-data_nest_all <- mutate(data_nest_all, model = map(data, cor_fun))
-
-corr_pr <- select(data_nest, -data) %>% unnest()
-corr_pr_all <- select(data_nest_all, -data) %>% unnest()
-
-corr_pr
-corr_pr_all
-
-corr_pr <- mutate(corr_pr, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
-corr_pr_all <- mutate(corr_pr_all, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
-
-corr_pr <- rbind(corr_pr, corr_pr_all)
-
-corr_pr <- corr_pr %>% 
-  mutate(tchla_loc = case_when(is.na(tchla_loc) ~ "TChla_all", 
-                           TRUE ~ as.character(tchla_loc)))
-  
-```
-
-```{r}
-
-#Order locations from fjord to shelf
-env_loc <- c("temp",
-               "sal",
-               "drho",
-               "dep_26_dm",
-               "up_b1",
-               "no2",
-               "po4_dm",
-               "sio2_dm",
-               "secchi",
-               "gm_b1",
-               "sm_b1",
-               "ra_b1",
-               "wan_b1",
-               "wind_b1",
-               "wind_dir_b1",
-               "par_b1")
-
-loc <- c("TChla_all", "tchla_f", "tchla_c", "tchla_s")
-
-#Chemtax - Specify order of phyto groups for figures
-corr_pr <- arrange(mutate(corr_pr,
-                         par = factor(par, levels = env_loc)))
-
-#Chemtax - Specify order of phyto groups for figures
-corr_pr <- arrange(mutate(corr_pr,
-                         tchla_loc = factor(tchla_loc, levels = loc)))
-```
-
-```{r}
-p <- ggplot()+
-  geom_tile(data = corr_pr,
-            aes(par, tchla_loc, fill = estimate),
-            size = 1,
-            colour = "white")+
-  geom_tile(data = filter(corr_pr, sig == "Sig."),
-            aes(par, tchla_loc),
-            size = 1.5,
-            colour = "black",
-            fill = "transparent") +
-  geom_text(data = corr_pr,
-            aes(par, tchla_loc, label = round(estimate, 2),
-                fontface = ifelse(sig == "Sig.", "bold", "plain")),
-            size = 7) +
-  scale_x_discrete(labels = c("temp" = "Temp",
-                              "sal" = "Sal",
-                             "drho" = "Δρ",
-                             "dep_26_dm" = "ρ1026",
-                             "up_b1" = "UI",
-                             "no2" = "DIN",
-                             "po4_dm" = "DIP",
-                             "sio2_dm" = "DSi",
-                             "secchi" = "SD",
-                             "gm_b1" = "G.Mtn.",
-                             "sm_b1" = "S.Mtn.",
-                             "ra_b1" = "Rain",
-                             "wan_b1" = "Wan",
-                             "wind_b1" = "WS",
-                             "wind_dir_b1" = "WD",
-                             "par_b1" = "PAR")) +
-  scale_y_discrete(labels = c("TChla_all" = "TChla-all",
-                              "tchla_f" = "TChla-F",
-                              "tchla_c" = "TChla-C",
-                              "tchla_s" = "TChla-S")) +
-  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
-                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
-                       name = "Spearmans Rank Correlation") +
-  theme_bw() +
-  theme(text = element_text(size = 30),
-        axis.title.x = element_blank(),
-        strip.background = element_blank(),
-        strip.text.y = element_blank(),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
-        axis.title.y = element_blank(),
-        axis.text = element_text(colour = "black"),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.background = element_blank(),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        axis.line = element_line(colour = "black"),
-        legend.background = element_blank(),
-        legend.key.width = unit(5, "cm"),
-        legend.key.height = unit(0.4, "cm"),
-        legend.title = element_text(size = 20),
-        legend.title.align = 0.5,
-        legend.text = element_text(size = 15)) +
-        guides(fill = "none") 
-
-ggsave(here("figures_cor", "pearsons_tchla.png"), 
-       width = 15, height = 6, dpi = 300)
-
-# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
-```
-
-```{r}
-panel <- wrap_elements(full = fig) / sr / p +
-  plot_layout(heights = c(2, 0.5, 0.5), widths = c(2, 1, 1))
-
-ggsave(here("figures_cor", "pca_spearmans_pearson_panel_s2.png"), panel,
-        width = 16, height = 14, dpi = 300)
 ```
 
 
@@ -871,7 +427,7 @@ fviz_gap_stat(gap_stat)
 ```{r}
 #This step sets clusters. Currently, set to three. Not fully supported by silhouette plot, but does make sense considering the data.
 
-k <- 5
+k <- 4
 clust <- cutree(cluster.average, k = k)
 
 clust.df <- data.frame(label = rownames(hc),
@@ -988,7 +544,6 @@ sites_loc_pca_clust <- sites_loc_pca_clust %>%
   relocate(cluster, .after = month)
 ```
 
-
 ```{r}
 test <- data_pca %>% 
   unite(sample_name, c(location, date), sep = "", remove = FALSE)
@@ -997,23 +552,23 @@ test <- test %>%
   left_join(clust_df)
 
 test %>% 
-  select(cluster, temp:par_b1) %>% 
+  select(cluster, temp:secchi) %>% 
   pivot_longer(!cluster, names_to = "param", values_to = "val") %>% 
   ggplot(aes(x = as.factor(cluster), y = val)) +
   geom_boxplot() +
   ggpubr::stat_compare_means(size = 6) +
   facet_wrap(~param, scales = "free_y")
 
-ggsave(here("figures_pca", "KW_test_physical.png"),
+ggsave(here("figures_pca", "KW_test_physical_basics.png"),
        width = 16, height = 16, dpi = 300)
 ```
 
 ```{r}
-kruskal.test(sio2_dm ~ cluster, data = test)
-
-test$cluster <- as.factor(test$cluster)
-
-#Dunn Test to look where differences are occuring.
-FSA::dunnTest(test$sio2_dm ~ test$cluster,
-              method = "bonferroni")
+# kruskal.test(sio2_dm ~ cluster, data = test)
+# 
+# test$cluster <- as.factor(test$cluster)
+# 
+# #Dunn Test to look where differences are occuring.
+# FSA::dunnTest(test$sio2_dm ~ test$cluster,
+#               method = "bonferroni")
 ```

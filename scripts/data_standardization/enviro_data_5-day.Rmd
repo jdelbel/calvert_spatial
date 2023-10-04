@@ -1,0 +1,209 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(zoo)
+```
+
+```{r}
+#Upload data
+
+#Discharge from the Wannock River.
+wan <- read_csv(here("files", "river.csv")) 
+
+#Discharge from the Dean/Burke watersheds.
+db <- read_csv(here("files", "Daily_flow_long_2018_2020_v2023_04_27.csv"))
+
+#Lookout wind data.
+lk_wind <- read_csv(here("files", "wind_lookout.csv"))
+
+#Lookout PAR data.
+lk_par <- read_csv(here("files", "lookout_par.csv"))
+
+#Upwelling
+up <- read_csv(here("files", "upwell.csv"))
+```
+
+```{r}
+#Filtering and selecting needed columns for the wannock discharge datasheet
+wan_ds <- wan %>%
+  filter(PARAM == 1) %>% 
+  mutate(year = lubridate::year(Date),
+         month = lubridate::month(Date),
+         yday = lubridate::yday(Date)) %>% 
+  select(date = Date, year, month, yday, dis = Value) %>% 
+  filter(year > 2017 & year < 2022)
+
+#calculating the backwards 10 day mean with a minus one day lag
+wan_mean <- wan_ds %>%
+  mutate(wan_b1 = rollmeanr(lag(dis, 0), k = 5, fill = NA))
+
+#Selecting the final data - daily and mean/lagged columns
+wan_mean <- wan_mean %>% 
+  select(date, wan_dis = dis, wan_b1)
+```
+
+```{r}
+#Filtering and selecting needed columns for the Dean/Burke discharge datasheet
+db_ds <- db %>%
+  mutate(date = lubridate::date(Date)) %>%
+  mutate(date = lubridate::ymd(date)) %>% 
+  select(date, Watershed_group, Q)
+
+#Snow mountain watershed - calculating the backwards 10 day mean with a minus one day lag
+db_sm <- db_ds %>% 
+  filter(Watershed_group == "Q_SM") %>% 
+  mutate(sm_b1 = rollmeanr(lag(Q, 0), k = 5, fill = NA)) %>%
+  select(!Watershed_group) %>% 
+  rename(sm_dis = Q)
+
+#glacial mountain watershed - calculating the backwards 10 day mean with a minus one day lag
+db_gm <- db_ds %>% 
+  filter(Watershed_group == "Q_GM") %>% 
+  mutate(gm_b1 = rollmeanr(lag(Q, 0), k = 5, fill = NA)) %>%  
+  select(!Watershed_group) %>%
+  rename(gm_dis = Q)
+
+#Rain watershed - calculating the backwards 10 day mean with a minus one day lag
+db_ra <- db_ds %>% 
+  filter(Watershed_group == "Q_RA") %>% 
+  mutate(ra_b1 = rollmeanr(lag(Q, 0), k = 5, fill = NA)) %>% 
+  select(!Watershed_group) %>%
+  rename(ra_dis = Q)
+```
+
+```{r}
+#Filtering and selecting needed columns for the lookout wind data
+lk_wind2 <- lk_wind %>%
+  filter(WindSpd_UQL == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, WindSpd_Avg, WindDir_Avg) %>% 
+  filter(year > 2017 & year < 2022)
+
+#Calculating the daily mean of the wind data and then the backwards running 3 day mean with a one day lag
+wind_mean <- lk_wind2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(wind_dm = mean(WindSpd_Avg),
+            wind_dir_dm = mean(WindDir_Avg)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(wind_b1 = rollmeanr(lag(wind_dm, 1), k = 3, fill = NA),
+         wind_dir_b1 = rollmeanr(lag(wind_dir_dm, 1), k = 3, fill = NA)) %>% 
+  select(date, wind_dm, wind_b1, wind_dir_dm, wind_dir_b1)
+  
+```
+
+```{r}
+par <- lk_par %>%
+  filter(`1hourPAR_UQL` == 2) %>% 
+  mutate(date = lubridate::mdy_hm(measurementTime),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, par = `1hourPAR`) %>% 
+  filter(year > 2017 & year < 2022)
+
+par_mean <- par %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(par_dm = mean(par)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(par_b1 = rollmeanr(lag(par_dm, 1), k = 3, fill = NA)) %>% 
+  select(date, par_dm, par_b1)
+  
+```
+
+```{r}
+#Filtering and selecting needed columns for the lookout wind data
+up2 <- up%>%
+  mutate(date = lubridate::date(time),
+         year = lubridate::year(date),
+         month = lubridate::month(date),
+         yday = lubridate::yday(date)) %>% 
+  select(date, year, month, yday, upwelling_index) %>% 
+  filter(year > 2017 & year < 2022)
+
+#Calculating the daily mean of the wind data and then the backwards running 3 day mean with a one day lag
+up_mean <- up2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(up_dm = mean(upwelling_index)) %>% 
+  ungroup() %>% 
+  rename(date = date2) %>%
+  mutate(up_b1 = rollmeanr(lag(up_dm, 1), k = 3, fill = NA)) %>% 
+  select(date, up_dm, up_b1)
+  
+```
+
+
+```{r}
+data <- wan_mean %>% 
+  left_join(db_sm) %>% 
+  left_join(db_gm) %>% 
+  left_join(db_ra) %>% 
+  left_join(wind_mean) %>% 
+  left_join(par_mean) %>% 
+  left_join(up_mean)
+```
+
+```{r}
+write_csv(data, here("outputs", "enviro_2023-10-03_up_5day.csv"))
+```
+
+
+```{r}
+up_dm <- up2 %>% 
+  mutate(date2 = lubridate::date(date)) %>% 
+  group_by(date2) %>% 
+  summarize(up_dm = mean(upwelling_index))
+
+up_cm <- up_dm %>% 
+  drop_na() %>% 
+  mutate(year = lubridate::year(date2),
+         yday = lubridate::yday(date2)) %>% 
+  group_by(year) %>% 
+  mutate(test = cumsum(up_dm)) %>% 
+  ungroup()
+
+up_cm %>% 
+  filter(year < 2021) %>% 
+  ggplot(aes(x = date2, y = test/10^4, color = as.factor(year))) +
+  geom_line(size = 2) +
+  theme_bw()
+
+wind_mean %>% 
+  mutate(year = lubridate::year(date),
+         yday = lubridate::yday(date)) %>% 
+  filter(year < 2021) %>% 
+  ggplot(aes(x = yday, y = wind_dir_dm, color = as.factor(year))) +
+  geom_smooth(span = 0.5) +
+  theme_bw()
+  
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

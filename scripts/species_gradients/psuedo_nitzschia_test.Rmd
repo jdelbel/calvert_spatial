@@ -1,0 +1,123 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(gsw)
+library(here)
+library(vegan)
+library(adespatial)
+library(ggord)
+library(fuzzySim)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(zoo)
+library(RColorBrewer)
+```
+
+```{r}
+#Upload data
+
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+
+ctd <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
+
+chl <- read_csv(here("outputs", "tchla_calibration_2022-11-15.csv"))
+
+clust <- read_csv(here("outputs", "final_cluster_2023-07-31.csv"))
+
+chem <- read_csv(here("files", "chemtax_2023-04-14.csv"))
+
+sf <- read_csv(here("files", "chl_2018_2020.csv"))
+```
+
+```{r}
+#Pivoting data for RDA analysis
+
+#Selecting columns for pivot
+micro_piv <- micro %>%
+  mutate(month = lubridate::month(date)) %>% 
+  select(date, month, site_id, scientificName, species_sum)
+
+#performing pivot and making NA's 0's. 
+micro_piv <- micro_piv %>% 
+  pivot_wider(names_from = scientificName, values_from = species_sum,
+              values_fill = 0) 
+
+micro_piv <- micro_piv %>% 
+  select(!month)
+```
+
+```{r}
+#Selecting columns from the CTD master sheet
+ctd <- ctd %>% 
+  select(date, site_id, temp_dm, sal_dm, delta_rho_dm, no2_dm:secchi_depth, dep_26_dm, turb_dm)
+```
+
+```{r}
+data <- ctd %>% 
+  left_join(env) %>% 
+  left_join(chl)
+```
+```{r}
+#Selecting and renaming the columns that I want
+data <- data %>% 
+  select(date:site_id,
+         temp = temp_dm,
+         sal = sal_dm,
+         drho = delta_rho_dm,
+         no2 = no2_dm,
+         sio2 = sio2_dm,
+         po4 = po4_dm,
+         secchi = secchi_depth,
+         wan_b1, 
+         sm_b1,
+         gm_b1,
+         ra_b1,
+         wind_b1,
+         wind_dir_b1,
+         par_b1,
+         UI = up_b1,
+         p1026 = dep_26_dm,
+         tchla)
+
+micro_join <- data %>%
+  left_join(micro_piv)
+
+```
+```{r}
+riv <- env %>%
+  mutate(Q_tot = gm_b1 + sm_b1 + ra_b1) %>% 
+  select(date, Q_GM = gm_dis, Q_SM = sm_dis, Q_RA = ra_dis, Q_tot) %>% 
+  pivot_longer(!date, names_to = "Watershed_group", values_to = "Q")
+
+# Order locations from fjord to shelf
+riv_loc <- c("Q_GM",
+             "Q_SM",
+             "Q_RA",
+             "Q_tot")
+
+riv <- arrange(mutate(riv, 
+                      Watershed_group = factor(Watershed_group,
+                                               levels = riv_loc)))
+```
+
+
+```{r}
+micro %>% 
+  
+```
+
+
+
+
+
