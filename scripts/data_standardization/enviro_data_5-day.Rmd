@@ -76,7 +76,16 @@ db_ra <- db_ds %>%
   mutate(ra_b1 = rollmeanr(lag(Q, 0), k = 5, fill = NA)) %>% 
   select(!Watershed_group) %>%
   rename(ra_dis = Q)
+
+db_tot <- db_ds %>% 
+  filter(Watershed_group == "Q_Total") %>% 
+  mutate(tot_b1 = rollmeanr(lag(Q, 0), k = 5, fill = NA)) %>% 
+  select(!Watershed_group) %>%
+  rename(tot_dis = Q)
 ```
+
+
+
 
 ```{r}
 #Filtering and selecting needed columns for the lookout wind data
@@ -97,8 +106,8 @@ wind_mean <- lk_wind2 %>%
             wind_dir_dm = mean(WindDir_Avg)) %>% 
   ungroup() %>% 
   rename(date = date2) %>%
-  mutate(wind_b1 = rollmeanr(lag(wind_dm, 1), k = 3, fill = NA),
-         wind_dir_b1 = rollmeanr(lag(wind_dir_dm, 1), k = 3, fill = NA)) %>% 
+  mutate(wind_b1 = rollmeanr(lag(wind_dm, 0), k = 5, fill = NA),
+         wind_dir_b1 = rollmeanr(lag(wind_dir_dm, 0), k = 5, fill = NA)) %>% 
   select(date, wind_dm, wind_b1, wind_dir_dm, wind_dir_b1)
   
 ```
@@ -119,7 +128,7 @@ par_mean <- par %>%
   summarize(par_dm = mean(par)) %>% 
   ungroup() %>% 
   rename(date = date2) %>%
-  mutate(par_b1 = rollmeanr(lag(par_dm, 1), k = 3, fill = NA)) %>% 
+  mutate(par_b1 = rollmeanr(lag(par_dm, 0), k = 5, fill = NA)) %>% 
   select(date, par_dm, par_b1)
   
 ```
@@ -141,7 +150,7 @@ up_mean <- up2 %>%
   summarize(up_dm = mean(upwelling_index)) %>% 
   ungroup() %>% 
   rename(date = date2) %>%
-  mutate(up_b1 = rollmeanr(lag(up_dm, 1), k = 3, fill = NA)) %>% 
+  mutate(up_b1 = rollmeanr(lag(up_dm, 0), k = 5, fill = NA)) %>% 
   select(date, up_dm, up_b1)
   
 ```
@@ -152,6 +161,7 @@ data <- wan_mean %>%
   left_join(db_sm) %>% 
   left_join(db_gm) %>% 
   left_join(db_ra) %>% 
+  left_join(db_tot) %>% 
   left_join(wind_mean) %>% 
   left_join(par_mean) %>% 
   left_join(up_mean)
@@ -187,6 +197,7 @@ wind_mean %>%
          yday = lubridate::yday(date)) %>% 
   filter(year < 2021) %>% 
   ggplot(aes(x = yday, y = wind_dir_dm, color = as.factor(year))) +
+  geom_line() +
   geom_smooth(span = 0.5) +
   theme_bw()
   

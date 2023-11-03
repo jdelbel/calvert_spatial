@@ -23,6 +23,7 @@ library(analogue)
 library(clustsig)
 library(BiodiversityR)
 library(ggsci)
+library(ggforce)
 
 ```
 
@@ -54,6 +55,25 @@ sm_size <- read_csv(here("outputs", "s_mar_size_2023-07-03.csv"))
 
 
 ```{r}
+#Filtering out bulk chlorophyll, removing bad data and cutting down on colums
+sf_less <- sf %>% 
+  filter(line_out_depth == 5 & !filter_type == "Bulk GF/F") %>% 
+  filter(chla_flag == "AV" | is.na(chla_flag)) %>%
+  mutate(year = lubridate::year(date)) %>% 
+  select(date, year, site_id, filter_type, chla) %>% 
+  filter(!is.na(chla)) %>% 
+  group_by(date) %>% 
+  mutate(n_filt = n()) %>% 
+  ungroup() %>% 
+  filter(n_filt == 3) %>% 
+  select(-n_filt) %>% 
+  group_by(date, site_id) %>% 
+  mutate(sum_sf = sum(chla)) %>% 
+  ungroup() %>% 
+  mutate(perc_sf = chla/sum_sf) 
+```
+
+```{r}
 chem <- chem %>% 
   rename(cyan = Cyanobacteria, hapt = Hapto, GA = `Prasinophytes-3`,
          cryp = Cryptophytes, dino = `Dinoflagellates-1`, raph = Raphido,
@@ -62,6 +82,8 @@ chem <- chem %>%
 chem_long <- chem %>% 
   pivot_longer(c(cyan:diat), values_to = "tchla", names_to = "group")
 ```
+
+
 
 ```{r}
 
@@ -126,12 +148,6 @@ micro <- micro %>%
   left_join(clust_pca) %>% 
   relocate(cluster, .after = location)
 
-micro_group <- micro %>% 
-  distinct(group)
-
-micro <- micro %>% 
-  filter(!group == "Protozoa") %>% 
-  filter(!group == "Metazoa")
 ```
 
 ```{r}
@@ -141,23 +157,23 @@ species_distinct <- micro %>%
 
 # Separating out diatoms
 # micro <- micro %>%
-#   filter(group == "Bacillariophyta")
+#   filter(!group == "Bacillariophyta")
 ```
 
 ```{r}
 #Filtering out species that are not present in at least 10% of the samples - this is important for the clustering and nMDS methods I am using as these species can skew the results.
 
 #Determining total number of samples in the dataset
-sample_num <- micro %>%
+sample_num <- micro %>% 
   distinct(date, site_id)
 
 #Determining species that are present in > 10% of samples.
-species_10 <- micro %>%
-  group_by(scientificName) %>%
+species_10 <- micro %>% 
+  group_by(scientificName) %>% 
   summarise(n_obs = n()) %>%
-  ungroup() %>%
-  mutate(perc_obs = n_obs/78) %>%
-  filter(perc_obs >= 0.05)
+  ungroup() %>% 
+  mutate(perc_obs = n_obs/78) %>% 
+  filter(perc_obs >= 0.10)
 
 # species_2 <- micro %>% 
 #   group_by(scientificName) %>% 
@@ -170,8 +186,8 @@ species_10_list <- species_10$scientificName
 # species_2_list <- species_2$scientificName
 
 #Removing species that are not present in > 10% of samples.
-micro <- micro %>%
-  filter(scientificName %in% species_10_list)
+micro <- micro %>% 
+  filter(scientificName %in% species_10_list) 
 # %>% 
 #   filter(!scientificName %in% species_2_list)
 ```
@@ -184,9 +200,6 @@ micro <- micro %>%
          month = lubridate::month(date)) %>% 
   relocate(year, .after = date) %>% 
   relocate(month, .after = year)
-
-# micro <- micro %>% 
-#   filter(site_id == "QCS01" | site_id == "KC10")
 ```
 
 ```{r}
@@ -211,13 +224,9 @@ species <- micro_piv[, 8:ncol(micro_piv)]
 #Transforming the abundance data
 # t_abund <- disttransform(species, method = "chord")
 
-# t_abund <- decostand(species, "total")
+t_abund <- (log10(species + 0.1) + 1)
 
-t_abund_log <- log10(species + 0.1) + 1
-t_abund <- sqrt(species)
 ```
-
-
 
 ```{r}
 #Making separate sheets to performed clustering on.
@@ -250,7 +259,7 @@ dis_abund <- vegdist(hc_abund, method = "bray")
 
 #Applying wards linkage method
 # clust_ward_abund <- agnes(dis_abund, method = "ward")
-clust_ward_abund <- hclust(dis_abund, method = "average")
+clust_ward_abund <- hclust(dis_abund, method = "complete")
 
 
 ```
@@ -260,13 +269,12 @@ rownames(t_abund) <- labs_list
 
 res_avg <- simprof(data = t_abund, 
                method.distance = "braycurtis",
-               method.cluster = "average")
+               method.cluster = "ward")
 
 res_cmp <- simprof(data = t_abund, 
                method.distance = "braycurtis",
-               method.cluster = "complete")
+               method.cluster = "ward")
 ```
-
 
 ```{r}
 simprof.plot(res_avg)
@@ -276,14 +284,13 @@ res_avg$significantclusters
 res_cmp$significantclusters
 ```
 
-
 ```{r}
 clust_sp_avg <- as.data.frame(do.call(rbind, res_avg$significantclusters))
 clust_sp_cmp <- as.data.frame(do.call(rbind, res_cmp$significantclusters))
 
 clust_sp_avg <- clust_sp_avg %>% 
   mutate(rn = row_number()) %>% 
-  pivot_longer(c(V1:V15), names_to = "cluster", values_to = "sample_name") %>% 
+  pivot_longer(c(V1:V16), names_to = "cluster", values_to = "sample_name") %>% 
   select(-cluster) %>% 
   rename(cluster_avg = rn) %>% 
   group_by(cluster_avg) %>% 
@@ -292,7 +299,7 @@ clust_sp_avg <- clust_sp_avg %>%
 
 clust_sp_cmp <- clust_sp_cmp %>% 
   mutate(rn = row_number()) %>% 
-  pivot_longer(c(V1:V23), names_to = "cluster", values_to = "sample_name") %>% 
+  pivot_longer(c(V1:V17), names_to = "cluster", values_to = "sample_name") %>% 
   select(-cluster) %>% 
   rename(cluster_cmp = rn) %>% 
   group_by(cluster_cmp) %>% 
@@ -301,53 +308,217 @@ clust_sp_cmp <- clust_sp_cmp %>%
 ```
 
 ```{r}
+coph <- cophenetic(clust_ward_abund)
+cor(dis_abund, coph) 
+```
+
+```{r}
+# Enhanced hierarchical clustering, cut in 3 groups
+fviz_dend(clust_ward_abund, cex = 0.5, h = 0.6, color_labels_by_k = TRUE)
+
+```
+
+```{r}
+#For the abundance data, looking at some methods to determine the number of clusters
+
+#These are time intensive, so turning off until needed
+
+fviz_nbclust(hc_abund, FUN = hcut, method = "wss")
+fviz_nbclust(hc_abund, FUN = hcut, method = "silhouette")
+gap_stat <- clusGap(hc_abund, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
+
+#In general, these approaches do not show many clusters - only 2. This bothers me as there is clearly more structure in the data.
+```
+
+
+```{r}
+#Trying cutting at line 
+
+# Abundance data
+k_abund <- 0.67
+clust_abund <- cutree(clust_ward_abund, h = k_abund)
+#
+clust_df_abund <- data.frame(label = rownames(hc_abund),
+                                   cluster = factor(clust_abund))
+```
+
+
+```{r}
+# extract dendrogram segment data for plotting
+
+#Abundance data
+dend_abund <- as.dendrogram(clust_ward_abund)
+dendrogram_data_abund <- dendro_data(dend_abund)
+dendrogram_segments_abund <- dendrogram_data_abund$segments 
+
+```
+
+```{r}
+#Setting up sheets so that I can color labels by station
+
+#Creating metadata sheet with 
+metadata <- micro_piv %>%
+  select(sample_name, site_id)
+
+# get terminal dendrogram segments and join with names. - abundance data.
+dendrogram_ends_abund <- dendrogram_segments_abund %>%
+ filter(yend == 0) %>% 
+ left_join(dendrogram_data_abund$labels, by = "x") %>% 
+ rename(sample_name = label) %>% 
+ left_join(metadata, by = "sample_name") 
+
+```
+
+```{r}
+#This is used to draw cluster boxes around the dendrogram clusters in the plot. 
+
+
+#Abundance
+dendrogram_data_abund[["labels"]] <- merge(dendrogram_data_abund[["labels"]], clust_df_abund, by = "label")
+rect_abund <- aggregate(x~cluster, label(dendrogram_data_abund), range)
+rect_abund <- data.frame(rect_abund$cluster, rect_abund$x)
+ymax_abund <- mean(clust_ward_abund$height[length(clust_ward_abund$height) - ((k_abund-2):(k_abund-1))])
+
+```
+
+
+```{r}
+#I'm not 100% sure how this all works, but it does - sets up colors for the sites for plotting with dendrogram.
+
+#Here doing abundance data
+
+# Generate custom color palette for dendrogram ends based on metadata variable - Site
+unique_vars_abund <- levels(factor(dendrogram_ends_abund$site_id)) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("row_id")
+
+# count number of unique variables
+color_count_abund <- length(unique(unique_vars_abund$.))
+
+# get RColorBrewer palette
+get_palette_abund <- colorRampPalette(brewer.pal(n = 3, name = "Set1"))
+
+# produce RColorBrewer palette based on number of unique variables in metadata:
+palette_abund <- get_palette_abund(color_count_abund) %>% 
+ as.data.frame() %>%
+ rename("color" = ".") %>%
+ rownames_to_column(var = "row_id")
+
+color_list_abund <- left_join(unique_vars_abund, palette_abund, by = "row_id") %>%
+ select(-row_id)
+
+site_color_abund <- as.character(color_list_abund$color)
+names(site_color_abund) <- color_list_abund$.
+```
+
+```{r}
+clust_df_abund2 <- clust_df_abund %>% 
+  rename(sample_name = label)
+
+dendrogram_ends_abund <- dendrogram_ends_abund %>% 
+  left_join(clust_df_abund2)
+```
+
+```{r}
+#Plotting dendrogram - saving for incorporation later.
+dendro <- ggplot() +
+ geom_segment(data = dendrogram_segments_abund, 
+              aes(x = x, y = y, xend = xend, yend = yend)) +
+ geom_segment(data = dendrogram_ends_abund, aes(x = x, y = y.x, xend = xend,
+                                          yend = yend, color = as.factor(cluster),
+              size = 3)) +
+ geom_text(data = dendrogram_ends_abund, aes(x = x, y = y.y, label = sample_name,
+                                       color = as.factor(cluster),
+           hjust = 1, angle = 90, size = 4)) +
+ geom_hline(yintercept = 0.67, size = 1) +
+ geom_rect(data = rect_abund, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0,
+                                  ymax = ymax_abund),
+            color = "black", fill = NA, size = 0.8) +
+ # scale_color_manual(values = site_color_abund) +
+ # scale_y_reverse(limits = c(1, -0.5)) +
+ scale_color_npg() +
+ ylim(-0.7, 1) +
+  # coord_flip() +
+ ylab("BC Similarity") +
+ theme_bw() +
+ theme(axis.text = element_text(colour = "black"),
+       legend.position = "none",
+       axis.title.x = element_blank(),
+       # axis.title.y = element_blank(),
+       axis.text.x = element_blank(),
+       text = element_text(size = 25)) +
+ annotate("text", x = 4, y = 0.25, label = "C2-W2", size = 9) +
+ annotate("text", x = 12, y = 0.25, label = "C1-W1", size = 9) +
+ annotate("text", x = 22, y = 0.25, label = "C5-SB", size = 9) +
+ annotate("text", x = 31.5, y = 0.25, label = "C6-PN", size = 9) +
+ annotate("text", x = 48, y = 0.25, label = "C4-SM", size = 9) +
+ annotate("text", x = 70, y = 0.25, label = "C3-F", size = 9)
+
+ggsave(here("figures_nmds_new", "2023-07-19_complete.png"),
+       width = 16, height = 8, dpi = 300)
+```
+
+```{r}
+#Setting up the derived abundance clusters for joining with the actual data
+clust_abund_join <- clust_df_abund %>% 
+  select(sample_name = label, clust_abund = cluster)
+
 micro_piv <- micro_piv %>% 
-  left_join(clust_sp_cmp) %>% 
-  relocate(cluster_cmp, .after = cluster)
-
-mp_3 <- micro_piv %>%   
+  left_join(clust_abund_join) %>% 
   left_join(clust_sp_avg) %>% 
-  relocate(cluster_avg, .after = cluster_cmp) %>% 
-  filter(!sample_name == "C2019-06-10") %>% 
-  filter(!sample_name == "F2019-05-14")
+  left_join(clust_sp_cmp) 
 
-mp_2 <- micro_piv %>% 
-  filter(!cluster_cmp == 5)
+micro_piv <- micro_piv %>% 
+  relocate(clust_abund, .after = cluster) %>% 
+  relocate(cluster_avg, .after = clust_abund) %>% 
+  relocate(cluster_cmp, .after = cluster_avg)
 
-species2 <- mp_2[, 9:ncol(mp_2)]
-species3 <- mp_3[, 10:ncol(mp_3)]
-
-#Transforming the abundance data
-# t_abund <- disttransform(species, method = "chord")
-
-# t_abund <- decostand(species, "total")
+micro_piv <- micro_piv %>% 
+  filter(!cluster_cmp == 3) %>% 
+  filter(!cluster_cmp == 10)
 
 
-t_abund2 <- sqrt(species2)
-t_abund3 <- sqrt(species3)
+clust <- micro_piv %>% 
+  select(date, site_id, clust_abund)
 ```
-
-```{r}
-
-cluster_avg
-cluster_cmp <- mp_2$cluster_cmp
-cluster_avg <- mp_3$cluster_avg
-```
-
 
 
 ```{r}
+write_csv(clust, here("outputs", "bio_clust_full.csv"))
 
-iv <- labdsv::indval(t_abund3, cluster_avg)
-
-summary(iv)
 ```
+Should probably transfer indicator analysis for both PCA and taxonomy data to separate sheet
 
+```{r}
+#ANOSIM test to see if groupings statistically significant 
+clust_pca <- micro_piv$clust_pca
+clust_abund <- micro_piv$cluster_cmp
+
+ano_clust_abund = anosim(t_abund, clust_abund, distance = "bray", permutations = 9999)
+ano_clust_abund
+
+
+```
 
 
 
 ```{r}
-mp_3 <- mp_3 %>%
+set.seed(123)
+
+#Running nmds all species
+nmds_abund <-  metaMDS(t_abund, distance = "bray", autotransform = F, 
+                         k = 2, trymax = 100) 
+
+#Show results including stress 
+nmds_abund
+
+#Checking stressplot for fit
+stressplot(nmds_abund)
+
+```
+```{r}
+micro_piv <- micro_piv %>%
   mutate(month = lubridate::month(date)) %>% 
   mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "W",
                             month >= 3 & month <= 5 ~ "Sp",
@@ -356,27 +527,259 @@ mp_3 <- mp_3 %>%
   relocate(season, .after = month)    
   
 #I want to push December from each year to winter of the next year
-mp_3 <- mp_3 %>%
+micro_piv <- micro_piv %>%
   mutate(year = case_when(season == "winter" & month == 12 ~ year + 1,
                            TRUE ~ as.numeric(year)))
 
 order_loc_seas <- c("W", "Sp", "S", "A")
 
-mp_3 <- arrange(mutate(mp_3,
+micro_piv <- arrange(mutate(micro_piv,
+                         season = factor(season, levels = order_loc_seas)))
+```
+
+
+```{r}
+#Pulling NMDS scores, months and stations for plotting NMDS is ggplot
+
+#All abundance
+data.scores_abund = as.data.frame(scores(nmds_abund))
+data.scores_abund$date = micro_piv$date
+data.scores_abund$month = micro_piv$month
+data.scores_abund$site = micro_piv$location
+data.scores_abund$year = micro_piv$year
+data.scores_abund$clust_pca = micro_piv$pca_clust
+data.scores_abund$clust_abund = micro_piv$cluster_cmp
+data.scores_abund$season = micro_piv$season
+```
+
+```{r}
+#Order locations from fjord to shelf for plotting order
+order_loc <- c("F", "C", "S")
+
+#Setting location order for plots 
+data.scores_abund <- arrange(mutate(data.scores_abund,
+                         site = factor(site, levels = order_loc)))
+
+```
+
+
+```{r}
+# #Looking at species scores to add to the nmds plot
+# 
+#All species
+vf <- envfit(nmds_abund, t_abund, perm = 999)
+# 
+# #Diatoms
+# vf_diat <- envfit(nmds_diat, transform_diat, perm = 999)
+# 
+# #Dinoflagellates
+# vf_dino <- envfit(nmds_dino, transform_dino, perm = 999)
+# 
+#Pulling out r2 scores
+#All species
+r2 <- vf$vectors$r
+# 
+# #Diatoms
+# r2_diat <- vf_diat$vectors$r
+# 
+# #Diatoms
+# r2_dino <- vf_dino$vectors$r
+# 
+#MAking dataframe out of r2 values
+#All species
+r2_df <- as.data.frame(r2)
+# 
+# #Diatoms
+# r2_df_diat <- as.data.frame(r2_diat)
+# 
+# #Dino
+# r2_df_dino <- as.data.frame(r2_dino)
+# 
+# #Pulling and binding vectors and r2 scores
+# #All species
+spp.scrs <- as.data.frame(scores(vf, display = "vectors"))
+spp.scrs <- cbind(spp.scrs, Species = rownames(spp.scrs))
+spp.scrs2 <- cbind(spp.scrs, r2_df)
+```
+
+
+```{r}
+#Pulling species with only r2 > 0.3 scores
+#All species
+spp.scrs2 <- spp.scrs2 %>%
+  filter(r2 >= 0.30)
+# 
+# #Diatoms
+# spp.scrs2_diat <- spp.scrs2_diat %>%
+#   filter(r2_diat >= 0.30)
+# 
+# #Dinoflagellates
+# spp.scrs2_dino <- spp.scrs2_dino %>%
+#   filter(r2_dino >= 0.30)
+```
+
+
+```{r}
+#Making shorter abbreviated species names for plotting
+
+# rownames(spp.scrs2) <- c("Hill.",
+#                          "Tel.",
+#                          "S.mar.",
+#                          "P.pou.",
+#                          "C.soc.",
+#                          "C.cin.") 
+# 
+# rownames(spp.scrs2_diat) <- c("C.clo.",
+#                               "P.n.s.",
+#                               "R.set.",
+#                               "Pen.",
+#                               "S.mar.",
+#                               "Bid.",
+#                               "L.dan.")
+# 
+# rownames(spp.scrs2_dino) <- c("Gymn.",
+#                               "Gyro.",
+#                               "Kato.",
+#                               "S.pre.",
+#                               "S.tro.")
+#                               
+```
+
+```{r}
+#This is the horizontal version of the month and year nMDS panel shown incorporated into a large panel later 
+
+ggplot(data = data.scores_abund, aes(x = NMDS1, y = NMDS2)) + 
+  geom_point(data = data.scores_abund, aes(fill = as.factor(clust_abund), shape = site),
+             size = 7, stroke = 2) + 
+  scale_fill_brewer(palette = "Spectral") +
+  scale_shape_manual(values = c(21, 22, 23)) + 
+  # geom_mark_hull(aes(color = season),
+  #                  concavity=0.1, size=0.2, show.legend=FALSE) +
+  # geom_segment(data = spp.scrs2,
+  #              aes(x = 0, xend = NMDS1, y = 0, yend = NMDS2),
+  #              arrow = arrow(length = unit(0.25, "cm")), colour = "grey",
+  #              size = 1.2, alpha = 0.7) +
+  # geom_text(data = spp.scrs2, aes(x = NMDS1, y = NMDS2), colour = "black",
+  #            fontface = "bold", label = row.names(spp.scrs2), size = 7) +
+  # ggrepel::geom_text_repel(data = spp.scrs2, aes(x = NMDS1, y = NMDS2,
+  #                                          label = row.names(spp.scrs2)),
+  #                 # box.padding = unit(0.5, 'lines'),
+  #                 # point.padding = NA,
+  #                 point.padding = unit(2, 'lines'),
+  #                 segment.color = 'black',
+  #                 segment.size = 0.5,
+  #                 segment.alpha = 0.7,
+  #                 arrow = arrow(length = unit(0.01, 'npc')),
+  #                 # nudge_y = 0.2,
+  #                 # nudge_x = -0.2,
+  #                 force = 3,
+  #                 max.iter = 3e3,
+  #                 size = 7) +
+  # xlim(-0.4, 0.7) +
+  # annotate("text", x = 0.60, y = 0.40, label = "a)", size = 10) +
+  # annotate("text", x = 0.40, y = -0.40, label = "Stress = 0.23", size = 10) +
+  theme(axis.title = element_text(size = 25, face = "bold", colour = "black"),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        axis.ticks = element_blank(),
+        axis.text = element_blank(),
+        # axis.title.x = element_blank(),
+        # axis.title.y = element_blank(),
+        # legend.position = "none",
+        text = element_text(size = 32)) +
+  labs(fill = "Month", shape = "Station") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)))
+
+# ggsave(here("figures_nmds_new", "2023-07-11.png"),
+#        width = 8, height = 5, dpi = 300)
+```
+
+```{r}
+export_cluster <- data.scores_abund %>% 
+  select(date, site, clust_abund)
+
+write_csv(export_cluster, here("outputs", "final_cluster_2023-07-31.csv"))
+```
+
+```{r}
+#Indicator species analysis
+# https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html
+
+#Indicators by station for diatoms
+inv_clust_abund = multipatt(t_abund, clust_abund, func = "r.g", duleg = T,
+                       control = how(nperm = 999))
+
+#Looking at results of analysis
+summary(inv_clust_abund)
+
+t_abund_2 <- t_abund %>%
+  filter(!row.names(t_abund) %in% c("F2019-08-05","F2019-05-14"))
+clust_abund2 <- micro_piv$cluster_cmp
+
+iv <- labdsv::indval(t_abund_2, clust_abund2)
+
+summary(iv)
+```
+```{r}
+micro_test <- micro %>%
+  left_join(clust_abund_join) %>% 
+  group_by(clust_abund, scientificName) %>%
+  summarise(mean_count = mean(species_sum)) %>% 
+  ungroup() 
+
+# micro_test %>% 
+#   ggplot(aes(x = mean_count, y = clust_abund, fill = scientificName)) +
+#   geom_bar(stat = "stack")
+# 
+# ggsave(here("figures_nmds_new", "test.png"),
+#        width = 8, height = 16, dpi = 300)
+
+micro_piv %>% 
+  ggplot(aes(x = as.factor(clust_abund), y = `Skeletonema marinoi`)) +
+  geom_boxplot()
+
+micro_piv %>% 
+  ggplot(aes(x = date, y = `Thalassiosira nordenskioeldii`, color = site_id)) +
+  geom_line()
+
+sm_size_join <- sm_size %>% 
+  left_join(clust)
+
+sm_size_join %>% 
+  ggplot(aes(x = as.factor(clust_abund), y = species_sum, fill = scientificName)) +
+  geom_boxplot()
+```
+
+```{r}
+micro_piv <- micro_piv %>%
+  mutate(month = lubridate::month(date)) %>% 
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "W",
+                            month >= 3 & month <= 5 ~ "Sp",
+                            month >= 6 & month <= 8 ~ "S",
+                            month >= 9 & month <= 12 ~ "A",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+micro_piv <- micro_piv %>%
+  mutate(year = case_when(season == "winter" & month == 12 ~ year + 1,
+                           TRUE ~ as.numeric(year)))
+
+order_loc_seas <- c("W", "Sp", "S", "A")
+
+micro_piv <- arrange(mutate(micro_piv,
                          season = factor(season, levels = order_loc_seas)))
 ```
 
 ```{r}
 data_pca_join <- data_pca %>% 
-  unite(sample_name, c(location, date), sep = "", remove = FALSE) %>% 
-  left_join(clust_sp_avg)
+  left_join(clust)
 ```
 
 
 
 ```{r}
-f1 <- mp_3 %>% 
-  ggplot(aes(x = as.factor(cluster_avg), fill = as.factor(season))) +
+f1 <- micro_piv %>% 
+  ggplot(aes(x = as.factor(clust_abund), fill = as.factor(season))) +
   geom_bar(position = "stack", color = "black", alpha = 0.8) +
   scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
   labs(y = "# of samples",
@@ -392,8 +795,8 @@ f1 <- mp_3 %>%
         legend.box.background = element_blank(),
         legend.key = element_blank())
 
-f2 <- mp_3 %>% 
-  ggplot(aes(x = as.factor(cluster_avg), fill = as.factor(year))) +
+f2 <- micro_piv %>% 
+  ggplot(aes(x = as.factor(clust_abund), fill = as.factor(year))) +
   geom_bar(position = "stack", color = "black", alpha = 0.8) +
   scale_fill_brewer(palette = "Dark2") + 
   labs(y = "# of samples",
@@ -409,8 +812,8 @@ f2 <- mp_3 %>%
         legend.box.background = element_blank(),
         legend.key = element_blank())
 
-f3 <- mp_3 %>% 
-  ggplot(aes(x = as.factor(cluster_avg), fill = as.factor(site_id))) +
+f3 <- micro_piv %>% 
+  ggplot(aes(x = as.factor(clust_abund), fill = as.factor(site_id))) +
   geom_bar(position = "stack", color = "black", alpha = 0.8) +
   # scale_fill_manual(values = c("brown", "forestgreen", "royalblue4"),
   #                   labels = c("F", "C", "S")) + 
@@ -429,8 +832,8 @@ f3 <- mp_3 %>%
         legend.key = element_blank())
 
 f4 <- data_pca_join %>% 
-  filter(!is.na(cluster_avg)) %>% 
-  ggplot(aes(x = as.factor(cluster_avg), y = temp, fill = as.factor(cluster_avg))) +
+  filter(!is.na(clust_abund)) %>% 
+  ggplot(aes(x = as.factor(clust_abund), y = temp, fill = as.factor(clust_abund))) +
   geom_boxplot() + 
   # ggpubr::stat_compare_means(size = 6) +
   labs(y = "Temp. (°C)") +
@@ -443,8 +846,8 @@ f4 <- data_pca_join %>%
         legend.position = "none")
 
 f5 <- data_pca_join %>% 
-  filter(!is.na(cluster_avg)) %>% 
-  ggplot(aes(x = as.factor(cluster_avg), y = sal, fill = as.factor(cluster_avg))) +
+  filter(!is.na(clust_abund)) %>% 
+  ggplot(aes(x = as.factor(clust_abund), y = sal, fill = as.factor(clust_abund))) +
   geom_boxplot() +
   scale_fill_npg() +
   labs(y = "Salinity") +
@@ -457,8 +860,8 @@ f5 <- data_pca_join %>%
         legend.position = "none")
 
 f6 <- data_pca_join %>% 
-  filter(!is.na(cluster_avg)) %>% 
-  ggplot(aes(x = as.factor(cluster_avg), y = sio2_dm, fill = as.factor(cluster_avg))) +
+  filter(!is.na(clust_abund)) %>% 
+  ggplot(aes(x = as.factor(clust_abund), y = sio2_dm, fill = as.factor(clust_abund))) +
   geom_boxplot() + 
   scale_fill_npg() +
   labs(y = "DSi\u0020\u0028\u00B5mol\u0020L\u207B\u00B9\u0029") +
@@ -471,8 +874,8 @@ f6 <- data_pca_join %>%
         legend.position = "none")
 
 f7 <- data_pca_join %>% 
-  filter(!is.na(cluster_avg)) %>% 
-  ggplot(aes(x = as.factor(cluster_avg), y = drho, fill = as.factor(cluster_avg))) +
+  filter(!is.na(clust_abund)) %>% 
+  ggplot(aes(x = as.factor(clust_abund), y = drho, fill = as.factor(clust_abund))) +
   geom_boxplot() +
   scale_fill_npg() +
   labs(y = "Δρ") +
@@ -490,8 +893,8 @@ f7 <- data_pca_join %>%
         legend.position = "none")
 
 f8 <- data_pca_join %>% 
-  filter(!is.na(cluster_avg)) %>% 
-  ggplot(aes(x = as.factor(cluster_avg), y = gm_b1/10^2, fill = as.factor(cluster_avg))) +
+  filter(!is.na(clust_abund)) %>% 
+  ggplot(aes(x = as.factor(clust_abund), y = gm_b1/10^2, fill = as.factor(clust_abund))) +
   geom_boxplot() + 
   scale_fill_npg() +
   labs(y = bquote(G.Mtn. ~ "("~m^-3*~s^-1*")")) +
@@ -503,8 +906,8 @@ f8 <- data_pca_join %>%
         legend.position = "none")
 
 f9 <- data_pca_join %>% 
-  filter(!is.na(cluster_avg)) %>% 
-  ggplot(aes(x = as.factor(cluster_avg), y = tchla, fill = as.factor(cluster_avg))) +
+  filter(!is.na(clust_abund)) %>% 
+  ggplot(aes(x = as.factor(clust_abund), y = tchla, fill = as.factor(clust_abund))) +
   geom_boxplot() + 
   scale_fill_npg() +
   labs(y = bquote("TChla (mg" ~ m^-3*")")) +
@@ -517,23 +920,16 @@ f9 <- data_pca_join %>%
         legend.position = "none")
 ```
 
-```{r}
-fig <- f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9
-
-ggsave(here("figures_nmds_new", "dendro_box_2023-10-27_SP_AVG.png"), fig,
-       width = 16, height = 16, dpi = 300)
-```
-
 
 
 ```{r}
-# kruskal.test(sal ~ clust_abund, data = data_pca_join)
-# 
-# data_pca_join$clust_abund <- as.factor(data_pca_join$clust_abund)
-# 
-# #Dunn Test to look where differences are occuring.
-# FSA::dunnTest(data_pca_join$sal ~ data_pca_join$clust_abund,
-#               method = "bonferroni")
+kruskal.test(sal ~ clust_abund, data = data_pca_join)
+
+data_pca_join$clust_abund <- as.factor(data_pca_join$clust_abund)
+
+#Dunn Test to look where differences are occuring.
+FSA::dunnTest(data_pca_join$sal ~ data_pca_join$clust_abund,
+              method = "bonferroni")
 
 ```
 
@@ -773,11 +1169,54 @@ FSA::dunnTest(sf_join_20$perc_sf ~ sf_join_20$clust_abund,
 ```
 
 ```{r}
+fig <- dendro / (f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9) +
+  plot_layout(heights = c(1.5, 4))
+
+ggsave(here("figures_nmds_new", "dendro_box_2023-09-13.png"), fig,
+       width = 16, height = 16, dpi = 300)
+```
+
+```{r}
 fig <- f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + hd + rd + sf + 
                        plot_layout(ncol = 3)
 
-ggsave(here("figures_nmds_new", "box_2023-10-04_60_C_S.png"), fig,
+ggsave(here("figures_nmds_new", "box_2023-09-13.png"), fig,
        width = 16, height = 16, dpi = 300)
+```
+
+```{r}
+test <- data_pca_join %>% 
+  filter(clust_abund == 4) %>% 
+  mutate(clust_abund_2 = case_when(clust_abund == 4 & (date == "2018-05-23" |
+                                                         date == "2020-08-07" |
+                                                         date == "2019-06-11" |
+                                                         date == "2020-06-04" |
+                                                         date == "2019-09-02" |
+                                                         date == "2020-08-08" |
+                                                         date == "2019-07-06" |
+                                                         date == "2020-07-02" |
+                                                         date == "2020-07-05") ~
+                                     "4a",
+                                   clust_abund == 4 & (date == "2018-03-27" |
+                                                         date == "2019-03-15" |
+                                                         date == "2019-10-01" |
+                                                         date == "2018-04-22" |
+                                                         date == "2019-04-18") ~
+                                     "4b",
+                                   TRUE ~ as.character(clust_abund)))
+
+test %>% 
+  ggplot(aes(x = as.factor(clust_abund_2), y = gm_b1, fill = as.factor(clust_abund_2))) +
+  geom_boxplot() + 
+  # ggpubr::stat_compare_means(size = 6) +
+  # labs(y = "Temp. (°C)") +
+  scale_fill_npg() +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        legend.position = "none")
 ```
 
 

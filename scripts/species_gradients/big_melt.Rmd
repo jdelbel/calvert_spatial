@@ -1,0 +1,116 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Upload packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(patchwork)
+library(RColorBrewer)
+library(ggpubr)
+library(broom)
+library(vegan)
+library(ggcorrplot)
+```
+
+```{r}
+chem <- read_xlsx(here("files", "big_melt.xlsx")) 
+```
+
+```{r}
+#Creating a unique location-date ID for each sample - makes labels for plotting by dendrogram more informative 
+chem <- chem %>% 
+  mutate(m = "m") %>% 
+  unite(sample_name, c(Station, depth), sep = "-", remove = FALSE) %>% 
+  unite(sample_name, c(sample_name, m), sep = "", remove = FALSE) %>% 
+  select(-m)
+
+chem <- chem %>% 
+  rename(cyan = Cyanobacteria, hapt = Hapto, GA = `Prasinophytes-3`,
+         cryp = Cryptophytes, dino = `Dinoflagellates-1`, dict = Dictyo, 
+         raph = Raphido,
+         diat = `Diatoms-1`)
+```
+
+```{r}
+chem_long <- chem %>% 
+  select(-chlc3) %>% 
+  pivot_longer(c(cyan:diat), names_to = "group", values_to = "tchla")
+```
+
+```{r}
+#Setting plotting order phytoplankton groups
+
+#Order phytoplankton groups roughly from smallest to largest - create order list
+order_chem <- c("cyan", "hapt", "GA", "cryp",
+                   "dino", "raph", "dict", "diat")
+
+#Chemtax spring bloom - Specify order of phyto groups for figures
+chem_long <- arrange(mutate(chem_long,
+                                group = factor(group,
+                                levels = order_chem)))
+
+
+order_station <- c("BUR8-5m", "BUR8-10m", "BUR5-5m", "BUR5-10m", "BUR3-5m", "BUR1-5m",
+                   "BUR1A-5m", 
+                   "DE6-5m", "DE6-10m",  "DE5-5m", "DE5-10m", "DE3-5m", "DE1-5m", 
+                   "FC1-5m",
+                   "FZH08-5m", "HKP04-5m", "HKP01-5m", "HKP03-5m", "QCS01-5m",
+                   "KC10-5m", "DFO2-5m")
+                   
+chem_long <- arrange(mutate(chem_long,
+                                sample_name = factor(sample_name,
+                                levels = order_station)))
+```
+
+```{r}
+#Set Color palette for plotting. Currently based on QU39 manuscript. Brewer has some good ones for R style.
+palette <- c("#ff8000", #1 - Diatoms (orange)
+             "#ff99c7", #2 - Dictyochophytes (pink)
+             "#4d6600", #3 - Raphidophytes (dark green)
+             "#ff0000", #4 - Dinoflagellates (Red)
+             "#ffff00", #5 - Cryptophytes (yellow)
+             "#00ff00", #6 - Chlorophyta (light green)
+             "#7d4dcc", #7 - Haptophytes (purple)
+             "#000000") #8 - Cyanobacteria (black)
+```
+
+
+
+```{r}
+chem_long %>% 
+  ggplot() + 
+  geom_bar(aes(x = as.factor(sample_name), y = tchla, 
+           fill = fct_rev(group)), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette,
+                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
+                               "Hapt", "Cyan")) +
+  facet_grid(depth ~ .) +
+  # ylim(0, 12.5) +
+  labs(y = bquote("Phy. (TChla, mg" ~ m^-3*")")) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        axis.text.x = element_text(colour = "black", angle = 90,
+                                   vjust = 0.5, hjust = 1),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        # strip.text.y = element_blank()
+        ) +
+  guides(fill = guide_legend(nrow = 1),
+         color = "none")
+
+ggsave(here("figures_species_timeseries", "big_melt.png"), 
+       width = 16, height = 10, dpi = 300)
+```
+
+
+
+

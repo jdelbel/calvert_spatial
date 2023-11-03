@@ -69,13 +69,19 @@ up_cm <- env %>%
 
 
 ```{r}
-up_fig <-
+scale <- 10
+
+# up_fig <-
   up_cm %>% 
   ggplot() +
-  geom_col(aes(x = date, y = ifelse(up_dm < 0/10^3, up_dm/10^3, 0)), fill= "blue") +
-  geom_col(aes(x = date, y = ifelse(up_dm > 0/10^3, up_dm/10^3, 0)), fill= "red") +
-  geom_line(aes(x = date, y = up_cm/10^4, color = as.factor(year)), size = 2) +
-  labs(y = "upwelling") +
+  geom_col(aes(x = date, y = ifelse(up_dm < 0, up_dm, 0)), fill= "blue") +
+  geom_col(aes(x = date, y = ifelse(up_dm > 0, up_dm, 0)), fill= "red") +
+  geom_line(aes(x = date, y = up_cm/scale, color = as.factor(year)), size = 2) +
+  scale_y_continuous(sec.axis = sec_axis(~.*scale,
+                                         name = "Cumulative UI."),
+                     limits = c(-1500, 700)) +
+  labs(y = "UI") +
+  scale_color_brewer(palette = "Dark2") +
   # scale_colour_steps2()
   scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
   theme_bw() +
@@ -86,6 +92,9 @@ up_fig <-
         strip.background = element_blank(),
         strip.text.x = element_blank(),
         legend.position = "none")
+  
+ggsave(here("figures_river", "upwelling.png"), 
+       width = 16, height = 6, dpi = 300)
 ```
 
 
@@ -215,10 +224,10 @@ co2_fig <-
 ```
 
 ```{r}
-fig <- up_fig / wind_fig / riv_fig / chl_fig / co2_fig
-
-ggsave(here("figures_river", "riv_co2_chl_upwelling.png"), fig,
-       width = 16, height = 18, dpi = 300)
+# fig <- up_fig / wind_fig / riv_fig / chl_fig / co2_fig
+# 
+# ggsave(here("figures_river", "riv_co2_chl_upwelling.png"), fig,
+#        width = 16, height = 18, dpi = 300)
 ```
 
 ```{r}
@@ -348,6 +357,10 @@ riv %>%
 ggsave(here("figures_river", "discharge_monthly.png"),
        width = 16, height = 12, dpi = 300)
 ```
+
+
+
+
 ```{r}
 riv %>% 
   mutate(year = lubridate::year(date),
@@ -377,6 +390,17 @@ riv %>%
 ggsave(here("figures_river", "discharge_vert.png"),
        width = 16, height = 12, dpi = 300)
 ```
+```{r}
+riv %>% 
+  mutate(year = lubridate::year(date)) %>% 
+  filter(Watershed_group == "Q_tot") %>% 
+  ggplot(aes(x = as.factor(year), y = Q)) +
+  geom_boxplot()
+```
+
+
+
+
 ```{r}
 cs_riv <- riv %>% 
   filter(Watershed_group == "Q_tot") %>% 
@@ -414,10 +438,205 @@ riv <- riv %>%
 ```
 
 ```{r}
+# "dodgerblue3", "darkolivegreen", "red2", "goldenrod1"
+
+
 cs_wan %>% 
-  ggplot(aes(x = date, y = cs_raw, color = as.factor(year))) +
-  geom_line()
+  ggplot(aes(x = date, y = cs_raw/10^5, color = as.factor(year))) +
+  geom_rect(aes(xmin = as.Date("2018-03-01"), xmax = as.Date("2018-06-01"), 
+                ymin = 0, ymax = 1.5),
+               fill = "darkolivegreen", color = "transparent", alpha = 0.002) +
+  geom_rect(aes(xmin = as.Date("2018-06-01"), xmax = as.Date("2018-09-01"), 
+                ymin = 0, ymax = 1.5),
+               fill = "red2", color = "transparent", alpha = 0.005) +
+  geom_rect(aes(xmin = as.Date("2018-09-01"), xmax = as.Date("2018-12-01"), 
+                ymin = 0, ymax = 1.5),
+               fill = "goldenrod1", color = "transparent", alpha = 0.002) +
+  geom_rect(aes(xmin = as.Date("2019-03-01"), xmax = as.Date("2019-06-01"), 
+                ymin = 0, ymax = 1.5),
+               fill = "darkolivegreen", color = "transparent", alpha = 0.002) +
+  geom_rect(aes(xmin = as.Date("2019-06-01"), xmax = as.Date("2019-09-01"), 
+                ymin = 0, ymax = 1.5),
+               fill = "red2", color = "transparent", alpha = 0.002) +
+  geom_rect(aes(xmin = as.Date("2019-09-01"), xmax = as.Date("2019-12-01"), 
+                ymin = 0, ymax = 1.5),
+               fill = "goldenrod1", color = "transparent", alpha = 0.002) +
+  geom_rect(aes(xmin = as.Date("2020-03-01"), xmax = as.Date("2020-06-01"), 
+                ymin = 0, ymax = 1.5),
+               fill = "darkolivegreen", color = "transparent", alpha = 0.002) +
+  geom_rect(aes(xmin = as.Date("2020-06-01"), xmax = as.Date("2020-09-01"), 
+                ymin = 0, ymax = 1.5),
+               fill = "red2", color = "transparent", alpha = 0.005) +
+  geom_rect(aes(xmin = as.Date("2020-09-01"), xmax = as.Date("2020-12-01"), 
+                ymin = 0, ymax = 1.5),
+               fill = "goldenrod1", color = "transparent", alpha = 0.002) +
+  geom_line(size = 2) +
+  scale_color_brewer(palette = "Dark2") +
+  theme_bw() +
+  theme(legend.position = "none",
+        text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_river", "discharge_cs_season.png"),
+       width = 16, height = 6, dpi = 300)
+
 ```
+```{r}
+riv_mm <- riv %>%
+  filter(!Watershed_group == "Q_tot") %>% 
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>% 
+  group_by(Watershed_group, month, year) %>% 
+  summarise(mm_q = mean(Q)) %>%
+  ungroup() %>% 
+  mutate(month_mid = 1) %>% 
+  unite(date, c("year", "month", "month_mid"), sep = "-") %>% 
+  mutate(date = lubridate::ymd(date))
+```
+```{r}
+riv_mm %>% 
+  ggplot(aes(x = date, y = mm_q/10^3, fill = Watershed_group)) +
+  annotate(geom = "rect", 
+           xmin = as.Date("2018-03-01"), xmax = as.Date("2018-06-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-06-01"), xmax = as.Date("2018-09-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-09-01"), xmax = as.Date("2018-12-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect", 
+           xmin = as.Date("2019-03-01"), xmax = as.Date("2019-06-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-06-01"), xmax = as.Date("2019-09-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-09-01"), xmax = as.Date("2019-12-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect", 
+           xmin = as.Date("2020-03-01"), xmax = as.Date("2020-06-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-06-01"), xmax = as.Date("2020-09-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-09-01"), xmax = as.Date("2020-12-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  geom_bar(stat = "identity", position = "stack", color = "black") +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 3.6)) +
+  scale_x_date(breaks = seq(as.Date("2018-01-01"), as.Date("2021-01-01"),
+                            by = "4 months"), date_minor_breaks = "1 month",
+               date_labels = "%b%y") +
+  scale_fill_brewer(palette = "Blues") +
+  labs(y = bquote("Discharge" ~ "("*10^4~m^3*~s^-1*")"),
+       fill = NULL) +
+  theme_bw() +
+  theme(legend.position = c(0.07, 0.9),
+        legend.background = element_blank(),
+        legend.box.background = element_blank(),
+        text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_river", "discharge_cs_season_mm.png"),
+       width = 16, height = 6, dpi = 300)
+
+```
+
+```{r}
+wind_mm <- env %>%
+  mutate(month = lubridate::month(date),
+         year = lubridate::year(date)) %>% 
+  group_by(month, year) %>% 
+  summarise(mm_ws = mean(wind_dm),
+            mm_wd = mean(wind_dir_dm)) %>%
+  ungroup() %>% 
+  mutate(month_mid = 1) %>% 
+  unite(date, c("year", "month", "month_mid"), sep = "-") %>% 
+  mutate(date = lubridate::ymd(date))
+```
+```{r}
+wind_mm %>% 
+  ggplot(aes(x = date, y = mm_ws, fill = mm_wd)) +
+  annotate(geom = "rect", 
+           xmin = as.Date("2018-03-01"), xmax = as.Date("2018-06-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-06-01"), xmax = as.Date("2018-09-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-09-01"), xmax = as.Date("2018-12-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect", 
+           xmin = as.Date("2019-03-01"), xmax = as.Date("2019-06-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-06-01"), xmax = as.Date("2019-09-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-09-01"), xmax = as.Date("2019-12-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect", 
+           xmin = as.Date("2020-03-01"), xmax = as.Date("2020-06-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-06-01"), xmax = as.Date("2020-09-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-09-01"), xmax = as.Date("2020-12-01"), 
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  geom_bar(stat = "identity", color = "black") +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 8.2)) +
+  scale_x_date(breaks = seq(as.Date("2018-01-01"), as.Date("2021-01-01"),
+                            by = "4 months"), date_minor_breaks = "1 month",
+               date_labels = "%b%y") +
+  scale_fill_stepsn(colors = brewer.pal(n = 8, name = "RdBu"),
+                     breaks = seq(0, 360, by = 45),
+                    limits = c(0, 360),
+                    name = "Dir.(°)") +
+  labs(y = bquote("Wind" ~ "(m"~s^-1*")")) +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.9),
+        legend.direction = "horizontal",
+        text = element_text(size = 30),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank())
+
+ggsave(here("figures_river", "wind_season_mm.png"),
+       width = 16, height = 6, dpi = 300)
+
+```
+
+
+
+
+
 
 ```{r}
 riv_test <- riv %>% 
@@ -433,7 +652,7 @@ riv_test <- riv %>%
 ```{r}
 scale <- 2
 
-riv_test %>% 
+cs_fig <- riv_test %>% 
   filter(!Watershed_group == "Q_tot") %>% 
   ggplot() +
   geom_area(aes(x = date, y = Q_d, fill = Watershed_group),
@@ -465,9 +684,15 @@ riv_test %>%
             color = "black", size = 1.0, linetype = "dotted") +
   geom_point(aes(x = as.Date("2018-05-02"), y = -5.786401/scale), pch = 21,
              fill = "white", stroke = 1.5, size = 2.5) +
+  geom_point(aes(x = as.Date("2018-09-06"), y = 1.06778141/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 2.5) +
   geom_point(aes(x = as.Date("2019-05-08"), y = -9.507108/scale), pch = 21,
              fill = "white", stroke = 1.5, size = 2.5) +
+  geom_point(aes(x = as.Date("2019-09-11"), y = -5.008165/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 2.5) +
   geom_point(aes(x = as.Date("2020-04-19"), y = -4.7487954/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 2.5) +
+  geom_point(aes(x = as.Date("2020-09-22"), y = 8.739361/scale), pch = 21,
              fill = "white", stroke = 1.5, size = 2.5) +
   scale_y_continuous(sec.axis = sec_axis(~.*scale,
                                          name = bquote("Int. Dis."~"("*10^4~m^3*~s^-1*")"))) + 
@@ -482,7 +707,7 @@ riv_test %>%
                expand = c(0, 0),
                date_breaks = "years", date_labels = "%b%y") +
   theme_bw() +
-  theme(legend.position = c(0.08, 0.86),
+  theme(legend.position = c(0.08, 0.83),
         text = element_text(size = 30),
         axis.text = element_text(color = 'black'),
         axis.title.x = element_blank(),
@@ -492,11 +717,12 @@ riv_test %>%
 ggsave(here("figures_river", "discharge_cs.png"),
        width = 16, height = 6, dpi = 300)
 ```
+
 ```{r}
 max_cs <- riv_test %>%
   mutate(year = lubridate::year(date)) %>% 
   group_by(year) %>% 
-  filter(cs_d == max(cs_d))
+  filter(cs_raw_d == max(cs_raw_d))
 ```
 
 
@@ -535,11 +761,17 @@ riv_test %>%
             aes(date, y = cs_wan_raw_d/scale),
             color = "black", size = 1.0, linetype = "dotted") +
   geom_point(aes(x = as.Date("2018-05-02"), y = 12.020980/scale), pch = 21,
-             fill = "white", stroke = 1.5, size = 2.5) +
+             fill = "white", stroke = 1.5, size = 3) +
+  geom_point(aes(x = as.Date("2018-09-06"), y = 37.39951/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 3) +
   geom_point(aes(x = as.Date("2019-05-08"), y = 9.169442/scale), pch = 21,
-             fill = "white", stroke = 1.5, size = 2.5) +
+             fill = "white", stroke = 1.5, size = 3) +
+  geom_point(aes(x = as.Date("2019-09-11"), y = 32.05311/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 3) +
   geom_point(aes(x = as.Date("2020-04-19"), y = 11.301365/scale), pch = 21,
-             fill = "white", stroke = 1.5, size = 2.5) +
+             fill = "white", stroke = 1.5, size = 3) +
+  geom_point(aes(x = as.Date("2020-09-22"), y = 47.55157/scale), pch = 21,
+             fill = "white", stroke = 1.5, size = 3) +
   scale_y_continuous(sec.axis = sec_axis(~.*scale,
                                          name = bquote("Int. Dis."~"("*10^4~m^3*~s^-1*")"))) + 
   # geom_line(data = riv %>% filter(Watershed_group == "Wan"),
@@ -579,7 +811,7 @@ sal_fig <- sal_dis <- ctd_s %>%
   theme_bw() +
   labs(y = bquote("Sal. (PSU)"),
        color = NULL) +
-  theme(legend.position = c(0.08, 0.1),
+  theme(legend.position = c(0.08, 0.2),
         text = element_text(size = 30),
         axis.text = element_text(color = 'black'),
         axis.title.x = element_blank(),

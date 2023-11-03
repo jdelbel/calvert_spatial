@@ -1,0 +1,916 @@
+---
+title: "pca_environemtal_data"
+output: html_notebook
+---
+
+Running PCA and cluster analysis on environmental variables.
+```{r}
+#Loading packages
+library(tidyverse)
+library(readxl)
+library(here)
+library(vegan)
+library(BiodiversityR)
+library(ggsci)
+library(ggrepel)
+library(ggforce)
+library(patchwork)
+library(cluster)
+library(ggdendro)
+library(RColorBrewer)
+library(indicspecies)
+library(factoextra)
+library(zoo)
+library(ggpubr)
+library(broom)
+```
+
+```{r}
+#Upload data
+
+#Physical - chemical data
+data <- read_csv(here("outputs", "ctd_all_2023-03-30_fwi3.csv"))
+
+#Chlorophyll data
+chl <- read_csv(here("outputs", "tchla_calibration_2022-08-04.csv"))
+
+#General environmental data - discharge etc.
+env <- read_csv(here("outputs", "enviro_2023-05-26_up.csv"))
+
+micro <- read_csv(here("outputs", "micro_all_2022-11-25.csv"))
+
+clust <- read_csv(here("outputs", "final_cluster_2023-07-31.csv"))
+```
+
+```{r}
+
+data <- data %>% 
+  select(date:secchi_depth)
+
+#Joining all of the data
+data_join <- data %>% 
+  left_join(chl) %>% 
+  left_join(env) 
+
+#Relocating metadata
+data_join <- data_join %>% 
+  relocate(location, .after = site_id)
+
+#Adding date information and relocating
+data_join <- data_join %>% 
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  relocate(month, .after = date) %>% 
+  relocate(year, .after = month)
+```
+
+```{r}
+#Selecting the variables I want
+data_pca <- data_join %>%
+  select(date, month, year, site_id, location, temp = temp_dm, 
+         sal = sal_dm, drho = delta_rho_dm, DN = no2_dm,
+         secchi = secchi_depth, sm_b1, gm_b1, ra_b1, wind_b1, 
+         wind_dir_b1, up_b1, tchla, par_b1)
+
+
+```
+
+```{r}
+data_pca %>% 
+  ggplot(aes(x = date, y = drho, color = site_id)) +
+  geom_line() +
+  geom_point()
+```
+
+```{r}
+data_pca_long <- data_pca %>% 
+  select(date, site_id, temp:par_b1) %>% 
+  pivot_longer(c(temp:par_b1), names_to = "par", values_to = "val")
+
+data_pca_long <- data_pca_long %>% 
+  left_join(clust)
+
+data_pca <- data_pca %>% 
+  left_join(clust)
+```
+
+```{r}
+#Removing NA's for analysis 
+data_pca <- data_pca %>%
+  drop_na()
+```
+
+```{r}
+#Pulling out explanatory variables for PCA analysis
+expl <- data_pca[, 6:18]
+```
+
+```{r}
+#Scaling data being used for PCA (Should look into whether I should also center as I did with the mantel tests)
+expl <- scale(expl)
+
+#Converting to a data frame for subsequent analysis.
+expl <- as.data.frame(expl)
+
+```
+
+
+```{r}
+#Running PCA using vegan - when RDA is run without response variables, then it is a PCA
+pca <- rda(expl)
+
+#Looking at results - for interpretation of following look at.
+head(summary(pca))
+
+#Looking at scores
+loadings <- scores(pca, display = 'species', scaling = 0)
+loadings
+```
+
+
+```{r}
+#Looking at the variables with highest correlation with axis 1
+sort (abs (loadings[,1]), decreasing = TRUE)
+```
+```{r}
+#Looking at the variables with highest correlation with axis 2
+sort (abs (loadings[,2]), decreasing = TRUE)
+```
+
+
+```{r}
+biplot (pca, display = 'species', scaling = 'species')
+```
+
+```{r}
+#Looking at different scalings
+source ('https://raw.githubusercontent.com/zdealveindy/anadat-r/master/scripts/NumEcolR2/cleanplot.pca.R')
+par (mfrow = c(1,2))
+cleanplot.pca (pca, scaling = 1)
+cleanplot.pca (pca, scaling = 2)
+```
+
+```{r}
+#Looking into importance of each axis
+
+# define "evplot" function first:
+source ('https://raw.githubusercontent.com/zdealveindy/anadat-r/master/scripts/NumEcolR1/evplot.R')
+
+# Finally, in the PCA object select the component $eig with the vector of eigenvalues:
+ev <- pca$CA$eig
+
+evplot (ev)
+```
+
+
+```{r}
+library (BiodiversityR)
+sig <- PCAsignificance (pca, axes = 14)
+sig
+
+barplot(sig[c('percentage of variance', 'broken-stick percentage'), ], beside = T, 
+  xlab = 'PCA axis', ylab = 'explained variation [%]', col = c('grey', 'black'), 
+  legend = TRUE)
+```
+
+
+```{r}
+p_pca <- biplot(pca, scaling = 2, type = "none", xlab = c("PCA1"),
+               ylab = c("PCA2"), xlim = c(-0.01, 0.1), ylim = c(-1.1, 1.1))
+
+points(scores(pca, display = 'sites', choices = c(1, 2), scaling = 1),
+       pch = 21, cex = 2.0,
+       bg = c("blue", "springgreen4", "black", "magenta")[as.factor(data_pca$site_id)])
+
+legend("topright", legend = c(levels(as.factor(data_pca$site_id))),
+       pch = 21,
+       pt.bg = c("blue", "springgreen4", "black", "magenta"),
+       bty = "n", cex = 1.5)
+```
+
+```{r}
+
+data_pca <- data_pca %>%
+  mutate(season = case_when(month == 12 | month == 1 | month == 2 ~ "winter",
+                            month >= 3 & month <= 5 ~ "spring",
+                            month >= 6 & month <= 8 ~ "summer",
+                            month >= 9 & month <= 12 ~ "autumn",)) %>%
+  relocate(season, .after = month)    
+  
+#I want to push December from each year to winter of the next year
+data_pca <- data_pca %>%
+  mutate(year = case_when(season == "winter" & month == 12 ~ year+1,
+                           TRUE ~ as.numeric(year)))
+```
+
+```{r}
+#Setting up parameters for plotting PCA
+
+# https://programmer.ink/think/r-redundancy-analysis-rda-ggplot2.html
+# https://rstudio-pubs-static.s3.amazonaws.com/694016_e2d53d65858d4a1985616fa3855d237f.html
+
+#Extracting site locations
+sites_loc_pca <- sites.long(p_pca, env.data = expl)
+meta_pca <- data_pca %>% 
+  select(date:location, month:year)
+sites_loc_pca <- cbind(meta_pca, sites_loc_pca)
+head(sites_loc_pca)
+sites_loc_pca <- sites_loc_pca %>% 
+  mutate(year = lubridate::year(date))
+
+#Species location in ordination
+species_loc_pca <- species.long(p_pca)
+species_loc_pca
+
+axis.long_pca <- axis.long(pca, choices = c(1, 2))
+axis.long_pca
+
+#these are both throwing zeros - One I won't need because I'm not plotting species vectors.
+#trying something from here. https://tem11010.github.io/Plotting-PCAs/
+# env_loc_pca <- as.data.frame(pca$biplot[,1:2])
+vscores <- as.data.frame(pca$CA$v)
+```
+
+```{r}
+#Adding results of clustering to the pca scores for plotting
+
+sites_loc_pca_clust <- sites_loc_pca %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
+```
+
+```{r}
+order_loc <- c("F", "C", "S")
+
+#Set order for locations in plot
+sites_loc_pca_clust <- arrange(mutate(sites_loc_pca_clust,
+                         location = factor(location, levels = order_loc)))
+
+#Order locations from fjord to shelf
+order_loc_seas <- c("winter", "spring", "summer", "autumn")
+
+#Chemtax - Specify order of phyto groups for figures
+sites_loc_pca_clust <- arrange(mutate(sites_loc_pca_clust,
+                         season = factor(season, levels = order_loc_seas)))
+```
+
+```{r}
+#Plotting PCA with clusters
+
+row.names(vscores) <- c("Temp",
+                        "Sal",
+                        "Δρ",
+                        "DN",
+                        "SD",
+                        "S.Mtn",
+                        "G.Mtn",
+                        "Rain",
+                        "WS",
+                        "WD",
+                        "UI",
+                        "TChla",
+                        "PAR")
+                        
+p1 <- ggplot(data = sites_loc_pca_clust, aes(x = axis1, y = axis2)) +
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_pca_clust, aes(fill = as.factor(season),
+                                   shape = location, stroke = 0.1), 
+             size = 10, color = "black", alpha = 0.7, stroke = 0.1) +
+  scale_fill_manual(values = c("dodgerblue3", "darkolivegreen", "red2", "goldenrod1")) + 
+  scale_shape_manual(values = c(21, 22, 23)) + 
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1*2, yend = PC2*2), 
+               arrow = arrow(length = unit(0.2,"cm")),
+               alpha = 1, color = 'grey', size = 1.5) +
+  geom_text_repel(data = vscores, aes(PC1*2, PC2*2,
+                                           label = row.names(vscores)),
+                  box.padding = unit(0.3, 'lines'),
+                  # point.padding = NA,
+                  point.padding = unit(2, 'lines'),
+                  segment.color = 'blue',
+                  # segment.size = 0.5,
+                  # segment.alpha = 0.4,
+                  # arrow = arrow(length = unit(0.01, 'npc')),
+                  # nudge_y = -0.02,
+                  # nudge_x = 0.1,
+                  force = 0.1,
+                  max.iter = 3e3,
+                  size = 8,
+                  color = "black") +
+  labs(x = "PCA1 (35%)",
+       y = "PCA2 (21%)") +
+  # xlim(-0.9, 1.1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        # axis.text.x = element_blank(),
+        # axis.title.x = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24)) +
+        theme(legend.direction = "horizontal") +
+        theme(legend.position = "top") +
+        theme(legend.box = "vertical") +
+  guides(fill = guide_legend(override.aes = list(shape = 21), nrow = 1)) +
+  labs(fill = "", shape = "")
+
+p2 <- ggplot() + 
+  geom_vline(xintercept = c(0), color = "grey70", linetype = 2) +
+  geom_hline(yintercept = c(0), color = "grey70", linetype = 2) +  
+  scale_x_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) +
+  scale_y_continuous(sec.axis = dup_axis(labels = NULL, name = NULL)) + 
+  geom_point(data = sites_loc_pca_clust, aes(x = axis1, y = axis2, 
+                                       fill = as.factor(year), 
+                                       shape = location, stroke = 1), 
+             size = 10, color = "black") +
+  scale_fill_brewer(palette = "Dark2") + 
+  scale_shape_manual(values = c(21, 22, 23)) + 
+  # geom_text(data = vscores, aes(x = PC1, y = PC2, label = rownames(vscores)),
+  #           col = 'red') +
+  geom_segment(data = vscores, aes(x = 0, y = 0, xend = PC1, yend = PC2), 
+               arrow = arrow(length = unit(0.2,"cm")),
+               alpha = 1, color = 'black', size = 1.5) +
+  # geom_text_repel(data = vscores, aes(PC1, PC2,
+  #                                          label = row.names(vscores)),
+  #                 box.padding = unit(0.3, 'lines'),
+  #                 # point.padding = NA,
+  #                 point.padding = unit(2, 'lines'),
+  #                 segment.color = 'blue',
+  #                 # segment.size = 0.5,
+  #                 # segment.alpha = 0.4,
+  #                 # arrow = arrow(length = unit(0.01, 'npc')),
+  #                 # nudge_y = -0.02,
+  #                 # nudge_x = 0.1,
+  #                 force = 0.1,
+  #                 max.iter = 3e3,
+  #                 size = 8,
+  #                 color = "black") +
+  labs(x = "PCA1 (35%)",
+       y = "PCA2 (21%)") +
+  # xlim(-1.0, 1.3) +
+  # labs(x = paste("PCA 1 (", format(100 *pca$cont[[1]][2,1],
+  #                                  digits = 3), "%)", sep = ""),
+  #      y = paste("PCA 2 (", format(100 *pca$cont[[1]][2,2], 
+  #                                  digits = 2), "%)", sep = "")) +
+ 
+  # coord_fixed(ratio = 1) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold", colour = "black"),
+        # axis.text.x = element_blank(),
+        # axis.title.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_rect(fill = NA, colour = "black"), 
+        legend.title = element_text(face = "bold", colour = "black"), 
+        legend.text = element_text(colour = "black"),
+        # legend.position = c(0.9, 0.85),
+        legend.margin = margin(-0.3, 0, 0, 0, unit = "cm"),
+        text = element_text(size = 24)) +
+        theme(legend.direction = "horizontal") +
+        theme(legend.position = "top") +
+        theme(legend.box = "vertical") +
+  labs(fill = "") +
+  guides(fill = guide_legend(override.aes = list(shape = 21)),
+         color = "none",
+         shape = "none")
+
+fig <- p1 + p2
+ 
+ggsave(here("figures_pca", "PCA-2023-10-18.png"), fig,
+       width = 15, height = 6, dpi = 300)
+```
+
+```{r}
+chl_loc <- data_pca %>% 
+  select(date, site_id, tchla) %>% 
+  pivot_wider(names_from = "site_id", values_from = "tchla") %>% 
+  rename(tchla_f = DFO2, tchla_c = KC10, tchla_s = QCS01) %>% 
+  pivot_longer(c(tchla_c:tchla_s), names_to = "tchla_loc", values_to = "tchla")
+
+chl_all <- data_pca %>% 
+  select(date, site_id, tchla) 
+
+data_pca_long2 <- data_pca_long %>% 
+  filter(!par == "tchla") %>% 
+  select(date, par, val)
+
+chl_cor <- chl_loc %>% 
+  left_join(data_pca_long2)
+
+chl_cor_all <- chl_all %>% 
+  left_join(data_pca_long2)
+
+data_nest <- chl_cor %>% 
+  group_by(tchla_loc, par) %>%
+  nest()
+
+data_nest_all <- chl_cor_all %>% 
+  group_by(par) %>%
+  nest()
+
+head(data_nest)
+head(data_nest_all)
+
+str(head(slice(data_nest, 1)))
+str(head(slice(data_nest_all, 1)))
+
+cor_fun <- function(df) cor.test(df$tchla,
+                                 df$val,
+                                 method = "spearman") %>% tidy()
+
+
+
+data_nest <- mutate(data_nest, model = map(data, cor_fun))
+data_nest_all <- mutate(data_nest_all, model = map(data, cor_fun))
+
+corr_pr <- select(data_nest, -data) %>% unnest()
+corr_pr_all <- select(data_nest_all, -data) %>% unnest()
+
+corr_pr
+corr_pr_all
+
+corr_pr <- mutate(corr_pr, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+corr_pr_all <- mutate(corr_pr_all, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+
+corr_pr <- rbind(corr_pr, corr_pr_all)
+
+corr_pr <- corr_pr %>% 
+  mutate(tchla_loc = case_when(is.na(tchla_loc) ~ "TChla_all", 
+                           TRUE ~ as.character(tchla_loc)))
+  
+```
+
+```{r}
+
+#Order locations from fjord to shelf
+env_loc <- c("temp",
+               "sal",
+               "drho",
+               "up_b1",
+               "DN",
+               "secchi",
+               "gm_b1",
+               "sm_b1",
+               "ra_b1",
+               "wind_b1",
+               "wind_dir_b1",
+               "par_b1")
+
+loc <- c("TChla_all", "tchla_f", "tchla_c", "tchla_s")
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         par = factor(par, levels = env_loc)))
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         tchla_loc = factor(tchla_loc, levels = loc)))
+```
+
+
+```{r}
+sr <- ggplot()+
+  geom_tile(data = corr_pr,
+            aes(par, tchla_loc, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr, sig == "Sig."),
+            aes(par, tchla_loc),
+            size = 1.5,
+            colour = "black",
+            fill = "transparent") +
+  geom_text(data = corr_pr,
+            aes(par, tchla_loc, label = round(estimate, 2),
+                fontface = ifelse(sig == "Sig.", "bold", "plain")),
+            size = 7) +
+  scale_x_discrete(labels = c("temp" = "Temp",
+                              "sal" = "Sal",
+                             "drho" = "Δρ",
+                             "DN" = "DN",
+                             "secchi" = "SD",
+                             "gm_b1" = "Q_G.Mtn.",
+                             "sm_b1" = "Q_S.Mtn.",
+                             "ra_b1" = "Q_Rain",
+                             "wind_b1" = "WS",
+                             "wind_dir_b1" = "WD",
+                             "par_b1" = "PAR")) +
+  scale_y_discrete(labels = c("TChla_all" = "TChla-all",
+                              "tchla_f" = "TChla-F",
+                              "tchla_c" = "TChla-C",
+                              "tchla_s" = "TChla-S")) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+                       name = "Correlation") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        # axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.width = unit(5, "cm"),
+        legend.key.height = unit(0.4, "cm"),
+        legend.title = element_text(size = 20),
+        legend.title.align = 0.5,
+        legend.text = element_text(size = 15)) +
+        guides(fill = guide_colourbar(title.position = "top")) 
+
+ggsave(here("figures_cor", "Spearmans_rank_tchla.png"), 
+       width = 15, height = 6, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```
+
+
+
+
+```{r}
+chl_loc <- data_pca %>% 
+  select(date, site_id, tchla) %>% 
+  pivot_wider(names_from = "site_id", values_from = "tchla") %>% 
+  rename(tchla_f = DFO2, tchla_c = KC10, tchla_s = QCS01) %>% 
+  pivot_longer(c(tchla_c:tchla_s), names_to = "tchla_loc", values_to = "tchla")
+
+chl_all <- data_pca %>% 
+  select(date, site_id, tchla) 
+
+data_pca_long2 <- data_pca_long %>% 
+  filter(!par == "tchla") %>% 
+  select(date, par, val)
+
+chl_cor <- chl_loc %>% 
+  left_join(data_pca_long2)
+
+chl_cor_all <- chl_all %>% 
+  left_join(data_pca_long2)
+
+data_nest <- chl_cor %>% 
+  group_by(tchla_loc, par) %>%
+  nest()
+
+data_nest_all <- chl_cor_all %>% 
+  group_by(par) %>%
+  nest()
+
+head(data_nest)
+head(data_nest_all)
+
+str(head(slice(data_nest, 1)))
+str(head(slice(data_nest_all, 1)))
+
+cor_fun <- function(df) cor.test(df$tchla,
+                                 df$val,
+                                 method = "pearson") %>% tidy()
+
+
+
+data_nest <- mutate(data_nest, model = map(data, cor_fun))
+data_nest_all <- mutate(data_nest_all, model = map(data, cor_fun))
+
+corr_pr <- select(data_nest, -data) %>% unnest()
+corr_pr_all <- select(data_nest_all, -data) %>% unnest()
+
+corr_pr
+corr_pr_all
+
+corr_pr <- mutate(corr_pr, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+corr_pr_all <- mutate(corr_pr_all, sig = ifelse(p.value < 0.05, "Sig.", "Non Sig."))
+
+corr_pr <- rbind(corr_pr, corr_pr_all)
+
+corr_pr <- corr_pr %>% 
+  mutate(tchla_loc = case_when(is.na(tchla_loc) ~ "TChla_all", 
+                           TRUE ~ as.character(tchla_loc)))
+  
+```
+
+```{r}
+
+#Order locations from fjord to shelf
+env_loc <- c("temp",
+               "sal",
+               "drho",
+               "up_b1",
+               "DN",
+               "secchi",
+               "gm_b1",
+               "sm_b1",
+               "ra_b1",
+               "wind_b1",
+               "wind_dir_b1",
+               "par_b1")
+
+loc <- c("TChla_all", "tchla_f", "tchla_c", "tchla_s")
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         par = factor(par, levels = env_loc)))
+
+#Chemtax - Specify order of phyto groups for figures
+corr_pr <- arrange(mutate(corr_pr,
+                         tchla_loc = factor(tchla_loc, levels = loc)))
+```
+
+```{r}
+p <- ggplot()+
+  geom_tile(data = corr_pr,
+            aes(par, tchla_loc, fill = estimate),
+            size = 1,
+            colour = "white")+
+  geom_tile(data = filter(corr_pr, sig == "Sig."),
+            aes(par, tchla_loc),
+            size = 1.5,
+            colour = "black",
+            fill = "transparent") +
+  geom_text(data = corr_pr,
+            aes(par, tchla_loc, label = round(estimate, 2),
+                fontface = ifelse(sig == "Sig.", "bold", "plain")),
+            size = 7) +
+ scale_x_discrete(labels = c("temp" = "Temp",
+                              "sal" = "Sal",
+                             "up_b1" = "UI",
+                             "drho" = "Δρ",
+                             "DN" = "DIN",
+                             "secchi" = "SD",
+                             "gm_b1" = "Q_G.Mtn.",
+                             "sm_b1" = "Q_S.Mtn.",
+                             "ra_b1" = "Q_Rain",
+                             "wind_b1" = "WS",
+                             "wind_dir_b1" = "WD",
+                             "par_b1" = "PAR")) +
+  scale_y_discrete(labels = c("TChla_all" = "TChla-all",
+                              "tchla_f" = "TChla-F",
+                              "tchla_c" = "TChla-C",
+                              "tchla_s" = "TChla-S")) +
+  scale_y_discrete(labels = c("TChla_all" = "TChla-all",
+                              "tchla_f" = "TChla-F",
+                              "tchla_c" = "TChla-C",
+                              "tchla_s" = "TChla-S")) +
+  scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+                       midpoint = 0, limit = c(-1 , 1), space = "Lab", 
+                       name = "Spearmans Rank Correlation") +
+  theme_bw() +
+  theme(text = element_text(size = 30),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.y = element_blank(),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        axis.line = element_line(colour = "black"),
+        legend.background = element_blank(),
+        legend.key.width = unit(5, "cm"),
+        legend.key.height = unit(0.4, "cm"),
+        legend.title = element_text(size = 20),
+        legend.title.align = 0.5,
+        legend.text = element_text(size = 15)) +
+        guides(fill = "none") 
+
+ggsave(here("figures_cor", "pearsons_tchla.png"), 
+       width = 15, height = 6, dpi = 300)
+
+# https://dominicroye.github.io/en/2019/tidy-correlation-tests-in-r/
+```
+
+```{r}
+panel <- wrap_elements(full = fig) / sr / p +
+  plot_layout(heights = c(2, 0.5, 0.5), widths = c(2, 1, 1))
+
+ggsave(here("figures_cor", "pca_spearmans_pearson_panel_s2.png"), panel,
+        width = 16, height = 14, dpi = 300)
+```
+
+```{r}
+#I think it might be important to highlight that 1) secchi depth is related to stratifiation at all stations and 2) Tchla is only related to secchi depth at KC10 and QCS01 and 3) stratification is related to discharge at all stations. Fuck all of the other correlations.
+
+#How can I show this efficiently???
+
+#Think of some sort of panel.
+
+#If I can make a panel showing this, then I could tie stratification to discharge,
+
+data_join %>% 
+  ggplot(aes(x = sm_dis + gm_dis + ra_dis, y = delta_rho_dm, color = site_id)) +
+  geom_point() 
+  
+```
+
+
+
+```{r}
+hc <- expl
+
+# hc <- scale(hc)
+
+metadata <- data_pca %>%
+  select(location, site_id, date) %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE) %>% 
+  relocate(sample_name, .before = date)
+
+#Creating a list of rownames
+# labs_list <- labs$sample_name
+labs_list <- metadata$sample_name
+
+
+#Making the rownames of the clustering matrix the ones specified in the above list.
+rownames(hc) <- labs_list
+```
+
+```{r}
+
+#Performing hierarchical clustering
+
+#Calculating Bray-Curtis Distances
+dis <- dist(hc, method = "euclidean")
+
+#Applying average linkage hierarchical clustering
+cluster.average <- hclust(dis, "ward.D2")
+
+```
+
+```{r}
+coph <- cophenetic(cluster.average)
+cor(dis, coph) 
+```
+```{r}
+# Enhanced hierarchical clustering, cut in 3 groups
+fviz_dend(cluster.average, cex = 0.5, k = 5, color_labels_by_k = TRUE)
+```
+
+
+```{r}
+#Looking at tests to derive cluster number - turning off for now because adds time.
+fviz_nbclust(hc, FUN = hcut, method = "wss")
+fviz_nbclust(hc, FUN = hcut, method = "silhouette")
+gap_stat <- clusGap(hc, FUN = hcut, nstart = 25, K.max = 10, B = 50)
+fviz_gap_stat(gap_stat)
+```
+
+
+```{r}
+#This step sets clusters. Currently, set to three. Not fully supported by silhouette plot, but does make sense considering the data.
+
+k <- 5
+clust <- cutree(cluster.average, k = k)
+
+clust.df <- data.frame(label = rownames(hc),
+                                   cluster = factor(clust))
+
+write_csv(clust.df, here("outputs", "pca_clusters_2023-08-2.csv"))
+```
+
+```{r}
+# extract dendrogram segment data for plotting
+
+dend <- as.dendrogram(cluster.average)
+dendrogram_data <- dendro_data(dend)
+dendrogram_segments <- dendrogram_data$segments 
+```
+
+```{r}
+#Creating metadata sheet with 
+# metadata <- micro_piv %>% 
+#   select(site_id, date)
+
+# metadata <- micro_piv %>% 
+#    select(sample_name, site_id, date)
+
+#Making unique labels by combining site and date into single string
+# metadata <- metadata %>% 
+#   unite(sample_name, c(site_id, date), sep = "_", remove = FALSE)
+
+# get terminal dendrogram segments and join with names.
+dendrogram_ends <- dendrogram_segments %>%
+ filter(yend == 0) %>% 
+ left_join(dendrogram_data$labels, by = "x") %>% 
+ rename(sample_name = label) %>% 
+ left_join(metadata, by = "sample_name") 
+
+```
+
+```{r}
+#This is used to draw cluster boxes around the dendrogram clusters in the plot. Not currently using clusters so have turned off, but necessary if using clusters.
+
+dendrogram_data[["labels"]] <- merge(dendrogram_data[["labels"]], clust.df, by = "label")
+rect <- aggregate(x~cluster, label(dendrogram_data), range)
+rect <- data.frame(rect$cluster, rect$x)
+ymax <- mean(cluster.average$height[length(cluster.average$height) - ((k-2):(k-1))])
+```
+
+
+```{r}
+#I'm not 100% sure how this all works, but it does - sets up colors for the sites for plotting with dendrogram.
+
+# Generate custom color palette for dendrogram ends based on metadata variable - Site
+unique_vars <- levels(factor(dendrogram_ends$site_id)) %>% 
+  as.data.frame() %>% 
+  rownames_to_column("row_id")
+
+# count number of unique variables
+color_count <- length(unique(unique_vars$.))
+
+# get RColorBrewer palette
+get_palette <- colorRampPalette(brewer.pal(n = 3, name = "Set1"))
+
+# produce RColorBrewer palette based on number of unique variables in metadata:
+palette <- get_palette(color_count) %>% 
+ as.data.frame() %>%
+ rename("color" = ".") %>%
+ rownames_to_column(var = "row_id")
+
+color_list <- left_join(unique_vars, palette, by = "row_id") %>%
+ select(-row_id)
+
+site_color <- as.character(color_list$color)
+names(site_color) <- color_list$.
+```
+
+```{r}
+#Plotting dendrogram - saving for incorporation later.
+ggplot() +
+ geom_segment(data = dendrogram_segments, 
+              aes(x = x, y = y, xend = xend, yend = yend)) +
+ geom_segment(data = dendrogram_ends, aes(x = x, y = y.x, xend = xend,
+                                          yend = yend, color = site_id),
+              size = 2) +
+ geom_text(data = dendrogram_ends, aes(x = x, y = y.y, label = sample_name,
+                                       color = site_id),
+           hjust = 0, angle = 0, size = 6) +
+ geom_rect(data = rect, aes(xmin = X1 - .3, xmax = X2 + .3, ymin = 0, ymax = ymax),
+            color = "black", fill = NA, size = 0.8) +
+ scale_color_manual(values = site_color) +
+ scale_y_reverse(limits = c(25, -5)) +
+ coord_flip() +
+ theme_bw() +
+ theme(legend.position = "none",
+       axis.title.x = element_blank(),
+       axis.title.y = element_blank(),
+       axis.text.y = element_blank(),
+       text = element_text(size = 30)) +
+ ylab("Distance") # flipped x and y coordinates for aesthetic reasons
+
+ 
+# ggsave(here("figures_pca", "ward_eucl_2023-03-27_no_secchi.png"),
+#        width = 6, height = 12, dpi = 300)
+```
+```{r}
+#Adding results of clustering to the pca scores for plotting
+
+sites_loc_pca_clust <- sites_loc_pca %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
+
+clust_df <- clust.df %>%
+  rename(sample_name = label)
+
+sites_loc_pca_clust <- sites_loc_pca_clust %>%
+  left_join(clust_df) %>%
+  relocate(cluster, .after = month)
+```
+
+
+```{r}
+test <- data_pca %>% 
+  unite(sample_name, c(location, date), sep = "", remove = FALSE)
+
+test <- test %>% 
+  left_join(clust_df)
+
+test %>% 
+  select(cluster, temp:par_b1) %>% 
+  pivot_longer(!cluster, names_to = "param", values_to = "val") %>% 
+  ggplot(aes(x = as.factor(cluster), y = val)) +
+  geom_boxplot() +
+  ggpubr::stat_compare_means(size = 6) +
+  facet_wrap(~param, scales = "free_y")
+
+ggsave(here("figures_pca", "KW_test_physical.png"),
+       width = 16, height = 16, dpi = 300)
+```
+
+```{r}
+kruskal.test(sio2_dm ~ cluster, data = test)
+
+test$cluster <- as.factor(test$cluster)
+
+#Dunn Test to look where differences are occuring.
+FSA::dunnTest(test$sio2_dm ~ test$cluster,
+              method = "bonferroni")
+```

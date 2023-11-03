@@ -28,30 +28,15 @@ chem <- read_csv(here("files", "chemtax_2023-04-14.csv"))
 sf <- read_csv(here("files", "chl_2018_2020.csv")) 
 ```
 
-```{r}
-pp <- micro %>% 
-  filter(genus == "Heterosigma")
 
+```{r}
 hapt <- micro %>% 
   filter(date == "2019-08-06" | date == "2019-08-31" | date == "2020-09-04") %>% 
   filter(group == "Dictyochophyta" | group == "Prymnesiophyta-Haptophyta" |
            group == "Chrysophyta")
 
-dino <- micro %>% 
-  filter(date == "2019-08-06" | date == "2019-08-31") %>% 
-  filter(group == "Dinoflagellata") %>% 
-  group_by(date, genus) %>% 
-  summarise(sum = sum(species_sum)) %>% 
-  ungroup()
+#Plot to show trends at the shelf when there was high haptophyte contributions.
 
-alex <- micro %>% 
-  filter(genus == "Alexandrium")
-
-cryp <- micro %>% 
-  filter(date == "2019-08-05")
-```
-
-```{r}
 hapt %>% 
   ggplot(aes(x = as.factor(date), y = species_sum/10^4, fill = scientificName)) + 
   geom_bar(stat = "identity", position = "stack", color = "black") +
@@ -66,45 +51,29 @@ hapt %>%
         strip.background.y = element_blank(),
         strip.text.y = element_blank())
 
-# dino %>%
-#   ggplot(aes(x = as.factor(date), y = sum/10^4, fill = genus)) + 
-#   geom_bar(stat = "identity", position = "stack", color = "black") +
-#   ggsci::scale_fill_jco() +
-#   labs(y = bquote("Abund. ("~10^4 ~ cells ~ L^-1*")")) +
-#   annotate("text", x = 0.8, y = 2.5, label = "SHELF", size = 10) +
-#   theme_bw() +
-#   theme(text = element_text(size = 25),
-#         axis.title.x = element_blank(),
-#         axis.text = element_text(colour = "black"),
-#         legend.title = element_blank(),
-#         strip.background.y = element_blank(),
-#         strip.text.y = element_blank())
-
 ggsave(here("figures_species_timeseries", "summer_2019_shelf.png"),
        width = 10, height = 6, dpi = 300)
 ```
 
 ```{r}
-#Remove QU39
+#Removing cyanobacteria from the counts.
 micro <- micro %>%
   filter(!scientificName_accepted == "Cyanobacteria")
+
+#Only including autotrophic species
+micro_phyto <- micro %>%
+  filter(trophicStatus == "auto")
 ```
 
 ```{r}
-test <- micro %>% 
-  distinct(group,scientificName)
-```
-
-
-```{r}
-#Add year column
-micro <- micro %>% 
+#Adding date and Season Columns.
+micro_phyto <- micro_phyto %>% 
   mutate(year = lubridate::year(date),
          month = lubridate::month(date)) %>% 
   relocate(year, .after = date) %>% 
   relocate(month, .after = year)
 
-micro <- micro %>%  
+micro_phyto <- micro_phyto %>%  
   mutate(month_surv = lubridate::month(date),
          month_surv = case_when(date == "2019-08-29" ~ 9,
                                 date == "2019-08-31" ~ 9,
@@ -113,6 +82,7 @@ micro <- micro %>%
 ```
 
 ```{r}
+#Formatting the size-fractionated data.
 sf_less <- sf %>% 
   filter(line_out_depth == 5 & !filter_type == "Bulk GF/F") %>% 
   filter(chla_flag == "AV" | is.na(chla_flag)) %>%
@@ -127,7 +97,7 @@ sf_less <- sf %>%
 
 ```{r}
 # Changing site_id to location 
-micro <- micro %>% 
+micro_phyto <- micro_phyto %>% 
     mutate(location = case_when(site_id == "DFO2" ~ "F",
                               site_id == "KC10" ~ "C",
                               site_id == "QCS01" ~ "S",
@@ -143,43 +113,26 @@ chl <- chl %>%
 ```
 
 ```{r}
-micro_all <- micro 
-
-#Order locations from fjord to shelf
-order_loc <- c("F", "C", "S")
-
-#Chemtax - Specify order of phyto groups for figures
-micro_all <- arrange(mutate(micro_all,
-                         location = factor(location, levels = order_loc)))
-
-
-micro_all <- micro_all %>%
-  # filter(group == "Bacillariophyta")
-  filter(trophicStatus == "auto")
-#I want to look at species that never contribute to more than a certain percentage to the total biomass
-```
-
-```{r}
-micro_all <- micro_all %>%
+micro_phyto <- micro_phyto %>%
   group_by(date, location) %>%
   mutate(sum_count = sum(species_sum)) %>%
   ungroup() %>%
   mutate(perc = species_sum/sum_count)
 
-micro_all <- micro_all %>%
+micro_phyto <- micro_phyto %>%
   group_by(scientificName) %>%
   mutate(max = max(perc),
          max_abund = max(species_sum),
          median_abund = median(species_sum)) %>% 
   ungroup()
 
-top_13 <- micro_all %>% 
+top_8 <- micro_phyto %>% 
   distinct(scientificName, max_abund) %>% 
   slice_max(max_abund, n = 8)
 ```
 
 ```{r}
-micro_all_gt10_perc <- micro_all %>% 
+micro_8 <- micro_phyto %>% 
   mutate(scientificName2 = ifelse(max_abund < 350000 & group == "Bacillariophyta",
                                   "Other diatom", scientificName)) %>% 
   mutate(scientificName2 = ifelse(max_abund < 350000 & !group == "Bacillariophyta",
@@ -188,24 +141,17 @@ micro_all_gt10_perc <- micro_all %>%
 
 
 ```{r}
-micro_all_gt10_perc2 <- micro_all_gt10_perc %>% 
+micro_8 <- micro_8 %>% 
   group_by(date, month_surv, location, scientificName2) %>% 
   summarise(species_sum = sum(species_sum)) %>% 
   ungroup()
 ```
 ```{r}
-micro_all_c <- micro_all_gt10_perc2  
+micro_8_c <- micro_8  
 
-colourCount_c = length(unique(micro_all_c$scientificName2))
+colourCount_c = length(unique(micro_8_c$scientificName2))
 getPalette_c = colorRampPalette(brewer.pal(15, "Paired"))
 ```
-
-```{r}
-spec_dist <- micro_all_c %>% 
-  distinct(scientificName2)
-```
-
-
 ```{r}
 #25%
 spec_ord <- c("Biddulphiales", #
@@ -224,146 +170,42 @@ spec_ord <- c("Biddulphiales", #
               "Other diatom", #
               "Other flagellate") #
 
-
-
-
-# spec_ord <- c("Biddulphiales", #
-#               "Chaetoceros tenuissimus", #
-#               "Pennales", #
-#               "Pseudo-nitzschia seriata", #
-#               "Rhizosolenia setigera", #
-#               "Skeletonema marinoi", #
-#               "Olisthodiscus", #
-#               "Hillea", #
-#               "Teleaulax", #
-#               "Phaeocystis pouchetii", #
-#               "Other diatom", #
-#               "Other flagellate") #
-
-#20%
-# spec_ord <- c("Biddulphiales",
-#               "Chaetoceros cinctus",
-#               "Chaetoceros tenuissimus",
-#               "Pseudo-nitzschia seriata",
-#               "Rhizosolenia setigera",
-#               "Skeletonema marinoi small",
-#               "Skeletonema marinoi large",
-#               "Olisthodiscus",
-#               "Hillea",
-#               "Teleaulax",
-#               "Phaeocystis pouchetii",
-#               "Pyramimonas orientalis",
-#               "Other")
-
-#10%
-# spec_ord <- c("Biddulphiales",
-#               "Chaetoceros cinctus",
-#               "Chaetoceros tenuissimus",
-#               "Pseudo-nitzschia",
-#               
-#               "Rhizosolenia setigera",
-#               "Skeletonema marinoi large",
-#               "Skeletonema marinoi small",
-#               "Thalassiosira nordenskioeldii",
-#               "Thalassiosira pacifica",
-#               "Olisthodiscus",
-#               "Hillea",
-#               "Teleaulax",
-#               "Pterosperma",
-#               "Pyramimonas orientalis",
-#               "Phaeocystis pouchetii")
-
-micro_all_c <- arrange(mutate(micro_all_c,
+micro_8_c <- arrange(mutate(micro_8_c,
                          scientificName2 = factor(scientificName2,
                                                  levels = spec_ord)))
 ```
 
 ```{r}
-micro_all_chl <- micro_all_c %>% 
+micro_8_c <- micro_8_c %>% 
   left_join(chl)
+```
 
-micro_all_chl <- arrange(mutate(micro_all_chl,
+
+```{r}
+#Order locations from fjord to shelf
+order_loc <- c("F", "C", "S")
+
+micro_8_c <- arrange(mutate(micro_8_c,
                          location = factor(location, levels = order_loc)))
 ```
 
 
 ```{r}
-coeff <- 2
-
-micro_all_chl %>%   
-  mutate(year = lubridate::year(date)) %>% 
-  ggplot() + 
-  geom_bar(aes(x = as.factor(month_surv), y = species_sum/100000, 
-           fill = scientificName2), stat = "identity", position = "stack",
-           color = "black") +
-  scale_fill_manual(values = getPalette_c(colourCount_c)) +
-  geom_line(aes(x = month_surv, y = tchla*coeff), size = 1.5) +
-  geom_point(aes(x = month_surv, y = tchla*coeff, 
-                 color = ifelse(tchla < 5, "Fail", "Pass")), size = 2.5, pch = 21,
-             stroke = 2, fill = "black") +
-  scale_y_continuous(name = "Phyto. Abundance (10^5 cells L)",
-                     sec.axis = sec_axis(~ . /coeff, name = "TChla")) +
-  scale_color_manual(values = c("black", "green"))+
-  facet_grid(location ~ year) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        # axis.text.y = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        strip.text.y = element_blank()) +
-  guides(fill = guide_legend(nrow = 3),
-         color = "none")
-
-ggsave(here("figures_species_timeseries", "compositions_all_10species.png"),
-       width = 16, height = 10, dpi = 300)
-```
-
-```{r}
-test <- micro_all_chl %>% 
+micro_8_plot <- micro_8_c %>% 
   select(-site_id, -tchla) %>% 
   pivot_wider(names_from = scientificName2, values_from = species_sum,
               values_fill = 0) 
 
-test2 <- test %>% 
+micro_8_plot <- micro_8_plot %>% 
   pivot_longer(cols = c(Hillea:Olisthodiscus), names_to = "scientificName2",
                values_to = "species_sum")
 ```
 
 ```{r}
-test2 <- arrange(mutate(test2,
+micro_8_plot <- arrange(mutate(micro_8_plot,
                          scientificName2 = factor(scientificName2,
                                                  levels = spec_ord)))
-
-test2 %>%
-  mutate(year = lubridate::year(date)) %>% 
-  ggplot() + 
-  geom_area(aes(x = date, y = species_sum/100000, 
-           fill = scientificName2), stat = "identity", position = "stack",
-           color = "black") +
-  scale_fill_manual(values = getPalette_c(colourCount_c)) +
-  facet_grid(location ~ .) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        # axis.text.y = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        strip.text.y = element_blank()) +
-  guides(fill = guide_legend(nrow = 3),
-         color = "none")
-
-
-ggsave(here("figures_species_timeseries", "test.png"),
-       width = 16, height = 10, dpi = 300)
 ```
-
 
 ```{r}
 
@@ -474,288 +316,34 @@ chem_long <- chem_long %>%
 ```
 
 ```{r}
-f1 <- test2 %>%
-  filter(location == "F") %>%
-  ggplot() + 
-  geom_area(aes(x = date, y = species_sum/100000, 
-           fill = scientificName2), stat = "identity", position = "stack",
-           color = "black") +
-  scale_fill_manual(values = palette_micro) +
-  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
-  labs(y = "cells L-1") +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        strip.text.y = element_blank()) +
-  guides(fill = guide_legend(nrow = 5),
-         color = "none")
-
-f2 <- chem_long %>%
-  filter(site_id == "DFO2") %>% 
-  ggplot() +
-  geom_area(aes(x = date, y = tchla, 
-           fill = fct_rev(group)), stat = "identity", position = "stack",
-           color = "black") +
-  scale_fill_manual(values = palette,
-                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
-                               "Hapt", "Cyan")) +
-  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
-  labs(y = "Phyto. ug/L") +
-  ylim(0, 12.5) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        # axis.title.y = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        # strip.text.y = element_blank()
-        ) +
-  guides(fill = guide_legend(nrow = 3),
-         color = "none")
-
-f3 <- test2 %>%
-  filter(location == "C") %>%
-  ggplot() + 
-  geom_area(aes(x = date, y = species_sum/100000, 
-           fill = scientificName2), stat = "identity", position = "stack",
-           color = "black") +
-  scale_fill_manual(values = palette_micro) +
-  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "none",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        strip.text.y = element_blank()) +
-  guides(fill = guide_legend(nrow = 2),
-         color = "none")
-
-f4 <- chem_long %>%
-  filter(site_id == "KC10") %>% 
-  ggplot() +
-  geom_area(aes(x = date, y = tchla, 
-           fill = fct_rev(group)), stat = "identity", position = "stack",
-           color = "black") +
-  scale_fill_manual(values = palette,
-                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
-                               "Hapt", "Cyan")) +
-  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
-  ylim(0, 12.5) +
-  labs(y = "Phyto. ug/L") +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        # axis.title.y = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "none",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        # strip.text.y = element_blank()
-        ) +
-  guides(fill = guide_legend(nrow = 1),
-         color = "none")
-
-test2<- test2 %>% 
-  mutate(year = lubridate::year(date))
-
-f5 <- test2 %>%
-  ggplot() +
-  geom_area(data = filter(test2, year == 2018 & location == "S"), 
-           aes(x = date, y = species_sum/100000,
-           fill = scientificName2), stat = "identity", position = "stack",
-           color = "black") +
-    geom_area(data = filter(test2, year == 2019 & location == "S"), 
-           aes(x = date, y = species_sum/100000,
-           fill = scientificName2), stat = "identity", position = "stack",
-           color = "black") +
-      geom_area(data = filter(test2, year == 2020 & location == "S"), 
-           aes(x = date, y = species_sum/100000,
-           fill = scientificName2), stat = "identity", position = "stack",
-           color = "black") +
-  scale_fill_manual(values = palette_micro) +
-  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "none",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        strip.text.y = element_blank()) +
-  guides(fill = guide_legend(nrow = 2),
-         color = "none")
-
-GeomRibbon$handle_na <- function(data, params) { data }
-
-test <- chem_long %>% 
-  filter(site_id == "QCS01")
-
-test$ymax <-test$tchla
-test$ymin <- 0
-zl <- levels(test$group)
-for ( i in 2:length(zl) ) {
-   zi <- test$group==zl[i]
-   zi_1 <- test$group==zl[i-1]
-   test$ymin[zi] <- test$ymax[zi_1]
-   test$ymax[zi] <- test$ymin[zi] + test$ymax[zi]
-}
-
-f6 <- test %>%
-  ggplot(aes(x = date, ymax = ymax, ymin = ymin, fill = fct_rev(group))) + 
-  geom_ribbon(color = "black") +
-  scale_fill_manual(values = palette,
-                    labels = c("Diat", "Dict", "Raph", "Dino", "Cryt", "Chlo", 
-                               "Hapt", "Cyan")) +
-  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
-  ylim(0, 12.5) +
-  labs(y = "Phyto. ug/L") +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        # axis.title.y = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "none",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        # strip.text.y = element_blank()
-        ) +
-  guides(fill = guide_legend(nrow = 1),
-         color = "none")
-
-f7 <- sf_less %>%
-  filter(site_id == "DFO2") %>%
-  ggplot() + 
-  geom_area(aes(x = date, y = chla, 
-           fill = filter_type), stat = "identity", position = "stack",
-           color = "black") +
-  scale_fill_brewer(palette = "Greens") +
-  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
-  ylim(0, 12.5) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "top",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        strip.text.y = element_blank()) +
-  guides(fill = guide_legend(nrow = 1),
-         color = "none")
-
-f8 <- sf_less %>%
-  filter(site_id == "KC10") %>%
-  ggplot() + 
-  geom_area(aes(x = date, y = chla, 
-           fill = filter_type), stat = "identity", position = "stack",
-           color = "black") +
-  scale_fill_brewer(palette = "Greens") +
-  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
-  ylim(0, 12.5) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "none",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        strip.text.y = element_blank()) +
-  guides(fill = guide_legend(nrow = 2),
-         color = "none")
-
-f9 <- sf_less %>%
-  ggplot() + 
-  geom_area(data = filter(sf_less, year == 2018 & site_id == "QCS01"), 
-           aes(x = date, y = chla,
-           fill = filter_type), stat = "identity", position = "stack",
-           color = "black") +
-    geom_area(data = filter(sf_less, year == 2019 & site_id == "QCS01"), 
-           aes(x = date, y = chla,
-           fill = filter_type), stat = "identity", position = "stack",
-           color = "black") +
-      geom_area(data = filter(sf_less, year == 2020 & site_id == "QCS01"), 
-           aes(x = date, y = chla,
-           fill = filter_type), stat = "identity", position = "stack",
-           color = "black") +
-  scale_fill_brewer(palette = "Greens") +
-  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
-  ylim(0, 12.5) +
-  theme_bw() +
-  theme(text = element_text(size = 25),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        axis.text.y = element_blank(),
-        axis.text.x = element_blank(),
-        axis.text = element_text(colour = "black"),
-        legend.position = "none",
-        legend.direction = "horizontal",
-        legend.title = element_blank(),
-        strip.background.y = element_blank(),
-        strip.text.y = element_blank()) +
-  guides(fill = guide_legend(nrow = 2),
-         color = "none")
-
-fig <- (f1 + f2 + f7) / (f3 + f4 + f8) / (f5 + f6 + f9)
-
-ggsave(here("figures_species_timeseries", "test_test2.png"), fig,
-       width = 18, height = 12, dpi = 300)
-```
-
-```{r}
-f1 <- test2 %>%
+f1 <- micro_8_plot %>%
   filter(location == "F") %>%
   ggplot() +
-  geom_bar(data = filter(test2, date < "2018-02-01" & location == "F"), 
+  geom_bar(data = filter(micro_8_plot, date < "2018-02-01" & location == "F"), 
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black", width = 20) +
-  geom_area(data = filter(test2, date > "2018-02-01" & date < "2018-11-01" &
+  geom_area(data = filter(micro_8_plot, date > "2018-02-01" & date < "2018-11-01" &
                             location == "F"), 
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black") +
-  geom_bar(data = filter(test2, date > "2018-11-01" & date < "2018-11-30" &
+  geom_bar(data = filter(micro_8_plot, date > "2018-11-01" & date < "2018-11-30" &
                            location == "F"), 
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black", width = 20) +
-  geom_area(data = filter(test2, date > "2019-01-01" & date < "2019-12-31"&
+  geom_area(data = filter(micro_8_plot, date > "2019-01-01" & date < "2019-12-31"&
                             location == "F"),
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black") +
-  geom_bar(data = filter(test2, date > "2020-01-01" & date < "2020-02-25" &
+  geom_bar(data = filter(micro_8_plot, date > "2020-01-01" & date < "2020-02-25" &
                             location == "F"),
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black", width = 20) +
-  geom_area(data = filter(test2, date > "2020-02-25" & date < "2020-12-21" &
+  geom_area(data = filter(micro_8_plot, date > "2020-02-25" & date < "2020-12-21" &
                             location == "F"),
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
@@ -814,25 +402,25 @@ f2 <- chem_long %>%
   guides(fill = guide_legend(nrow = 2),
          color = "none")
 
-f3 <- test2 %>%
+f3 <- micro_8_plot %>%
   filter(location == "C") %>%
   ggplot() + 
-  geom_area(data = filter(test2, date > "2018-01-01" & date < "2018-12-31" &
+  geom_area(data = filter(micro_8_plot, date > "2018-01-01" & date < "2018-12-31" &
                             location == "C"), 
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black") +
-  geom_area(data = filter(test2, date > "2019-01-01" & date < "2019-12-31" &
+  geom_area(data = filter(micro_8_plot, date > "2019-01-01" & date < "2019-12-31" &
                             location == "C"),
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black") +
-  geom_bar(data = filter(test2, date > "2020-01-01" & date < "2020-02-25" &
+  geom_bar(data = filter(micro_8_plot, date > "2020-01-01" & date < "2020-02-25" &
                             location == "C"),
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black", width = 25) +
-  geom_area(data = filter(test2, date > "2020-02-25" & date < "2020-12-21" &
+  geom_area(data = filter(micro_8_plot, date > "2020-02-25" & date < "2020-12-21" &
                             location == "C"),
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
@@ -893,31 +481,31 @@ f4 <- chem_long %>%
   guides(fill = guide_legend(nrow = 1),
          color = "none")
 
-test2<- test2 %>% 
+micro_8_plot <- micro_8_plot %>% 
   mutate(year = lubridate::year(date))
 
-f5 <- test2 %>%
+f5 <- micro_8_plot %>%
   ggplot() +
-  geom_bar(data = filter(test2, date < "2018-02-01" & location == "S"), 
+  geom_bar(data = filter(micro_8_plot, date < "2018-02-01" & location == "S"), 
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black", width = 25) +
-  geom_area(data = filter(test2, date > "2018-02-01" & date < "2018-12-31" &
+  geom_area(data = filter(micro_8_plot, date > "2018-02-01" & date < "2018-12-31" &
                             location == "S"), 
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black") +
-  geom_area(data = filter(test2, date > "2019-01-01" & date < "2019-12-31"&
+  geom_area(data = filter(micro_8_plot, date > "2019-01-01" & date < "2019-12-31"&
                             location == "S"),
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black") +
-  geom_bar(data = filter(test2, date > "2020-01-01" & date < "2020-02-25" &
+  geom_bar(data = filter(micro_8_plot, date > "2020-01-01" & date < "2020-02-25" &
                             location == "S"),
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black", width = 20) +
-  geom_area(data = filter(test2, date > "2020-02-25" & date < "2020-12-21" &
+  geom_area(data = filter(micro_8_plot, date > "2020-02-25" & date < "2020-12-21" &
                             location == "S"),
            aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
@@ -1088,41 +676,42 @@ fig3 <- fig2 / (f2 + f4 + f6)
 
 fig4 <- fig3 / (f7 + f8 + f9)
 
-ggsave(here("figures_species_timeseries", "test_test3.png"), fig4,
+ggsave(here("figures_species_timeseries", "panel_phyto_chem_sf.png"), fig4,
        width = 18, height = 12, dpi = 300)
 ```
+
 ```{r}
-t1 <- test2 %>%
+t1 <- micro_8_plot %>%
   filter(location == "F") %>%
   ggplot() +
   geom_bar(aes(x = date, y = species_sum/100000,
            fill = scientificName2), stat = "identity", position = "stack",
            color = "black", width = 15) +
-  # geom_bar(data = filter(test2, date < "2018-02-01" & location == "F"), 
+  # geom_bar(data = filter(micro_8_plot, date < "2018-02-01" & location == "F"), 
   #          aes(x = date, y = species_sum/100000,
   #          fill = scientificName2), stat = "identity", position = "stack",
   #          color = "black", width = 20) +
-  # geom_area(data = filter(test2, date > "2018-02-01" & date < "2018-11-01" &
+  # geom_area(data = filter(micro_8_plot, date > "2018-02-01" & date < "2018-11-01" &
   #                           location == "F"), 
   #          aes(x = date, y = species_sum/100000,
   #          fill = scientificName2), stat = "identity", position = "stack",
   #          color = "black") +
-  # geom_bar(data = filter(test2, date > "2018-11-01" & date < "2018-11-30" &
+  # geom_bar(data = filter(micro_8_plot, date > "2018-11-01" & date < "2018-11-30" &
   #                          location == "F"), 
   #          aes(x = date, y = species_sum/100000,
   #          fill = scientificName2), stat = "identity", position = "stack",
   #          color = "black", width = 20) +
-  # geom_area(data = filter(test2, date > "2019-01-01" & date < "2019-12-31"&
+  # geom_area(data = filter(micro_8_plot, date > "2019-01-01" & date < "2019-12-31"&
   #                           location == "F"),
   #          aes(x = date, y = species_sum/100000,
   #          fill = scientificName2), stat = "identity", position = "stack",
   #          color = "black") +
-  # geom_bar(data = filter(test2, date > "2020-01-01" & date < "2020-02-25" &
+  # geom_bar(data = filter(micro_8_plot, date > "2020-01-01" & date < "2020-02-25" &
   #                           location == "F"),
   #          aes(x = date, y = species_sum/100000,
   #          fill = scientificName2), stat = "identity", position = "stack",
   #          color = "black", width = 20) +
-  # geom_area(data = filter(test2, date > "2020-02-25" & date < "2020-12-21" &
+  # geom_area(data = filter(micro_8_plot, date > "2020-02-25" & date < "2020-12-21" &
   #                           location == "F"),
   #          aes(x = date, y = species_sum/100000,
   #          fill = scientificName2), stat = "identity", position = "stack",
@@ -1145,7 +734,7 @@ t1 <- test2 %>%
   guides(fill = guide_legend(nrow = 2),
          color = "none")
 
-t2 <- test2 %>%
+t2 <- micro_8_plot %>%
   filter(location == "C") %>%
   ggplot() +
   geom_bar(aes(x = date, y = species_sum/100000,
@@ -1165,7 +754,7 @@ t2 <- test2 %>%
         strip.background.y = element_blank(),
         strip.text.y = element_blank())
 
-t3 <- test2 %>%
+t3 <- micro_8_plot %>%
   filter(location == "S") %>%
   ggplot() +
   geom_bar(aes(x = date, y = species_sum/100000,

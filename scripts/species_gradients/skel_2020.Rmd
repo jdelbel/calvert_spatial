@@ -214,7 +214,7 @@ fp1 <- micro_join %>%
   ggplot(aes(x = date, y = `Pseudo-nitzschia seriata`/10^5, fill = site_id)) +
   geom_col(color = "black", width = 1, size = 1) +
   scale_fill_manual(values = c("#EFC000FF","#868686FF"),
-                    labels = c("C", "F")) +
+                    labels = c("C", "S")) +
   labs(y = bquote("Abund. ("~10^5 ~ cells ~ L^-1*")"),
        fill = NULL) +
   annotate("text", x = as.Date("2019-07-05"), y = 5, label = "2019 - P.seriata"

@@ -1752,18 +1752,69 @@ pre code {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBwYWNrYWdlc1xubGlicmFyeSh0aWR5dmVyc2UpXG5saWJyYXJ5KHJlYWR4bClcbmxpYnJhcnkoaGVyZSlcbmxpYnJhcnkocGF0Y2h3b3JrKVxubGlicmFyeShSQ29sb3JCcmV3ZXIpXG5saWJyYXJ5KGdncHVicilcbmxpYnJhcnkoYnJvb20pXG5saWJyYXJ5KHZlZ2FuKVxubGlicmFyeShnZ2NvcnJwbG90KVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI1VwbG9hZCBwYWNrYWdlc1xubGlicmFyeSh0aWR5dmVyc2UpXG5gYGAifQ== -->
 <pre class="r"><code>#Upload packages
-library(tidyverse)
-library(readxl)
-library(here)
-library(patchwork)
-library(RColorBrewer)
-library(ggpubr)
-library(broom)
-library(vegan)
-library(ggcorrplot)</code></pre>
+library(tidyverse)</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRdGlkeXZlcnNlkiB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41UmVnaXN0ZXJlZCBTMyBtZXRob2RzIG92ZXJ3cml0dGVuIGJ5ICdkYnBseXInOlxuICBtZXRob2QgICAgICAgICBmcm9tXG4gIHByaW50LnRibF9sYXp5ICAgICBcbiAgcHJpbnQudGJsX3NxbCAgICAgIFxuLS0gQXR0YWNoaW5nIHBhY2thZ2VzIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHRpZHl2ZXJzZSAxLjMuMSAtLVxudiBnZ3Bsb3QyIDMuMy41ICAgICB2IHB1cnJyICAgMS4wLjFcbnYgdGliYmxlICAzLjIuMSAgICAgdiBkcGx5ciAgIDEuMS4yXG52IHRpZHlyICAgMS4xLjMgICAgIHYgc3RyaW5nciAxLjQuMFxudiByZWFkciAgIDIuMC4xICAgICB2IGZvcmNhdHMgMC41LjFcbnBhY2thZ2UgkWdncGxvdDKSIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVwYWNrYWdlIJF0aWR5cpIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNXBhY2thZ2UgkXJlYWRykiB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41cGFja2FnZSCRc3RyaW5ncpIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuM3BhY2thZ2UgkWZvcmNhdHOSIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjUtLSBDb25mbGljdHMgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gdGlkeXZlcnNlX2NvbmZsaWN0cygpIC0tXG54IGRwbHlyOjpmaWx0ZXIoKSBtYXNrcyBzdGF0czo6ZmlsdGVyKClcbnggZHBseXI6OmxhZygpICAgIG1hc2tzIHN0YXRzOjpsYWcoKVxuIn0= -->
+<pre><code>package 㤼㸱tidyverse㤼㸲 was built under R version 4.0.5Registered S3 methods overwritten by &#39;dbplyr&#39;:
+  method         from
+  print.tbl_lazy     
+  print.tbl_sql      
+-- Attaching packages ----------------------------------------------------------------- tidyverse 1.3.1 --
+v ggplot2 3.3.5     v purrr   1.0.1
+v tibble  3.2.1     v dplyr   1.1.2
+v tidyr   1.1.3     v stringr 1.4.0
+v readr   2.0.1     v forcats 0.5.1
+package 㤼㸱ggplot2㤼㸲 was built under R version 4.0.5package 㤼㸱tidyr㤼㸲 was built under R version 4.0.5package 㤼㸱readr㤼㸲 was built under R version 4.0.5package 㤼㸱stringr㤼㸲 was built under R version 4.0.3package 㤼㸱forcats㤼㸲 was built under R version 4.0.5-- Conflicts -------------------------------------------------------------------- tidyverse_conflicts() --
+x dplyr::filter() masks stats::filter()
+x dplyr::lag()    masks stats::lag()</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShyZWFkeGwpXG5gYGAifQ== -->
+<pre class="r"><code>library(readxl)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFyZWFkeGzjpLzjuLIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuM1xuIn0= -->
+<pre><code>package 㤼㸱readxl㤼㸲 was built under R version 4.0.3</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShoZXJlKVxuYGBgIn0= -->
+<pre class="r"><code>library(here)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRaGVyZZIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNGhlcmUoKSBzdGFydHMgYXQgQzovVXNlcnMvanVzdGluLmJlbGx1ei9Eb2N1bWVudHMvUi9jYWx2ZXJ0X3NwYXRpYWxcbiJ9 -->
+<pre><code>package 㤼㸱here㤼㸲 was built under R version 4.0.4here() starts at C:/Users/justin.belluz/Documents/R/calvert_spatial</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShwYXRjaHdvcmspXG5gYGAifQ== -->
+<pre class="r"><code>library(patchwork)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFwYXRjaHdvcmvjpLzjuLIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNVxuIn0= -->
+<pre><code>package 㤼㸱patchwork㤼㸲 was built under R version 4.0.5</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShSQ29sb3JCcmV3ZXIpXG5saWJyYXJ5KGdncHVicilcbmBgYCJ9 -->
+<pre class="r"><code>library(RColorBrewer)
+library(ggpubr)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ3B1YnLjpLzjuLIgd2FzIGJ1aWx0IHVuZGVyIFIgdmVyc2lvbiA0LjAuNVxuIn0= -->
+<pre><code>package 㤼㸱ggpubr㤼㸲 was built under R version 4.0.5</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShicm9vbSlcbmBgYCJ9 -->
+<pre class="r"><code>library(broom)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFicm9vbeOkvOO4siB3YXMgYnVpbHQgdW5kZXIgUiB2ZXJzaW9uIDQuMC41XG4ifQ== -->
+<pre><code>package 㤼㸱broom㤼㸲 was built under R version 4.0.5</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeSh2ZWdhbilcbmBgYCJ9 -->
+<pre class="r"><code>library(vegan)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSCRdmVnYW6SIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjVMb2FkaW5nIHJlcXVpcmVkIHBhY2thZ2U6IHBlcm11dGVcbkxvYWRpbmcgcmVxdWlyZWQgcGFja2FnZTogbGF0dGljZVxuVGhpcyBpcyB2ZWdhbiAyLjUtN1xuIn0= -->
+<pre><code>package 㤼㸱vegan㤼㸲 was built under R version 4.0.5Loading required package: permute
+Loading required package: lattice
+This is vegan 2.5-7</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShnZ2NvcnJwbG90KVxuYGBgIn0= -->
+<pre class="r"><code>library(ggcorrplot)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoicGFja2FnZSDjpLzjuLFnZ2NvcnJwbG9046S847iyIHdhcyBidWlsdCB1bmRlciBSIHZlcnNpb24gNC4wLjRcbiJ9 -->
+<pre><code>package 㤼㸱ggcorrplot㤼㸲 was built under R version 4.0.4</code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
@@ -2591,7 +2642,7 @@ test &lt;- hetero_genus_wide %&gt;%
 <!-- rnb-output-begin eyJkYXRhIjoiSm9pbmluZyB3aXRoIGBieSA9IGpvaW5fYnkoZGF0ZSwgc2l0ZV9pZClgSm9pbmluZyB3aXRoIGBieSA9IGpvaW5fYnkoZGF0ZSwgc2l0ZV9pZClgXG4ifQ== -->
 <pre><code>Joining with `by = join_by(date, site_id)`Joining with `by = join_by(date, site_id)`</code></pre>
 <!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY3J5cF9kaXN0aW5jdCA8LSBtaWNybyAlPiUgXG4gIGZpbHRlcihncm91cCA9PSBcIkNyeXB0b3BoeXRhXCIpICU+JSBcbiAgZGlzdGluY3Qoc2NpZW50aWZpY05hbWUpXG5cbmhpbGwgPC0gbWljcm8gJT4lIFxuICBmaWx0ZXIoc2NpZW50aWZpY05hbWUgPT0gXCJIaWxsZWFcIikgJT4lIFxuICBzZWxlY3QoZGF0ZSwgc2l0ZV9pZCwgaGlsbCA9IHNwZWNpZXNfc3VtKVxuXG50ZXN0IDwtIHRlc3QgJT4lIFxuICBsZWZ0X2pvaW4oaGlsbClcbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY3J5cF9kaXN0aW5jdCA8LSBtaWNybyAlPiUgXG4gIGZpbHRlcihncm91cCA9PSBcIkNyeXB0b3BoeXRhXCIpICU+JSBcbiAgZGlzdGluY3Qoc2NpZW50aWZpY05hbWUpXG5cbmhpbGwgPC0gbWljcm8gJT4lIFxuICBmaWx0ZXIoc2NpZW50aWZpY05hbWUgPT0gXCJIaWxsZWFcIikgJT4lIFxuICBzZWxlY3QoZGF0ZSwgc2l0ZV9pZCwgaGlsbCA9IHNwZWNpZXNfc3VtKVxuXG50ZWwgPC0gbWljcm8gJT4lIFxuICBmaWx0ZXIoZ2VudXMgPT0gXCJUZWxlYXVsYXhcIikgJT4lIFxuICBzZWxlY3QoZGF0ZSwgc2l0ZV9pZCwgdGVsID0gc3BlY2llc19zdW0pXG5cbnRlc3QgPC0gdGVzdCAlPiUgXG4gIGxlZnRfam9pbihoaWxsKVxuYGBgIn0= -->
 <pre class="r"><code>cryp_distinct &lt;- micro %&gt;% 
   filter(group == &quot;Cryptophyta&quot;) %&gt;% 
   distinct(scientificName)
@@ -2599,6 +2650,10 @@ test &lt;- hetero_genus_wide %&gt;%
 hill &lt;- micro %&gt;% 
   filter(scientificName == &quot;Hillea&quot;) %&gt;% 
   select(date, site_id, hill = species_sum)
+
+tel &lt;- micro %&gt;% 
+  filter(genus == &quot;Teleaulax&quot;) %&gt;% 
+  select(date, site_id, tel = species_sum)
 
 test &lt;- test %&gt;% 
   left_join(hill)</code></pre>

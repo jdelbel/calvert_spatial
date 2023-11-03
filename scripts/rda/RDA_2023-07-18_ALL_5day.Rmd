@@ -142,6 +142,7 @@ data <- data %>%
          sm_b1,
          gm_b1,
          ra_b1,
+         tot_b1,
          wind_b1,
          wind_dir_b1,
          par_b1,
@@ -164,12 +165,12 @@ micro_join_d <- micro_join_d %>%
 ```
 ```{r}
 #Separating into response variables (microscopy counts) and Explanatory variables (Environmental)
-resp <- micro_join[, 20:ncol(micro_join)]
+resp <- micro_join[, 21:ncol(micro_join)]
 
-resp_d <- micro_join_d[, 20:ncol(micro_join_d)]
+resp_d <- micro_join_d[, 21:ncol(micro_join_d)]
 
 #Explanatory variables
-expl <- micro_join[, 3:18]
+expl <- micro_join[, 3:19]
 
 #Trying to remove variables that have high VIFS. Removed no2 and po4 because they had the highest VIFS. I also think silicate is important because of fjords trends. Doesn't really matter as sio2 should be representative of the other nutrients anyways - when I cut sio2 out, no2 vector was comparable. 
 expl <- expl %>%
@@ -502,12 +503,11 @@ row.names(sp_bf) <- c("P.n.s",
                       "C.cin")
 
 row.names(sp_bf_d) <- c("P.n.s",
-                      "R.set.",
+                        "Pen.",
                       "S.mar",
                       "Bidd.",
                       "C.ten",
-                      "C.soc.",
-                      "T.pac.")
+                      "C.soc.")
 
 # row.names(sp_bf) <- c("P.n.s",
 #                       "Thal.",
@@ -670,14 +670,14 @@ diat <- ggplot() +
          color = "none",
          shape = "none")
 
-ggsave(here("figures_rda", "rda_2023-08-04_s3_5day.png"), 
+ggsave(here("figures_rda", "rda_2023-08-04_s3_5day2.png"), 
         width = 8, height = 6, dpi = 300)
 ```
 
 ```{r}
 fig <- all + diat
 
-ggsave(here("figures_rda", "combined_5day.png"), fig,
+ggsave(here("figures_rda", "combined_5day2.png"), fig,
        width = 16, height = 8, dpi = 300)
 ```
 

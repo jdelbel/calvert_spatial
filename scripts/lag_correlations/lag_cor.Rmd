@@ -176,10 +176,10 @@ ggsave(here("figures_pca", "lag_correlation_qcs01.png"),
 #ra = 0.338, -8
 
 env %>%
-  mutate(tot = gm_dis + sm_dis + ra_dis) %>% 
-  select(date, tot) %>% 
+  # mutate(tot = wan_dis) %>% 
+  select(date, wan_dis) %>% 
   # mutate(gm_b5 = lag(wan_dis, 10)) %>% 
-  mutate(gm_b5 = rollmeanr(lag(tot, 0), k = 11, fill = NA)) %>% 
+  mutate(gm_b5 = rollmeanr(lag(wan_dis, 1), 5, fill = NA)) %>% 
   left_join(test_c) %>% 
   mutate(month = lubridate::month(date),
          year = lubridate::year(date)) %>%
@@ -187,13 +187,6 @@ env %>%
   geom_point(aes(fill = as.factor(year)), pch = 21, size = 3) +
   ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8) 
 
-test_j %>% 
-  mutate(month = lubridate::month(date)) %>% 
-  ggplot(aes(x = tot, y = gm_dis)) +
-  geom_point(aes(fill = as.factor(month)), pch = 21) +
-  ggpubr::stat_cor(p.accuracy = 0.001, r.accuracy = 0.01, size = 8)
-
-0.85^2
 ```
 
 

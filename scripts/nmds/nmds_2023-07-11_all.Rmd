@@ -265,6 +265,27 @@ clust_ward_abund <- hclust(dis_abund, method = "complete")
 ```
 
 ```{r}
+rownames(t_abund) <- labs_list
+
+res_avg <- simprof(data = t_abund, 
+               method.distance = "braycurtis",
+               method.cluster = "average")
+
+res_cmp <- simprof(data = t_abund, 
+               method.distance = "braycurtis",
+               method.cluster = "complete")
+```
+
+```{r}
+simprof.plot(res_avg)
+simprof.plot(res_cmp)
+
+res_avg$significantclusters
+res_cmp$significantclusters
+```
+
+
+```{r}
 coph <- cophenetic(clust_ward_abund)
 cor(dis_abund, coph) 
 ```
@@ -862,21 +883,7 @@ f9 <- data_pca_join %>%
         legend.position = "none")
 ```
 
-```{r}
-fig <- dendro / (f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9) +
-  plot_layout(heights = c(1.5, 4))
 
-ggsave(here("figures_nmds_new", "dendro_box_2023-09-13.png"), fig,
-       width = 16, height = 16, dpi = 300)
-```
-
-```{r}
-fig <- f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + hd + rd + sf + 
-                       plot_layout(ncol = 3)
-
-ggsave(here("figures_nmds_new", "box_2023-09-13.png"), fig,
-       width = 16, height = 16, dpi = 300)
-```
 
 ```{r}
 kruskal.test(sal ~ clust_abund, data = data_pca_join)
@@ -1124,7 +1131,56 @@ FSA::dunnTest(sf_join_20$perc_sf ~ sf_join_20$clust_abund,
 
 ```
 
+```{r}
+fig <- dendro / (f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9) +
+  plot_layout(heights = c(1.5, 4))
 
+ggsave(here("figures_nmds_new", "dendro_box_2023-09-13.png"), fig,
+       width = 16, height = 16, dpi = 300)
+```
+
+```{r}
+fig <- f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + hd + rd + sf + 
+                       plot_layout(ncol = 3)
+
+ggsave(here("figures_nmds_new", "box_2023-09-13.png"), fig,
+       width = 16, height = 16, dpi = 300)
+```
+
+```{r}
+test <- data_pca_join %>% 
+  filter(clust_abund == 4) %>% 
+  mutate(clust_abund_2 = case_when(clust_abund == 4 & (date == "2018-05-23" |
+                                                         date == "2020-08-07" |
+                                                         date == "2019-06-11" |
+                                                         date == "2020-06-04" |
+                                                         date == "2019-09-02" |
+                                                         date == "2020-08-08" |
+                                                         date == "2019-07-06" |
+                                                         date == "2020-07-02" |
+                                                         date == "2020-07-05") ~
+                                     "4a",
+                                   clust_abund == 4 & (date == "2018-03-27" |
+                                                         date == "2019-03-15" |
+                                                         date == "2019-10-01" |
+                                                         date == "2018-04-22" |
+                                                         date == "2019-04-18") ~
+                                     "4b",
+                                   TRUE ~ as.character(clust_abund)))
+
+test %>% 
+  ggplot(aes(x = as.factor(clust_abund_2), y = gm_b1, fill = as.factor(clust_abund_2))) +
+  geom_boxplot() + 
+  # ggpubr::stat_compare_means(size = 6) +
+  # labs(y = "Temp. (°C)") +
+  scale_fill_npg() +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(colour = "black"),
+        axis.title.x = element_blank(),
+        # axis.text.x = element_blank(),
+        legend.position = "none")
+```
 
 
 ```{r}
