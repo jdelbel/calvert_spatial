@@ -318,19 +318,19 @@ ctd %>%
 
 
 ```{r}
-riv_18 <- riv %>%
+riv_19 <- riv %>%
   mutate(year = lubridate::year(date),
          month = lubridate::month(date)) %>% 
-  filter(year == 2019 & month > 4 & month < 9) 
+  filter(year == 2019 & month > 5 & month < 10) 
 
-riv_18 %>% 
+riv_19 %>% 
   ggplot() +
-  geom_area(data = riv_18 %>% filter(!Watershed_group == "Q_tot"),
+  geom_area(data = riv_19 %>% filter(!Watershed_group == "Q_tot"),
             aes(x = date, y = Q/10^3, fill = Watershed_group),
             stat = "identity", position = "stack", color = "black", 
             size = 0.5) +
-  geom_line(data = riv_18 %>% filter(Watershed_group == "Q_tot"),
-            aes(x = date, y = Q/10^3), color = "black", size = 1.5) +
+  # geom_line(data = riv_18 %>% filter(Watershed_group == "Q_tot"),
+  #           aes(x = date, y = Q/10^3), color = "black", size = 1.5) +
   # scale_fill_d3(labels = c('glacier', 'snow', 'rain')) +
   scale_fill_brewer(palette = "Blues",
                     labels = c('glacier', 'snow', 'rain')) +
@@ -345,6 +345,80 @@ riv_18 %>%
         strip.text.x = element_blank(),
         legend.position = c(0.87, 0.83))
 ```
+
+
+```{r}
+riv_18 <- riv %>%
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  filter(year == 2018 & month > 5 & month < 10) 
+
+riv_19 %>% 
+  ggplot() +
+  geom_area(data = riv_18 %>% filter(!Watershed_group == "Q_tot"),
+            aes(x = date, y = Q/10^3, fill = Watershed_group),
+            stat = "identity", position = "stack", color = "black", 
+            size = 0.5) +
+  # geom_line(data = riv_18 %>% filter(Watershed_group == "Q_tot"),
+  #           aes(x = date, y = Q/10^3), color = "black", size = 1.5) +
+  # scale_fill_d3(labels = c('glacier', 'snow', 'rain')) +
+  scale_fill_brewer(palette = "Blues",
+                    labels = c('glacier', 'snow', 'rain')) +
+  labs(fill = NULL,
+       y = bquote(Dis. ~ "("~m^-3*~s^-1*")")) +
+  ylim(0, 7) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = c(0.87, 0.83))
+```
+
+```{r}
+riv_20 <- riv %>%
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date)) %>% 
+  filter(year == 2020 & month > 5 & month < 10) %>% 
+  left_join(ctd)
+
+riv_20 %>% 
+  ggplot() +
+  geom_area(data = riv_20 %>% filter(!Watershed_group == "Q_tot"),
+            aes(x = date, y = Q/10^3, fill = Watershed_group),
+            stat = "identity", position = "stack", color = "black", 
+            size = 0.5) +
+  geom_line(data = riv_20 %>% filter(site_id == "KC10"),
+            aes(x = date, y = delta_rho_dm)) +
+  # geom_line(data = riv_18 %>% filter(Watershed_group == "Q_tot"),
+  #           aes(x = date, y = Q/10^3), color = "black", size = 1.5) +
+  # scale_fill_d3(labels = c('glacier', 'snow', 'rain')) +
+  scale_fill_brewer(palette = "Blues",
+                    labels = c('glacier', 'snow', 'rain')) +
+  labs(fill = NULL,
+       y = bquote(Dis. ~ "("~m^-3*~s^-1*")")) +
+  # ylim(0, 7) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.text = element_text(color = 'black'),
+        axis.title.x = element_blank(),
+        strip.background = element_blank(),
+        strip.text.x = element_blank(),
+        legend.position = c(0.87, 0.83))
+```
+
+```{r}
+ctd %>% 
+  filter(site_id == "KC10") %>%
+  ggplot(aes(x = delta_rho_dm, y = sal_dm)) +
+  geom_point() 
+
+```
+
+
+
+
 
 ```{r}
 qcs <- micro_join %>% 

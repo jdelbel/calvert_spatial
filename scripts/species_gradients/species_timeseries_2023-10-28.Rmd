@@ -74,11 +74,13 @@ micro_phyto <- micro_phyto %>%
   relocate(month, .after = year)
 
 micro_phyto <- micro_phyto %>%  
-  mutate(month_surv = lubridate::month(date),
-         month_surv = case_when(date == "2019-08-29" ~ 9,
+  mutate(month_surv = case_when(date == "2019-08-29" ~ 9,
                                 date == "2019-08-31" ~ 9,
-                                date == "2019-11-27" ~ 12,
-                             TRUE ~ as.numeric (month_surv)))
+                                date == "2020-04-30" ~ 5,
+                                TRUE ~ as.numeric (month))) %>% 
+  mutate(month_mid = 15) %>% 
+  unite(month_date, c("year", "month_surv", "month_mid"), sep = "-") %>% 
+  mutate(month_date = lubridate::ymd(month_date))
 ```
 
 ```{r}
@@ -142,7 +144,7 @@ micro_8 <- micro_phyto %>%
 
 ```{r}
 micro_8 <- micro_8 %>% 
-  group_by(date, month_surv, location, scientificName2) %>% 
+  group_by(date, month_date, location, scientificName2) %>% 
   summarise(species_sum = sum(species_sum)) %>% 
   ungroup()
 ```
@@ -226,9 +228,6 @@ chem <- chem %>%
          cryp = Cryptophytes, dino = `Dinoflagellates-1`, dict = Dictyo, 
          raph = Raphido,
          diat = `Diatoms-1`)
-
-
-
 ```
 
 ```{r}
@@ -236,22 +235,32 @@ chem <- chem %>%
 chem <- chem %>% 
   filter(date < "2021-01-01")
 
-chem <- chem %>% 
-    add_row(sample_name = NA,
-            date = as.Date("2020-01-01"),
-            site_id = "QCS01",
-            location = "S",
-            cyan = NA,
-            hapt = NA,
-            GA = NA, 
-            cryp = NA,
-            dino = NA,
-            raph = NA,
-            dict = NA, 
-            diat = NA) 
+# chem <- chem %>% 
+#     add_row(sample_name = NA,
+#             date = as.Date("2020-01-01"),
+#             site_id = "QCS01",
+#             location = "S",
+#             cyan = NA,
+#             hapt = NA,
+#             GA = NA, 
+#             cryp = NA,
+#             dino = NA,
+#             raph = NA,
+#             dict = NA, 
+#             diat = NA) 
 
 chem_long <- chem %>% 
   pivot_longer(c(cyan:diat), names_to = "group", values_to = "tchla")
+
+
+chem_long <- chem_long %>%  
+  mutate(month_surv = case_when(date == "2019-08-29" ~ 9,
+                                date == "2019-08-31" ~ 9,
+                                date == "2020-04-30" ~ 5,
+                                TRUE ~ as.numeric (month))) %>% 
+  mutate(month_mid = 15) %>% 
+  unite(month_date, c("year", "month_surv", "month_mid"), sep = "-") %>% 
+  mutate(month_date = lubridate::ymd(month_date))
 ```
 
 
@@ -779,6 +788,417 @@ fig_test <- t1/t2/t3
 ggsave(here("figures_species_timeseries", "test_single_1.png"), fig_test,
        width = 18, height = 12, dpi = 300)
 ```
+```{r}
+palette_micro2 <- c("#001219", #Bidd
+                   "#005f73", #C.ten.
+                   "#0a9396", #P.n.s.
+                   "#94d2bd", #S.mar.
+                   "#e9d8a6", #Hill
+                   "#ee9b00", #Tel
+                   "#bb3e03", #Olis
+                   "#751628", #P.p.
+                   "#71797E", #OD
+                   "#E5E4E2") #OF
+
+
+```
+
+
+
+```{r}
+mf <- micro_8_plot %>%
+  filter(location == "F") %>%
+  ggplot() +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-03-01"), xmax = as.Date("2018-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-06-01"), xmax = as.Date("2018-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-09-01"), xmax = as.Date("2018-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-03-01"), xmax = as.Date("2019-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-06-01"), xmax = as.Date("2019-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-09-01"), xmax = as.Date("2019-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-03-01"), xmax = as.Date("2020-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-06-01"), xmax = as.Date("2020-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-09-01"), xmax = as.Date("2020-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  geom_bar(aes(x = month_date, y = species_sum/100000,
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette_micro2) +
+  # ggsci::scale_fill_d3() +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 32) +
+  labs(y = bquote("Abund. ("~10^5 ~ cells ~ L^-1*")")) +
+  annotate("text", x = as.Date("2018-03-01"), y = 30, label = "Fjord", size = 10) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "top",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(nrow = 2),
+         color = "none")
+
+mc <- micro_8_plot %>%
+  filter(location == "C") %>%
+  ggplot() +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-03-01"), xmax = as.Date("2018-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-06-01"), xmax = as.Date("2018-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-09-01"), xmax = as.Date("2018-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-03-01"), xmax = as.Date("2019-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-06-01"), xmax = as.Date("2019-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-09-01"), xmax = as.Date("2019-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-03-01"), xmax = as.Date("2020-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-06-01"), xmax = as.Date("2020-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-09-01"), xmax = as.Date("2020-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  geom_bar(aes(x = month_date, y = species_sum/100000,
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette_micro2) +
+  # ggsci::scale_fill_d3() +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 32) +
+  labs(y = bquote("Abundance ("~10^5 ~ cells ~ L^-1*")")) +
+  annotate("text", x = as.Date("2018-03-01"), y = 30, label = "Channel", size = 10) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        # axis.title.y = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank())
+
+ms <- micro_8_plot %>%
+  filter(location == "S") %>%
+  ggplot() +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-03-01"), xmax = as.Date("2018-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-06-01"), xmax = as.Date("2018-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-09-01"), xmax = as.Date("2018-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-03-01"), xmax = as.Date("2019-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-06-01"), xmax = as.Date("2019-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-09-01"), xmax = as.Date("2019-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-03-01"), xmax = as.Date("2020-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-06-01"), xmax = as.Date("2020-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-09-01"), xmax = as.Date("2020-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  geom_bar(aes(x = month_date, y = species_sum/100000,
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette_micro2) +
+  # ggsci::scale_fill_d3() +
+  scale_x_date(limits = as.Date(c("2018-01-01", "2021-01-01"))) +
+  ylim(0, 32) +
+  labs(y = bquote("Abund. ("~10^5 ~ cells ~ L^-1*")")) +
+  annotate("text", x = as.Date("2018-03-01"), y = 30, label = "SHELF", size = 10) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        # axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank())
+
+fig_month <- mf / mc / ms
+
+ggsave(here("figures_species_timeseries", "test_single_1.png"), fig_month,
+       width = 16, height = 10, dpi = 300)
+```
+
+```{r}
+mf <- micro_8_plot %>%
+  filter(location == "F") %>%
+  ggplot() +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-03-01"), xmax = as.Date("2018-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-06-01"), xmax = as.Date("2018-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-09-01"), xmax = as.Date("2018-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-03-01"), xmax = as.Date("2019-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-06-01"), xmax = as.Date("2019-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-09-01"), xmax = as.Date("2019-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-03-01"), xmax = as.Date("2020-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-06-01"), xmax = as.Date("2020-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-09-01"), xmax = as.Date("2020-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  geom_bar(aes(x = month_date, y = species_sum/100000,
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette_micro2) +
+  # ggsci::scale_fill_d3() +
+  scale_x_date(breaks = seq(as.Date("2018-01-01"), as.Date("2021-01-01"),
+                            by = "4 months"), date_minor_breaks = "1 month",
+               date_labels = "%b%y",
+               limits = c(as.Date("2018-01-01"), as.Date("2021-01-01"))) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 32)) +
+  # ylim(0, 32) +
+  labs(y = bquote("Abund. ("~10^5 ~ cells ~ L^-1*")")) +
+  annotate("text", x = as.Date("2018-03-01"), y = 30, label = "Fjord", size = 10) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        # axis.text.x = element_blank(),
+        # axis.title.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        legend.direction = "horizontal",
+        legend.title = element_blank(),
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank()) +
+  guides(fill = guide_legend(nrow = 2),
+         color = "none")
+
+mc <- micro_8_plot %>%
+  filter(location == "C") %>%
+  ggplot() +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-03-01"), xmax = as.Date("2018-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-06-01"), xmax = as.Date("2018-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-09-01"), xmax = as.Date("2018-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-03-01"), xmax = as.Date("2019-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-06-01"), xmax = as.Date("2019-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-09-01"), xmax = as.Date("2019-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-03-01"), xmax = as.Date("2020-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-06-01"), xmax = as.Date("2020-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-09-01"), xmax = as.Date("2020-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  geom_bar(aes(x = month_date, y = species_sum/100000,
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette_micro2) +
+  # ggsci::scale_fill_d3() +
+ scale_x_date(breaks = seq(as.Date("2018-01-01"), as.Date("2021-01-01"),
+                            by = "4 months"), date_minor_breaks = "1 month",
+               date_labels = "%b%y",
+               limits = c(as.Date("2018-01-01"), as.Date("2021-01-01"))) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 32)) +
+  # ylim(0, 32) +
+  labs(y = bquote("Abundance ("~10^5 ~ cells ~ L^-1*")")) +
+  annotate("text", x = as.Date("2018-03-01"), y = 30, label = "Channel", size = 10) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        # axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank())
+
+ms <- micro_8_plot %>%
+  filter(location == "S") %>%
+  ggplot() +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-03-01"), xmax = as.Date("2018-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-06-01"), xmax = as.Date("2018-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2018-09-01"), xmax = as.Date("2018-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-03-01"), xmax = as.Date("2019-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-06-01"), xmax = as.Date("2019-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2019-09-01"), xmax = as.Date("2019-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-03-01"), xmax = as.Date("2020-06-01"),
+           ymin = 0, ymax = Inf,
+           fill = "darkolivegreen", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-06-01"), xmax = as.Date("2020-09-01"),
+           ymin = 0, ymax = Inf,
+           fill = "red2", color = "transparent", alpha = 0.2) +
+  annotate(geom = "rect",
+           xmin = as.Date("2020-09-01"), xmax = as.Date("2020-12-01"),
+           ymin = 0, ymax = Inf,
+           fill = "goldenrod1", color = "transparent", alpha = 0.2) +
+  geom_bar(aes(x = month_date, y = species_sum/100000,
+           fill = scientificName2), stat = "identity", position = "stack",
+           color = "black") +
+  scale_fill_manual(values = palette_micro2) +
+  # ggsci::scale_fill_d3() +
+  scale_x_date(breaks = seq(as.Date("2018-01-01"), as.Date("2021-01-01"),
+                            by = "4 months"), date_minor_breaks = "1 month",
+               date_labels = "%b%y",
+               limits = c(as.Date("2018-01-01"), as.Date("2021-01-01"))) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 32)) +
+  # ylim(0, 32) +
+  labs(y = bquote("Abund. ("~10^5 ~ cells ~ L^-1*")")) +
+  annotate("text", x = as.Date("2018-03-01"), y = 30, label = "SHELF", size = 10) +
+  theme_bw() +
+  theme(text = element_text(size = 25),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1),
+        # axis.text.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text = element_text(colour = "black"),
+        legend.position = "none",
+        strip.background.y = element_blank(),
+        strip.text.y = element_blank())
+
+fig_month <- mf + mc + ms
+
+ggsave(here("figures_species_timeseries", "test_single_2.png"), fig_month,
+       width = 20, height = 5, dpi = 300)
+```
+
+
+
+
+
+
 
 
 
